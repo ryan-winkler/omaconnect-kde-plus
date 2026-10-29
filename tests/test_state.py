@@ -1812,6 +1812,27 @@ class ScriptIntegrationTests(unittest.TestCase):
     self.assertTrue(device["capabilities"]["battery"])
     self.assertTrue(device["pairRequested"])
 
+  def test_discover_devices_keeps_quotes_backslashes_and_folds_newlines(self):
+    # The old gdbus text parser kept the quotes around "Sam's phone",
+    # doubled backslashes and printed a newline as a literal \n.
+    script = ROOT / "scripts" / "discover_devices.sh"
+    for name, expected in (("Sam's phone", "Sam's phone"), ("C:\\Users\\phone", "C:\\Users\\phone"), ("Two\nlines", "Two lines")):
+      with self.subTest(name=name), tempfile.TemporaryDirectory() as tmp:
+        device = {"type": "a{sv}", "data": [{"name": {"type": "s", "data": name}, "type": {"type": "s", "data": "phone"},
+                                             "isPaired": {"type": "b", "data": True}, "isReachable": {"type": "b", "data": True}}]}
+        write_busctl_stub(tmp, [
+            ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+            ("*get-property*customDevices*", FIXTURES / "busctl-custom-devices-empty.json"),
+            ("*GetAll*s*org.kde.kdeconnect.device", json.dumps(device)),
+            ("*daemon devices*", FIXTURES / "busctl-devices.json"),
+        ])
+        result = subprocess.run([BASH, str(script)], capture_output=True, text=True,
+                                env={**os.environ, "PATH": f"{tmp}:{os.environ['PATH']}"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rows = [line for line in result.stdout.splitlines() if line.startswith("DEVICE\t")]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(parse_device(rows[0])["name"], expected)
+
   def test_media_control_action_and_player_dispatch(self):
     script = ROOT / "scripts" / "media_control.sh"
     with tempfile.TemporaryDirectory() as tmp:
