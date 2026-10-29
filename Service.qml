@@ -30,6 +30,37 @@ Item {
             ownerPanel.running = true
         }
     }
+    // Syncthing keeps its own API key; Plus only asks its CLI about one linked device.
+    property string syncthingDeviceId: ""
+    property string syncthingState: ""  // "paused", "active", "unknown", or "" before a read
+    property bool syncthingBusy: syncthingPause.running
+    Process {
+        id: syncthingPause
+        property string requested: ""
+        command: ["/usr/bin/timeout", "4", "/usr/bin/syncthing", "cli", "config", "devices", root.syncthingDeviceId, "paused"].concat(requested ? ["set", requested] : ["get"])
+        stdout: StdioCollector { id: syncthingReply; waitForEnd: true }
+        onExited: function(code) {
+            var reply = syncthingReply.text.trim(), changed = requested !== ""
+            requested = ""
+            if (code !== 0) root.syncthingState = "unknown"
+            else if (changed) { root.syncthingState = ""; Qt.callLater(function() { syncthingPause.running = true }) }  // Read back after every change.
+            else root.syncthingState = reply === "true" ? "paused" : reply === "false" ? "active" : "unknown"
+        }
+    }
+    function readSyncthingPause(id) {
+        if (syncthingPause.running || !/^[A-Z2-7]{7}(?:-[A-Z2-7]{7}){7}$/.test(id)) return false
+        syncthingDeviceId = id
+        syncthingState = ""
+        syncthingPause.requested = ""
+        syncthingPause.running = true
+        return true
+    }
+    function setSyncthingPaused(id, paused) {
+        if (syncthingPause.running || id !== syncthingDeviceId || syncthingState === "") return false
+        syncthingPause.requested = paused ? "true" : "false"
+        syncthingPause.running = true
+        return true
+    }
     function displayName(device) { return device ? appearanceStore.displayName(device.id, device.name) : "KDE Connect" }
     property alias selection: controller.selection
     property alias selectionBytes: controller.selectionBytes

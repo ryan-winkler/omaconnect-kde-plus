@@ -97,7 +97,7 @@ Reuse the owning domain before creating a new abstraction:
 | A Plus preference | `manifest.json` and `PreferenceControls` in the owning Settings domain | Add its typed key to `network_preferences.py` and migration validation. Verify saved readback and defaults. Visibility must not change native permissions or VPN policy. |
 | File selection or drop | `FileDropArea.qml` and the existing controller/portal helper | Both the bar and Send target share Copy-only review. Do not add a second transfer engine or implicit Send. |
 | Native module support | Searchable `components/NativeFeaturesSection.qml` and selected-device native handoff | Preserve unknown reported IDs. Use a verified native API before offering a direct action. |
-| Syncthing | The optional local identity note and existing owner route | Keep sync state, keys and folder operations with Syncthing/Syncshell. |
+| Syncthing | The optional local identity note, `Service.qml` pause/resume and the existing owner route | Pause/resume of the linked device goes through `syncthing cli` with readback. Keep keys and folder operations with Syncthing/Syncshell. |
 
 Keep UI data catalogues small. Python validation remains an independent trust
 boundary; parity tests prevent drift. Prefer one focused check to a new framework.

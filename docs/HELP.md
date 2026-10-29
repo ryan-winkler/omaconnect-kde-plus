@@ -111,7 +111,12 @@ KDE device resets the draft; a pending save stays attached to its reviewed devic
 Saved readback confirms a save or removal. **Remove local note** removes only this
 association. Select the saved ID to copy it with the normal keyboard command.
 
-The note does not pair devices, start sync, check live state or verify ownership.
+When a note is saved, the section shows whether Syncthing has paused that device.
+Select **Pause in Syncthing** or **Resume in Syncthing** to change it. Syncthing's
+own `syncthing cli` makes the change and a readback confirms it. "State unknown"
+means Syncthing does not run or does not know that device ID.
+
+The note does not pair devices, start sync or verify ownership.
 **Open existing Syncthing panel** opens the general Syncshell panel, where you
 configure folders and check synchronization. It is not a per-device deep link.
 Syncshell retains the synchronization engine and keys. Read the official

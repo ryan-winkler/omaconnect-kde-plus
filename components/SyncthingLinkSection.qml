@@ -62,10 +62,16 @@ Column {
         draft = actual
         feedback = actual ? "Local identity note saved." : "Local identity note removed."
     }
+    readonly property string syncState: service && service.syncthingDeviceId === linkedId ? String(service.syncthingState || "") : ""
+    function readSyncState() { if (service && linkedId && visible) service.readSyncthingPause(linkedId) }
+    onVisibleChanged: readSyncState()
     onPeerIdChanged: rebaseDraft()
     onStoreChanged: rebaseDraft()
-    onLinkedIdChanged: if (!edited && draftPeerId === peerId) draft = linkedId
-    Component.onCompleted: rebaseDraft()
+    onLinkedIdChanged: {
+        if (!edited && draftPeerId === peerId) draft = linkedId
+        readSyncState()
+    }
+    Component.onCompleted: { rebaseDraft(); readSyncState() }
     Connections {
         target: root.store
         ignoreUnknownSignals: true
@@ -91,7 +97,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: "Keep an optional local note to recognize the same device in both apps. Compare its name and full IDs in KDE Connect and Syncthing. This note does not verify ownership, check live status, pair devices or start synchronization."
+        text: "Keep an optional local note to recognize the same device in both apps. Compare its name and full IDs in KDE Connect and Syncthing. This note does not verify ownership, pair devices or start synchronization."
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
         font.pixelSize: Style.font.caption
@@ -119,6 +125,39 @@ Column {
         readOnly: true
         selectByMouse: true
         Accessible.name: "Saved full Syncthing device ID; select to copy"
+    }
+    Text {
+        objectName: "syncthing-pause-state"
+        textFormat: Text.PlainText
+        width: parent.width
+        visible: !!root.linkedId
+        text: root.syncState === "paused" ? "Syncthing: paused for this device."
+            : root.syncState === "active" ? "Syncthing: not paused for this device."
+            : root.syncState === "unknown" ? "Syncthing state unknown. Syncthing may not run, or it does not know this device ID."
+            : "Checking Syncthing…"
+        wrapMode: Text.Wrap
+        color: Commons.Color.popups.text
+        font.pixelSize: Style.font.caption
+    }
+    Kit.Button {
+        objectName: "syncthing-pause"
+        width: parent.width
+        visible: !!root.linkedId
+        text: root.syncState === "paused" ? "Resume in Syncthing" : "Pause in Syncthing"
+        foreground: Commons.Color.popups.text
+        focusable: true
+        enabled: (root.syncState === "paused" || root.syncState === "active") && !!root.service && !root.service.syncthingBusy
+        Accessible.name: text + " for the saved device ID"
+        onClicked: root.service.setSyncthingPaused(root.linkedId, root.syncState !== "paused")
+    }
+    Text {
+        textFormat: Text.PlainText
+        width: parent.width
+        visible: !!root.linkedId
+        text: "Pause stops Syncthing from syncing with this device until you resume. Syncthing keeps its folders, keys and settings."
+        wrapMode: Text.Wrap
+        color: Commons.Color.popups.text
+        font.pixelSize: Style.font.caption
     }
     Text {
         width: parent.width

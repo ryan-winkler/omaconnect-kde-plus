@@ -59,6 +59,12 @@ ShellRoot {
         property string ownerPanelMessage: ""
         property int ownerCalls: 0
         property int ownerArguments: -1
+        property string syncthingDeviceId: ""
+        property string syncthingState: ""
+        property bool syncthingBusy: false
+        property var pauseCalls: []
+        function readSyncthingPause(id) { syncthingDeviceId=id;syncthingState="active";return true }
+        function setSyncthingPaused(id,paused) { pauseCalls=pauseCalls.concat([{id:id,paused:paused}]);syncthingState=paused?"paused":"active";return true }
         function openSyncthingPanel() { ownerCalls++;ownerArguments=arguments.length;ownerPanelMessage="Owned panel unavailable" }
     }
     Window {
@@ -119,6 +125,12 @@ ShellRoot {
                 if(!test.check(!!message && message.visible,"unavailable owner feedback stays visible"))return
                 var before=JSON.stringify(store.records),count=store.calls.length;section.visible=false;section.visible=true
                 if(!test.check(JSON.stringify(store.records)===before && store.calls.length===count,"hiding the section never removes metadata"))return
+                var pause=test.button("syncthing-pause","Pause in Syncthing"),state=test.find(section,function(item){return item.objectName==="syncthing-pause-state"})
+                if(!test.check(service.syncthingDeviceId===test.idA && !!pause && pause.visible && pause.enabled && state.text.indexOf("not paused")>=0,"linked device reads its Syncthing pause state in words"))return
+                test.click(pause)
+                if(!test.check(service.pauseCalls.length===1 && service.pauseCalls[0].id===test.idA && service.pauseCalls[0].paused && pause.text==="Resume in Syncthing","pause targets only the linked ID and offers resume"))return
+                service.syncthingState="unknown"
+                if(!test.check(!pause.enabled && state.text.indexOf("unknown")>=0,"unknown Syncthing state disables pause"))return
                 console.log("SYNCTHING_NOTE_PASS",JSON.stringify(test.checks));Qt.quit();test.phase++
             }
         }

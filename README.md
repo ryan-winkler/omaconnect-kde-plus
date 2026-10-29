@@ -71,9 +71,9 @@ Read the [source-verified feature matrix and decision](docs/WHY-PLUS.md) for the
   specific KDE identity, including Tailscale’s CGNAT range for that source.
   Preserve existing KDE addresses. Opt in to rediscovery while the panel is open;
   route events are debounced and failures back off. An IP does not prove identity.
-- **Syncthing identity notes:** Optionally remember that two full device IDs refer to the same machine. The section starts hidden and is configurable. Drafts stay with their reviewed KDE peer; saved readback confirms changes. Open the general existing Syncshell panel for folders/status. Syncshell retains its own core and keys.
+- **Syncthing identity notes:** Optionally remember that two full device IDs refer to the same machine. The section starts hidden and is configurable. Drafts stay with their reviewed KDE peer; saved readback confirms changes. Pause or resume syncing with the linked device; a readback confirms the state. Open the general existing Syncshell panel for folders. Syncshell retains its own core and keys.
 
-Quick Share, router rosters, new VPN setup and inline Syncthing pause/resume are
+Quick Share, router rosters and new VPN setup are
 later work. This fork does not implement the separate Banatik/UniFi collector.
 
 **All KDE Connect features** opens the selected peer in the native app, including

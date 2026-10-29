@@ -135,7 +135,13 @@ local desktop stays on native LAN; no local WireGuard interface is required.
 The fixed `omarchy-shell shell summon io.github.ilyazar.syncthing {}` call must
 return `ok` before the UI reports it opened. A missing plugin, unknown response or
 failed call remains unavailable. No API key, CoreProcess or raw owner object is
-loaded. Inline status and device actions remain deferred.
+loaded.
+
+Pause/resume runs only for the saved, validated Syncthing ID:
+`timeout 4 syncthing cli config devices <ID> paused get|set true|false`. Syncthing's
+CLI reads its own API key; Plus never reads its configuration. Each change is
+followed by a `get` readback. A failed call or other output shows "unknown" and
+disables the action. Folder operations stay with Syncthing/Syncshell.
 
 ## Native feature visibility and network owners
 
