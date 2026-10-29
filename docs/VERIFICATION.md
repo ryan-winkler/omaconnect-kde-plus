@@ -1,13 +1,41 @@
 # Current verification — 29 October 2026
 
-Product: **Omaconnect KDE Plus 0.1.1 candidate**. Current case-sensitive plugin/IPC/storage ID: **`Omaconnect.plus`**.
+Product: **Omaconnect KDE Plus 0.1.1**. Current case-sensitive plugin/IPC/storage ID: **`Omaconnect.plus`**.
 
-**Identity:** the `v0.1.0` tag, hosted checks and installed receipts below used an earlier development ID. Version 0.1.1 has no supported public upgrade path. Owner development installations retain separate preservation and readback checks. Those receipts do not establish `Omaconnect.plus` runtime acceptance; the release task must add the exact new revision and separate receipts.
+**Identity:** the `v0.1.0` tag, hosted checks and installed receipts below used an earlier development ID. Version 0.1.1 has no supported public upgrade path. Owner development installations retain separate preservation and readback checks. Those earlier receipts alone do not establish `Omaconnect.plus` runtime acceptance. The separate current receipt below records the new identity and revision.
 Historical published release: [`v0.1.0`](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0),
 commit `256d50c0c20b4bdfcef73e4111317679b817cb13`. Earlier comparison revision was `f8b3e11`.
 This file separates implementation checks, installed runtime, physical acceptance
 and publication. [Historical snapshots](VERIFICATION-HISTORY-2026-10-29.md) retain
 older observations; their blocked/staged status is superseded where shown here.
+
+## Current 0.1.1 native receipt
+
+On 29 October 2026, the owner authorized PR #4's merge and native installation on
+both computers. The installed source was
+[`5af99727608ad4b7ddfed1459923c8ca978a4147`](https://github.com/ryan-winkler/omaconnect-kde-plus/commit/5af99727608ad4b7ddfed1459923c8ca978a4147).
+Both manifests report the exact ID **`Omaconnect.plus`** and version **0.1.1**.
+
+| Boundary | Observed result | Limit |
+| --- | --- | --- |
+| ARM laptop install | Supported native update with reviewed confirmation, manifest validation, shell restart and ping passed. Original OmaConnect and Plus remain enabled beside each other. | Original source/entries, private metadata and the existing helper match pre-update fingerprints. A later Plus display preference is preserved; do not restore an older full shell configuration. |
+| x86_64 desktop install | Native add and reviewed identity staging, private metadata copy/readback, supported shell restart and target enable passed. Original OmaConnect remains enabled. | Earlier development source/private records are retained and disabled. No pairing, provider or permission change. |
+| Actual Settings windows | The native **Omaconnect KDE Plus Settings** window was observed mapped on both computers. | An accepted configure call alone is not a mapped-window receipt. An early laptop check saw no client; a direct native Qt IPC call subsequently mapped it. Timing/cause is unisolated. |
+| Exact installed-source fixtures | `./scripts/validate.sh` passed **225 Python tests and three JavaScript suites on each architecture**, plus native manifest validation and per-file shell syntax. ARM Python run: 36.240 s; x86_64: 37.178 s. | Private temporary HOME/XDG/bus, fake providers and offscreen Qt. QML host/unqualified diagnostics remain. No physical transfer or assistive-technology certification. |
+| Hosted main checks | [Functional checks](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/runs/40965403720) and [CodeQL Python/Actions](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/runs/40965403537) pass at that exact merge. | CodeQL does not analyze all QML or the native KDE engine. |
+
+The manifest SHA-256 is
+`503353716d7a19c9ba3626f45486b7b8a6d0faf4adb8f2cc1b0a0503dd0dc769`.
+The release documentation can follow these checks without changing the tested
+runtime or manifest; the final tag and its exact source are recorded in the
+[GitHub release](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.1).
+Private detailed receipts remain outside public Git.
+
+No real transfer, Ring, phone permission, pairing, VPN/profile/router or system
+package change ran during this installation and fixture pass. Physical bar-icon
+drop, post-drop Send/delivery, broad AT/RTL/scale/reduced-motion and new offsite
+acceptance remain open. Earlier snapshots and scans retain their own input scope.
+Marketplace listing approval remains with its maintainers.
 
 ## Evidence before the identity update
 
