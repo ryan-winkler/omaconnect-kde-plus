@@ -6,7 +6,7 @@ The original MIT license and copyright remain in [LICENSE](LICENSE).
 The [original README](docs/UPSTREAM-README.md) is kept as a historical reference.
 
 - Fork: [ryan-winkler/omaconnect-kde-plus](https://github.com/ryan-winkler/omaconnect-kde-plus).
-- Current plugin/IPC/storage identity: `Omaconnect.plus` (case-sensitive). The upstream identity is `omaconnect`. Earlier releases used a previous development ID; their receipts do not prove this migration.
+- Current plugin/IPC/storage identity: `Omaconnect.plus` (case-sensitive). The upstream identity is `omaconnect`. The `v0.1.0` development tag used another ID; its receipts do not cover this one.
 - [KDE Connect](https://kdeconnect.kde.org/) owns pairing, its native modules,
   permissions and the device protocol. It is a separate upstream dependency,
   licensed under its own terms. This repository does not copy its settings UI.

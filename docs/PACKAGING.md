@@ -36,7 +36,7 @@ If `Omaconnect.plus` is already registered:
 omarchy plugin update Omaconnect.plus
 ```
 
-If an earlier fork identity or the original `omaconnect` is registered, follow [migration and recovery](MIGRATION.md) first. A Git update alone does not rename registry entries, IPC targets or metadata directories. Stage settings with the exact source ID; inspect the candidate before activation. For earlier Plus identities, existing private appearance/assets/address records need separate copy and validation; the helper does not infer replacement appearance.
+If the original `omaconnect` is registered, follow [migration and recovery](MIGRATION.md) to move its display settings. Stage settings and inspect the candidate before activation.
 
 ## Disable, remove and recover
 

@@ -1,4 +1,4 @@
-# Final scoped outside review — 0.2.0 identity update
+# Final scoped outside review — 0.1.1 identity update
 
 Date: 2026-10-29. Product: **Omaconnect KDE Plus**. Exact technical ID: **`Omaconnect.plus`**. Original upstream ID: `omaconnect`.
 

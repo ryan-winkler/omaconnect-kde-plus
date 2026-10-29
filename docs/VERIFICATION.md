@@ -1,8 +1,8 @@
 # Current verification — 29 October 2026
 
-Product: **Omaconnect KDE Plus 0.2.0 candidate**. Current case-sensitive plugin/IPC/storage ID: **`Omaconnect.plus`**.
+Product: **Omaconnect KDE Plus 0.1.1 candidate**. Current case-sensitive plugin/IPC/storage ID: **`Omaconnect.plus`**.
 
-**Identity update:** the publication, hosted checks and installed receipts below used the previous development ID. They do not establish new-ID migration or runtime acceptance. The release task must add the exact new revision and separate receipts.
+**Identity:** the `v0.1.0` tag, hosted checks and installed receipts below used an earlier development ID. That tag had no installed users, so no upgrade migration is required. Those receipts do not establish `Omaconnect.plus` runtime acceptance; the release task must add the exact new revision and separate receipts.
 Historical published release: [`v0.1.0`](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0),
 commit `256d50c0c20b4bdfcef73e4111317679b817cb13`. Earlier comparison revision was `f8b3e11`.
 This file separates implementation checks, installed runtime, physical acceptance
@@ -125,11 +125,11 @@ The owner also confirmed repository app access. PR #3 subsequently received the 
 [PR #3 review](https://github.com/ryan-winkler/omaconnect-kde-plus/pull/3#pullrequestreview-5703659944) is an observed `COMMENTED` review of the three-document change at `b6860b9`. It identified one minor issue: G5 combined a required explicit Send result with evidence that stopped before Send. This document and the persona gate now preserve that distinction. The earlier LAN receipt is not a substitute. New identity/security code needs its own checks and review.
 
 
-### 0.2.0 source changes awaiting final receipts
+### 0.1.1 source changes awaiting final receipts
 
-The current target changes plugin/IPC/storage identity to `Omaconnect.plus`, removes inherited privileged setup launchers, and stops rendering/fetching provider-supplied media-art URLs while keeping text/player controls. The parent release task must record final-source verification, hosted results, migration and both installed readbacks. Earlier 0.1.0 results above do not prove these changes.
+The current target changes plugin/IPC/storage identity to `Omaconnect.plus`, removes inherited privileged setup launchers, and stops rendering/fetching provider-supplied media-art URLs while keeping text/player controls. The parent release task must record final-source verification, hosted results and both installed readbacks. Earlier 0.1.0 results above do not prove these changes.
 
-## 0.2.0 changed-boundary QA
+## 0.1.1 changed-boundary QA
 
 The identity/security/settings implementation uses `Omaconnect.plus`. The integrated release gate passed **216 Python tests and three JavaScript
 suites**, native manifest validation and per-file shell syntax. Local Markdown

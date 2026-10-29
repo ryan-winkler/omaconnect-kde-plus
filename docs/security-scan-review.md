@@ -9,7 +9,7 @@ a clean result or security certification.
 
 - Scan ID: `d5a6aec5-1934-4228-9c45-bbbfcae9828c`.
 - Base revision: `b6860b9d4265ce05987963a0bc4318b3da956faa`, plus the current
-  uncommitted 0.2.0 candidate at scan start.
+  uncommitted 0.1.1 candidate at scan start.
 - Snapshot digest: `codex-security-snapshot/v1:sha256:f0735a90f2c223f3309187ca17a845a66b51963d81825a29e44d1d34275509e0`.
 - Technical identity in that snapshot: `Omaconnect.plus`.
 

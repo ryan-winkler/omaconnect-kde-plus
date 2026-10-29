@@ -87,10 +87,10 @@ checks passed `256d50c`; force pushes and branch deletion are disabled. CodeRabb
 app access is owner-confirmed and the scoped PR #3 review is observed. Its metadata reports the existing account tier as Advanced; no purchase or plan change was made for this release. See [current verification](VERIFICATION.md).
 
 
-## Current 0.2.0 identity-update gates
+## Current 0.1.1 release gates
 
-- [ ] Validate the exact `Omaconnect.plus` ID across manifest, IPC, preferences, metadata paths, examples and migration. Historical receipts remain labelled with their prior scope.
+- [ ] Validate the exact `Omaconnect.plus` ID across manifest, IPC, preferences, metadata paths and examples. Historical receipts remain labelled with their prior scope.
 - [ ] Review removal of inherited privileged setup entry points. Manual prerequisite guidance uses supported Omarchy commands; the fork must not keep a hidden installer/firewall execution path.
 - [ ] Run final source checks and actual hosted scans on the identity/security revision. Preserve the real scanner results and limits.
-- [ ] Obtain installed new-ID readback separately for ARM and x86 without losing previous appearance, address records or provider settings.
-- [ ] Publish the new revision and update marketplace identity only after their own gates pass. The earlier release/catalog submission does not establish the new ID.
+- [ ] Obtain fresh-install `Omaconnect.plus` readback separately for ARM and x86. Remove the development `v0.1.0` checkout first; there are no external users to migrate.
+- [ ] Publish the new revision and update the marketplace submission to `Omaconnect.plus` only after their own gates pass.

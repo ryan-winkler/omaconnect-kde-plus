@@ -55,7 +55,7 @@ For each contribution:
 
 Small documentation and focused bug fixes can go directly to a PR. For a new provider, public schema, native-module installer or major navigation change, open a feature issue first. This avoids duplicate work and protects the existing boundaries. See the [settings decision](docs/2026-10-29-settings-rice-personas.md) before proposing a second KDE plugin manager.
 
-The stable plugin ID is `Omaconnect.plus`. Treat the 0.2.0 identity change as an explicit migration. Preserve source settings and private metadata; new-ID runtime acceptance needs its own receipt. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
+The stable plugin ID is `Omaconnect.plus`. Do not change it after release: Omarchy registers plugins by manifest ID, and `omarchy plugin update` cannot rename an installed plugin, so a new ID would drop users' bar placement, settings and private metadata. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
 
 ## Test without changing personal state
 
