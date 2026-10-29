@@ -35,6 +35,7 @@ fi
 
 if [ -n "$validator" ] && [ -x "$validator" ]; then
     "$validator" .
+    printf '%s\n' "Omarchy plugin validator passed"
 else
     printf '%s\n' "exact Omarchy validator unavailable; skipped"
 fi
