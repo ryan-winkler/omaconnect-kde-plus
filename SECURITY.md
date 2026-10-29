@@ -19,5 +19,3 @@ KDE Connect owns its protocol and pairing. Tailscale, WireGuard, the existing Ba
 ## Contribute a security fix
 
 Discuss a private vulnerability before publishing a patch that reveals it. Use fixed argument arrays, bounded I/O, private atomic state and explicit user actions. Add a focused fixture with invented data. Keep the protocol, trust and local appearance boundaries intact. Read [contribution guidance](CONTRIBUTING.md) and [contracts](docs/CONTRACTS.md).
-
-Private reporting must be enabled in GitHub repository settings. This document alone does not enable that service. The maintainer setup checklist is in [the release plan](docs/contributor-release-plan.md).

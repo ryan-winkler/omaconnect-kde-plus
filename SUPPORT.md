@@ -6,10 +6,9 @@
 | --- | --- |
 | Use the panel or find a feature | [README](README.md), [help map](docs/HELP.md) |
 | Choose or contribute an icon | [Icon sources and storage](docs/ICONS.md) |
-| Install, update or recover | [Native packaging/install](docs/PACKAGING.md), [migration and recovery](docs/MIGRATION.md) |
+| Install, update or recover | [Install, update and recovery](docs/INSTALL.md) |
 | Understand device features and native settings | [Help map](docs/HELP.md), [KDE Connect handbook](https://docs.kde.org/stable5/en/kdeconnect/kdeconnect/) |
-| Understand connection options | [Connection guidance](docs/2026-10-29-connection-settings.md) |
-| See what has been checked | [Verification](docs/VERIFICATION.md), [native QA](tests/NATIVE-QA.md) |
+| Understand connection options | [Connections help](docs/HELP.md#connections) |
 | Contribute or change a domain | [Contributing](CONTRIBUTING.md), [contracts](docs/CONTRACTS.md) |
 | Report a security issue | [Private security report](SECURITY.md) |
 
