@@ -17,26 +17,25 @@ class NativeFeaturesTests(unittest.TestCase):
     def discover(self, supported, loaded=None):
         with tempfile.TemporaryDirectory() as tmp:
             bindir = Path(tmp)
-            for name in ('sed', 'grep', 'tr'):
-                (bindir / name).symlink_to(shutil.which(name))
-            stub = bindir / 'gdbus'
-            stub.write_text('#!' + sys.executable + '\n' + '''import os,sys
-args=' '.join(sys.argv[1:])
-if 'NameHasOwner' in args: print('(true,)')
-elif 'daemon.devices' in args: print("(['fixture_peer'],)")
-elif 'customDevices' in args: print('(<@as []>,)')
+            (bindir / 'python3').symlink_to(sys.executable)
+            (bindir / 'dirname').symlink_to(shutil.which('dirname'))
+            stub = bindir / 'busctl'
+            stub.write_text('#!' + sys.executable + '\n' + '''import json,os,sys
+args=[a for a in sys.argv[1:] if a not in ('--user', '--json=short')]
+def reply(kind, *data): print(json.dumps({'type': kind, 'data': list(data)}))
+def v(kind, value): return {'type': kind, 'data': value}
+if 'NameHasOwner' in args: reply('b', True)
+elif 'devices' in args: reply('as', ['fixture_peer'])
+elif 'customDevices' in args: print(json.dumps({'type': 'as', 'data': []}))
 elif 'loadedPlugins' in args:
     if 'LOADED' not in os.environ: sys.exit(1)
     print(os.environ['LOADED'])
-elif 'supportedPlugins' in args: print(os.environ['SUPPORTED'])
-elif 'verificationKey' in args: print("(<'fixture-key'>,)")
-elif 'isPaired' in args or 'isReachable' in args: print('(<true>,)')
-elif args.endswith(' name'): print("(<'Fixture peer'>,)")
-elif args.endswith(' type'): print("(<'phone'>,)")
-else: print('(<false>,)')
+elif args[-1] == 'org.kde.kdeconnect.device':
+    reply('a{sv}', {'name': v('s', 'Fixture peer'), 'type': v('s', 'phone'), 'isPaired': v('b', True), 'isReachable': v('b', True), 'verificationKey': v('s', 'fixture-key'), 'supportedPlugins': v('as', json.loads(os.environ['SUPPORTED']))})
+else: sys.exit(1)
 ''')
             stub.chmod(0o700)
-            env = {**os.environ, 'PATH': tmp, 'SUPPORTED': supported}
+            env = {**os.environ, 'PATH': tmp, 'SUPPORTED': json.dumps(supported)}
             if loaded is not None:
                 env['LOADED'] = loaded
             else:
@@ -46,20 +45,20 @@ else: print('(<false>,)')
             return next(line.split('\t') for line in result.stdout.splitlines() if line.startswith('DEVICE\t'))
 
     def test_future_native_feature_survives_and_loading_is_separate(self):
-        row = self.discover("(<['kdeconnect_notifications', 'kdeconnect_sftp', 'kdeconnect_future_feature', 'thirdparty.custom-addon', 'kdeconnect_remotecommands']>,)", "(['kdeconnect_sftp'],)")
+        row = self.discover(['kdeconnect_notifications', 'kdeconnect_sftp', 'kdeconnect_future_feature', 'thirdparty.custom-addon', 'kdeconnect_remotecommands'], '{"type":"as","data":[["kdeconnect_sftp"]]}')
         self.assertEqual(row[8].split(','), ['kdeconnect_notifications', 'kdeconnect_sftp', 'kdeconnect_future_feature', 'thirdparty.custom-addon', 'kdeconnect_remotecommands'])
         self.assertEqual(row[13:], ['fixture-key', 'kdeconnect_sftp', 'true'])
-        old = self.discover("(<['kdeconnect_sftp']>,)")
+        old = self.discover(['kdeconnect_sftp'])
         self.assertEqual(old[14:], ['', 'false'])
-        malformed = self.discover("(<['kdeconnect_sftp']>,)", '(<false>,)')
+        malformed = self.discover(['kdeconnect_sftp'], '{"type":"b","data":[false]}')
         self.assertEqual(malformed[14:], ['', 'false'])
-        empty = self.discover('(<@as []>,)', '(@as [],)')
+        empty = self.discover([], '{"type":"as","data":[[]]}')
         self.assertEqual(empty[14:], ['', 'true'])
 
     def test_invalid_or_oversized_plugin_arrays_do_not_reach_qml(self):
-        for raw in ("(<['kdeconnect_valid', 'bad;$(command)']>,)", "(<['" + 'kdeconnect_a' * 4000 + "']>,)", '(' + repr(['kdeconnect_p' + str(i) for i in range(257)]) + ',)'):
-            with self.subTest(size=len(raw)):
-                row = self.discover(raw)
+        for supported in (['kdeconnect_valid', 'bad;$(command)'], ['kdeconnect_a' * 4000], ['kdeconnect_p' + str(i) for i in range(257)]):
+            with self.subTest(size=len(supported)):
+                row = self.discover(supported)
                 self.assertEqual(row[8], '')
 
     @unittest.skipUnless(shutil.which('node'), 'node unavailable')
@@ -79,6 +78,21 @@ assert.equal(row.pluginIds.includes('kdeconnect_future_feature'),true);assert.eq
 assert.equal(row.loadedKnown,true);assert.equal(row.loadedPluginIds.join(','),'kdeconnect_mprisremote');
 '''
         result = subprocess.run([shutil.which('node'), '-e', script], input=json.dumps({'fn': function}), text=True, capture_output=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    @unittest.skipUnless(shutil.which('node'), 'node unavailable')
+    def test_pairing_response_rejects_ids_unsafe_for_a_dbus_path(self):
+        # D-Bus object-path elements allow only ASCII letters, digits and '_'.
+        source = (ROOT / 'KdeConnectController.qml').read_text()
+        function = source[source.index('    function validDeviceId('):source.index('    function respondToPairingRequest(')]
+        self.assertIn('if (!validDeviceId(id)) return false', source[source.index('    function respondToPairingRequest('):])
+        script = '''const assert=require('node:assert/strict');
+const vm=require('node:vm');const api=vm.createContext({});
+vm.runInContext(require('node:fs').readFileSync(0,'utf8'),api);
+for (const id of ['0123456789abcdef0123456789abcdef','a1b2c3d4_e5f6_4a1b_9c2d_0123456789ab','peer_123_abc']) assert.equal(api.validDeviceId(id),true,id);
+for (const id of ['','_peer','peer-123','../peer','peer/sub','peer.name','peer id','peer;x',null]) assert.equal(api.validDeviceId(id),false,String(id));
+'''
+        result = subprocess.run([shutil.which('node'), '-e', script], input=function, text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def launch(self, app, args):
