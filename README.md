@@ -6,7 +6,7 @@ Jitendra’s plugin and KDE Connect are the upstream foundations. We retain thei
 credit, follow their interfaces, and aim to contribute reusable fixes back.
 This is an independent community fork. See [lineage and licenses](FORK.md).
 
-**Current plugin ID: `Omaconnect.plus`.** The display name remains Omaconnect KDE Plus. The earlier `v0.1.0` tag used a development ID and had no installed users, so 0.1.1 needs no upgrade path; it does need its own installed-runtime receipts. See [verification](docs/VERIFICATION.md).
+**Current plugin ID: `Omaconnect.plus`.** The display name remains Omaconnect KDE Plus. The earlier `v0.1.0` tag used a development ID. Version 0.1.1 has no supported public upgrade path; owner development installs retain separate preservation and installed-runtime checks. See [verification](docs/VERIFICATION.md).
 
 **Version 0.1.1 candidate.** The fork adds one place for known devices,
 file submission, appearance and network access through **Tailscale, MikroTik Back

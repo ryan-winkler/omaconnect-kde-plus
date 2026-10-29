@@ -32,4 +32,4 @@ body:
     id: version
     attributes:
       label: Plugin version (optional)
-      description: Use the version shown in Settings. Do not paste a full system report.
+      description: If known, enter the installed plugin version or commit. Leave this blank if unknown. Do not paste a full system report.

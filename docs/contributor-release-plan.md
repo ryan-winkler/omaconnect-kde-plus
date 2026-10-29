@@ -91,14 +91,14 @@ app access is owner-confirmed and the scoped PR #3 review is observed. Its metad
 
 - [ ] Validate the exact `Omaconnect.plus` ID across manifest, IPC, preferences, metadata paths and examples. Historical receipts remain labelled with their prior scope.
 - [ ] Review removal of inherited privileged setup entry points. Manual prerequisite guidance uses supported Omarchy commands; the fork must not keep a hidden installer/firewall execution path.
-- [ ] Run final source checks and actual hosted scans on the identity/security revision. Preserve the real scanner results and limits.
-- [ ] Obtain fresh-install `Omaconnect.plus` readback separately for ARM and x86. Remove the development `v0.1.0` checkout first; there are no external users to migrate.
+- [ ] Run final source checks and actual hosted scans on the identity/security revision. Preserve the real scanner results and limits. Observed 2026-10-29: the full CodeRabbit review of PR #3 was addressed in `fa6a5f9` before merge as `e279c79`; Functional, CodeQL Python and Actions checks passed on PR #4 head `f2fe2ad`. The final 0.1.1 head still needs its own receipt.
+- [ ] Obtain fresh-install `Omaconnect.plus` readback separately for ARM and x86. Version 0.1.1 has no supported public upgrade path; preserve owner development settings and record their readback separately.
 - [ ] Publish the new revision and update the marketplace submission to `Omaconnect.plus` only after their own gates pass.
 
 ## Fasti comparison
 
-The owner's [Fasti contribution guide](https://github.com/Scrobble-dev/Fasti/blob/main/CONTRIBUTING.md),
-[issue routes](https://github.com/Scrobble-dev/Fasti/blob/main/.github/ISSUE_TEMPLATE/config.yml)
+The owner's [Fasti contribution guide](https://github.com/Scrobble-dev/Fasti/blob/dev/CONTRIBUTING.md),
+[issue routes](https://github.com/Scrobble-dev/Fasti/blob/dev/.github/ISSUE_TEMPLATE/config.yml)
 and contributor-task form were inspected live on 29 October 2026. Plus adopts the
 useful pattern: welcome different contributor skills, route questions to
 Discussions and vulnerabilities privately, label bounded work, ask for outcome/

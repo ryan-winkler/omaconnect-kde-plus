@@ -2,7 +2,7 @@
 
 Product: **Omaconnect KDE Plus 0.1.1 candidate**. Current case-sensitive plugin/IPC/storage ID: **`Omaconnect.plus`**.
 
-**Identity:** the `v0.1.0` tag, hosted checks and installed receipts below used an earlier development ID. That tag had no installed users, so no upgrade migration is required. Those receipts do not establish `Omaconnect.plus` runtime acceptance; the release task must add the exact new revision and separate receipts.
+**Identity:** the `v0.1.0` tag, hosted checks and installed receipts below used an earlier development ID. Version 0.1.1 has no supported public upgrade path. Owner development installations retain separate preservation and readback checks. Those receipts do not establish `Omaconnect.plus` runtime acceptance; the release task must add the exact new revision and separate receipts.
 Historical published release: [`v0.1.0`](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0),
 commit `256d50c0c20b4bdfcef73e4111317679b817cb13`. Earlier comparison revision was `f8b3e11`.
 This file separates implementation checks, installed runtime, physical acceptance
@@ -159,10 +159,10 @@ See [settings audit/frontier panel](2026-10-29-settings-completeness-audit.md),
 [scoped outside voices](final-outside-review.md) and
 [full upstream review](UPSTREAM-REVIEW.md).
 
-Final product-source digest (49 runtime/manifest files):
+Tested main `e279c79cf62fbcc4590875b951daafd3bb83220d` product-source digest (49 runtime/manifest files, including its 0.2.0 manifest):
 `aca8f7aa1693f3d66adcb2f6cdba7d93b3367eb37844f2e4b17b4a456e4e9f07`.
-The last source change reserves a themed scrollbar gutter after inspection of the
-six native captures. The final gate retains QML host/unqualified-type diagnostics;
+The native layout includes a themed scrollbar gutter checked in six captures.
+The 0.1.1 manifest needs its own candidate receipt; this historical digest does not identify that changed manifest. The final gate retains QML host/unqualified-type diagnostics;
 this is not a warning-free lint claim. Native fixtures substitute providers and
 use a private owned namespace root; they do not relax production ownership checks.
 
