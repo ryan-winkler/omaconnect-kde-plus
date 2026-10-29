@@ -33,7 +33,7 @@ SOURCES = {
     "omaconnect": ("Original OmaConnect", "github", "jitendradara12/omaconnect"),
 }
 TOPICS = {
-    "security/privacy": r"secur|vulnerab|\bcve\b|certificat|\btls\b|\bssl\b|encrypt|auth|pair|permiss|privacy|saniti|escap",
+    "security/privacy": r"secur|vulnerab|\bcve\b|certificat|\btls\b|\bssl\b|encrypt|\b(?:un)?authenticat|\bauthori[sz]|\bauth\b|\bpair|permiss|privacy|saniti|escap",
     "protocol/discovery": r"protocol|packet|payload|networkpackage|lanlink|discovery|wireguard|tailscale|\budp\b|\btcp\b",
     "API/capabilities": r"dbus|d-bus|interface|capabilit|kdeconnect-cli|service|deviceaction|actioncatalog|discover_devices|manifest\.json|(^|/)(core|daemon)/",
     "native plugins": r"plugin|share|findmyphone|\bping\b|battery|sms|clipboard|mpris|notification|runcommand|remotecommands|sftp|systemvolume",
@@ -109,7 +109,7 @@ class Client:
 
 
 def array(value, limit=100):
-    if not isinstance(value, list) or len(value) > limit or any(not isinstance(x, dict) for x in value):
+    if not isinstance(value, list) or (limit is not None and len(value) > limit) or any(not isinstance(x, dict) for x in value):
         raise WatchError("invalid-payload")
     return value
 
@@ -191,22 +191,50 @@ def read_snapshot(client, source):
 def code_change(client, source, old, current):
     base, kind = base_path(source)
     previous, head = sha(old["head"]), sha(current["head"])
+    host = "api.github.com" if kind == "github" else "invent.kde.org"
+    path = base + "/compare/" + previous + "..." + head if kind == "github" else base + "/repository/compare"
+    query = {"per_page": 100} if kind == "github" else {"from": previous, "to": head, "straight": "true"}
+    try:
+        result = client.request(host, path, query)
+    except WatchError as error:
+        if str(error) == "oversized-response":
+            # The old/new heads came from validated metadata. Preserve the gap
+            # for manual review, then advance so later small changes can resume.
+            return event(source, "code", head, ["coverage gap"], previous)
+        raise
     if kind == "github":
-        result = client.request("api.github.com", base + "/compare/" + previous + "..." + head, {"per_page": 100})
         if not isinstance(result, dict) or result.get("status") not in {"ahead", "identical", "behind", "diverged"}:
             raise WatchError("invalid-comparison")
         files, commits = array(result.get("files"), 300), array(result.get("commits"), 100)
-        incomplete = result["status"] in {"behind", "diverged"} or type(result.get("total_commits")) is not int or result["total_commits"] > len(commits) or len(files) == 300
+        if type(result.get("total_commits")) is not int or result["total_commits"] < 0:
+            raise WatchError("invalid-payload")
+        incomplete = result["status"] in {"behind", "diverged"} or result["total_commits"] > len(commits) or len(files) == 300
         paths = file_paths(files, ["filename"])
-        messages = [c.get("commit", {}).get("message", "") for c in commits if isinstance(c.get("commit"), dict)]
+        messages = []
+        for commit in commits:
+            metadata = commit.get("commit")
+            if not isinstance(metadata, dict) or not isinstance(metadata.get("message"), str):
+                raise WatchError("invalid-payload")
+            messages.append(metadata["message"])
     else:
-        result = client.request("invent.kde.org", base + "/repository/compare", {"from": previous, "to": head, "straight": "true"})
         if not isinstance(result, dict):
             raise WatchError("invalid-comparison")
-        files, commits = array(result.get("diffs"), 300), array(result.get("commits"), 100)
-        incomplete = bool(result.get("compare_timeout")) or len(files) == 300 or len(commits) == 100 or any(f.get("too_large") or f.get("collapsed") for f in files)
+        # GitLab can return larger lists. The transport already bounds JSON at
+        # 1 MiB. Validate every entry before capping classification work.
+        files, commits = array(result.get("diffs"), None), array(result.get("commits"), None)
+        if type(result.get("compare_timeout", False)) is not bool:
+            raise WatchError("invalid-payload")
+        for item in files:
+            if any(type(item.get(flag, False)) is not bool for flag in ("too_large", "collapsed")):
+                raise WatchError("invalid-payload")
+        incomplete = result.get("compare_timeout", False) or len(files) >= 300 or len(commits) >= 100 or any(f.get("too_large") or f.get("collapsed") for f in files)
         paths = file_paths(files, ["new_path", "old_path"])
-        messages = [c.get("title", "") for c in commits]
+        messages = []
+        for commit in commits:
+            if not isinstance(commit.get("title"), str):
+                raise WatchError("invalid-payload")
+            messages.append(commit["title"])
+        paths, messages = paths[:600], messages[:100]
     found = topics(paths + messages)
     if incomplete:
         found.append("coverage gap")

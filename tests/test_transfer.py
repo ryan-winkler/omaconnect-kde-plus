@@ -71,7 +71,8 @@ class Files(unittest.TestCase):
             backend.write_text("#!/usr/bin/python3\nimport json,os,sys,time\nwith open(os.environ['FAKE_RECEIPT'],'a') as out: out.write(json.dumps(sys.argv[1:])+'\\n')\nif os.environ['FAKE_MODE']=='hang': time.sleep(5)\nraise SystemExit(0 if os.environ['FAKE_MODE']=='accept' else 1)\n")
             backend.chmod(0o700)
             receipt = base / 'receipt'
-            env = dict(os.environ, PATH=str(base), FAKE_RECEIPT=str(receipt))
+            env = dict(os.environ, PATH=str(base), HOME=str(base),
+                       XDG_CACHE_HOME=str(base / 'cache'), FAKE_RECEIPT=str(receipt))
             loader = "import importlib.util,sys; sys.path.insert(0," + repr(str(HELPER.parent)) + "); s=importlib.util.spec_from_file_location('picker'," + repr(str(HELPER)) + "); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.SUBMISSION_TIMEOUT=.15; raise SystemExit(m.main())"
             payload = json.dumps({'peerId': 'reviewed-peer', 'file': chosen}) + '\n'
             for mode, state in [('accept', 'request_accepted'), ('fail', 'submission_failed'), ('hang', 'submission_unknown')]:

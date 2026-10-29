@@ -4,7 +4,7 @@ prepared_source(reviewed_metadata, cancelled) yields PreparedSource(path,
 snapshot_used). Protected canonical files need no copy. Other sources are copied
 from their validated open descriptor into private cache storage. Once yielded,
 snapshots survive context exit: KDE can reopen after CLI acceptance. They become
-eligible after 24 hours and are cleaned on the next preparation.
+eligible after 24 hours. Cleanup is attempted on later preparation when the cache is safe and available.
 
 No daemon or provider runs here. Same-UID code and root remain trusted. Deadlines
 and cancellation are checked between bounded chunks, not inside blocked kernel
@@ -197,9 +197,18 @@ def prepared_source(expected, cancelled=lambda: False):
         canonical = Path(os.readlink('/proc/self/fd/' + str(source_fd)))
         _check(cancelled, deadline)
         if canonical.is_absolute() and _protected_path(canonical, source_stat):
-            directory = _cache_directory(create=False)
+            # A protected source needs no cache. Optional old-copy housekeeping
+            # must not turn an unrelated unsafe/unavailable cache into send failure.
+            try:
+                directory = _cache_directory(create=False)
+            except (OSError, ValueError):
+                directory = None
             if directory is not None:
-                _expire(directory, cancelled, deadline)
+                try:
+                    _expire(directory, cancelled, deadline)
+                except OSError:
+                    pass
+                # _expire's cancellation/deadline ValueErrors still propagate.
             _check(cancelled, deadline)
             if not _matches(expected, os.fstat(source_fd)):
                 raise ValueError('source-changed')

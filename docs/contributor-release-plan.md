@@ -94,3 +94,19 @@ app access is owner-confirmed and the scoped PR #3 review is observed. Its metad
 - [ ] Run final source checks and actual hosted scans on the identity/security revision. Preserve the real scanner results and limits.
 - [ ] Obtain installed new-ID readback separately for ARM and x86 without losing previous appearance, address records or provider settings.
 - [ ] Publish the new revision and update marketplace identity only after their own gates pass. The earlier release/catalog submission does not establish the new ID.
+
+## Fasti comparison
+
+The owner's [Fasti contribution guide](https://github.com/Scrobble-dev/Fasti/blob/main/CONTRIBUTING.md),
+[issue routes](https://github.com/Scrobble-dev/Fasti/blob/main/.github/ISSUE_TEMPLATE/config.yml)
+and contributor-task form were inspected live on 29 October 2026. Plus adopts the
+useful pattern: welcome different contributor skills, route questions to
+Discussions and vulnerabilities privately, label bounded work, ask for outcome/
+owner/acceptance evidence, preserve DCO/source credit, and link related upstream
+work. The new task form enters triage; it does not claim every submission is
+contributor-ready. Maintainers choose good-first-issue scope after review.
+
+Fasti's media identity rules, YouTrack references, AGPL terms, Rust/Cargo monorepo,
+contract generators and development/release branch gates are specific to Fasti.
+They are not copied into this small MIT-licensed native UI fork. Plus retains its
+existing domain helpers, native owner routes and isolated validation command.

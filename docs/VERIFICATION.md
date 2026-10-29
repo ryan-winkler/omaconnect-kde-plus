@@ -131,7 +131,7 @@ The current target changes plugin/IPC/storage identity to `Omaconnect.plus`, rem
 
 ## 0.2.0 changed-boundary QA
 
-The identity/security/settings implementation uses `Omaconnect.plus`. The integrated release gate passed **216 Python tests and three JavaScript
+The identity/security/settings implementation uses `Omaconnect.plus`. The integrated release gate passed **225 Python tests and three JavaScript
 suites**, native manifest validation and per-file shell syntax. Local Markdown
 file targets also pass. The exact source revision is attached to PR #3; installed
 publication receipts are recorded separately. Earlier scans remain bound to their snapshots.
@@ -149,7 +149,7 @@ submit. These Qt calls are controlled fixtures, not a real file-manager drag.
 The owner's earlier physical pre-Send drag acceptance remains scoped to the Send
 window and previous identity on both computers. Post-drop Send/delivery stays open.
 
-Both hosts had KDE Connect26.08.2-1. Fresh package checks used temporary databases
+Both hosts had KDE Connect `26.08.2-1`. Fresh package checks used temporary databases
 and found no KDE Connect update. No system packages, phone permissions, VPN
 profiles, router settings or KDE pairings changed during these checks.
 
@@ -160,8 +160,24 @@ See [settings audit/frontier panel](2026-10-29-settings-completeness-audit.md),
 [full upstream review](UPSTREAM-REVIEW.md).
 
 Final product-source digest (49 runtime/manifest files):
-`0ea9c318b6d91f49c8012f590cc546fbe4001e5a489e71645a93c6ad6655fbbb`.
+`aca8f7aa1693f3d66adcb2f6cdba7d93b3367eb37844f2e4b17b4a456e4e9f07`.
 The last source change reserves a themed scrollbar gutter after inspection of the
 six native captures. The final gate retains QML host/unqualified-type diagnostics;
 this is not a warning-free lint claim. Native fixtures substitute providers and
 use a private owned namespace root; they do not relax production ownership checks.
+
+### CodeRabbit review corrections
+
+The observed full [review5704818421](https://github.com/ryan-winkler/omaconnect-kde-plus/pull/3#pullrequestreview-5704818421)
+covered `cd3b54c` and posted five Minor items. Verified repairs tighten watcher
+topic signal, retain explicit gap evidence and recover from large comparisons,
+make optional protected-file cache housekeeping best effort, isolate the
+standalone transfer child HOME/cache, and mark the SMS guard implemented. The
+additional cancellation-copy suggestion was applied. Focused checks first failed
+for the changed cases and then passed. The post-review gate supersedes the prior
+216-test source scope; no earlier scanner snapshot is silently expanded.
+
+Biome could not parse Qt's valid `.pragma library` headers in its inspected JS
+files. Native Qt loading and JS model checks cover those files; that tool gap is
+not a product syntax error or a lint pass. Hosted CodeQL covers Python/workflows,
+not KDE's native engine or all QML semantics.

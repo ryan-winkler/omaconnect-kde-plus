@@ -161,7 +161,7 @@ installed receipts are recorded in [VERIFICATION.md](VERIFICATION.md).
 | SC05 | One catalogue now offers 18 reviewed shortcuts and explicit native-owner routes. Unknown native modules remain searchable; no command is generated from their names. |
 | SC06 | Bar and Send share one Copy-only DropArea. Native component/controller probes check refusal, recipient review and no automatic Send. A physical file-manager drop onto the bar icon remains a separate owner check. |
 | SC07 | Repeated native-owner prose was shortened; the task search precedes the detailed guide link. Fresh 520/720 captures belong to final QA. |
-| SC08 | Both hosts have native KDE Connect26.08.2-1. Fresh temporary-database package checks found no KDE update; no packages changed. Help distinguishes plugin update from system update. |
+| SC08 | Both hosts have native KDE Connect `26.08.2-1`. Fresh temporary-database package checks found no KDE update; no packages changed. Help distinguishes plugin update from system update. |
 
 The source-target fidelity comparison remains unavailable. This follow-up does
 not turn that design-specific gap into a pass or claim clinical ADHD/AuDHD

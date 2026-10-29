@@ -87,6 +87,14 @@ def baseline(client):
 
 
 class WatchTests(unittest.TestCase):
+    def test_auth_and_pairing_topics_do_not_match_attribution_or_repair(self):
+        for text in ("Co-authored-by: Example Contributor", "Author attribution", "Repair display spacing", "repair.cpp"):
+            with self.subTest(text=text):
+                self.assertNotIn("security/privacy", watch.topics([text]))
+        for text in ("auth.cpp", "authentication failure", "authenticated peer", "unauthenticated request", "authorize peer", "authorization policy", "pairinghandler.cpp", "pair request", "paired device"):
+            with self.subTest(text=text):
+                self.assertIn("security/privacy", watch.topics([text]))
+
     def test_first_baseline_does_not_import_history_and_stable_run_has_no_change(self):
         client = FakeAPI()
         client.set_snapshot("omaconnect", releases=["v1.0"], pulls=[{"number": 31, "head": {"sha": A}, "updated_at": "2026-10-01T12:00:00Z"}])
@@ -154,6 +162,101 @@ class WatchTests(unittest.TestCase):
         current = watch.evolve(client, state)
         self.assertIn("coverage gap", current["events"][0]["topics"])
         self.assertIn("coverage gap", watch.render(current))
+
+    def test_large_valid_gitlab_lists_advance_with_gap_and_recover_normally(self):
+        for commits_count, diffs_count in ((101, 1), (1, 301), (101, 301)):
+            with self.subTest(commits=commits_count, diffs=diffs_count):
+                client = FakeAPI()
+                state = baseline(client)
+                client.set_snapshot("desktop", head=B)
+                base, _ = watch.base_path("desktop")
+                client.routes[("invent.kde.org", base + "/repository/compare")] = {"commits": [{"title": "Update wording"} for _ in range(commits_count)], "diffs": [{"new_path": "docs/wording.txt", "old_path": "docs/wording.txt"} for _ in range(diffs_count)]}
+                current = watch.evolve(client, state)
+                self.assertEqual(current["sources"]["desktop"]["head"], B)
+                self.assertEqual(current["sources"]["desktop"]["status"], "ok")
+                self.assertEqual(current["events"], [watch.event("desktop", "code", B, ["coverage gap"], A)])
+                self.assertEqual(watch.evolve(client, current), current)
+                client.set_snapshot("desktop", head=C)
+                client.compare("desktop", old=B, new=C)
+                recovered = watch.evolve(client, current)
+                self.assertEqual(recovered["sources"]["desktop"]["head"], C)
+                self.assertEqual(len(recovered["events"]), 2)
+                self.assertEqual(recovered["events"][-1]["base"], B)
+                self.assertIn("native plugins", recovered["events"][-1]["topics"])
+
+    def test_malformed_gitlab_entries_after_caps_still_preserve_baseline(self):
+        variants = [
+            {"commits": [{"title": "Update"}] * 100 + [{"title": False}], "diffs": []},
+            {"commits": [], "diffs": [{"new_path": "docs/wording.txt", "old_path": "docs/wording.txt"}] * 300 + [{"new_path": "docs/wording.txt", "old_path": None}]},
+            {"commits": [{"title": "Update"}] * 100 + [False], "diffs": []},
+            {"commits": {}, "diffs": []},
+            {"commits": [], "diffs": "not-a-list"},
+            {"commits": [], "diffs": [], "compare_timeout": "false"},
+            {"commits": [], "diffs": [{"new_path": "docs/wording.txt", "old_path": "docs/wording.txt", "too_large": "false"}]},
+        ]
+        for payload in variants:
+            with self.subTest(variant=variants.index(payload)):
+                client = FakeAPI()
+                state = baseline(client)
+                client.set_snapshot("desktop", head=B)
+                base, _ = watch.base_path("desktop")
+                client.routes[("invent.kde.org", base + "/repository/compare")] = payload
+                current = watch.evolve(client, state)
+                self.assertEqual(current["sources"]["desktop"]["head"], A)
+                self.assertEqual(current["sources"]["desktop"]["status"], "invalid-payload")
+                self.assertEqual(current["events"], [])
+
+    def test_oversized_compare_advances_with_gap_but_other_errors_do_not(self):
+        for source in ("desktop", "omaconnect"):
+            for failure in ("oversized-response", "invalid-json", "invalid-payload"):
+                with self.subTest(source=source, failure=failure):
+                    client = FakeAPI()
+                    state = baseline(client)
+                    client.set_snapshot(source, head=B)
+                    base, kind = watch.base_path(source)
+                    host = "invent.kde.org" if kind == "gitlab" else "api.github.com"
+                    compare_path = base + "/repository/compare" if kind == "gitlab" else base + "/compare/" + A + "..." + B
+                    client.routes[(host, compare_path)] = watch.WatchError(failure)
+                    current = watch.evolve(client, state)
+                    if failure == "oversized-response":
+                        self.assertEqual(current["sources"][source]["head"], B)
+                        self.assertEqual(current["sources"][source]["status"], "ok")
+                        self.assertEqual(current["events"], [watch.event(source, "code", B, ["coverage gap"], A)])
+                        self.assertEqual(watch.evolve(client, current), current)
+                        client.set_snapshot(source, head=C)
+                        client.compare(source, old=B, new=C)
+                        recovered = watch.evolve(client, current)
+                        self.assertEqual(recovered["sources"][source]["head"], C)
+                        self.assertEqual(recovered["events"][-1]["base"], B)
+                    else:
+                        self.assertEqual(current["sources"][source]["head"], A)
+                        self.assertEqual(current["sources"][source]["status"], failure)
+                        self.assertEqual(current["events"], [])
+
+    def test_oversized_noncompare_api_remains_an_unavailable_source(self):
+        client = FakeAPI()
+        state = baseline(client)
+        client.set_snapshot("desktop", head=B)
+        base, _ = watch.base_path("desktop")
+        client.routes[("invent.kde.org", base + "/repository/tags")] = watch.WatchError("oversized-response")
+        current = watch.evolve(client, state)
+        self.assertEqual(current["sources"]["desktop"]["head"], A)
+        self.assertEqual(current["sources"]["desktop"]["status"], "oversized-response")
+        self.assertEqual(current["events"], [])
+
+    def test_malformed_github_comparison_types_preserve_baseline(self):
+        for field, value in (("commits", [{"commit": {"message": None}}]), ("total_commits", "1"), ("files", [False])):
+            with self.subTest(field=field):
+                client = FakeAPI()
+                state = baseline(client)
+                client.set_snapshot("omaconnect", head=B)
+                client.compare("omaconnect")
+                base, _ = watch.base_path("omaconnect")
+                client.routes[("api.github.com", base + "/compare/" + A + "..." + B)][field] = value
+                current = watch.evolve(client, state)
+                self.assertEqual(current["sources"]["omaconnect"]["head"], A)
+                self.assertEqual(current["sources"]["omaconnect"]["status"], "invalid-payload")
+                self.assertEqual(current["events"], [])
 
     def test_bad_head_and_missing_paths_cannot_advance_the_baseline(self):
         for fault in ("bad-head", "missing-path"):
