@@ -8,14 +8,14 @@ This is an independent community fork. See [lineage and licenses](FORK.md).
 
 **Current plugin ID: `Omaconnect.plus`.** The display name remains Omaconnect KDE Plus. The earlier `v0.1.0` tag used a development ID. Version 0.1.1 has no supported public upgrade path; owner development installs retain separate preservation and installed-runtime checks. See [verification](docs/VERIFICATION.md).
 
-**Version 0.1.1 candidate.** The fork adds one place for known devices,
+**Version 0.1.1.** The fork adds one place for known devices,
 file submission, appearance and network access through **Tailscale, MikroTik Back
 to Home, or WireGuard**. KDE Connect owns pairing and transfers. Existing native
 network tools retain connection ownership; the BTH helper retains its policy.
 
 ![Native settings with invented sample device data](preview.png)
 
-[Earlier release 0.1.0](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0) ·
+[Release 0.1.1](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.1) ·
 [Functional checks](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml) ·
 [CodeQL](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml) ·
 [Marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/13289)
