@@ -23,6 +23,21 @@ is part of automated tests. Run focused checks, then the full suite before commi
 Subagents own only their assigned files. The parent integrates shared files and
 commits after reviewing the changes. Do not overwrite another agent's edits.
 
+Agents are contributors. Follow CONTRIBUTING.md as a person would, including its
+upstream checklist and PR template. An agent does not add a DCO sign-off on a
+person's behalf.
+
+Be cautious with upstream-owned code. Files inherited from OmaConnect 1.5.0
+(`git ls-tree -r --name-only 71282d2042b1a1cda1cb1cac84251694eaabb7cb`) and behavior
+owned by KDE Connect or the network helper belong upstream first. Change them only
+when the Plus benefit is clear: prefer a new sibling file or an existing facade,
+keep the diff small enough to offer upstream, and add an "Upstream impact" note
+to the PR saying what changed, why it can't wait for upstream, and whether it will
+be offered. Do not reformat, rename or reorder inherited code for its own sake.
+
+When more than one agent works on this repository, follow
+docs/AGENT-COORDINATION.md for ownership, locks and handoffs.
+
 For contributions, start with CONTRIBUTING.md. docs/ICONS.md explains icon
 sources, resolver ownership, private storage and the preset parity check.
 
