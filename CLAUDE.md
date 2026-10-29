@@ -1,6 +1,5 @@
-Follow AGENTS.md, CONTRIBUTING.md and docs/AGENT-COORDINATION.md. This checkout
-is an isolated candidate; do not activate installed plugins or providers during
-development.
+Follow AGENTS.md. This checkout is an isolated candidate; do not activate installed
+plugins or providers during development.
 
 ## Skill routing
 
