@@ -73,6 +73,7 @@ Do not make automated checks install a plugin, restart the shell, change VPN mod
 - Include no credentials, private configurations, raw device inventories or personal receipts. Use small invented examples.
 - Record asset sources and licenses. Preserve [MIT attribution](LICENSE) and [authors](AUTHORS.md).
 - Keep one behavior or extraction per change. Avoid unrelated moves and speculative dependencies.
+- Keep docs for users and contributors only. Put results, reviews and plans in the PR description, not in new files. Update an existing guide before adding one, and record user-visible changes in [CHANGELOG.md](CHANGELOG.md).
 
 Use `git commit -s` for new contributions when possible. This adds a Developer Certificate of Origin sign-off; it does not transfer your copyright. Read [DCO 1.1](https://developercertificate.org/) before signing. We do not require contributors to rewrite inherited history or install a separate DCO app.
 

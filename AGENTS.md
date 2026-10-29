@@ -12,4 +12,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) first; it holds the domain map and revie
 - Do not add privileged setup launchers or fetch provider-supplied artwork.
 - Keep the plugin ID `Omaconnect.plus` and the upstream attribution in
   [LICENSE](LICENSE) and [AUTHORS.md](AUTHORS.md).
+- Keep the repository to code, tests and user or contributor guides. Do not
+  commit reviews, audits, QA or test-run results, plans, progress notes or agent
+  coordination. Update an existing guide before you add a new file.
 - Run `./scripts/validate.sh` before you commit.
