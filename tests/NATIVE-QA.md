@@ -77,3 +77,30 @@ mapping, positioning, click geometry, compositor focus, scale-two appearance,
 RTL layout, AT-SPI/Orca, resource budgets, x86 packaging, real KDE delivery and
 physical-device acceptance remain open. The expected Hyprland-unset warning
 confirms that this test has no live compositor connection.
+
+## Explicit desktop session check — 29 October 2026
+
+Run only when the owner has requested validation on the current desktop:
+
+```sh
+OMACONNECT_DESKTOP_VALIDATION=1 python3 -m unittest discover -s tests -p test_native_ui.py
+```
+
+This opt-in keeps the private HOME/D-Bus/fake-provider boundaries. It connects to
+only the current Wayland socket and exposes the existing DRI devices for native
+OpenGL rendering. It copies only the current public colors.toml/shell.toml into
+the private fixture. No installed bar/plugin configuration is changed. The sample
+window and panel close when the bounded test exits. The default suite remains
+offscreen and never connects to the desktop.
+
+On asahi-omarchy/aarch64, the desktop mode passes **32 assertions**, including
+opening the genuine unmodified native KeyboardPanel/PanelWindow. This closes the
+previous native-window backend prerequisite for this desktop session. It does not
+prove activation inside the installed replacement bar, pointer hit testing,
+physical keyboard/AT behavior, x86_64 or physical file delivery.
+
+Optional content-only PNGs and a log are saved outside the source checkout in
+`outputs/desktop-validation`. The PNGs have transparent backgrounds and omit the
+native popup card. They are layout evidence, not composited contrast acceptance.
+Expected isolation warning: no Hyprland IPC connection. Qt Wayland text-input
+warnings also occurred during popup focus changes; the run is not warning-free.

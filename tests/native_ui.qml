@@ -8,6 +8,14 @@ import "plugin/bridge" as Bridge
 
 ShellRoot {
     id: test
+    readonly property bool desktopMode: Quickshell.env("OMACONNECT_DESKTOP_VALIDATION") === "1"
+    property int captures: 0
+    function capture(name) {
+        if (!desktopMode) return
+        var body = find(panel,function(object) { return object.objectName === "omaconnect-content" },[])
+        if (body) body.grabToImage(function(result) { result.saveToFile(Quickshell.env("NATIVE_COMMAND_LOG").replace("commands.jsonl", "desktop-"+name+".png")); test.captures++ })
+    }
+    Timer { interval: 300; running: test.desktopMode; onTriggered: panel.open() }
     property int phase: 0
     property int ticks: 0
     property bool failed: false
@@ -60,6 +68,9 @@ ShellRoot {
     QtObject {
         id: fakeBar
         property var shell: fakeFacade
+        property var activePopout: null
+        function requestPopout(owner) { activePopout = owner }
+        function releasePopout(owner) { if (activePopout === owner) activePopout = null }
         property bool vertical: false
         property bool foregroundAnimationEnabled: false
         property int barSize: 26
@@ -75,15 +86,16 @@ ShellRoot {
         function unregisterClickTarget(owner) {}
         function switchPanelFrom(owner, direction) { return false }
     }
-    Item { id: anchor; width: 26; height: 26 }
-    Plugin.BarWidget { id: widget; bar: fakeBar; settings: ({showTailscale:false}) }
     Window {
         id: previewWindow
-        visible: false
+        title: "OmaConnect validation — sample devices"
+        visible: test.desktopMode
         width: 500
-        height: 700
+        height: test.desktopMode ? 60 : 700
+        Item { id: anchor; width: 26; height: 26 }
+        Plugin.BarWidget { id: widget; bar: fakeBar; settings: ({showTailscale:false}) }
         Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false}) }
-        Components.SendSection { id: send; width: 400; service: service }
+        Components.SendSection { id: send; visible: !test.desktopMode; width: 400; service: service }
     }
     Timer {
         interval: 25
@@ -93,7 +105,7 @@ ShellRoot {
             if(test.failed) return
             test.ticks++
             if(test.ticks > 600) { test.check(false,"timeout phase="+test.phase); return }
-            if(test.phase === 0 && service.appearance.ready && !service.appearance.busy && service.devices.length === 2) {
+            if(test.phase === 0 && (!test.desktopMode || panel.opened) && service.appearance.ready && !service.appearance.busy && service.devices.length === 2) {
                 test.check(Bridge.Bridge.service === service, "own-service bridge")
                 test.check(widget.service === service && panel.service === service, "bar and panel bridge fallback")
                 test.check(panel.viewNames.join(",") === "Devices,Send,Activity,Appearance", "all four views load")
@@ -106,7 +118,7 @@ ShellRoot {
             } else if(test.phase === 1 && !service.appearance.busy) {
                 test.activeChooser.choose({mode:"preset",value:"laptop",render:"symbolic"})
                 test.activeChooser.applyDraft()
-                test.phase=2
+                if (test.activeChooser.pendingApply) test.phase=2
             } else if(test.phase === 2 && !service.appearance.busy && service.appearance.snapshot.bar_icon.value === "laptop") {
                 test.check(service.appearance.barIcon("A","phone").value === "laptop", "chooser Apply saves bar icon")
                 service.appearance.refresh()
@@ -131,6 +143,7 @@ ShellRoot {
                 test.phase=5
             } else if(test.phase === 5 && service.selectionState === "draft") {
                 test.check(service.selection.length === 2 && service.selectionBytes === 7, "portal files reach review with real sizes")
+                test.capture("send")
                 test.check(!service.operationBusy && service.operations.length === 0, "chooser close does not send")
                 service.selectDevice("B")
                 test.check(service.draftTarget.peerId === "A", "draft target survives selection change")
@@ -167,7 +180,12 @@ ShellRoot {
                 test.phase=11
             } else if(test.phase === 11 && service.ownerPanelMessage.indexOf("unavailable") !== -1) {
                 test.check(service.ownerPanelMessage.indexOf("Opened") === -1, "owner summon exit zero without confirmation stays unavailable")
+                if (test.desktopMode) { test.capture("devices"); test.phase=12; test.ticks=0 }
+                else { console.log("NATIVE_PASS "+JSON.stringify(test.outcomes)); Qt.quit() }
+            } else if(test.phase === 12 && test.captures >= 2 && test.ticks > 20) {
+                test.check(panel.opened, "actual native panel opened")
                 console.log("NATIVE_PASS "+JSON.stringify(test.outcomes))
+                panel.close()
                 Qt.quit()
             }
         }

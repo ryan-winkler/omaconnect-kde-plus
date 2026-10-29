@@ -68,3 +68,44 @@ were used to bypass this limit.
 
 A successful CLI request does not close the delivery gate. A successful helper
 status does not prove a VPN handshake, service reachability or fleet acceptance.
+
+## Current desktop session — 29 October 2026
+
+The owner subsequently authorized validation on this desktop. Live identity is
+asahi-omarchy/aarch64. The explicit desktop test uses the current Wayland socket,
+the original native KeyboardPanel and existing GPU renderer with private sample
+providers. It passes 32 runtime assertions and opens the genuine PanelWindow.
+The former offscreen backend limit therefore no longer blocks this host's native
+window smoke test. Installed-bar activation, manual focus/AT/scaling and physical
+payload acceptance remain separate. No installation or BTH transition ran.
+
+Read-only provider preflight: existing BTH status is valid, Automatic/inactive,
+with no pending error (normal HOME metadata). KDE daemon/CLI and portal FileChooser
+v4 respond. Syncshell is installed with one observed core. At preflight there were
+zero paired/reachable KDE recipients; the owner chose their phone for a subsequent
+real transfer check. Test submission acknowledgement alone is not delivery proof.
+
+### Intended desktop and real phone check
+
+The owner clarified that ubiquitous/Kintsugi, paired with Leica 17, was the intended
+desktop. The existing pinned `desktop` SSH connection verified Kintsugi/x86_64.
+A private source staging directory on that host passed all 124 Python tests, all
+three JS suites, the installed manifest validator and shell syntax. Its explicit
+Wayland test passed 32 assertions using the original native KeyboardPanel and GPU.
+Standard OmaConnect remained installed and connected; its seven protected
+source/config/helper files retained their starting hashes.
+
+The fork's actual one-shot submission helper sent a generated 109-byte text file
+to the explicitly selected, paired and reachable Leica 17. The helper reported
+request_accepted. The owner then confirmed reception, opening and the matching
+unique check code. This establishes one real text payload on this LAN; it does
+not establish every file type, zero-byte/multifile delivery, cancellation or away
+reachability. No second live candidate UI watcher or protocol daemon was started.
+
+BTH's direct SSH status reported not-preauthorized. The same read-only command
+through the existing native user-session manager reported nm_control=true,
+Automatic/inactive, no pending state and no error. This was an SSH authorization
+context limit. No policy/profile/VPN-mode change was needed or performed.
+
+The candidate is still staged separately. Installed bar replacement, actual
+keyboard/pointer/AT interaction and offsite validation remain open.

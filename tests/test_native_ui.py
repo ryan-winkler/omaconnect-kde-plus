@@ -15,6 +15,9 @@ class NativeUi(unittest.TestCase):
     def test_actual_service_bar_panel_and_controls(self):
         with tempfile.TemporaryDirectory(prefix='omaconnect-native-') as temporary:
             fixture = Path(temporary)
+            desktop = os.environ.get('OMACONNECT_DESKTOP_VALIDATION') == '1'
+            wayland = Path(os.environ.get('XDG_RUNTIME_DIR','')) / os.environ.get('WAYLAND_DISPLAY','')
+            if desktop and not wayland.is_socket(): self.fail('Current Wayland socket is unavailable')
             plugin = fixture / 'plugin'
             shutil.copytree(ROOT, plugin, ignore=shutil.ignore_patterns('.git','__pycache__'))
             (fixture / 'Commons').symlink_to('/usr/share/omarchy/shell/Commons')
@@ -38,6 +41,9 @@ Item {
  function fittedContentHeight(value) { return Math.min(700,value) }
 }
 ''')
+            if desktop:
+                (ui/'KeyboardPanel.qml').unlink()
+                (ui/'KeyboardPanel.qml').symlink_to('/usr/share/omarchy/shell/Ui/KeyboardPanel.qml')
             shutil.copy(ROOT / 'tests/native_ui.qml', fixture / 'shell.qml')
             shutil.copy(ROOT / 'tests/native_ui_session.py', fixture / 'session.py')
             for name, content in [('one', b'abc'), ('two', b'defg'), ('slow', b'delay')]:
@@ -73,15 +79,31 @@ else: raise SystemExit(99)
             (home/'.local/bin/remote-access-mode').symlink_to(fake_bin/'remote-access-mode')
             runtime = fixture/'runtime'; runtime.mkdir(mode=0o700)
             env = {'PATH':str(fake_bin), 'HOME':str(home), 'XDG_CONFIG_HOME':str(home/'.config'), 'XDG_CACHE_HOME':str(home/'.cache'), 'XDG_DATA_HOME':str(home/'.local/share'), 'XDG_STATE_HOME':str(home/'.local/state'), 'XDG_RUNTIME_DIR':str(runtime), 'QT_QPA_PLATFORM':'offscreen', 'QT_QUICK_BACKEND':'software', 'LANG':'C.UTF-8', 'NATIVE_COMMAND_LOG':str(fixture/'commands.jsonl'), 'DBUS_SYSTEM_BUS_ADDRESS':'unix:path='+str(fixture/'no-system-bus')}
+            if desktop:
+                env.pop('QT_QUICK_BACKEND',None)
+                env.update(QT_QPA_PLATFORM='wayland', QSG_RHI_BACKEND='opengl', WAYLAND_DISPLAY='validation-wayland', OMACONNECT_DESKTOP_VALIDATION='1')
             # Read-only host root, a single writable fixture, private process and
             # network namespaces, and fixed absolute actions replaced as well.
             command = ['/usr/bin/bwrap','--ro-bind','/','/','--tmpfs','/tmp','--bind',str(fixture),str(fixture),'--unshare-net','--unshare-pid','--proc','/proc','--dev','/dev','--die-with-parent']
             for name in ('omarchy-shell','nmcli','hyprctl','kdeconnect-cli','dbus-monitor'):
                 path=Path('/usr/bin')/name
                 if path.exists(): command += ['--ro-bind',str(fake),str(path)]
+            if desktop:
+                command += ['--ro-bind',str(wayland),str(runtime/'validation-wayland')]
+                if Path('/dev/dri').exists(): command += ['--dev-bind','/dev/dri','/dev/dri']
+                theme = Path(os.environ['HOME'])/'.local/state/omarchy/current/theme'
+                target = home/'.local/state/omarchy/current/theme'
+                target.mkdir(parents=True)
+                for name in ('colors.toml','shell.toml'):
+                    if (theme/name).is_file(): shutil.copyfile(theme/name,target/name)
             command += ['/usr/bin/dbus-run-session','--','/usr/bin/python3',str(fixture/'session.py'),str(fixture)]
             result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=22)
             output = result.stdout+result.stderr
+            if desktop:
+                destination = ROOT.parent/'desktop-validation'
+                destination.mkdir(exist_ok=True)
+                (destination/'native-ui.log').write_text(output)
+                for shot in fixture.glob('desktop-*.png'): shutil.copyfile(shot,destination/shot.name)
             self.assertEqual(result.returncode, 0, output)
             self.assertIn('NATIVE_PASS', output, output)
             self.assertNotIn('NATIVE_FAIL', output, output)

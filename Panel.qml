@@ -638,6 +638,7 @@ Panel {
 
             Column {
                 id: contentColumn
+                objectName: "omaconnect-content"
                 width: scrollView.width
                 spacing: Style.space(12)
                 bottomPadding: Style.space(8)
