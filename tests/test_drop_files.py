@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class DropFiles(unittest.TestCase):
     @unittest.skipUnless(shutil.which('node'), 'Node runtime absent')
     def test_actual_controller_stages_inspected_files_without_sending_or_retargeting(self):
-        source = (ROOT / 'KdeConnectController.qml').read_text()
+        source = (ROOT / 'controller' / 'FileTransferController.qml').read_text()
         def extract(name):
             start = source.index('    function ' + name + '(')
             brace = source.index('{', start)
@@ -39,7 +39,7 @@ const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
 const ctx={operationBusy:false, fileTransferProcess:{running:false},filePickerProcess:{running:false,signal(){}},fileInspectProcess:{running:false,signal(){}},
  selectionState:'idle',selection:[],selectionBytes:0,selectionError:'',selectionGeneration:0,draftTarget:null,
  devices:[{id:'A',name:'Reviewed phone',paired:true,reachable:true,capabilities:{file:true}},{id:'B',name:'Another phone',paired:true,reachable:true,capabilities:{file:true}}]};
-ctx.deviceById=id=>ctx.devices.find(d=>d.id===id);ctx.canAct=id=>!!ctx.deviceById(id);vm.createContext(ctx);vm.runInContext(input.functions,ctx);
+ctx.deviceById=id=>ctx.devices.find(d=>d.id===id);ctx.canAct=id=>!!ctx.deviceById(id);ctx.controller=ctx;vm.createContext(ctx);vm.runInContext(input.functions,ctx);
 assert.equal(ctx.stageDroppedFiles('A',input.uris),true);
 assert.equal(JSON.parse(ctx.fileInspectProcess.payload).join(','),input.uris.join(','));
 assert.equal(ctx.draftTarget.peerId,'A');assert.ok(Object.isFrozen(ctx.draftTarget));
