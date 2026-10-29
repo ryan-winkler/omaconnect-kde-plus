@@ -84,9 +84,10 @@ To switch:
 2. Disable the original UI: `omarchy plugin disable omaconnect`.
 3. Back up `~/.config/omarchy/shell.json`, then replace it with the reviewed
    `candidate-shell.json`. If you changed shell settings after `prepare`, run
-   `prepare` again first so the candidate does not drop those changes. Copy `candidate-appearance.json`, if present, to
-   `$XDG_CONFIG_HOME/Omaconnect.plus/appearance.json` (default
-   `~/.config/Omaconnect.plus/appearance.json`). Then enable `Omaconnect.plus`.
+   `prepare` again first so the candidate keeps those changes. The candidate
+   gives `Omaconnect.plus` the same enabled or disabled state the original had.
+   Copy `candidate-appearance.json`, if present, to
+   `${XDG_CONFIG_HOME:-$HOME/.config}/Omaconnect.plus/appearance.json`.
 4. Check the bar, keyboard focus and your devices. Keep the original installed
    until you are satisfied.
 
