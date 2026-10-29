@@ -50,8 +50,8 @@ cache copies become eligible for cleanup after 24 hours. See the
 
 Pairings stay in KDE Connect, so both UIs see the same devices. The helper below
 stages display settings for review. It never edits your configuration and has
-no apply command. Run it from the installed plugin folder under
-`~/.config/omarchy/plugins/`.
+no apply command. Find the installed plugin folder under
+`~/.config/omarchy/plugins/`, change into it, then run:
 
 ```bash
 python3 scripts/migrate_settings.py prepare \
@@ -84,7 +84,8 @@ To switch:
 2. Disable the original UI: `omarchy plugin disable omaconnect`.
 3. Back up `~/.config/omarchy/shell.json`, then replace it with the reviewed
    `candidate-shell.json`. Copy `candidate-appearance.json`, if present, to
-   `~/.config/Omaconnect.plus/appearance.json`. Then enable `Omaconnect.plus`.
+   `$XDG_CONFIG_HOME/Omaconnect.plus/appearance.json` (default
+   `~/.config/Omaconnect.plus/appearance.json`). Then enable `Omaconnect.plus`.
 4. Check the bar, keyboard focus and your devices. Keep the original installed
    until you are satisfied.
 
