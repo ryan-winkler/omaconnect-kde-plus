@@ -15,7 +15,7 @@ ShellRoot {
     property var captures: [
         {page:"Appearance", width:720, name:"settings-720-appearance.png"},
         {page:"Connections", width:720, name:"settings-720-connections.png"},
-        {page:"Sharing", width:720, name:"settings-720-sharing.png"},
+        {page:"Quick actions", width:720, name:"settings-720-actions.png"},
         {page:"Device features", width:720, name:"settings-720-features.png"},
         {page:"Connections", width:520, name:"settings-520-connections.png"},
         {page:"Device features", width:520, name:"settings-520-features.png"}
@@ -72,9 +72,9 @@ ShellRoot {
             } else if(test.phase===29) {
                 var scrolled=test.find(settings.contentItem,function(o){return o.objectName === "settings-page-scroll"},[])
                 if(!test.check(scrolled.contentItem.contentY > 0,"mouse wheel reaches lower connection settings"))return
-                test.named("Settings: Sharing").clicked();test.phase=3
+                test.named("Settings: Quick actions").clicked();test.phase=3
             } else if(test.phase===3) {
-                if(!test.check(test.named("Show file sharing action")!==null,"sharing preferences have a domain"))return
+                if(!test.check(test.named("Settings: Quick actions")!==null,"quick actions have an explicit domain"))return
                 test.named("Settings: Device features").clicked();test.phase=4
             } else if(test.phase===4) {
                 var features=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])

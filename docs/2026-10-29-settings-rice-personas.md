@@ -238,3 +238,12 @@ narrow integration. If the native window already solves the task with a clear
 link, keep that owner and spend the next effort on reliable file sharing and
 connection recovery. The user's goal is a successful task, not one more place to
 maintain every configuration page.
+
+## Subsequent implementation refinement
+
+The owner's later request made toolbar membership and order a first-class local
+preference. The four Settings domains are now Appearance, Connections, Quick
+actions and Device features. A shared verified action catalog replaces the fixed
+six-button list. This stays within A: it configures Plus shortcuts and delegates
+native module enable/config to KDE. It does not implement B's full native settings
+frontend or C's installer. The hypothetical strategic comparison is unchanged.

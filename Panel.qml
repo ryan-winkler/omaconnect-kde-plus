@@ -8,6 +8,7 @@ import qs.Commons as Commons
 import qs.Ui
 import "./components"
 import "bridge" as OmaconnectBridge
+import "ActionCatalog.js" as Actions
 
 Panel {
     id: root
@@ -58,18 +59,8 @@ Panel {
     property string draftText: ""
     property string composerError: ""
 
-    readonly property var availableActions: {
-        if (!root.device || !root.device.paired || !root.device.reachable) return []
-        var caps = root.device.capabilities || {}
-        var res = []
-        if (caps.ring && root.getSetting("showActionRing", true)) res.push("ring")
-        if (caps.clipboard && root.getSetting("showActionClipboard", true)) res.push("clipboard")
-        if (caps.file && root.getSetting("showActionFile", true)) res.push("file")
-        if (caps.sms && root.getSetting("showActionSms", true)) res.push("sms")
-        if (caps.ping && root.getSetting("showActionPing", false)) res.push("ping")
-        if (caps.text && root.getSetting("showActionText", true)) res.push("text")
-        return res
-    }
+    readonly property var availableActions: Actions.available(root.getSetting("quickActionsOrder", Actions.DEFAULT_ORDER), root.device)
+
 
     readonly property var visibleSections: {
         var list = ["devices"]
@@ -270,6 +261,10 @@ Panel {
     }
 
     function triggerAction(actionId) {
+        if (actionId === "native-features") {
+            if (service) service.openKdeConnectApp()
+            return
+        }
         if (!service || !device) return
         if (actionId === "ring") service.ringDevice(device.id)
         else if (actionId === "clipboard") service.sendClipboard(device.id)

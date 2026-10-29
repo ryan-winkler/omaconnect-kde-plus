@@ -112,3 +112,15 @@ drop selection, the existing inspection/review lifecycle and explicit Send. This
 avoids losing the drop surface when the file manager receives focus. The default
 graphical portal chooser remains an equal selection path. No drop replaces a draft
 or redirects a frozen recipient.
+
+## Configurable quick actions and contextual help
+
+Toolbar membership/order now uses the shared verified ActionCatalog and saved
+quickActionsOrder. Users add, remove and reorder shortcuts through labelled native
+controls. Ring is optional; fresh defaults are Files, Text/link and Clipboard.
+Plugin readiness is metadata-driven and native enablement remains independent.
+The active Settings domains are Appearance, Connections, Quick actions and Device
+features. Legacy showAction booleans no longer determine the toolbar.
+
+Every feature has adjacent help text or a documentation link; docs/HELP.md records
+coverage and AGENTS.md makes it a contribution requirement.

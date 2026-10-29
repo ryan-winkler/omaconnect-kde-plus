@@ -18,7 +18,7 @@ Kit.BorderSurface {
         : service && (service.operationBusy || service.selectionState === "choosing")
             ? "Wait for the current file action before dropping files."
         : service && service.selectionState === "draft" ? "Review or clear the current selection to drop more files."
-        : "Drop local files here, or use Choose files. Review the recipient and files before Send."
+        : "Drop local files here, or use Choose files. Up to 100 regular files and 1 TiB; folders are not included. Review the recipient and files before Send."
     width: parent ? parent.width : 0
     implicitHeight: copy.implicitHeight + Style.space(24)
     color: dropArea.containsDrag ? Style.hoverFillFor(Commons.Color.popups.text, Commons.Color.accent) : "transparent"

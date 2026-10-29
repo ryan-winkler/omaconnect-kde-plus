@@ -10,8 +10,11 @@ network tools retain connection ownership; the BTH helper retains its policy.
 ## First release
 
 - **Settings:** Open a dedicated native window for Appearance, Connections,
-  Sharing and Device features. All active Plus preferences have a domain; native
+  Quick actions and Device features. All active Plus preferences have a domain; native
   plugin enablement and permissions link to the selected device in KDE Connect.
+- **Quick actions:** Add, remove and reorder verified shortcuts in Settings. Ring
+  is optional; new installs start with Files, Text/link and Clipboard. Native
+  plugin enablement stays independent.
 - **Appearance:** Choose a phone, computer, theme icon, custom symbol or local
   PNG/SVG for the bar. Set a separate icon and local alias for each KDE identity.
   Preview before Apply. Reset to Phone or follow the selected device.
@@ -80,6 +83,8 @@ an offsite VPN, a mapped desktop or assistive-technology acceptance.
 
 Contributors: start with [CONTRIBUTING.md](CONTRIBUTING.md) and the
 [icon source/storage guide](docs/ICONS.md).
+
+See [contextual help coverage](docs/HELP.md) for guidance and documentation links.
 
 Read the [current product/spec addendum](docs/2026-10-29-product-addendum.md) for
 native KDE features, all three network services and user-success acceptance.

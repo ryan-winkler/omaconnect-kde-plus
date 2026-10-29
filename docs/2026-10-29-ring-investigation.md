@@ -96,3 +96,10 @@ native Plugin Settings next step. It preserves the supported capability and does
 not infer disabled status from loading state. Accepted dispatch copy describes a
 request without claiming audible output. The actual-function regression passes
 after the previously failing control. No native module was enabled by this fix.
+
+## Owner confirmation
+
+The owner confirmed the failed action was Plus → Leica 17 on the laptop, and that
+Ping worked while Ring did not. This matches the read-only disabled-module and
+absent-endpoint finding. Ping is a separate native plugin and does not establish
+Ring readiness. No native setting or phone sound was changed by this investigation.

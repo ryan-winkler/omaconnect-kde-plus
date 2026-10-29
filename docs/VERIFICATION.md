@@ -2,7 +2,7 @@
 
 ## Current dedicated Settings / drop / comparison follow-up
 
-**152 Python tests and all three JS suites pass.** The native Settings window,
+**155 Python tests and all three JS suites pass.** The native Settings window,
 provider preferences, searchable feature view, persistent Send window, drop review
 and Ring readiness guard are integrated. See the settings review and new SP01–SP50
 RICE audit. The earlier counts below are dated snapshots. Live comparison

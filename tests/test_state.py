@@ -139,29 +139,6 @@ def format_battery_status(device, show_battery=True, show_network=True):
     return ""
 
 
-def compute_available_actions(device, settings=None):
-    if not device or not device.get("paired") or not device.get("reachable"):
-        return []
-    caps = device.get("capabilities", {})
-    s = settings or {}
-    res = []
-    if caps.get("ring") and s.get("showActionRing", True):
-        res.append("ring")
-    if caps.get("clipboard") and s.get("showActionClipboard", True):
-        res.append("clipboard")
-    if caps.get("file") and s.get("showActionFile", True):
-        res.append("file")
-    if caps.get("sms") and s.get("showActionSms", True):
-        res.append("sms")
-    if caps.get("ping") and s.get("showActionPing", False):
-        res.append("ping")
-    if caps.get("text") and s.get("showActionText", True):
-        res.append("text")
-    return res
-
-
-
-
 def validate_composer_input(text):
     clean = str(text or "").strip()
     if not clean:
@@ -651,33 +628,11 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
     service_source = (ROOT / "Service.qml").read_text()
     self.assertIn("function deviceTypeIcon(type)", service_source)
 
-  def test_settings_action_filtering(self):
-    full_line = "DEVICE\tdev-full\tFull Phone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_findmyphone,kdeconnect_clipboard,kdeconnect_sms\t5G\t4"
-    dev = parse_device(full_line)
-
-    # Ping is disabled by default
-    default_acts = compute_available_actions(dev, {})
-    self.assertEqual(default_acts, ["ring", "clipboard", "file", "sms", "text"])
-
-    # Explicitly enable ping
-    all_acts = compute_available_actions(dev, {"showActionPing": True})
-    self.assertEqual(all_acts, ["ring", "clipboard", "file", "sms", "ping", "text"])
-
-    # Disable SMS with ping enabled
-    filtered_acts = compute_available_actions(dev, {"showActionSms": False, "showActionPing": True})
-    self.assertEqual(filtered_acts, ["ring", "clipboard", "file", "ping", "text"])
-
-    # Disable ring and clipboard
-    filtered_acts2 = compute_available_actions(dev, {"showActionRing": False, "showActionClipboard": False})
-    self.assertEqual(filtered_acts2, ["file", "sms", "text"])
-
-    panel_source = (ROOT / "Panel.qml").read_text()
-    self.assertIn("root.getSetting(\"showActionRing\", true)", panel_source)
-    self.assertIn("root.getSetting(\"showActionClipboard\", true)", panel_source)
-    self.assertIn("root.getSetting(\"showActionFile\", true)", panel_source)
-    self.assertIn("root.getSetting(\"showActionSms\", true)", panel_source)
-    self.assertIn("root.getSetting(\"showActionPing\", false)", panel_source)
-    self.assertIn("root.getSetting(\"showActionText\", true)", panel_source)
+  def test_settings_action_filtering_uses_the_shared_ordered_catalog(self):
+    source = (ROOT / "Panel.qml").read_text()
+    self.assertIn('import "ActionCatalog.js" as Actions', source)
+    self.assertIn('Actions.available(root.getSetting("quickActionsOrder", Actions.DEFAULT_ORDER), root.device)', source)
+    self.assertNotIn('root.getSetting("showActionRing", true)', source)
 
   def test_settings_telemetry_filtering(self):
     full_line = "DEVICE\tdev-full\tFull Phone\tphone\ttrue\ttrue\t85\ttrue\tkdeconnect_battery,kdeconnect_connectivity_report\tLTE\t3"

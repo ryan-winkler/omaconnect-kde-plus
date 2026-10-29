@@ -12,7 +12,7 @@ Window {
     readonly property var service: panel ? panel.service : null
     readonly property var device: panel ? panel.device : null
     readonly property string selectedName: device ? (service && typeof service.displayName === "function" ? service.displayName(device) : device.name) : "No device selected"
-    readonly property var pages: ["Appearance", "Connections", "Sharing", "Device features"]
+    readonly property var pages: ["Appearance", "Connections", "Quick actions", "Device features"]
     readonly property color surfaceColor: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     property string currentPage: "Appearance"
     signal returnToPanelRequested()
@@ -190,6 +190,14 @@ Window {
                             font.family: Style.font.family
                             font.pixelSize: Style.font.caption
                         }
+                        Kit.Button {
+                            width: parent.width
+                            text: "Icon and contribution guide ↗"
+                            Accessible.name: "Open the local icon and contribution guide"
+                            focusable: true
+                            foreground: Commons.Color.popups.text
+                            onClicked: Qt.openUrlExternally(Qt.resolvedUrl("../docs/ICONS.md"))
+                        }
                         PreferenceControls {
                             width: parent.width
                             panel: root.panel
@@ -209,35 +217,13 @@ Window {
                     }
                     Column {
                         width: parent.width
-                        visible: root.currentPage === "Sharing"
+                        visible: root.currentPage === "Quick actions"
                         spacing: Style.space(12)
-                        Text {
-                            width: parent.width
-                            text: "Choose files in the native picker or drop local files in Send. Review the recipient and files, then select Send. Selecting or dropping files never sends them."
-                            textFormat: Text.PlainText
-                            wrapMode: Text.Wrap
-                            color: Commons.Color.popups.text
-                            font.family: Style.font.family
-                            font.pixelSize: Style.font.bodySmall
-                        }
-                        Text {
-                            width: parent.width
-                            text: "These choices show quick actions in Plus. Native sharing and permissions stay in KDE Connect."
-                            textFormat: Text.PlainText
-                            wrapMode: Text.Wrap
-                            color: Commons.Color.popups.text
-                            font.family: Style.font.family
-                            font.pixelSize: Style.font.caption
-                        }
+                        QuickActionsSettings { width: parent.width; panel: root.panel }
                         PreferenceControls {
                             width: parent.width
                             panel: root.panel
-                            preferences: [
-                                {key: "showActionFile", label: "Show file sharing action", defaultValue: true},
-                                {key: "showActionClipboard", label: "Show clipboard action", defaultValue: true},
-                                {key: "showActionText", label: "Show text and link action", defaultValue: true},
-                                {key: "showActionSms", label: "Show SMS action", defaultValue: true}
-                            ]
+                            preferences: [{key: "defaultPingMessage", label: "Default ping message", defaultValue: "", type: "string"}]
                         }
                     }
                     Column {
@@ -261,10 +247,7 @@ Window {
                                 {key: "showBatteryStats", label: "Show battery details", defaultValue: true},
                                 {key: "showNetworkStats", label: "Show cellular connection details", defaultValue: true},
                                 {key: "showMediaPlayer", label: "Show media controls", defaultValue: true},
-                                {key: "showRemoteCommands", label: "Show remote commands", defaultValue: true},
-                                {key: "showActionRing", label: "Show ring device action", defaultValue: true},
-                                {key: "showActionPing", label: "Show ping action", defaultValue: false},
-                                {key: "defaultPingMessage", label: "Default ping message", defaultValue: "", type: "string"}
+                                {key: "showRemoteCommands", label: "Show remote commands", defaultValue: true}
                             ]
                         }
                     }

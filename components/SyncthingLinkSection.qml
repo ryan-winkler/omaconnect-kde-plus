@@ -77,6 +77,14 @@ Column {
         Accessible.name: text
         onClicked: root.service.openSyncthingPanel()
     }
+    Kit.Button {
+        width: parent.width
+        text: "Syncthing device setup help ↗"
+        Accessible.name: "Open official Syncthing device setup help"
+        foreground: Commons.Color.popups.text
+        focusable: true
+        onClicked: Qt.openUrlExternally("https://docs.syncthing.net/intro/getting-started.html")
+    }
     Text {
         textFormat: Text.PlainText
         width: parent.width

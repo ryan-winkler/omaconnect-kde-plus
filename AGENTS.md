@@ -23,3 +23,9 @@ commits after reviewing the changes. Do not overwrite another agent's edits.
 
 For contributions, start with CONTRIBUTING.md. docs/ICONS.md explains icon
 sources, resolver ownership, private storage and the preset parity check.
+
+Every user-facing feature needs concise contextual help or a direct documentation
+link. Put it next to its owning control/domain. Use verified fixed official URLs
+for external help; local contributor guides can open installed documentation.
+Update docs/HELP.md when adding a feature. Keep toolbar action labels, readiness
+and ordering in ActionCatalog.js; do not add another hardcoded toolbar branch.

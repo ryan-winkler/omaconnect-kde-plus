@@ -88,6 +88,14 @@ Column {
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
         }
+        Kit.Button {
+            width: parent.width
+            text: "KDE Connect user guide ↗"
+            Accessible.name: "Open the official KDE Connect user guide"
+            focusable: true
+            foreground: Commons.Color.popups.text
+            onClicked: Qt.openUrlExternally("https://kdeconnect.kde.org/users.html")
+        }
         Text {
             width: parent.width
             text: "Search device features"

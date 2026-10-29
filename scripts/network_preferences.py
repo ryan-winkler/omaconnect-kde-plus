@@ -11,9 +11,9 @@ from manage_addresses import AddressError, bounded_command
 
 KEYS = frozenset(("networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled",
                   "showBatteryStats", "showBarBattery", "showNetworkStats", "showMediaPlayer",
-                  "showRemoteCommands", "showActionRing", "showActionClipboard", "showActionFile",
-                  "showActionSms", "showActionPing", "showActionText"))
-STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath"))
+                  "showRemoteCommands"))
+STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath", "quickActionsOrder"))
+ACTION_IDS = frozenset(("ring", "clipboard", "file", "sms", "ping", "text", "native-features"))
 MAX_REQUEST = 32768
 
 
@@ -28,7 +28,11 @@ def setting_value(request):
     value = request["value"]
     if not isinstance(value, str) or len(value) > 4096:
         raise ValueError()
-    if key == "defaultPingMessage":
+    if key == "quickActionsOrder":
+        values = value.split(",") if value else []
+        if len(value) > 128 or len(values) > len(ACTION_IDS) or len(set(values)) != len(values) or any(item not in ACTION_IDS for item in values):
+            raise ValueError()
+    elif key == "defaultPingMessage":
         if any(ord(char) < 32 and char not in "\n\t" for char in value):
             raise ValueError()
     elif value and (not value.startswith("/") or not value.endswith("/remote-access-mode")

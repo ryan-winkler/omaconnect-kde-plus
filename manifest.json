@@ -3,7 +3,7 @@
   "id": "ryan.omaconnect",
   "name": "OmaConnect Plus",
   "version": "0.1.0-alpha.1",
-  "author": "Ryan Winkler; based on Jitendra Dara\u2019s OmaConnect",
+  "author": "Ryan Winkler; based on Jitendra Dara’s OmaConnect",
   "description": "Known-device sharing, appearance and home access over existing KDE Connect and BTH controllers.",
   "license": "MIT",
   "homepage": "https://github.com/ryan-winkler/omaconnect",
@@ -67,32 +67,32 @@
     "showActionRing": {
       "type": "boolean",
       "default": true,
-      "description": "Include Ring device action"
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
     },
     "showActionClipboard": {
       "type": "boolean",
       "default": true,
-      "description": "Include Clipboard sync action"
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
     },
     "showActionFile": {
       "type": "boolean",
       "default": true,
-      "description": "Include File transfer action"
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
     },
     "showActionSms": {
       "type": "boolean",
       "default": true,
-      "description": "Include SMS conversation action"
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
     },
     "showActionPing": {
       "type": "boolean",
       "default": false,
-      "description": "Include Ping action"
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
     },
     "showActionText": {
       "type": "boolean",
       "default": true,
-      "description": "Include Text and link sharing action"
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
     },
     "defaultPingMessage": {
       "type": "string",
@@ -118,6 +118,11 @@
       "type": "boolean",
       "default": false,
       "description": "Show other WireGuard profiles integration. This display setting does not connect or disconnect a VPN."
+    },
+    "quickActionsOrder": {
+      "type": "string",
+      "default": "file,text,clipboard",
+      "description": "Ordered optional quick action IDs. Configure add, remove and order in Plus Settings → Quick actions."
     }
   }
 }

@@ -4,6 +4,7 @@ import QtQuick.Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "../ActionCatalog.js" as Actions
 
 Column {
     id: root
@@ -37,33 +38,13 @@ Column {
                 id: actionSurface
                 required property string modelData
                 required property int index
-                readonly property string actionName: {
-                    if (modelData === "ring") return "Ring"
-                    if (modelData === "clipboard") return "Clipboard"
-                    if (modelData === "file") return (root.service && root.service.fileBusy) ? "Stop submitting" : "File"
-                    if (modelData === "sms") return "SMS"
-                    if (modelData === "ping") return "Ping"
-                    if (modelData === "text") return "Text"
-                    return modelData
-                }
-                readonly property string actionTooltip: {
-                    if (modelData === "ring") return "Ring device to locate it"
-                    if (modelData === "clipboard") return "Send clipboard to device"
-                    if (modelData === "file") return (root.service && root.service.fileBusy) ? "Click to cancel active file transfer" : "Choose and send file to device"
-                    if (modelData === "sms") return "Open SMS conversation app"
-                    if (modelData === "ping") return "Send ping notification"
-                    if (modelData === "text") return "Share text or link with device"
-                    return modelData
-                }
-                readonly property string actionIcon: {
-                    if (modelData === "ring") return "󰂚"
-                    if (modelData === "clipboard") return "󰅌"
-                    if (modelData === "file") return (root.service && root.service.fileBusy) ? "󰅖" : "󰈔"
-                    if (modelData === "sms") return "󰍦"
-                    if (modelData === "ping") return "󰵅"
-                    if (modelData === "text") return "󰌹"
-                    return ""
-                }
+                readonly property var catalogEntry: Actions.entry(modelData)
+                readonly property string actionName: modelData === "file" && root.service && root.service.fileBusy
+                    ? "Stop submitting" : catalogEntry ? catalogEntry.label : modelData
+                readonly property string actionTooltip: modelData === "file" && root.service && root.service.fileBusy
+                    ? "Cancel the current file submission" : catalogEntry ? catalogEntry.description : modelData
+                readonly property string actionIcon: modelData === "file" && root.service && root.service.fileBusy
+                    ? "󰅖" : catalogEntry ? catalogEntry.icon : ""
 
                 PanelToolTip {
                     visible: actionMouseArea.containsMouse
