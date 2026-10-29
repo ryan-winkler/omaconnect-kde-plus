@@ -16,8 +16,22 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      # Pinned Omarchy commit for bin/omarchy-plugin-validate; bump the SHA to follow upstream schema changes.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: basecamp/omarchy
+          ref: 225dcb80ef1ced9436f27eb34ff140659d3956dd
+          path: .omarchy-validator
+          persist-credentials: false
+          sparse-checkout: bin/omarchy-plugin-validate
+          sparse-checkout-cone-mode: false
+      - name: Provide the Omarchy plugin validator
+        run: |
+          mv .omarchy-validator "$RUNNER_TEMP/omarchy"
+          test -x "$RUNNER_TEMP/omarchy/bin/omarchy-plugin-validate"
+          echo "$RUNNER_TEMP/omarchy/bin" >> "$GITHUB_PATH"
       - name: Install test prerequisites
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-gi dbus nodejs ripgrep
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-gi dbus nodejs ripgrep jq
       - name: Test helpers and models
         run: PATH="/usr/bin:$PATH" ./scripts/validate.sh
       - name: Check local documentation links
@@ -26,4 +40,4 @@ jobs:
         if: always()
         run: |
           echo '### Scope of this job' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Fixtures use private temporary state and fake providers. Missing Omarchy manifest validation, QML tools and native runtime checks are reported as skipped. This job does not establish installed-bar, keyboard, assistive-technology, physical-device delivery or offsite acceptance.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Fixtures use private temporary state and fake providers. The Omarchy manifest validator comes from a pinned Omarchy commit. Missing QML tools and native runtime checks are reported as skipped. This job does not establish installed-bar, keyboard, assistive-technology, physical-device delivery or offsite acceptance.' >> "$GITHUB_STEP_SUMMARY"
