@@ -58,8 +58,8 @@ Checked items record administrative actions confirmed by the release task on 202
 - [ ] Open a real pull request after app access is set. Confirm a CodeRabbit review and configuration acceptance. If needed, comment `@coderabbitai review` on that PR. Record a link and outcome.
 - [x] Confirm Functional checks and both CodeQL jobs run on preparation revision `a5c3470`: all passed. Inspect native skips. Required branch checks and final release revision are recorded separately.
 - [ ] Confirm the issue chooser, forms, private security route, contributor links and release notes configuration work on GitHub after the rename.
-- [ ] Complete separately authorized installed-desktop and device checks. Report ARM, x86, fixture, physical receipt, keyboard and assistive-technology evidence separately.
-- [ ] Publish the reviewed version and source revision only after release gates pass. Automatic release notes can use `.github/release.yml`; they do not replace current known limits.
+- [x] Update and verify the published revision on ARM and x86 comparison installs. [Current verification](VERIFICATION.md) keeps mapped UI, fixtures, physical receipt and open AT/drag/away checks separate.
+- [x] Publish reviewed `v0.1.0` at `256d50c`. Release notes record actual checks and open acceptance limits. [Marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/13289) is open; maintainer review is separate.
 
 The GitHub CLI token available during preparation could not list user GitHub App installations (`GET /user/installations` returned 403). That is a token-capability limit, not proof that CodeRabbit is missing. An authorized browser/admin check or actual PR review is needed.
 
@@ -79,3 +79,10 @@ Official sources checked during preparation:
 - [Actions checkout](https://github.com/actions/checkout): official checkout action. The v7 ref was verified as `3d3c42e5aac5ba805825da76410c181273ba90b1`; the CodeQL v4 annotated tag resolved to `9b3254085494b55a0f7c4c2b3d2d52cc712ce370`.
 
 These service details can change. Recheck them at a later release rather than treating this dated inspection as a permanent service guarantee.
+
+
+Live setup receipt: main now requires the observed Functional, Analyze Python and
+Analyze Actions checks, PRs and conversation resolution. Main’s actual release
+checks passed `256d50c`; force pushes and branch deletion are disabled. CodeRabbit
+app access remains pending, with the official GitHub app page left for the owner.
+No paid service was enabled. See [current verification](VERIFICATION.md).

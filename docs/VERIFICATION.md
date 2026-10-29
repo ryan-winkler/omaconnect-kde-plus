@@ -1,7 +1,8 @@
 # Current verification — 29 October 2026
 
 Product: **Omaconnect KDE Plus 0.1.0**, stable ID `ryan.omaconnect`.
-Release preparation follows installed comparison revision `f8b3e11`.
+Published release: [`v0.1.0`](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0),
+commit `256d50c0c20b4bdfcef73e4111317679b817cb13`. Earlier comparison revision was `f8b3e11`.
 This file separates implementation checks, installed runtime, physical acceptance
 and publication. [Historical snapshots](VERIFICATION-HISTORY-2026-10-29.md) retain
 older observations; their blocked/staged status is superseded where shown here.
@@ -14,8 +15,8 @@ older observations; their blocked/staged status is superseded where shown here.
 | Migration | Native inline, legacy nested and string entries; output uses native inline settings. Exact rollback, conflict refusal and unrelated later edits covered. | Stages reviewed candidates only; no live apply. |
 | Daily action accessibility | Regression first failed on missing button role. Corrected native Button passes 24 actual Qt assertions: names/help, Tab, Enter, Space, accessible press, disabled refusal and Stop. | Offscreen component; no Orca acceptance claim. |
 | Settings and sharing UI | Native domains, six width/page captures, scrolling, back/close/Escape; drop/controller inspection; persistent Send window and explicit review. | External file-manager drag under the actual compositor is a separate owner check. |
-| Installed laptop, ARM | Original and fork enabled side by side by explicit owner request. `f8b3e11` source/runtime and native Settings checked. Appearance and connection preferences retained. | Release revision update is recorded separately. |
-| Installed desktop, x86_64 | Same comparison revision; mapped native Settings and shell ping confirmed after supported shell restart. Original source and layout retained. | Source checkout alone does not prove runtime reload. |
+| Installed laptop, ARM | Original and fork enabled side by side by explicit owner request. Published `256d50c` downloaded through native `omarchy plugin update`; supported shell restart, shell ping and mapped new Settings title confirmed. Appearance and connection preferences retained. | Original UI remains active beside the fork by owner request. |
+| Installed desktop, x86_64 | Published `256d50c` updated from the public repository; mapped new Settings and shell ping confirmed after supported shell restart. Original source, preferences, metadata and layout retained. | Source checkout alone does not prove runtime reload. |
 | Real phone receipt | One generated 109-byte text payload sent from the selected desktop to the owner-selected paired phone. Owner confirmed receipt, opening and matching check code. | One LAN text payload; not all types, multifile, empty file, cancellation or offsite acceptance. |
 | Ring incident | Laptop native Find my phone module was disabled/unloaded; Ping was separate and available. UI now gives native settings recovery instead of assuming support means readiness. | Native choice preserved. No automatic enable or audible Ring test. |
 | Network ownership | Independent Tailscale/BTH/WireGuard visibility switches; existing native owner/helper paths and source-scoped addresses covered. | No new VPN/profile/key/policy writer; no new away-network proof. |
@@ -47,8 +48,9 @@ See [native fixture scope](../tests/NATIVE-QA.md),
 - Assistive technology, RTL, scale 2 and reduced-motion acceptance remain open.
 - A command accepted by KDE Connect is not a delivered file or audible sound.
 - No new offsite transfer or fleet-wide network conclusion is claimed.
-- GitHub CI, CodeRabbit app access, public installation and marketplace state
-  need live receipts. A configuration file is not a completed external check.
+- CodeRabbit app access awaits the owner’s signed-in step; no completed bot review
+  is claimed. Marketplace submission awaits maintainer review. Hosted checks and
+  installed updates are confirmed below; neither implies those open checks passed.
 
 These limits stay in release notes. The fork does not advertise a new protocol,
 VPN provisioner, Quick Share engine, native plugin store or synchronization core.
@@ -83,3 +85,28 @@ reviewer agreement is claimed. See the outside report for snapshot and CLI limit
 The browser is signed out of GitHub, so CodeRabbit app access is awaiting the
 owner. Its configuration and explicit PR review request are present; no bot
 review has yet been observed. This does not block the independent local checks.
+
+
+### Publication and installed runtime
+
+Release `v0.1.0` is published from `256d50c`. Main-branch
+[Functional run](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/runs/40917326019)
+and [CodeQL run](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/runs/40917326011)
+passed that exact commit. Main requires the three observed fixture/analysis checks,
+pull requests and resolved conversations; force pushes and branch deletion are disabled.
+
+Both installed copies now track the public repository. Native update succeeded on
+ARM and x86_64. A supported shell restart replaced cached QML, then the new
+**Omaconnect KDE Plus Settings** window mapped on both hosts. Hash/readback checks
+preserved the original plugin, shell settings, bar entries, private appearance,
+saved-address metadata and the existing BTH helper. No provider mode change,
+permission toggle, pairing or real transfer ran during the update.
+
+The [marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/13289)
+is open. Listing approval belongs to marketplace maintainers. See that issue for
+current bot validation and exact-commit review state. Do not infer listing from
+submission or a retained approval label.
+
+All five in-app official provider-help URLs returned HTTP 200 at the release
+check. The local Markdown guide has a registered default viewer on the tested
+laptop. External services and desktop associations may change later.
