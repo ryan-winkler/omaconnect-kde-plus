@@ -14,7 +14,7 @@ Item {
         id: discoveryController
         panelOpened: root.panelOpened
         selectedDeviceId: controller.selectedDeviceId
-        onRefreshRequested: controller.refresh(false)
+        onRefreshRequested: controller.refresh(true)  // KDE only searches the network on --refresh.
     }
     Process {
         id: ownerPanel
