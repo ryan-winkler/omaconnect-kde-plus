@@ -17,7 +17,7 @@ KDE Connect owns pairing, its native modules and the device protocol. Existing n
 | Change connection guidance or address discovery | `components/NetworkOptions.qml`, `DiscoveryController.qml`, `DiscoveryModel.js`, `scripts/manage_addresses.py` | Opt-in sources, approval, input bounds and baseline preservation. |
 | Change home access | `BthControlCard.qml`, `BthControlModel.js` | Existing helper contract; requested mode and observed state stay distinct. |
 | Change settings navigation | `components/SettingsPanel.qml`, `scripts/network_preferences.py` | One home per domain, clear links to native settings, focus and narrow layouts. |
-| Add a provider or change a contract | [Contracts](docs/CONTRACTS.md), [domain map](docs/2026-10-29-contribution-architecture.md) | Discuss ownership and failure modes before implementation. |
+| Add a provider or change a contract | [Contracts](docs/CONTRACTS.md) | Discuss ownership and failure modes before implementation. |
 
 `good first issue` marks a bounded task with a useful starting point. `help wanted` marks work where another contributor can help. Maintainers should add a clear acceptance check before applying either label. You can ask for help before choosing a task.
 
@@ -34,7 +34,7 @@ Offer reusable fixes and enhancements to the project that owns the behavior when
 
 **Search before opening an issue or PR.** Check open and closed work in this fork and the owning upstream. If an existing proposal covers the behavior, link it and contribute relevant evidence or a focused follow-up there. Do not create a competing duplicate. Treat security reports through [SECURITY.md](SECURITY.md) and the affected upstream’s private reporting route first.
 
-The 29 October 2026 audit found existing upstream proposals for [plain-text device values (#32)](https://github.com/jitendradara12/omaconnect/pull/32), [structured D-Bus parsing and SMS input validation (#33)](https://github.com/jitendradara12/omaconnect/pull/33), and [per-script syntax checks and CI (#34)](https://github.com/jitendradara12/omaconnect/pull/34), all by [riccelso](https://github.com/riccelso). Reference these proposals instead of opening duplicates. Recheck their current state and the exact Plus boundary before adapting code; a broad upstream patch can change contracts that Plus must preserve.
+Existing upstream proposals cover [plain-text device values (#32)](https://github.com/jitendradara12/omaconnect/pull/32), [structured D-Bus parsing and SMS input validation (#33)](https://github.com/jitendradara12/omaconnect/pull/33), and [per-script syntax checks and CI (#34)](https://github.com/jitendradara12/omaconnect/pull/34), all by [riccelso](https://github.com/riccelso). Reference these proposals instead of opening duplicates. Recheck their current state and the exact Plus boundary before adapting code; a broad upstream patch can change contracts that Plus must preserve.
 
 For each contribution:
 
@@ -48,14 +48,14 @@ For a bounded contributor task, use the [task form](https://github.com/ryan-wink
 
 ## Make the change
 
-1. Read [AGENTS.md](AGENTS.md) and the owning domain above.
+1. Read the owning domain above. AI coding agents also follow [AGENTS.md](AGENTS.md).
 2. For a behavior defect, add a focused check that fails for the reported case. Use owned temporary state and fake services.
 3. Make the smallest complete change. Reuse platform controls and existing domain helpers.
 4. Run `./scripts/validate.sh` and `python3 .github/check_doc_links.py`. Report missing prerequisites and skipped checks.
 5. Update the relevant contract and [help map](docs/HELP.md). Each feature needs nearby helper text or a direct documentation link.
 6. Open a pull request. State the problem, resulting behavior, checks and open device/UI checks.
 
-Small documentation and focused bug fixes can go directly to a PR. For a new provider, public schema, native-module installer or major navigation change, open a feature issue first. This avoids duplicate work and protects the existing boundaries. See the [settings decision](docs/2026-10-29-settings-rice-personas.md) before proposing a second KDE plugin manager.
+Small documentation and focused bug fixes can go directly to a PR. For a new provider, public schema, native-module installer or major navigation change, open a feature issue first. This avoids duplicate work and protects the existing boundaries. Native KDE Plugin Settings stays the one place to enable modules; do not add a second plugin manager.
 
 The stable plugin ID is `Omaconnect.plus`. Do not change it after release: Omarchy registers plugins by manifest ID, and `omarchy plugin update` cannot rename an installed plugin, so a new ID would drop users' bar placement, settings and private metadata. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
 
@@ -69,14 +69,15 @@ Do not make automated checks install a plugin, restart the shell, change VPN mod
 
 - Use plain English, short instructions and stable domain names. Explain disabled controls. State must have words as well as color.
 - Keep remote names and user text plain. Use fixed argument arrays and bounded input/output.
-- Keep appearance, address hints and pairing trust separate. Do not duplicate the UniFi collector or add another protocol daemon.
+- Keep appearance, address hints and pairing trust separate. Do not add another protocol daemon or router collector.
 - Include no credentials, private configurations, raw device inventories or personal receipts. Use small invented examples.
-- Record asset sources and licenses. Preserve [MIT attribution](LICENSE) and [upstream lineage](FORK.md).
+- Record asset sources and licenses. Preserve [MIT attribution](LICENSE) and [authors](AUTHORS.md).
 - Keep one behavior or extraction per change. Avoid unrelated moves and speculative dependencies.
+- Keep docs for users and contributors only. Put results, reviews and plans in the PR description, not in new files. Update an existing guide before adding one, and record user-visible changes in [CHANGELOG.md](CHANGELOG.md).
 
 Use `git commit -s` for new contributions when possible. This adds a Developer Certificate of Origin sign-off; it does not transfer your copyright. Read [DCO 1.1](https://developercertificate.org/) before signing. We do not require contributors to rewrite inherited history or install a separate DCO app.
 
-CodeRabbit can provide an additional review when its GitHub app has repository access. Its comments do not replace maintainer review, tests or device evidence. See [release and contributor checks](docs/contributor-release-plan.md) for setup status and limits.
+CodeRabbit can provide an additional review when its GitHub app has repository access. Its comments do not replace maintainer review, tests or device evidence.
 
 ## Add a feature or setting
 
