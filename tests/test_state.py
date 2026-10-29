@@ -2027,10 +2027,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("sudo pacman", device_section)
     self.assertIn("sudo ufw", device_section)
 
-    action_toolbar = (ROOT / "components" / "ActionToolbar.qml").read_text()
-    self.assertIn("PanelToolTip", action_toolbar)
-    self.assertIn("actionTooltip", action_toolbar)
-    self.assertIn("id: actionMouseArea", action_toolbar)
+    # Daily toolbar help/focus/activation is verified with the actual native
+    # component in test_action_toolbar_accessibility, not a MouseArea spelling.
 
   def test_media_player_qml_contracts_and_components(self):
     controller_source = (ROOT / "KdeConnectController.qml").read_text()

@@ -1,0 +1,27 @@
+name: Accessibility or cognitive friction
+description: Report a barrier with wording, focus, layout, motion or interaction.
+title: "[Accessibility]: "
+labels: [accessibility, ux, triage]
+body:
+  - type: markdown
+    attributes:
+      value: "You do not need to disclose a diagnosis. Describe the task and barrier. Remove private information from screenshots and examples."
+  - type: textarea
+    id: barrier
+    attributes:
+      label: What blocked or confused you?
+      description: State the task, where the barrier appeared and its effect.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What would let you complete the task?
+      description: A desired result is enough. You do not need to propose a design.
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Optional setup or evidence
+      description: For example keyboard use, screen reader, scaling or a small screenshot. Share only what helps explain the barrier.

@@ -1,11 +1,17 @@
-# OmaConnect Plus
+# Omaconnect KDE Plus
 
-An isolated Omarchy UI fork of [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect).
+An Omarchy bar UI fork of [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect), built on [KDE Connect](https://kdeconnect.kde.org/).
 
-**Candidate version: 0.1.0-alpha.1.** The fork adds one place for known devices,
+Jitendra’s plugin and KDE Connect are the upstream foundations. We retain their
+credit, follow their interfaces, and aim to contribute reusable fixes back.
+This is an independent community fork. See [lineage and licenses](FORK.md).
+
+**Version 0.1.0.** The fork adds one place for known devices,
 file submission, appearance and network access through **Tailscale, MikroTik Back
 to Home, or WireGuard**. KDE Connect owns pairing and transfers. Existing native
 network tools retain connection ownership; the BTH helper retains its policy.
+
+![Native settings with invented sample device data](preview.png)
 
 ## First release
 
@@ -68,9 +74,49 @@ Its absolute path is configurable in plugin settings; an empty setting uses
 
 This branch uses plugin ID `ryan.omaconnect`. It can be staged separately from
 `omaconnect`. **No installation or activation occurs from the tests or checkout.**
-Read [migration and recovery](docs/MIGRATION.md) before an eventual activation.
+Read [migration and recovery](docs/MIGRATION.md) before moving existing settings.
 
-## Verify the candidate
+## Install and open
+
+Requirements: an existing Omarchy shell, `kdeconnect`, `python`, `python-gobject`
+and a working desktop file portal. Omarchy supplies Quickshell and its UI kit.
+Install missing packages through the supported package command:
+
+```bash
+omarchy pkg add kdeconnect python python-gobject
+omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --enable
+```
+
+The native installer asks for approval and bar placement. It reads the root
+manifest; it does not run a repository install script. Open the new bar icon,
+select **All KDE Connect features** and pair your device in native KDE Connect.
+Open **Settings** for appearance, connections, quick actions and device features.
+Use the [task guide](docs/HELP.md) for each control and its owner documentation.
+
+If you use the original OmaConnect, keep it for comparison or disable its UI after
+review: `omarchy plugin disable omaconnect`. Pairings stay in KDE Connect. Read
+[migration and recovery](docs/MIGRATION.md) before moving existing display settings.
+
+## Update, disable and remove
+
+```bash
+omarchy plugin update ryan.omaconnect
+omarchy plugin disable ryan.omaconnect
+omarchy plugin remove ryan.omaconnect
+```
+
+Use **enable**, **disable** or **remove** only for the action you want. Removal
+uses Omarchy’s confirmation flow. It does not remove KDE pairings, providers or
+private Plus metadata. Appearance assets and approved-address records stay under
+`~/.config/ryan.omaconnect/` and `~/.local/share/ryan.omaconnect/`
+unless you explicitly remove them. XDG overrides are supported. See the
+[icon storage guide](docs/ICONS.md) for exact paths and backup scope.
+
+For rollback, disable the fork and re-enable `omaconnect` if still installed.
+The migration helper prepares a reviewed rollback candidate and preserves later
+unrelated edits; it never applies an old full configuration over your active one.
+
+## Verify locally
 
 ```bash
 ./scripts/validate.sh
@@ -105,3 +151,13 @@ an atomic file handoff or an end-to-end delivery receipt.
 
 MIT license. Preserve upstream and reused Bananet notices. See `LICENSE` and the
 notice in `BthControlCard.qml`.
+
+## Help, contributions and reporting
+
+Contributions are welcome: code, documentation, design, accessibility and device
+checks. Start with [CONTRIBUTING.md](CONTRIBUTING.md). Use the
+[issue chooser](https://github.com/ryan-winkler/omaconnect-kde-plus/issues/new/choose)
+for defects, ideas and questions, or read [SUPPORT.md](SUPPORT.md).
+Report vulnerabilities privately through [SECURITY.md](SECURITY.md).
+See the [code of conduct](CODE_OF_CONDUCT.md), [review checks](docs/contributor-release-plan.md)
+and [50-persona/red-team review](docs/release-personas-red-blue.md).

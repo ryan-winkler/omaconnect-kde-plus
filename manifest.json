@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "id": "ryan.omaconnect",
-  "name": "OmaConnect Plus",
-  "version": "0.1.0-alpha.1",
+  "name": "Omaconnect KDE Plus",
+  "version": "0.1.0",
   "author": "Ryan Winkler; based on Jitendra Dara’s OmaConnect",
-  "description": "Known-device sharing, appearance and home access over existing KDE Connect and BTH controllers.",
+  "description": "KDE Connect device actions, file sharing, custom icons and optional Tailscale, MikroTik Back to Home and WireGuard views for Omarchy.",
   "license": "MIT",
-  "homepage": "https://github.com/ryan-winkler/omaconnect",
-  "repository": "https://github.com/ryan-winkler/omaconnect",
+  "homepage": "https://github.com/ryan-winkler/omaconnect-kde-plus",
+  "repository": "https://github.com/ryan-winkler/omaconnect-kde-plus",
   "kinds": [
     "service",
     "bar-widget"
@@ -17,7 +17,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "OmaConnect Plus",
+    "displayName": "Omaconnect KDE Plus",
     "description": "Devices, file submission, appearance and existing home-access controls",
     "category": "Productivity",
     "allowMultiple": false,

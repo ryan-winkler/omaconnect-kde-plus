@@ -1,0 +1,49 @@
+name: Bug report
+description: Explain a task that does not work as expected.
+title: "[Bug]: "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: "Use invented examples. Remove names, device IDs, addresses, private paths, tokens and keys. For a vulnerability, use SECURITY.md instead. You do not need to know the cause."
+  - type: textarea
+    id: task
+    attributes:
+      label: What were you trying to do?
+      placeholder: Open Devices, select a paired phone, then choose Send files.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and result
+      description: Give the smallest steps you can. State the expected result and what happened.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Not sure
+        - Devices and native features
+        - Quick actions
+        - File selection, drop or sending
+        - Appearance and icons
+        - Connections and home access
+        - Addresses and discovery
+        - Syncthing handoff
+        - Installation, update or recovery
+        - Help or documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version and desktop
+      description: Plugin version or commit; Omarchy version; ARM or x86. Leave unknown parts out.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Optional evidence
+      description: Add a small redacted screenshot or error. If relevant, does the same action work in native KDE Connect? Do not post raw configuration or inventories.

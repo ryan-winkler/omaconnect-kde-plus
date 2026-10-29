@@ -1,157 +1,69 @@
-# Candidate verification — 29 October 2026
+# Current verification — 29 October 2026
 
-## Current dedicated Settings / drop / comparison follow-up
+Product: **Omaconnect KDE Plus 0.1.0**, stable ID `ryan.omaconnect`.
+Release preparation follows installed comparison revision `f8b3e11`.
+This file separates implementation checks, installed runtime, physical acceptance
+and publication. [Historical snapshots](VERIFICATION-HISTORY-2026-10-29.md) retain
+older observations; their blocked/staged status is superseded where shown here.
 
-**155 Python tests and all three JS suites pass.** The native Settings window,
-provider preferences, searchable feature view, persistent Send window, drop review
-and Ring readiness guard are integrated. See the settings review and new SP01–SP50
-RICE audit. The earlier counts below are dated snapshots. Live comparison
-installation is explicitly authorized on both computers, with original retained.
+## Current evidence
 
+| Boundary | Evidence | Limit |
+| --- | --- | --- |
+| ARM helper/model/UI fixtures | Final integrated preparation: 164 Python tests and three JS suites pass; manifest validation, shell syntax and local Markdown targets pass. | Private temporary state and fake providers. |
+| Migration | Native inline, legacy nested and string entries; output uses native inline settings. Exact rollback, conflict refusal and unrelated later edits covered. | Stages reviewed candidates only; no live apply. |
+| Daily action accessibility | Regression first failed on missing button role. Corrected native Button passes 24 actual Qt assertions: names/help, Tab, Enter, Space, accessible press, disabled refusal and Stop. | Offscreen component; no Orca acceptance claim. |
+| Settings and sharing UI | Native domains, six width/page captures, scrolling, back/close/Escape; drop/controller inspection; persistent Send window and explicit review. | External file-manager drag under the actual compositor is a separate owner check. |
+| Installed laptop, ARM | Original and fork enabled side by side by explicit owner request. `f8b3e11` source/runtime and native Settings checked. Appearance and connection preferences retained. | Release revision update is recorded separately. |
+| Installed desktop, x86_64 | Same comparison revision; mapped native Settings and shell ping confirmed after supported shell restart. Original source and layout retained. | Source checkout alone does not prove runtime reload. |
+| Real phone receipt | One generated 109-byte text payload sent from the selected desktop to the owner-selected paired phone. Owner confirmed receipt, opening and matching check code. | One LAN text payload; not all types, multifile, empty file, cancellation or offsite acceptance. |
+| Ring incident | Laptop native Find my phone module was disabled/unloaded; Ping was separate and available. UI now gives native settings recovery instead of assuming support means readiness. | Native choice preserved. No automatic enable or audible Ring test. |
+| Network ownership | Independent Tailscale/BTH/WireGuard visibility switches; existing native owner/helper paths and source-scoped addresses covered. | No new VPN/profile/key/policy writer; no new away-network proof. |
+| Help | Each user-facing feature has nearby guidance or a direct owner/task-guide link. Display preferences and persistent field labels included. | Remote help services may change; source links are fixed official URLs. |
+| Reviews | Exactly 50 new synthetic RP journeys and 13 red/blue challenges; three reproduced helper defects fixed; outside review recorded separately. | Synthetic review is not research with 50 people or a security certification. |
 
-## Current icon, native-feature and network follow-up
+## Reproduce local checks
 
-**141 Python tests and all three JavaScript suites pass.** Shell syntax and the
-installed Omarchy manifest validator pass. QML lint succeeds with known host/
-unqualified-access diagnostics; it is not warning-free. Actual native QML loads
-both new components without TypeError/ReferenceError in the isolated fixtures.
+```bash
+./scripts/validate.sh
+python3 .github/check_doc_links.py
+```
 
-- Appearance: 13 checks, including distinct rendered preset fallbacks, visible
-  choices, saved drafts, operation-error priority and late-import invalidation.
-- Native feature boundary: four checks cover full/third-party IDs, optional loaded
-  state, sender/receiver directions and strict selected-device launcher arguments.
-- Network coverage: seven checks cover Tailscale source-scoped CGNAT, add/readback/
-  auto/remove, fixed native-owner routes, unavailable owners and unchanged policy.
-- Keyboard: actual Qt key-event fixture now passes **29 assertions**, including
-  native feature entry/details, Tailscale/WireGuard owner-button focus, BTH,
-  addresses and Syncthing. Owner buttons are focused, not launched.
-- Intended desktop **Kintsugi, x86_64**: updated candidate passes **32 native
-  assertions** with the actual installed KeyboardPanel and current Wayland socket.
-  All providers/actions/state are private fakes. Seven protected installed files
-  retain their hashes. The standard plugin remains active; no fork activation.
-  Nonfatal sandbox Wayland text-input warnings were observed. This does not prove
-  live pointer/focus or assistive-technology acceptance.
+The runner uses a temporary HOME/XDG/runtime, private D-Bus sessions, fake providers
+and offscreen rendering. It unsets host display/session state. Missing native
+prerequisites are explicit skips. QML lint has known host-import/unqualified-type
+warnings; a successful run is not warning-free lint. Hosted Ubuntu CI lacks the
+full Omarchy native runtime and must report that gap.
 
-The separate review found one launch-success wording issue, now corrected to
-“launch requested”; no blocking finding remains. Exactly 50 unique synthetic
-persona scenarios were checked. Claude and Antigravity each completed independent
-initial and scope-addendum reviews; recommendations were source-checked, with
-incorrect loaded/disabled and glyph claims rejected. See the decision ledger.
+See [native fixture scope](../tests/NATIVE-QA.md),
+[helper security review](release-security-qa.md),
+[50-persona/red-blue review](release-personas-red-blue.md), and
+[contributor/release checks](contributor-release-plan.md).
 
-New native owner launches, real pointer/AT, scale/RTL and away-network transfers
-remain untested. The earlier owner-confirmed phone payload below is valid evidence
-for that payload only. No real send was repeated during this follow-up. Logs and
-machine-readable receipts are in the adjacent desktop-validation and
-ux-contribution-audit delivery folders. The committed source stays isolated.
+## Acceptance limits
 
-## Earlier first-release receipt
+- External file-manager drag on both actual desktops awaits owner acceptance.
+- Assistive technology, RTL, scale 2 and reduced-motion acceptance remain open.
+- A command accepted by KDE Connect is not a delivered file or audible sound.
+- No new offsite transfer or fleet-wide network conclusion is claimed.
+- GitHub CI, CodeRabbit app access, public installation and marketplace state
+  need live receipts. A configuration file is not a completed external check.
 
-Local full-run result: **124 Python tests passed**, all three JavaScript suites
-passed (including 18 BTH/discovery checks), manifest validation and shell syntax
-passed. Quickshell 0.3.2 ran the native fixtures. QML lint returned success with
-host-import/type diagnostics; this is not a warning-free lint claim. The native
-integration fixture passed 31 runtime assertions without TypeError/ReferenceError.
-Seven protected installed source/config/helper files retained their starting
-hashes. This result applies to the isolated ARM candidate and synthetic providers.
+These limits stay in release notes. The fork does not advertise a new protocol,
+VPN provisioner, Quick Share engine, native plugin store or synchronization core.
 
-Status: first-release implementation candidate. No installed activation, real
-transfer, VPN-mode change or router/UniFi change is part of this receipt.
+## Final release receipt
 
-## Runnable evidence
+The integrated preparation command completed successfully on 29 October 2026:
+164 Python tests, all three JS suites, native manifest validation, shell syntax,
+and the local Markdown target gate. Six native Settings captures at widths 520
+and 720 show readable labels and bounded scrolling. The updated appearance page
+shows its helper text and installed task-guide link. Native provider actions were
+substituted in fixtures. QML lint warnings remain as described above.
 
-`./scripts/validate.sh` runs all Python tests, the actual JS model checks, shell
-syntax, the installed Omarchy manifest validator and QML lint when available.
-The runner uses a temporary HOME/XDG/runtime, no host display and a private session
-bus. Optional native prerequisites cause explicit skips; inspect the final test
-summary before making a claim. CI runs this same command and has no native Omarchy
-runtime by default.
-
-Focused suites cover:
-
-- Portal multiselect/cancel over private D-Bus, inspected real temporary regular
-  files and unsupported/folder/FIFO/changed/oversized sources.
-- Actual transfer JS/controller functions and fake CLI accepted, failed,
-  ambiguous timeout and after-invocation cancellation outcomes.
-- Appearance storage, stable identity, alias validation, concurrent writes,
-  corrupt-state preservation, image import/rejection and Syncthing link metadata.
-- BTH strict status, fixed commands, unsafe/unknown/missing cases, intent versus
-  actual state and helper-path drift.
-- Private address validation, baseline preservation, merge/readback conflicts,
-  four concurrent writers, real busctl against private fake KDE and native
-  queue/close-disable behavior with owned helpers.
-- Native/ryan.bar/tray migration, icon semantics, private staging and rollback
-  conflicts that preserve unrelated later edits.
-- Native QML component/control integration: actual Service, BarWidget, Panel,
-  facade bridge, tabs, chooser Apply/Cancel/reload, aliases, portal review,
-  explicit Send, fixed recipient, sequential requests, delivery-unknown activity,
-  cancellation and unconfirmed owner-panel opening. See [native QA details](../tests/NATIVE-QA.md).
-
-## Platform limitation
-
-Qt offscreen has no native Quickshell PanelWindow backend. The integration fixture
-substitutes only the KeyboardPanel hosting boundary. Actual product components and
-UI logic run unchanged in that fixture. It asserts no TypeError/ReferenceError or
-configuration-load error. It is not a mapped desktop screenshot or an end-to-end
-keyboard/assistive-technology test.
-
-A separate CPU-only headless Hyprland attempt could not start a Wayland socket.
-The isolated compositor reported backend creation failure; a mandatory-headless
-Aquamarine probe reported no allocator. No host display/GPU or installed settings
-were used to bypass this limit.
-
-## Open acceptance gates
-
-| Gate | Status |
-| --- | --- |
-| ARM native helper/model/UI logic fixtures | Run by the documented local validation command |
-| Genuine PanelWindow mapping and compositor focus | Blocked by isolated compositor prerequisite |
-| Native and replacement-bar activation | Not run; installed desktop preserved |
-| x86_64 native UI | Not run |
-| Linux/Android physical payload and zero-byte delivery | Not run |
-| Offsite BTH and phone-away / desktop-LAN pairing | Not run |
-| Scale 2, RTL, reduced motion and assistive technology | Not accepted; basic names/plain text/focus controls implemented |
-| Release publication | Not performed |
-
-A successful CLI request does not close the delivery gate. A successful helper
-status does not prove a VPN handshake, service reachability or fleet acceptance.
-
-## Current desktop session — 29 October 2026
-
-The owner subsequently authorized validation on this desktop. Live identity is
-asahi-omarchy/aarch64. The explicit desktop test uses the current Wayland socket,
-the original native KeyboardPanel and existing GPU renderer with private sample
-providers. It passes 32 runtime assertions and opens the genuine PanelWindow.
-The former offscreen backend limit therefore no longer blocks this host's native
-window smoke test. Installed-bar activation, manual focus/AT/scaling and physical
-payload acceptance remain separate. No installation or BTH transition ran.
-
-Read-only provider preflight: existing BTH status is valid, Automatic/inactive,
-with no pending error (normal HOME metadata). KDE daemon/CLI and portal FileChooser
-v4 respond. Syncshell is installed with one observed core. At preflight there were
-zero paired/reachable KDE recipients; the owner chose their phone for a subsequent
-real transfer check. Test submission acknowledgement alone is not delivery proof.
-
-### Intended desktop and real phone check
-
-The owner clarified that ubiquitous/Kintsugi, paired with Leica 17, was the intended
-desktop. The existing pinned `desktop` SSH connection verified Kintsugi/x86_64.
-A private source staging directory on that host passed all 124 Python tests, all
-three JS suites, the installed manifest validator and shell syntax. Its explicit
-Wayland test passed 32 assertions using the original native KeyboardPanel and GPU.
-Standard OmaConnect remained installed and connected; its seven protected
-source/config/helper files retained their starting hashes.
-
-The fork's actual one-shot submission helper sent a generated 109-byte text file
-to the explicitly selected, paired and reachable Leica 17. The helper reported
-request_accepted. The owner then confirmed reception, opening and the matching
-unique check code. This establishes one real text payload on this LAN; it does
-not establish every file type, zero-byte/multifile delivery, cancellation or away
-reachability. No second live candidate UI watcher or protocol daemon was started.
-
-BTH's direct SSH status reported not-preauthorized. The same read-only command
-through the existing native user-session manager reported nm_control=true,
-Automatic/inactive, no pending state and no error. This was an SSH authorization
-context limit. No policy/profile/VPN-mode change was needed or performed.
-
-The candidate is still staged separately. Installed bar replacement, actual
-keyboard/pointer/AT interaction and offsite validation remain open.
+The public fork has been renamed with history retained. Issues, Discussions,
+private reporting, Dependabot alerts, secret scanning and push protection are
+enabled; 16 labels and relevant topics are applied. Default CodeQL setup is not
+configured, so the supplied advanced workflow will be the only CodeQL setup.
+App access, actual hosted checks, installed release update and catalog submission
+remain separate receipts. No pending item above is implicitly accepted.

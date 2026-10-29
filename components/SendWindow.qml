@@ -18,7 +18,7 @@ Window {
         && service.selectionState !== "choosing" && service.selectionState !== "draft"
         && (!service.selection || service.selection.length === 0))
     signal returnToPanelRequested()
-    title: "OmaConnect Plus — Send files"
+    title: "Omaconnect KDE Plus — Send files"
     transientParent: null
     flags: Qt.Window
     width: 620

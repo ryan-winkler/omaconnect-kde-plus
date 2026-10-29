@@ -91,6 +91,15 @@ Column {
         spacing: Style.space(6)
 
         Text {
+            width: parent.width
+            text: "Commands run on the selected device. Add or edit them in that device’s KDE Connect Run commands settings."
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+        }
+        Text {
             textFormat: Text.PlainText
             visible: !!root.service && root.service.commandsLoading
             text: "Loading commands..."

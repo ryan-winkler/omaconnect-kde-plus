@@ -1,0 +1,18 @@
+changelog:
+  exclude:
+    labels: [duplicate, invalid, wontfix]
+  categories:
+    - title: Security
+      labels: [security]
+    - title: Fixes
+      labels: [bug]
+    - title: Accessibility and usability
+      labels: [accessibility, ux]
+    - title: Features
+      labels: [enhancement]
+    - title: Documentation
+      labels: [documentation]
+    - title: Maintenance
+      labels: [ci, dependencies]
+    - title: Other changes
+      labels: ["*"]

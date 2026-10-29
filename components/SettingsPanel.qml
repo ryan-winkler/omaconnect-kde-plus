@@ -18,7 +18,7 @@ Window {
     signal returnToPanelRequested()
     signal closed()
 
-    title: "OmaConnect Plus Settings"
+    title: "Omaconnect KDE Plus Settings"
     objectName: "omaconnect-settings-window"
     width: 720
     height: 640
@@ -70,7 +70,7 @@ Window {
             spacing: Style.space(12)
             Text {
                 width: parent.width - closeButton.width - parent.spacing
-                text: "OmaConnect Plus Settings"
+                text: "Omaconnect KDE Plus Settings"
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
@@ -201,7 +201,7 @@ Window {
                         PreferenceControls {
                             width: parent.width
                             panel: root.panel
-                            preferences: [{key: "showBarBattery", label: "Show battery beside the bar icon", defaultValue: false}]
+                            preferences: [{key: "showBarBattery", label: "Show battery beside the bar icon", defaultValue: false, description: "Show the selected device’s reported charge beside the icon. Devices without a battery report show no percentage."}]
                         }
                     }
                     Column {
@@ -223,7 +223,7 @@ Window {
                         PreferenceControls {
                             width: parent.width
                             panel: root.panel
-                            preferences: [{key: "defaultPingMessage", label: "Default ping message", defaultValue: "", type: "string"}]
+                            preferences: [{key: "defaultPingMessage", label: "Default ping message", defaultValue: "", type: "string", description: "Prefill the Ping draft. You can edit it before sending. Ping shows a notification; Ring requests a sound."}]
                         }
                     }
                     Column {
@@ -244,12 +244,21 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
-                                {key: "showBatteryStats", label: "Show battery details", defaultValue: true},
-                                {key: "showNetworkStats", label: "Show cellular connection details", defaultValue: true},
-                                {key: "showMediaPlayer", label: "Show media controls", defaultValue: true},
-                                {key: "showRemoteCommands", label: "Show remote commands", defaultValue: true}
+                                {key: "showBatteryStats", label: "Show battery details", defaultValue: true, description: "Show charge and charging state when the selected device reports them."},
+                                {key: "showNetworkStats", label: "Show cellular connection details", defaultValue: true, description: "Show the device’s reported cellular type and signal. This does not describe Wi-Fi or VPN reachability."},
+                                {key: "showMediaPlayer", label: "Show media controls", defaultValue: true, description: "Control a reported media player on the selected device. Open Media in Devices to choose a player."},
+                                {key: "showRemoteCommands", label: "Show remote commands", defaultValue: true, description: "Show commands configured on the selected device. Use that device’s KDE Connect Run commands settings to add or edit them."}
                             ]
                         }
+                    }
+                    Kit.Button {
+                        width: parent.width
+                        text: "Help with " + root.currentPage.toLowerCase() + " ↗"
+                        Accessible.name: "Open the installed task guide for " + root.currentPage.toLowerCase()
+                        Accessible.description: "Opens local documentation in your default viewer."
+                        focusable: true
+                        foreground: Commons.Color.popups.text
+                        onClicked: Qt.openUrlExternally(Qt.resolvedUrl("../docs/HELP.md"))
                     }
                     Item { width: 1; height: Style.space(4) }
                 }

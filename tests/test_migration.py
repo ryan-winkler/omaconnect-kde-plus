@@ -27,8 +27,8 @@ class Migration(unittest.TestCase):
             self.assertEqual(entry["id"], "ryan.omaconnect")
             self.assertEqual(result["bar"]["id"], bar)
             self.assertEqual(result["bar"]["layout"]["right"][::2], ["tray", "power"])
-            self.assertFalse(entry["settings"]["showTailscale"])
-            self.assertFalse(entry["settings"]["showTroubleshooting"])
+            self.assertFalse(entry["showTailscale"])
+            self.assertFalse(entry["showTroubleshooting"])
             self.assertEqual(appearance["bar_icon"]["mode"], "automatic")
             self.assertNotIn("DO_NOT_SNAPSHOT", json.dumps(snapshot))
             self.assertEqual(M.rollback(result, snapshot), original)
@@ -62,12 +62,12 @@ class Migration(unittest.TestCase):
         candidate, snapshot, _ = M.prepare(original)
         candidate["plugins"][0]["settings"]["later"] = True
         candidate["bar"]["layout"]["left"].append("new-widget")
-        candidate["bar"]["layout"]["right"][1]["settings"]["later_fork_setting"] = True
+        candidate["bar"]["layout"]["right"][1]["later_fork_setting"] = True
         result = M.rollback(candidate, snapshot)
         self.assertTrue(result["plugins"][0]["settings"]["later"])
         self.assertIn("new-widget", result["bar"]["layout"]["left"])
         self.assertTrue(result["bar"]["layout"]["right"][1]["settings"]["later_fork_setting"])
-        candidate["bar"]["layout"]["right"][1]["settings"]["showBatteryStats"] = True
+        candidate["bar"]["layout"]["right"][1]["showBatteryStats"] = True
         with self.assertRaisesRegex(M.MigrationError, "conflict"):
             M.rollback(candidate, snapshot)
 

@@ -31,6 +31,14 @@ Column {
         color: Commons.Color.popups.text
         font.pixelSize: Style.font.caption
     }
+    Text {
+        width: parent.width
+        text: "Syncthing device ID"
+        textFormat: Text.PlainText
+        color: Commons.Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
+    }
     Controls.TextField {
         id: syncthingId
         width: parent.width

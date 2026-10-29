@@ -138,7 +138,7 @@ Column {
     Text {
         width: parent.width
         visible: root.order.length === 0
-        text: "No quick actions are selected. Add one below. Native KDE features remain available in Settings."
+        text: "No quick actions are selected. Choose an action above, then Add. Native KDE features remain available in Settings."
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family

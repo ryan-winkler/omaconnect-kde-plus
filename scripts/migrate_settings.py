@@ -51,12 +51,21 @@ def entries_at(config, location):
     return config["bar"]["layout"][location["section"]] if location["kind"] == "bar" else config["plugins"]
 
 
-def settings(entry):
+def source_shape(entry):
     if isinstance(entry, str):
-        return {}
-    if not isinstance(entry, dict) or set(entry) - {"id", "settings"}:
+        return "string"
+    if not isinstance(entry, dict):
         raise MigrationError("entry-needs-review")
-    value = entry.get("settings", {})
+    if "settings" in entry:
+        if set(entry) - {"id", "settings"}:
+            raise MigrationError("entry-needs-review")
+        return "nested"
+    return "inline"
+
+
+def settings(entry):
+    shape = source_shape(entry)
+    value = {} if shape == "string" else entry.get("settings", {}) if shape == "nested" else {k:v for k,v in entry.items() if k != "id"}
     if not isinstance(value, dict) or set(value) - ALLOWED:
         raise MigrationError("settings-need-review")
     for key, item in value.items():
@@ -65,6 +74,14 @@ def settings(entry):
         if key == "defaultPingMessage" and (not isinstance(item, str) or len(item) > 4096 or any(ord(c) < 32 and c not in "\n\t" for c in item)):
             raise MigrationError("settings-invalid")
     return dict(value)
+
+
+def legacy_actions(before):
+    # Preserve the old toolbar's visible membership and order as explicit data.
+    values = [("ring", "showActionRing", True), ("clipboard", "showActionClipboard", True),
+              ("file", "showActionFile", True), ("sms", "showActionSms", True),
+              ("ping", "showActionPing", False), ("text", "showActionText", True)]
+    return ",".join(action for action, key, default in values if before.get(key, default))
 
 
 def set_disabled(config, target, disabled):
@@ -86,15 +103,17 @@ def prepare(config):
     if not isinstance(disabled, list) or len(disabled) != len(set(disabled)):
         raise MigrationError("disabled-list-invalid")
     snapshot = {"schema_version":1, "old_id":OLD, "new_id":NEW, "entries":[], "bindings":[], "disabled_present":"disabledPlugins" in config,
-        "old_disabled":OLD in disabled, "new_disabled":NEW in disabled}
+        "old_disabled":OLD in disabled, "new_disabled":NEW in disabled,
+        "disabled_positions":{key:disabled.index(key) for key in (OLD, NEW) if key in disabled}}
     legacy_icon = True
     for loc in reversed(found):
         source = entries_at(config, loc)[loc["index"]]
         before = settings(source)
-        after = {k:v for k,v in before.items() if k != "showDeviceTypeIcons"}
-        after.update(showTailscale=False, showTroubleshooting=False)
-        entries_at(result, loc)[loc["index"]] = {"id":NEW, "settings":after}
-        snapshot["entries"].append(dict(loc, was_string=isinstance(source,str), settings_present=isinstance(source,dict) and "settings" in source, before=dict(before), after=dict(after)))
+        after = {k:v for k,v in before.items() if k != "showDeviceTypeIcons" and not k.startswith("showAction")}
+        after.update(showTailscale=False, showTroubleshooting=False, quickActionsOrder=legacy_actions(before))
+        # Registry reads native bar/service entry settings inline, not under settings.
+        entries_at(result, loc)[loc["index"]] = dict(after, id=NEW)
+        snapshot["entries"].append(dict(loc, source_shape=source_shape(source), target_shape="inline", was_string=isinstance(source,str), settings_present=isinstance(source,dict) and "settings" in source, before=dict(before), after=dict(after)))
         if "showDeviceTypeIcons" in before:
             legacy_icon = before["showDeviceTypeIcons"]
     set_disabled(result, OLD, True)
@@ -105,32 +124,44 @@ def prepare(config):
 
 
 def rollback(config, snapshot):
-    if not isinstance(snapshot, dict) or snapshot.get("schema_version") != 1 or snapshot.get("old_id") != OLD or snapshot.get("new_id") != NEW:
+    if not isinstance(snapshot, dict) or type(snapshot.get("schema_version")) is not int or snapshot.get("schema_version") != 1 or snapshot.get("old_id") != OLD or snapshot.get("new_id") != NEW:
         raise MigrationError("snapshot-invalid")
     result = copy.deepcopy(config)
     try:
         for receipt in snapshot["entries"]:
             entries = entries_at(result, receipt)
             entry = entries[receipt["index"]]
-            if identifier(entry) != NEW or not isinstance(entry, dict) or not isinstance(entry.get("settings"), dict):
+            if identifier(entry) != NEW or not isinstance(entry, dict):
                 raise MigrationError("rollback-conflict")
-            current = dict(entry["settings"])
+            # Old staged snapshots used nested output; new ones name the actual
+            # native target shape. Never silently merge two configuration surfaces.
+            target_shape = receipt.get("target_shape", "nested")
+            if target_shape == "nested":
+                if not isinstance(entry.get("settings"), dict):
+                    raise MigrationError("rollback-conflict")
+                current = dict(entry["settings"])
+                extra = {k:v for k,v in entry.items() if k not in {"id", "settings"}}
+            elif target_shape == "inline" and "settings" not in entry:
+                current = {k:v for k,v in entry.items() if k != "id"}
+                extra = {}
+            else:
+                raise MigrationError("rollback-conflict")
             for key, expected in receipt["after"].items():
                 if key not in current or current[key] != expected or type(current[key]) is not type(expected):
                     raise MigrationError("rollback-conflict")
                 current.pop(key)
-            # Adding an old managed key after activation is a conflicting edit.
             if any(key in current for key in receipt["before"]):
                 raise MigrationError("rollback-conflict")
             current.update(receipt["before"])
-            if receipt["was_string"] and not current and set(entry) <= {"id", "settings"}:
+            shape = receipt.get("source_shape", "string" if receipt["was_string"] else "nested" if receipt["settings_present"] else "inline")
+            if shape == "string" and not current and not extra:
                 restored = OLD
+            elif shape == "nested":
+                restored = dict(extra, id=OLD, settings=current)
+            elif shape in ("inline", "string"):
+                restored = dict(extra, **current, id=OLD)
             else:
-                restored = dict(entry, id=OLD)
-                if current or receipt["settings_present"]:
-                    restored["settings"] = current
-                else:
-                    restored.pop("settings", None)
+                raise MigrationError("rollback-conflict")
             entries[receipt["index"]] = restored
         disabled = result.get("disabledPlugins", [])
         for target, expected in snapshot["disabled_after"].items():
@@ -138,6 +169,16 @@ def rollback(config, snapshot):
                 raise MigrationError("rollback-conflict")
         set_disabled(result, OLD, snapshot["old_disabled"])
         set_disabled(result, NEW, snapshot["new_disabled"])
+        positions = snapshot.get("disabled_positions")
+        if positions is not None:
+            if not isinstance(positions, dict) or set(positions) - {OLD, NEW} or any(type(index) is not int or index < 0 for index in positions.values()):
+                raise MigrationError("rollback-conflict")
+            values = [key for key in result["disabledPlugins"] if key not in positions]
+            for target, index in sorted(positions.items(), key=lambda row: row[1]):
+                if not snapshot["old_disabled" if target == OLD else "new_disabled"]:
+                    raise MigrationError("rollback-conflict")
+                values.insert(min(index, len(values)), target)
+            result["disabledPlugins"] = values
         if not snapshot["disabled_present"] and not result["disabledPlugins"]:
             result.pop("disabledPlugins")
     except (KeyError, IndexError, TypeError):

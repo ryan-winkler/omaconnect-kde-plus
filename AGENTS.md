@@ -1,4 +1,4 @@
-# OmaConnect Plus development
+# Omaconnect KDE Plus development
 
 This is an isolated fork. Develop on the feature branch. Keep upstream history
 and MIT attribution. Never modify installed plugins, user shell configuration,

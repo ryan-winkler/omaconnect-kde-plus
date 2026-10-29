@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import re
 import selectors
+import signal
 import stat
 import subprocess
 import sys
@@ -98,6 +99,7 @@ def bounded_command(argv, deadline):
     except OSError:
         raise AddressError("provider-missing") from None
     output = bytearray()
+    complete = False
     try:
         with selectors.DefaultSelector() as selector:
             selector.register(process.stdout, selectors.EVENT_READ)
@@ -113,11 +115,17 @@ def bounded_command(argv, deadline):
                     raise AddressError("provider-output-limit")
         if process.wait(timeout=max(.001, deadline-time.monotonic())) != 0:
             raise AddressError("provider-unavailable")
+        complete = True
     except subprocess.TimeoutExpired:
         raise AddressError("address-timeout") from None
     finally:
-        if process.poll() is None:
-            process.kill()
+        if not complete:
+            # This process owns a new session. Reap descendants as well as a shell
+            # wrapper, including when that wrapper exited before its child.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
         process.wait()
         process.stdout.close()
     return bytes(output)
@@ -147,7 +155,7 @@ class KdeBus:
 def load_metadata(directory):
     path = directory / "addresses.json"
     try:
-        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
     except FileNotFoundError:
         return []
     except OSError:

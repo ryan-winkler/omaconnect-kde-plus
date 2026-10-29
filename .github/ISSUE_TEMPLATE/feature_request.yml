@@ -1,0 +1,24 @@
+name: Feature or design proposal
+description: Suggest a useful task, improvement or provider.
+title: "[Feature]: "
+labels: [enhancement, proposal, triage]
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: What task should become easier?
+      description: Explain who needs it and what blocks the task now. Avoid private names or configuration.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What result would help?
+      description: Describe the outcome. A sketch or example is welcome; implementation detail is optional.
+    validations:
+      required: true
+  - type: textarea
+    id: existing
+    attributes:
+      label: Existing tools or alternatives
+      description: Does a native KDE Connect feature or existing network tool already do part of this? Links help avoid duplicate work.

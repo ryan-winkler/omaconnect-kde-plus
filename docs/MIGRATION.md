@@ -1,8 +1,9 @@
 # Staging, activation and recovery
 
-This candidate has not been installed or enabled on the owner's desktop. The
-installed `omaconnect`, its KDE pairing data, the current bar and existing
-VPN profiles remain independent from this checkout.
+The original `omaconnect` and the fork `ryan.omaconnect` have separate UI identities.
+KDE pairing data and VPN profiles remain with their existing owners. Development
+comparison has used both UIs on ARM and x86_64; normal migration should leave one
+daily UI enabled. This guide stages settings changes for review. It never applies them.
 
 ## Prepare an offline candidate
 
@@ -37,22 +38,23 @@ disabled. Current network guidance and saved-address approval cover Tailscale,
 BTH and WireGuard. They do not reinstall or connect a provider. Saved-address
 controls default to no automatic rediscovery.
 
-## Future activation gate
+## Activate after review
 
-Activation is a separate owner action after review. Do not overwrite an active
+Activation is an explicit action after review. Do not overwrite an active
 shell's configuration with a stale candidate. Confirm the source hash, preserve
 the original plugin revision, and coordinate with any chat that owns shell tests.
 Use supported `omarchy plugin` commands and user configuration only. Never edit
 `/usr/share/omarchy` or copy daemon identities, VPN keys or API keys.
 
 1. Stage the reviewed fork revision in user plugin storage, disabled. The native
-   `omarchy plugin add` flow supports adding without `--enable`; inspect the local
+   `omarchy plugin add` flow supports adding without `--enable`. In an interactive
+   terminal, decline its enable prompt to keep the plugin disabled. Inspect the local
    command before use. Do not assume the remote default branch contains this
    candidate branch.
 2. Validate the staged manifest. Confirm optional providers fail safely.
 3. Stop the original UI watcher before enabling the fork. Preserve its exact
    layout position, and use a coordinated supported shell restart when changed
-   QML needs reload. Never run both UI watchers as a migration shortcut.
+   QML needs reload. Use both UIs only for an explicit comparison, then choose one daily UI.
 4. Apply only the reviewed display settings and appearance metadata. Recheck the
    source hash before any atomic configuration replacement. The staging helper
    deliberately has **no apply/activation command**.

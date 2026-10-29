@@ -663,7 +663,7 @@ Panel {
                     focusable: true
                     width: parent.width
                     text: "Settings"
-                    Accessible.name: "OmaConnect Plus settings"
+                    Accessible.name: "Omaconnect KDE Plus settings"
                     onClicked: root.openSettings()
                 }
                 Column {

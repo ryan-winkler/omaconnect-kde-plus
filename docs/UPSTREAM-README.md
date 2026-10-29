@@ -2,7 +2,7 @@
 
 Control phones and connected devices from the Omarchy bar using KDE Connect.
 
-![OmaConnect panel](preview.png)
+![OmaConnect panel](../upstream-preview.png)
 
 ## Install
 Just install the plugin with this command. It will handle dependencies and firewall in GUI.
@@ -68,7 +68,7 @@ Expand **Network Discovery** to add detected Tailscale peers, or enter custom LA
 
 KDE Connect requires ports `1714:1764` (TCP and UDP). Click **Allow in Firewall** in the panel when devices are offline, or allow them manually:
 
-![Firewall setup in OmaConnect](preview1.png)
+![Firewall setup in OmaConnect](../preview1.png)
 
 ```bash
 sudo ufw allow 1714:1764/tcp comment 'KDE Connect'

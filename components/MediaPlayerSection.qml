@@ -145,6 +145,15 @@ Column {
             anchors.margins: Style.space(10)
             spacing: Style.space(10)
 
+            Text {
+                width: parent.width
+                text: "Control media on the selected device. Choose a reported player below; playback stays in its owner app."
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
+            }
             Row {
                 width: parent.width
                 spacing: Style.space(10)

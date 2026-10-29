@@ -34,7 +34,7 @@ Column {
         spacing: Style.space(6)
         Repeater {
             model: panel ? panel.availableActions : []
-            delegate: CursorSurface {
+            delegate: Button {
                 id: actionSurface
                 required property string modelData
                 required property int index
@@ -46,61 +46,29 @@ Column {
                 readonly property string actionIcon: modelData === "file" && root.service && root.service.fileBusy
                     ? "󰅖" : catalogEntry ? catalogEntry.icon : ""
 
-                PanelToolTip {
-                    visible: actionMouseArea.containsMouse
-                    text: actionSurface.actionTooltip
-                    fontFamily: root.fontFamily
-                }
-
-                implicitWidth: actionRowContent.implicitWidth + Style.space(16)
-                implicitHeight: actionRowContent.implicitHeight + Style.space(8)
-                radius: Style.cornerRadius
+                text: actionName
+                iconText: actionIcon
+                tooltipText: actionTooltip
+                Accessible.role: Accessible.Button
+                Accessible.name: actionName
+                Accessible.description: actionTooltip
+                Accessible.onPressAction: if (enabled) clicked()
+                focusable: true
+                fontFamily: root.fontFamily
+                fontSize: Style.font.bodySmall
+                iconSize: Style.font.caption
                 hasCursor: panel.cursorActive && panel.focusSection === "actions" && panel.actionSelectedIndex === index
-                current: (modelData === "ping" && panel.activeComposer === "ping") || (modelData === "text" && panel.activeComposer === "text") || (modelData === "file" && !!(root.service && root.service.fileBusy))
+                selected: (modelData === "ping" && panel.activeComposer === "ping") || (modelData === "text" && panel.activeComposer === "text") || (modelData === "file" && !!(root.service && root.service.fileBusy))
                 foreground: root.foreground
-                fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
-                currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
                 enabled: !root.service || (modelData === "file" ? true : (root.service.actionState !== "running"))
-
-                MouseArea {
-                    id: actionMouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onEntered: {
+                onHovered: function(isHovered) {
+                    if (isHovered) {
                         panel.cursorActive = true
                         panel.focusSection = "actions"
                         panel.actionSelectedIndex = index
                     }
-                    onClicked: panel.triggerAction(modelData)
                 }
-
-                Row {
-                    id: actionRowContent
-                    anchors.centerIn: parent
-                    spacing: Style.space(6)
-
-                    Text {
-                        textFormat: Text.PlainText
-                        visible: actionSurface.actionIcon !== ""
-                        text: actionSurface.actionIcon
-                        color: actionSurface.current ? Commons.Color.accent : root.foreground
-                        font.family: root.fontFamily
-                        font.pixelSize: Style.font.caption
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    Text {
-                        textFormat: Text.PlainText
-                        id: actionBtnText
-                        text: actionSurface.actionName
-                        color: root.foreground
-                        font.family: root.fontFamily
-                        font.pixelSize: Style.font.bodySmall
-                        font.bold: actionSurface.current
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
+                onClicked: if (enabled) panel.triggerAction(modelData)
             }
         }
     }

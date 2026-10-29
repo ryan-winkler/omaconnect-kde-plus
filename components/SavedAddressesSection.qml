@@ -34,12 +34,28 @@ Column {
         font.family: root.fontFamily
         font.pixelSize: Style.font.caption
     }
+    Text {
+        width: parent.width
+        text: "IP address"
+        textFormat: Text.PlainText
+        color: root.foreground
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
+    }
     Controls.TextField {
         id: address
         width: root.width
         placeholderText: "Private or Tailscale IP address"
         Accessible.name: "LAN or VPN IP address to approve"
         selectByMouse: true
+    }
+    Text {
+        width: parent.width
+        text: "Address source"
+        textFormat: Text.PlainText
+        color: root.foreground
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
     }
     Controls.ComboBox {
         id: source

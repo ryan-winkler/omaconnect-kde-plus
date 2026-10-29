@@ -4,12 +4,26 @@ on:
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: functional-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   functional:
+    name: Functional fixtures and local links
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Install test prerequisites
-        run: sudo apt-get update && sudo apt-get install -y python3-gi dbus nodejs ripgrep
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-gi dbus nodejs ripgrep
       - name: Test helpers and models
         run: PATH="/usr/bin:$PATH" ./scripts/validate.sh
+      - name: Check local documentation links
+        run: python3 .github/check_doc_links.py
+      - name: State evidence limits
+        if: always()
+        run: |
+          echo '### Scope of this job' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Fixtures use private temporary state and fake providers. Missing Omarchy manifest validation, QML tools and native runtime checks are reported as skipped. This job does not establish installed-bar, keyboard, assistive-technology, physical-device delivery or offsite acceptance.' >> "$GITHUB_STEP_SUMMARY"
