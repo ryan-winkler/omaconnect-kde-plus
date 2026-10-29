@@ -152,7 +152,7 @@ WireGuard profiles to the installed NetworkManager editor. Launch requests use
 fixed arguments and bounded feedback. They do not install, connect, copy keys,
 choose a profile or introduce a second policy writer. BTH mode control remains
 on the reviewed helper contract above. No native-owner launch is a reachability
-receipt. See the network coverage audit for exact first-release limits.
+receipt.
 
 ## Settings window and typed preferences
 

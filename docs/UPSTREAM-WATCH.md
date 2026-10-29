@@ -19,7 +19,7 @@ The watcher does not merge code, open automatic port PRs, install software, upda
 For each relevant row:
 
 1. Open the fixed upstream evidence link.
-2. Compare the change with current Plus behavior and [the dated upstream audit](UPSTREAM-REVIEW.md). Confirm that the work is still absent.
+2. Compare the change with current Plus behavior. Confirm that the work is still absent.
 3. Check the owning domain. KDE Connect owns native capabilities; the existing network controller owns policy.
 4. Open a focused issue or PR for a confirmed need. Credit the upstream source. Include the smallest meaningful regression check.
 

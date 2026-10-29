@@ -40,7 +40,7 @@ and [Qt QIcon lookup](https://doc.qt.io/qt-6/qicon.html#fromTheme).
 The native Omarchy image picker is a general image-directory overlay, not an icon
 bank; its current file list also includes video and omits SVG. The emoji overlay
 inserts text into another app. Neither is used as a direct replacement for this
-private draft/import flow. See [source audit](icon-audit.md) for inspected evidence.
+private draft/import flow.
 
 ## User storage
 
