@@ -4,13 +4,14 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "components"
 import "bridge" as OmaconnectBridge
 
 BarWidget {
     id: root
-    moduleName: "ryan.omaconnect"
+    moduleName: "Omaconnect.plus"
 
     // Primary path: the bar host's scoped facade (service-capable under the
     // first-party bar). Fallback: the engine-wide bridge singleton -- under
@@ -20,7 +21,7 @@ BarWidget {
     // torn down). See bridge/Bridge.qml.
     readonly property var service: {
         var viaHost = bar && bar.shell && typeof bar.shell.serviceFor === "function"
-            ? bar.shell.serviceFor("ryan.omaconnect") : null
+            ? bar.shell.serviceFor("Omaconnect.plus") : null
         return viaHost || OmaconnectBridge.Bridge.service
     }
     readonly property var device: service ? service.selectedDevice : null
@@ -89,6 +90,7 @@ BarWidget {
             }
         }
         tooltipText: {
+            if (iconDrop.containsDrag) return iconDrop.ready ? "Release to review files for " + root.deviceName + ". Nothing sends until you select Send." : iconDrop.instructions
             var name = "Omaconnect KDE Plus · " + root.deviceName
             if (root.device && root.device.name && root.device.name !== name) name += " (" + root.device.name + ")"
             var showBat = !root.settings || root.settings.showBatteryStats !== false
@@ -101,10 +103,24 @@ BarWidget {
         onPressed: function(b) {
             root.togglePanel()
         }
+        Rectangle {
+            anchors.fill: parent
+            visible: iconDrop.containsDrag
+            color: Style.hoverFillFor(buttonItem.foreground, Commons.Color.accent)
+            radius: Style.cornerRadius
+        }
+        FileDropArea {
+            id: iconDrop
+            objectName: "bar-file-drop-area"
+            anchors.fill: parent
+            service: root.service
+            device: root.device
+            onFilesStaged: root.openSendWindow()
+        }
     }
 
     IpcHandler {
-        target: "ryan.omaconnect"
+        target: "Omaconnect.plus"
 
         function open(): void { root.open() }
         function close(): void { root.close() }

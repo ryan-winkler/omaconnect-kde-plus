@@ -1,5 +1,7 @@
 # Release helper security and functional QA
 
+Identity note: this report describes the previous development identity. It does not establish runtime or migration acceptance for the current `Omaconnect.plus` ID. See [current verification](VERIFICATION.md).
+
 Date: 2026-10-29. Scope: the working release candidate based on `f8b3e11`,
 including the fixes below. This is a source review and private fixture check.
 It is not a claim that every device, desktop session or attack path is tested.
@@ -37,7 +39,7 @@ candidate or copy settings into a user's shell configuration.
 | File chooser and drop input | `portal_files.py` accepts bounded batches of local file URIs. It rejects remote hosts, folders, final symlinks and nonregular files. File identity, size and timestamps are checked again before submission. Existing transfer/drop fixtures exercise these branches and the actual QML staging path. |
 | KDE submission | Fixed argument arrays call the existing CLI. Request acceptance, failure, timeout and cancellation remain distinct. A zero exit does not prove delivery. Existing fixtures test these results without a real recipient. |
 | Appearance and imports | The helper validates private metadata, aliases and identifiers. Image limits and SVG element/reference rules reject active/external content, animations, malformed images and reference cycles. Existing private-state fixtures also cover corrupt state, symlinks and concurrent updates. |
-| Preferences and owner links | The preference helper accepts exact key/value shapes and uses the fixed fork ID `ryan.omaconnect`. It sends JSON values as arguments. Owner links open existing provider interfaces. Fixtures cover invalid values, saved-state readback, failed confirmation and original/fork isolation. |
+| Preferences and owner links | The preference helper accepts exact key/value shapes and used the fixed previous development ID at this snapshot. It sends JSON values as arguments. Owner links open existing provider interfaces. Fixtures cover invalid values, saved-state readback, failed confirmation and original/fork isolation. |
 | Addresses and rediscovery | Private literal addresses need explicit approval. Existing fixtures cover batch reconciliation, baseline ownership, stale external state, bounded provider replies and concurrent writers. The two process/metadata regressions above close reproduced gaps. |
 | Native feature identifiers | Reported plugin metadata remains data. The feature list can retain unknown plugin IDs; it does not construct executable plugin commands from them. The device settings launcher validates device IDs and uses fixed arguments. Native feature fixtures exercise unknown IDs and older frontend fallback. |
 | BTH/controller boundary | Existing fixed mode commands, strict status parsing and unavailable/error states remain in the controller contract. JavaScript fixtures cover mode and readback decisions. No real mode command was issued in this review. |

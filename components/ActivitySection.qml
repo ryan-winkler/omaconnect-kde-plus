@@ -30,6 +30,7 @@ Column {
     Repeater {
         model: root.service ? root.service.operations : []
         delegate: Text {
+            textFormat: Text.PlainText
             required property var modelData
             width: root.width
             text: modelData.peerName + "\nKDE ID: " + modelData.peerId + "\n" + modelData.count + " file(s), " + Transfers.formatBytes(modelData.total) + "\n" + Transfers.status(modelData)

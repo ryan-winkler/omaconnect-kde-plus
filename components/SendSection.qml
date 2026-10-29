@@ -57,6 +57,17 @@ Column {
         font.pixelSize: Style.font.bodySmall
     }
 
+    Text {
+        textFormat: Text.PlainText
+        visible: root.files.length > 0
+        width: parent.width
+        text: "Files in shared locations can need a private cache copy. Copies become eligible for cleanup after 24 hours and are removed on a later preparation. See Help → Send files."
+        wrapMode: Text.Wrap
+        color: root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+    }
+
     Controls.ScrollView {
         visible: root.files.length > 0
         width: parent.width

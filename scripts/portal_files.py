@@ -145,29 +145,37 @@ def submit(payload):
     peer = payload.get('peerId')
     if not isinstance(peer, str) or not peer or len(peer) > 256 or any(ord(c) < 32 for c in peer):
         raise ValueError('identity-mismatch')
-    source = validate_file(payload.get('file'))
+    validate_file(payload.get('file'))
     if cancelled:
         emit({'state': 'cancelled_before_submit', 'error': ''})
         return
     try:
-        # The supported CLI needs a path argument. Recheck identity immediately
-        # before execution; KDE owns the later open. Its path-based API cannot
-        # guarantee an atomic descriptor handoff or hide process metadata.
-        emit({'event': 'submitting'})
-        attempted = True
-        child = subprocess.Popen(['kdeconnect-cli', '-d', peer, '--share', source['path']], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-        if cancelled:
-            stop()
-        try:
-            code = child.wait(timeout=SUBMISSION_TIMEOUT)
-            state = 'request_accepted' if code == 0 else 'submission_failed'
-            error = '' if code == 0 else 'submission-failed'
-        except subprocess.TimeoutExpired:
-            stop()
-            state, error = 'submission_unknown', 'submission-unknown'
-        # stop() also services timeout; only an external cancel changes this flag.
-        if cancelled and state != 'submission_unknown':
-            state, error = 'cancellation_unconfirmed', 'cancellation-unconfirmed'
+        from private_sources import prepared_source
+        emit({"event": "preparing"})
+        with prepared_source(payload.get("file"), lambda: cancelled) as prepared:
+            # The prepared path is protected from a different local writer.
+            # Shared sources use a retained descriptor-backed snapshot; normal
+            # private paths avoid a copy. KDE still owns its later native open.
+            emit({'event': 'submitting'})
+            attempted = True
+            child = subprocess.Popen(['kdeconnect-cli', '-d', peer, '--share', prepared.path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+            if cancelled:
+                stop()
+            try:
+                code = child.wait(timeout=SUBMISSION_TIMEOUT)
+                state = 'request_accepted' if code == 0 else 'submission_failed'
+                error = '' if code == 0 else 'submission-failed'
+            except subprocess.TimeoutExpired:
+                stop()
+                state, error = 'submission_unknown', 'submission-unknown'
+            # stop() also services timeout; only an external cancel changes this flag.
+            if cancelled and state != 'submission_unknown':
+                state, error = 'cancellation_unconfirmed', 'cancellation-unconfirmed'
+    except ValueError as preparation_error:
+        if str(preparation_error) == "cancelled-before-submit" and not attempted:
+            state, error = "cancelled_before_submit", ""
+        else:
+            raise
     except FileNotFoundError:
         state, error = 'submission_failed', 'provider-missing'
     except OSError:
@@ -200,7 +208,7 @@ def main():
             raise ValueError('source-path-rejected')
     except ValueError as error:
         code = str(error)
-        allowed = ('source-path-rejected', 'source-changed', 'selection-limit', 'identity-mismatch')
+        allowed = ('source-path-rejected', 'source-changed', 'selection-limit', 'identity-mismatch', 'source-preparation-failed')
         emit({'state': 'failed', 'error': code if code in allowed else 'source-path-rejected'})
         return 1
     except (OSError, ImportError, TypeError, KeyError):

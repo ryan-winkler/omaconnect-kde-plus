@@ -31,8 +31,16 @@ Column {
         spacing: Style.space(6)
 
         CursorSurface {
+            activeFocusOnTab: true
+            Accessible.role: Accessible.Button
+            Accessible.name: panel.commandsExpanded ? "Collapse remote commands" : "Expand remote commands"
+            Accessible.description: "Show commands configured in the selected device's native KDE Connect settings."
+            Accessible.onPressAction: panel.toggleCommandsExpanded()
+            Keys.onReturnPressed: panel.toggleCommandsExpanded()
+            Keys.onEnterPressed: panel.toggleCommandsExpanded()
+            Keys.onSpacePressed: panel.toggleCommandsExpanded()
             width: Math.max(1, parent.width - (panel.commandsExpanded ? refreshCmdBtn.implicitWidth + Style.space(6) : 0))
-            implicitHeight: headerRow.implicitHeight + Style.space(6)
+            implicitHeight: Math.max(32, headerRow.implicitHeight + Style.space(6))
             hasCursor: panel.cursorActive && panel.focusSection === "commands" && !panel.commandsExpanded
             radius: Style.cornerRadius
             foreground: root.foreground

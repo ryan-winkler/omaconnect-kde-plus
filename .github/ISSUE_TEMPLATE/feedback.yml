@@ -1,0 +1,35 @@
+name: Experience feedback
+description: Tell us what helped, what blocked you, and one useful next step.
+title: "[Feedback]: "
+labels: [feedback, ux, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for experience feedback. Use the bug form for a reproducible failure, or Discussions for an open question or idea.
+        Keep private device names, addresses, file paths, credentials and screenshots with personal data out of this public form.
+        Report security concerns through SECURITY.md instead.
+  - type: textarea
+    id: task
+    attributes:
+      label: What were you trying to do?
+      description: Name the task and the view you used. A short example helps.
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: What helped or got in the way?
+      description: Describe what you expected and what you saw. Include one point if that is enough.
+    validations:
+      required: true
+  - type: textarea
+    id: next_step
+    attributes:
+      label: What one change would help you next?
+      description: Describe the result you need. You do not need to design the solution.
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version (optional)
+      description: Use the version shown in Settings. Do not paste a full system report.

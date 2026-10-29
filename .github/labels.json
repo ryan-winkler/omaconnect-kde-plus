@@ -78,5 +78,15 @@
     "name": "wontfix",
     "color": "ffffff",
     "description": "Maintainer does not plan to implement this"
+  },
+  {
+    "name": "upstream",
+    "color": "5319e7",
+    "description": "Changes from KDE Connect or original OmaConnect need review"
+  },
+  {
+    "name": "feedback",
+    "color": "c5def5",
+    "description": "User experience feedback and task friction"
   }
 ]

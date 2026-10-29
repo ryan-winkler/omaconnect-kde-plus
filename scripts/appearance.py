@@ -2,7 +2,7 @@
 """Private, bounded appearance metadata. JSON stdin/stdout; no service actions.
 
 read | update | import | library. update actions: bar, device, link, forget.
-XDG_CONFIG_HOME/ryan.omaconnect/appearance.json; XDG_DATA_HOME/ryan.omaconnect/icons.
+XDG_CONFIG_HOME/Omaconnect.plus/appearance.json; XDG_DATA_HOME/Omaconnect.plus/icons.
 Corrupt/unsafe metadata is preserved and blocks writes. Assets are never collected.
 """
 import fcntl
@@ -106,7 +106,7 @@ def paths():
     config = Path(os.environ.get('XDG_CONFIG_HOME', str(home/'.config')))
     data = Path(os.environ.get('XDG_DATA_HOME', str(home/'.local/share')))
     reject(not config.is_absolute() or not data.is_absolute(), 'Appearance directory must be absolute.')
-    return config/'ryan.omaconnect', data/'ryan.omaconnect'/'icons'
+    return config/'Omaconnect.plus', data/'Omaconnect.plus'/'icons'
 
 
 def private_dir(path):

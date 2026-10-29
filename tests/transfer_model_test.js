@@ -106,3 +106,35 @@ pending.shift()();
 assert.equal(context.fileTransferProcess.running,false);
 assert.equal(context.activeOperation.state,'cancelled_before_submit');
 assert.equal(context.activeOperation.cancelled,3);
+
+// A running helper without a final acknowledgement has unknown cancellation.
+function cancelledHelper(finalState) {
+ context.chooseFiles('A'); context.filePickerProcess.running=false;
+ context.applySelection(JSON.stringify({state:'selected',files:[chosen[0]]}),0,context.selectionGeneration);
+ context.submitSelection(); pending.shift()();
+ const id=context.activeOperation.id;
+ context.applySubmissionLine('{"event":"preparing"}',id);
+ assert.equal(context.activeOperation.state,'preparing');
+ context.cancelOperation();
+ if(finalState) context.applySubmissionLine(JSON.stringify({state:finalState,error:''}),id);
+ context.fileTransferProcess.running=false; context.submissionExited(id);
+ return context.activeOperation.state;
+}
+assert.equal(cancelledHelper(''),'cancellation_unconfirmed');
+assert.equal(cancelledHelper('cancelled_before_submit'),'cancelled_before_submit');
+
+// Private text and ping contents must remain on stdin, never argv.
+Object.assign(context, {actionProcess:{running:false},pairProcess:{running:false},
+ scriptPath:p=>'/owned/'+p});
+context.devices[0].capabilities.text=true; context.devices[0].capabilities.ping=true;
+vm.runInContext(['startAction','shareText','pingDevice'].map(extract).join('\n'),context);
+for (const action of ['shareText','pingDevice']) {
+ context.actionProcess.running=false;
+ const sentinel='PRIVATE-CONTENT-ARGV-CHECK';
+ assert.equal(context[action]('A',sentinel),true);
+ assert.deepEqual(Array.from(context.actionProcess.command),['python3','/owned/scripts/send_text.py']);
+ assert.ok(!JSON.stringify(context.actionProcess.command).includes(sentinel));
+ assert.equal(JSON.parse(context.actionProcess.payload).text,sentinel);
+ context.actionProcess.running=false;
+ assert.equal(context[action]('A','x'.repeat(8193)),false);
+}

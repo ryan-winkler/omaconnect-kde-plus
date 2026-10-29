@@ -23,7 +23,6 @@ Column {
     readonly property bool showBattery: !panel || (typeof panel.getSetting === "function" ? panel.getSetting("showBatteryStats", true) : true)
     readonly property bool showNetwork: !panel || (typeof panel.getSetting === "function" ? panel.getSetting("showNetworkStats", true) : true)
     readonly property bool showDeviceTypeIcons: !panel || (typeof panel.getSetting === "function" ? panel.getSetting("showDeviceTypeIcons", true) : true)
-    readonly property bool showTroubleshooting: !panel || (typeof panel.getSetting === "function" ? panel.getSetting("showTroubleshooting", true) : true)
 
     Item {
         width: parent.width
@@ -492,73 +491,22 @@ Column {
             font.pixelSize: Style.font.bodySmall
         }
 
-        Row {
-            visible: !(root.service && root.service.scanning) && (root.service && root.service.discoveryState === "not_installed") && root.showTroubleshooting
-            spacing: Style.space(6)
-
-            Text {
-                textFormat: Text.PlainText
-                text: "kdeconnect needed"
-                color: Qt.darker(root.foreground, 1.4)
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Button {
-                text: "Install Dependencies"
-                tooltipText: "Runs: sudo pacman -S --needed kdeconnect glib2 dbus"
-                foreground: root.foreground
-                fontFamily: root.fontFamily
-                fontSize: Style.font.bodySmall
-                onClicked: if (root.service) root.service.installDependencies()
-            }
+        Text {
+            width: parent.width
+            text: "Use the setup guide for missing packages or connection requirements. Pair devices and manage native features in KDE Connect."
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+        }
+        Button {
+            text: "KDE Connect setup guide ↗"
+            Accessible.name: "Open the official KDE Connect setup guide"
+            focusable: true
+            foreground: root.foreground
+            onClicked: Qt.openUrlExternally("https://kdeconnect.kde.org/users.html")
         }
 
-        Row {
-            visible: !(root.service && root.service.scanning) && (root.service && root.service.discoveryState === "unavailable") && root.showTroubleshooting
-            spacing: Style.space(6)
-
-            Text {
-                textFormat: Text.PlainText
-                text: "daemon not running"
-                color: Qt.darker(root.foreground, 1.4)
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Button {
-                text: "Start Service"
-                tooltipText: "Attempts to start KDE Connect background service"
-                foreground: root.foreground
-                fontFamily: root.fontFamily
-                fontSize: Style.font.bodySmall
-                onClicked: if (root.service) root.service.refresh(true)
-            }
-        }
-
-        Row {
-            visible: !(root.service && root.service.scanning) && (!root.service || (root.service.discoveryState !== "not_installed" && root.service.discoveryState !== "unavailable")) && root.showTroubleshooting
-            spacing: Style.space(6)
-
-            Text {
-                textFormat: Text.PlainText
-                text: "Firewall blocking?"
-                color: Qt.darker(root.foreground, 1.4)
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Button {
-                text: "Allow in Firewall"
-                tooltipText: "Runs: sudo ufw allow 1714:1764/tcp & udp (or firewalld)"
-                foreground: root.foreground
-                fontFamily: root.fontFamily
-                fontSize: Style.font.bodySmall
-                onClicked: if (root.service) root.service.configureFirewall()
-            }
-        }
     }
 }

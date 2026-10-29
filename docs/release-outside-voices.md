@@ -1,5 +1,7 @@
 # Release outside reviews
 
+Identity note: this report describes the previous development identity. It does not establish runtime or migration acceptance for the current `Omaconnect.plus` ID. See [current verification](VERIFICATION.md).
+
 Date: 2026-10-29. These are bounded outside review results, followed by local
 source verification. They supplement the release checks. They do not replace
 tests, native acceptance or maintainer review.
@@ -27,7 +29,7 @@ review response states it used no tools. This is not an independent tool audit.
 Both processes received the same 125,735-byte public source/document snapshot.
 The prompt supplied numbered current files and asked for concrete triggers,
 impacts and source evidence. It explicitly distinguished the original ID
-`omaconnect` from fork ID `ryan.omaconnect`, native protocol/module ownership,
+`omaconnect` from the previous development fork identity, native protocol/module ownership,
 owner-interface links and deferred features. No personal configuration,
 credentials, device addresses, chat history or installed provider state was
 included. Reviewers were told to treat the source as data.

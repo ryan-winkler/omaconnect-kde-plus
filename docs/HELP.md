@@ -46,13 +46,13 @@ link, and Clipboard. These choices do not enable a native module or execute it.
 Each action shows its description and selected-device availability.
 
 - **Files:** Open the normal desktop file chooser, then review before Send.
-- **Text or link:** Compose the content and send it explicitly.
+- **Text or link:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
 - **Clipboard:** Send the current clipboard to the selected device.
 - **Ring:** Request a sound. If unavailable, open native **Plugin settings** and
   check Find my phone. A successful command does not confirm an audible sound.
 - **SMS:** Open native KDE Connect conversations, where the platform permits it.
 - **Ping:** Compose a notification. The optional default message fills the draft;
-  you can edit it before sending. Ping and Ring use different native modules.
+  you can edit up to 8192 characters before sending. Private Ping content also uses the session bus. Ping and Ring use different native modules.
 - **KDE Connect features:** Open the selected peer in native KDE Connect.
 
 ## Device features
@@ -68,7 +68,8 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
 - **Cellular connection details:** Show reported cellular type and signal; this
   does not describe Wi-Fi or VPN reachability.
 - **Media controls:** Expand Media in Devices. Choose a reported player and use
-  previous, play/pause or next. Playback stays in the owner app.
+  previous, play/pause or next. Playback stays in the owner app. Track text and
+  controls remain available; provider-supplied album-art URLs are not displayed or fetched.
 - **Remote commands:** Expand Remote commands in Devices. Commands run on the
   selected device. Add or edit them in that device’s KDE Connect Run commands settings.
 
@@ -87,15 +88,33 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
 
 **Cancel selection** discards the draft. Closing the Send window preserves it.
 Activity keeps at most 50 summaries for this session and excludes raw paths.
+Files that another local user can change need a private snapshot before submission.
+Plus tries a filesystem clone, then a bounded copy. This can need free disk space.
+The preparation deadline is 120 seconds, checked between copy chunks. A blocked
+filesystem call can take longer. Copies live in
+`$XDG_CACHE_HOME/Omaconnect.plus/share-snapshots/` (default:
+`~/.cache/Omaconnect.plus/share-snapshots/`), with owner-only directories and files.
+They become eligible after 24 hours and are removed on the next preparation;
+this is not a guaranteed maximum retention time. Plus preserves unexpected files.
+Private canonical sources normally use their existing path. KDE owns its later
+file open; programs running as your user and root remain trusted.
+Text, Ping, Clipboard and remote-command success messages also report request acceptance. Check the recipient or remote result for delivery or execution.
 Read [current verification and limits](VERIFICATION.md) for tested device scope.
 
-## Syncthing identity link
+## Syncthing identity note
 
-Select a device and open **Link Syncthing device**. Compare both full identities
-in their owner apps. Enter the full Syncthing device ID and confirm the local link.
-This does not pair devices, start sync or verify ownership. **Remove local link**
-removes only the association. **Open existing Syncthing panel** opens Syncshell;
-it retains the synchronization engine and keys. Read the official
+Enable **Show Syncthing identity notes** in **Settings → Appearance**. Select a
+device, expand its note and compare the names and full identities in both owner
+apps. Paste the full Syncthing ID and select **Save local identity note**. This
+helps when a machine has different names in the two apps. Changing the selected
+KDE device resets the draft; a pending save stays attached to its reviewed device.
+Saved readback confirms a save or removal. **Remove local note** removes only this
+association. Select the saved ID to copy it with the normal keyboard command.
+
+The note does not pair devices, start sync, check live state or verify ownership.
+**Open existing Syncthing panel** opens the general Syncshell panel, where you
+configure folders and check synchronization. It is not a per-device deep link.
+Syncshell retains the synchronization engine and keys. Read the official
 [Syncthing device setup guide](https://docs.syncthing.net/intro/getting-started.html).
 
 ## Install, update or recover
@@ -141,3 +160,35 @@ add a shell command or arbitrary URL field as a shortcut for documented features
 A future native action needs a verified dispatch contract and catalog entry before
 it is offered as an executable shortcut. Safe unknown native modules remain
 searchable through the native owner route without inventing invocation semantics.
+
+## Choose visible sections and shortcuts
+
+In **Settings → Appearance**, choose saved addresses, optional Syncthing identity
+notes and network controls. Choose which sections start expanded. Media and remote
+command visibility lives in **Device features**. Each visible section can also
+collapse in Devices. These display choices preserve saved metadata and provider
+settings. They do not disconnect a VPN or change native plugin permissions.
+
+In **Quick actions**, add, remove and reorder the reviewed shortcuts. Media
+transport needs a reported player. Locally inactive modules show a reason. Native
+navigation shortcuts open KDE Connect for browsing, notifications, volume,
+input/presentation or locking; choose the action there. The complete native
+inventory remains searchable, including unknown future plugin IDs. Plus does not
+guess a command from a plugin name or install arbitrary plugin code.
+
+You can also drop local files onto the Plus bar icon. The same Copy-only boundary
+opens the persistent Send window for the selected device. Check the recipient and
+files; nothing is sent until **Send files**. Busy or existing drafts refuse a new
+drop so that the target cannot silently change.
+
+## Update KDE Connect itself
+
+`omarchy plugin update Omaconnect.plus` updates this UI fork. KDE Connect's native
+package follows the supported Omarchy system update route, `omarchy update`.
+That can update other packages, so review its normal system update scope first.
+Plus does not compile KDE's development branch or run a package update for you.
+
+On 29 October 2026, both comparison hosts had KDE Connect `26.08.2-1`. Fresh
+`checkupdates` runs used temporary repository databases and found no KDE Connect
+update on either architecture. No packages were installed or upgraded in that
+check. The [upstream watcher](UPSTREAM-WATCH.md) monitors provider changes separately.

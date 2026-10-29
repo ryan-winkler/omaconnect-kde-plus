@@ -80,16 +80,6 @@ def build_action_command(action_type, device_id, extra_arg=None):
         return ["kdeconnect-cli", "-d", str(device_id), "--share", clean_path]
     elif action_type == "sms":
         return ["bash", "scripts/open_sms.sh", str(device_id)]
-    elif action_type == "ping":
-        is_valid, content = validate_composer_input(extra_arg)
-        if not is_valid:
-            return None
-        return ["kdeconnect-cli", "-d", str(device_id), "--ping-msg", content]
-    elif action_type == "text":
-        is_valid, content = validate_composer_input(extra_arg)
-        if not is_valid:
-            return None
-        return ["kdeconnect-cli", "-d", str(device_id), "--share-text", content]
     return None
 
 
@@ -741,20 +731,6 @@ class ActionAndComposerTests(unittest.TestCase):
     valid_space, err_space = validate_composer_input("   \t  \n  ")
     self.assertFalse(valid_space)
     self.assertEqual(err_space, "Message cannot be empty")
-
-    # Command construction for ping
-    self.assertIsNone(build_action_command("ping", "dev-1", "  "))
-    self.assertEqual(
-        build_action_command("ping", "dev-1", "Ping test"),
-        ["kdeconnect-cli", "-d", "dev-1", "--ping-msg", "Ping test"]
-    )
-
-    # Command construction for text share
-    self.assertIsNone(build_action_command("text", "dev-1", ""))
-    self.assertEqual(
-        build_action_command("text", "dev-1", "https://example.com"),
-        ["kdeconnect-cli", "-d", "dev-1", "--share-text", "https://example.com"]
-    )
 
   def test_composer_state_transitions_submit_and_cancel(self):
     state = ComposerState(selected_device_id="dev-1")
@@ -1525,14 +1501,14 @@ if [[ "$*" == *"Properties.GetAll"* ]]; then
 ({'album': <''>, 'artist': <''>, 'isPlaying': <false>, 'player': <''>, 'playerList': <['Spotify', 'VLC']>},)
 EOF
 elif [[ "$*" == *"Properties.Set"* ]]; then
-  echo "SET_CALLED: $*" >> /tmp/gdbus_set_test.log
+  echo "SET_CALLED: $*" >> "$TEST_SET_LOG"
   exit 0
 else
   printf "(<''>,)\n"
 fi
 """)
       _ = gdbus.chmod(0o755)
-      set_log = Path("/tmp/gdbus_set_test.log")
+      set_log = (stub_dir / "gdbus-set.log")
       if set_log.exists():
         set_log.unlink()
       result = subprocess.run(
@@ -1540,7 +1516,7 @@ fi
           capture_output=True,
           text=True,
           check=False,
-          env={**os.environ, "PATH": f"{stub_dir}:{os.environ['PATH']}"},
+          env={**os.environ, "PATH": f"{stub_dir}:{os.environ['PATH']}", "TEST_SET_LOG": str(set_log)},
       )
       self.assertEqual(result.returncode, 0, result.stderr)
       data = json.loads(result.stdout)
@@ -1856,8 +1832,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("controller.openSmsApp", service_source)
     self.assertIn("openKdeConnectApp", service_source)
     self.assertIn("controller.openKdeConnectApp", service_source)
-    self.assertIn("configureFirewall", service_source)
-    self.assertIn("controller.configureFirewall", service_source)
+    self.assertNotIn("configureFirewall", service_source)
+    self.assertNotIn("installDependencies", service_source)
     self.assertIn("setPendingPairing", service_source)
     self.assertIn("deviceNetworkIcon", service_source)
     self.assertIn("refreshTailscale", service_source)
@@ -1929,26 +1905,15 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("appearance.deviceIcon", device_section_source)
     self.assertIn("modelData.paired", device_section_source)
 
-  def test_dependency_installer_script_and_states(self):
-    installer_path = ROOT / "scripts" / "install_dependencies.sh"
-    self.assertTrue(installer_path.exists())
-    content = installer_path.read_text()
-    self.assertIn("pacman", content)
-    self.assertIn("kdeconnect", content)
-    self.assertIn("glib2", content)
-    self.assertIn("dbus", content)
-
+  def test_missing_dependency_state_retains_native_setup_guidance(self):
     discovery_source = (ROOT / "scripts" / "discover_devices.sh").read_text()
     self.assertIn("kdeconnect-cli", discovery_source)
     self.assertIn("exit 127", discovery_source)
-
     controller_source = (ROOT / "KdeConnectController.qml").read_text()
     self.assertIn('discoveryState = "not_installed"', controller_source)
-    self.assertIn("installDependencies", controller_source)
-
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
-    self.assertIn("Install Dependencies", device_section)
-    self.assertIn("installDependencies()", device_section)
+    self.assertIn("KDE Connect setup guide", device_section)
+    self.assertNotIn("installDependencies", controller_source)
 
   def test_action_error_and_status_banner_contracts(self):
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
@@ -1963,14 +1928,14 @@ class QmlWiringAndContractTests(unittest.TestCase):
 
   def test_action_verbiage_and_auto_dismiss_contracts(self):
     controller_source = (ROOT / "KdeConnectController.qml").read_text()
-    # Check natural action verbiages
-    self.assertIn('"Ping sent"', controller_source)
-    self.assertIn('"Text sent"', controller_source)
+    # State the evidence: command success does not establish delivery/execution.
+    self.assertIn('"Ping request accepted. Delivery is not confirmed."', controller_source)
+    self.assertIn('"Text request accepted. Delivery is not confirmed."', controller_source)
     self.assertIn('"Ring request accepted. Audible ringing is not confirmed."', controller_source)
-    self.assertIn('"Clipboard synced"', controller_source)
+    self.assertIn('"Clipboard request accepted. Delivery is not confirmed."', controller_source)
     self.assertNotIn('"File sent"', controller_source)
     self.assertIn("TransferModel.status", controller_source)
-    self.assertIn('"Command executed"', controller_source)
+    self.assertIn('"Command request accepted. Execution is not confirmed."', controller_source)
     self.assertIn('"Pair request sent"', controller_source)
     self.assertIn('"Device unpaired"', controller_source)
 
@@ -2005,30 +1970,11 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn('"unknown"', toolbar_source)
     self.assertNotIn('"UNKNOWN ACTIONS"', toolbar_source)
 
-  def test_privileged_script_transparency_and_confirmation_prompts(self):
-    # install_dependencies.sh must preview the exact command and prompt
-    install_source = (ROOT / "scripts" / "install_dependencies.sh").read_text()
-    self.assertIn("Exact command that will be executed:", install_source)
-    self.assertIn("sudo pacman -S --needed kdeconnect glib2 dbus", install_source)
-    self.assertIn("Press Enter to proceed", install_source)
-    self.assertIn("Ctrl+C to cancel", install_source)
-
-    # setup_firewall.sh must preview commands and support ufw / firewalld
-    firewall_source = (ROOT / "scripts" / "setup_firewall.sh").read_text()
-    self.assertIn("1714-1764", firewall_source)
-    self.assertIn("sudo ufw allow 1714:1764/tcp", firewall_source)
-    self.assertIn("sudo ufw allow 1714:1764/udp", firewall_source)
-    self.assertIn("sudo ufw reload", firewall_source)
-    self.assertIn("firewall-cmd", firewall_source)
-    self.assertIn("Press Enter to apply", firewall_source)
-
-  def test_ui_tooltips_and_security_transparency(self):
+  def test_ui_setup_has_help_without_privileged_launchers(self):
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
-    self.assertIn("sudo pacman", device_section)
-    self.assertIn("sudo ufw", device_section)
-
-    # Daily toolbar help/focus/activation is verified with the actual native
-    # component in test_action_toolbar_accessibility, not a MouseArea spelling.
+    self.assertIn("https://kdeconnect.kde.org/users.html", device_section)
+    self.assertNotIn("sudo ", device_section)
+    self.assertNotIn("configureFirewall", device_section)
 
   def test_media_player_qml_contracts_and_components(self):
     controller_source = (ROOT / "KdeConnectController.qml").read_text()
@@ -2083,8 +2029,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("playerControlsRow", media_section)
     self.assertIn("playerNameText", media_section)
     self.assertNotIn("id: pText", media_section)
-    self.assertIn("bgArt", media_section)
-    self.assertIn("backdropArt", media_section)
+    self.assertNotIn("source: root.albumArt", media_section)
     self.assertIn("localAlbumArtUrl", (ROOT / "scripts" / "media_control.sh").read_text())
     self.assertNotIn("Style.font.bodyLarge", media_section)
     self.assertIn("musicIcon", media_section)
@@ -2095,7 +2040,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("anchors.leftMargin: Style.space(6)", media_section)
     self.assertIn("anchors.rightMargin: Style.space(6)", media_section)
     self.assertIn("anchors.rightMargin: Style.space(2)", media_section)
-    self.assertIn("implicitHeight: Style.space(20)", media_section)
+    self.assertIn("implicitHeight: Math.max(32, Style.space(32))", media_section)
     self.assertNotIn("Math.max(1, parent.width - Style.space(32))", media_section)
 
   def test_bar_widget_battery_feature_flag(self):
@@ -2489,11 +2434,10 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
   def test_device_section_offline_and_empty_states_contracts(self):
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
     self.assertIn("Required packages missing", device_section)
-    self.assertIn("Install Dependencies", device_section)
+    self.assertIn("KDE Connect setup guide", device_section)
     self.assertIn("KDE Connect daemon stopped", device_section)
-    self.assertIn("Start Service", device_section)
     self.assertIn("No devices found", device_section)
-    self.assertIn("Allow in Firewall", device_section)
+    self.assertNotIn("Allow in Firewall", device_section)
 
   def test_keyboard_navigation_no_double_movement_and_hotkey_safety(self):
     panel_source = (ROOT / "Panel.qml").read_text()

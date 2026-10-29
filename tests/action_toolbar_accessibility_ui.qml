@@ -55,12 +55,13 @@ ShellRoot {
         id: fakeService
         property bool fileBusy: false
         property string actionState: "idle"
+        property var mediaState: ({})
     }
     QtObject {
         id: fakePanel
         property var bar: fakeBar
         property var service: fakeService
-        property var device: ({id:"fixture",type:"phone",paired:true,reachable:true})
+        property var device: ({id:"fixture",type:"phone",paired:true,reachable:true,capabilities:{file:true,ring:true}})
         property var availableActions: ["file", "ring"]
         property bool cursorActive: false
         property string focusSection: ""
@@ -125,6 +126,39 @@ ShellRoot {
                     test.phase = 7
                 } else if (test.phase === 7) {
                     if (!test.check(fakePanel.dispatches.join(",") === "file,ring,file,file", "Space dispatches Stop once through the same fake boundary")) return
+                    fakeService.fileBusy = false
+                    fakeService.actionState = "idle"
+                    fakePanel.device = null
+                    fakePanel.availableActions = ["plus-settings", "native-features"]
+                    test.phase = 8
+                } else if (test.phase === 8) {
+                    var settings = test.findAction(toolbar, "plus-settings")
+                    var nativeFeatures = test.findAction(toolbar, "native-features")
+                    if (!test.check(toolbar.visible && settings && settings.enabled && nativeFeatures && nativeFeatures.enabled, "global settings and native handoff remain available without a connected device")) return
+                    settings.Accessible.pressAction()
+                    nativeFeatures.Accessible.pressAction()
+                    if (!test.check(fakePanel.dispatches.join(",") === "file,ring,file,file,plus-settings,native-features", "global actions use the same accessible dispatcher")) return
+                    fakePanel.device = ({id:"fixture",type:"phone",paired:true,reachable:true,capabilities:{media:true},loadedKnown:true,loadedPluginIds:["kdeconnect_mprisremote"]})
+                    fakePanel.availableActions = ["media", "media-next", "native-features"]
+                    test.phase = 9
+                } else if (test.phase === 9) {
+                    var media = test.findAction(toolbar, "media")
+                    var next = test.findAction(toolbar, "media-next")
+                    if (!test.check(media && media.enabled && next && !next.enabled, "media view remains available while transport waits for a reported player")) return
+                    if (!test.check(next.Accessible.description.indexOf("choose a reported player") >= 0, "disabled media transport exposes its readiness reason")) return
+                    next.Accessible.pressAction()
+                    if (!test.check(fakePanel.dispatches.length === 6, "unready media press does not dispatch")) return
+                    fakeService.mediaState = ({player:"Owned player"})
+                    test.phase = 10
+                } else if (test.phase === 10) {
+                    var nextReady = test.findAction(toolbar, "media-next")
+                    if (!test.check(nextReady.enabled, "a reported player enables the selected transport shortcut")) return
+                    nextReady.Accessible.pressAction()
+                    if (!test.check(fakePanel.dispatches[6] === "media-next", "ready transport uses the shared action dispatcher")) return
+                    fakeService.actionState = "running"
+                    test.phase = 11
+                } else if (test.phase === 11) {
+                    if (!test.check(!test.findAction(toolbar,"media-next").enabled && test.findAction(toolbar,"media").enabled && test.findAction(toolbar,"native-features").enabled, "busy state blocks transport while navigation and native configuration remain usable")) return
                     console.log("ACTION_TOOLBAR_ACCESSIBILITY_PASS " + JSON.stringify(test.checks))
                     console.log("NATIVE_PASS action toolbar accessibility")
                     Qt.quit()

@@ -15,6 +15,15 @@ ShellRoot {
         var body = find(panel,function(object) { return object.objectName === "omaconnect-content" },[])
         if (body) body.grabToImage(function(result) { result.saveToFile(Quickshell.env("NATIVE_COMMAND_LOG").replace("commands.jsonl", "desktop-"+name+".png")); test.captures++ })
     }
+    function stageIconDrop() {
+        var receiver = test.find(widget,function(object) { return object.objectName === "bar-file-drop-area" },[])
+        var event = {hasUrls:true, urls:[Qt.resolvedUrl("one")], supportedActions:Qt.CopyAction|Qt.MoveAction, accepted:false, action:Qt.IgnoreAction,
+            accept:function(value) { this.action=value;this.accepted=true }}
+        var result = receiver ? receiver.acceptFiles(event) : false
+        test.check(result && event.action===Qt.CopyAction, "actual bar drop stages Copy review: result=" + result + ",action=" + event.action + ",expected=" + Qt.CopyAction)
+        if(test.failed) return
+        test.phase=13
+    }
     Timer { interval: 300; running: test.desktopMode; onTriggered: panel.open() }
     property int phase: 0
     property int ticks: 0
@@ -57,8 +66,9 @@ ShellRoot {
         if (button) button.clicked()
     }
     function check(value, message) {
-        if (!value) { console.error("NATIVE_FAIL " + message); failed=true; Qt.quit(); }
-        else outcomes = outcomes.concat([message])
+        if (!value) { console.error("NATIVE_FAIL " + message); failed=true; Qt.quit(); return false }
+        outcomes = outcomes.concat([message])
+        return true
     }
     Plugin.Service { id: service }
     QtObject {
@@ -108,7 +118,13 @@ ShellRoot {
             if(test.phase === 0 && (!test.desktopMode || panel.opened) && service.appearance.ready && !service.appearance.busy && service.devices.length === 2) {
                 test.check(Bridge.Bridge.service === service, "own-service bridge")
                 test.check(widget.service === service && panel.service === service, "bar and panel bridge fallback")
+                test.check(!!test.find(widget,function(object) { return object.objectName === "bar-file-drop-area" },[]), "actual bar icon installs the shared file-drop target")
                 test.check(panel.viewNames.join(",") === "Devices,Send,Activity", "all three daily views load")
+                test.check(!panel.syncthingVisible && panel.savedAddressesVisible, "optional Syncthing starts hidden while saved addresses remain available")
+                panel.settings = {showSavedAddresses:false,showSyncthingLinks:true,showNetworkControls:false,mediaStartExpanded:false,commandsStartExpanded:true}
+                test.check(!panel.savedAddressesVisible && panel.syncthingVisible && !panel.networkControlsVisible, "saved section visibility respects settings")
+                panel.settings = {showTailscale:false}
+
                 test.click("Settings")
                 test.check(panel.settingsWindow.visible, "dedicated settings window opens")
                 test.activeChooser = test.find(panel,function(object) { return typeof object.openForBar === "function" },[])
@@ -158,7 +174,7 @@ ShellRoot {
                 test.check(service.operationBusy && service.activeOperation.peerId === "A", "active target survives device changes and clear")
                 test.phase=7
             } else if(test.phase === 7 && !service.operationBusy && service.activeOperation) {
-                test.check(service.activeOperation.state === "request_accepted" && service.activeOperation.accepted === 2, "two sequential KDE requests accepted")
+                test.check(service.activeOperation.state === "request_accepted" && service.activeOperation.accepted === 2, "two sequential KDE requests accepted: " + service.activeOperation.state + "/" + service.activeOperation.error)
                 test.check(service.activeOperation.delivery === "unknown", "accepted does not claim delivery")
                 test.check(JSON.stringify(service.operations).indexOf("/one") === -1, "activity excludes raw file paths")
                 test.click("Activity")
@@ -183,9 +199,16 @@ ShellRoot {
             } else if(test.phase === 11 && service.ownerPanelMessage.indexOf("unavailable") !== -1) {
                 test.check(service.ownerPanelMessage.indexOf("Opened") === -1, "owner summon exit zero without confirmation stays unavailable")
                 if (test.desktopMode) { test.capture("devices"); test.phase=12; test.ticks=0 }
-                else { console.log("NATIVE_PASS "+JSON.stringify(test.outcomes)); Qt.quit() }
+                else test.stageIconDrop()
             } else if(test.phase === 12 && test.captures >= 2 && test.ticks > 20) {
                 test.check(panel.opened, "actual native panel opened")
+                test.stageIconDrop()
+            } else if(test.phase === 13 && service.selectionState === "draft") {
+                var review = test.find(widget,function(object) { return typeof object.openSend === "function" && "visible" in object },[])
+                test.check(review && review.visible, "bar drop opens the persistent Send window")
+                test.check(service.selection.length===1 && service.draftTarget.peerId==="A" && !service.operationBusy && service.operations.length===0, "bar drop preserves recipient and waits for explicit Send")
+                service.cancelDraft()
+                review.close()
                 console.log("NATIVE_PASS "+JSON.stringify(test.outcomes))
                 panel.close()
                 Qt.quit()

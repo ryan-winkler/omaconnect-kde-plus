@@ -2,7 +2,7 @@
 
 ## Report a vulnerability privately
 
-Use [GitHub private vulnerability reporting](https://github.com/ryan-winkler/omaconnect-kde-plus/security/advisories/new). If that form is unavailable, email the maintainer at **hi@ryanw.eu** with the subject **Omaconnect KDE Plus security report**. Do not open a public issue with an exploit, credential or personal configuration.
+Use [GitHub private vulnerability reporting](https://github.com/ryan-winkler/omaconnect-kde-plus/security/advisories/new). If that form is unavailable, email the project at **omaconnectplus@ryanw.eu** with the subject **Omaconnect KDE Plus security report**. Do not open a public issue with an exploit, credential or personal configuration.
 
 Include the affected version, a short description, impact and safe reproduction steps. Use invented device names and owned test files. Do not send VPN private keys, pairing material, passwords, tokens, raw configuration directories or personal file contents. Ask for a secure exchange method if sensitive evidence is necessary.
 

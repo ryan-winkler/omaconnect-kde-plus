@@ -182,14 +182,6 @@ Item {
         return controller.openKdeConnectApp()
     }
 
-    function configureFirewall() {
-        controller.configureFirewall()
-    }
-
-    function installDependencies() {
-        controller.installDependencies()
-    }
-
     function refreshTailscale() {
         controller.refreshTailscale()
     }

@@ -21,6 +21,29 @@ KDE Connect owns pairing, its native modules and the device protocol. Existing n
 
 `good first issue` marks a bounded task with a useful starting point. `help wanted` marks work where another contributor can help. Maintainers should add a clear acceptance check before applying either label. You can ask for help before choosing a task.
 
+## Share reusable improvements upstream
+
+Offer reusable fixes and enhancements to the project that owns the behavior when appropriate. Keep a change here when it is specific to Plus, or record why an upstream contribution does not fit. An upstream offer is a reviewed proposal; it does not promise acceptance or an automatic merge.
+
+| Behavior belongs to… | Contribution route |
+| --- | --- |
+| The original OmaConnect UI, launcher or helper | [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect). Reproduce against its current source before proposing the smallest reusable change. |
+| The KDE Connect protocol, daemon or native desktop application | [KDE Connect desktop source](https://invent.kde.org/kde/kdeconnect-kde), following [KDE’s contribution and reporting guidance](https://kdeconnect.kde.org/get-involved.html). |
+| Android native modules, permissions or application behavior | [KDE Connect Android source](https://invent.kde.org/kde/kdeconnect-android), following the same KDE guidance. |
+| Plus-specific settings, appearance metadata or integration UI | This repository. Explain the Plus requirement and retain the existing provider boundary. |
+
+**Search before opening an issue or PR.** Check open and closed work in this fork and the owning upstream. If an existing proposal covers the behavior, link it and contribute relevant evidence or a focused follow-up there. Do not create a competing duplicate. Treat security reports through [SECURITY.md](SECURITY.md) and the affected upstream’s private reporting route first.
+
+The 29 October 2026 audit found existing upstream proposals for [plain-text device values (#32)](https://github.com/jitendradara12/omaconnect/pull/32), [structured D-Bus parsing and SMS input validation (#33)](https://github.com/jitendradara12/omaconnect/pull/33), and [per-script syntax checks and CI (#34)](https://github.com/jitendradara12/omaconnect/pull/34), all by [riccelso](https://github.com/riccelso). Reference these proposals instead of opening duplicates. Recheck their current state and the exact Plus boundary before adapting code; a broad upstream patch can change contracts that Plus must preserve.
+
+For each contribution:
+
+- [ ] Link the exact related upstream issue/PR, or state that the search found none.
+- [ ] Offer a reusable change upstream, link the existing proposal it supports, or explain why it belongs only in Plus.
+- [ ] Credit the source author and exact issue/PR or commit for adapted work; retain its license notices.
+- [ ] Explain any fork-only adaptation, deferred upstream offer or upstream decision that requires a local difference.
+- [ ] Include focused checks and remaining device/UI acceptance limits. Keep upstream review and merge status separate from those results.
+
 ## Make the change
 
 1. Read [AGENTS.md](AGENTS.md) and the owning domain above.
@@ -32,7 +55,7 @@ KDE Connect owns pairing, its native modules and the device protocol. Existing n
 
 Small documentation and focused bug fixes can go directly to a PR. For a new provider, public schema, native-module installer or major navigation change, open a feature issue first. This avoids duplicate work and protects the existing boundaries. See the [settings decision](docs/2026-10-29-settings-rice-personas.md) before proposing a second KDE plugin manager.
 
-The stable plugin ID is `ryan.omaconnect`. Keep existing settings and identity compatible. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
+The stable plugin ID is `Omaconnect.plus`. Treat the 0.2.0 identity change as an explicit migration. Preserve source settings and private metadata; new-ID runtime acceptance needs its own receipt. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
 
 ## Test without changing personal state
 
@@ -52,3 +75,19 @@ Do not make automated checks install a plugin, restart the shell, change VPN mod
 Use `git commit -s` for new contributions when possible. This adds a Developer Certificate of Origin sign-off; it does not transfer your copyright. Read [DCO 1.1](https://developercertificate.org/) before signing. We do not require contributors to rewrite inherited history or install a separate DCO app.
 
 CodeRabbit can provide an additional review when its GitHub app has repository access. Its comments do not replace maintainer review, tests or device evidence. See [release and contributor checks](docs/contributor-release-plan.md) for setup status and limits.
+
+## Add a feature or setting
+
+Reuse the owning domain before creating a new abstraction:
+
+| Change | Source of behavior | Boundary and check |
+| --- | --- | --- |
+| A reviewed shortcut | `ActionCatalog.js`, then the existing `Panel.qml` dispatcher | Add the ID to preference/migration validation; keep the catalogue parity check. Expose capability, loaded state and help. Never turn a plugin name into an arbitrary command. |
+| A Plus preference | `manifest.json` and `PreferenceControls` in the owning Settings domain | Add its typed key to `network_preferences.py` and migration validation. Verify saved readback and defaults. Visibility must not change native permissions or VPN policy. |
+| File selection or drop | `FileDropArea.qml` and the existing controller/portal helper | Both the bar and Send target share Copy-only review. Do not add a second transfer engine or implicit Send. |
+| Native module support | Searchable `FeatureCatalog.js` and selected-device native handoff | Preserve unknown reported IDs. Use a verified native API before offering a direct action. |
+| Syncthing | The optional local identity note and existing owner route | Keep sync state, keys and folder operations with Syncthing/Syncshell. |
+
+Keep UI data catalogues small. Python validation remains an independent trust
+boundary; parity tests prevent drift. Prefer one focused check to a new framework.
+Include nearby helper text or a fixed documentation link for each new control.

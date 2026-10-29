@@ -62,6 +62,8 @@ ShellRoot {
                 if(!test.check(settings.visible && settings.width===720 && settings.height===640,"dedicated native settings window opens"))return
                 if(!test.check(settings.transientParent===null,"settings remains independent of the bar popup"))return
                 if(!test.check(test.named("Settings: Appearance").activeFocus,"opening settings focuses domain navigation"))return
+                if(!test.check(test.named("Show Syncthing identity notes")!==null && test.named("Show saved addresses")!==null,"optional sections have explicit saved visibility controls"))return
+                if(!test.check(test.named("Start media expanded")!==null && test.named("Start network controls expanded")!==null,"collapse defaults are configurable"))return
                 test.named("Settings: Connections").clicked();test.phase=2
             } else if(test.phase===2) {
                 if(!test.check(settings.currentPage==="Connections" && test.named("Show MikroTik Back to Home")!==null,"domain navigation exposes connection preferences"))return

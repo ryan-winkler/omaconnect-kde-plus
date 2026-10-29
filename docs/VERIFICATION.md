@@ -1,13 +1,15 @@
 # Current verification — 29 October 2026
 
-Product: **Omaconnect KDE Plus 0.1.0**, stable ID `ryan.omaconnect`.
-Published release: [`v0.1.0`](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0),
+Product: **Omaconnect KDE Plus 0.2.0 candidate**. Current case-sensitive plugin/IPC/storage ID: **`Omaconnect.plus`**.
+
+**Identity update:** the publication, hosted checks and installed receipts below used the previous development ID. They do not establish new-ID migration or runtime acceptance. The release task must add the exact new revision and separate receipts.
+Historical published release: [`v0.1.0`](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0),
 commit `256d50c0c20b4bdfcef73e4111317679b817cb13`. Earlier comparison revision was `f8b3e11`.
 This file separates implementation checks, installed runtime, physical acceptance
 and publication. [Historical snapshots](VERIFICATION-HISTORY-2026-10-29.md) retain
 older observations; their blocked/staged status is superseded where shown here.
 
-## Current evidence
+## Evidence before the identity update
 
 | Boundary | Evidence | Limit |
 | --- | --- | --- |
@@ -44,18 +46,16 @@ See [native fixture scope](../tests/NATIVE-QA.md),
 
 ## Acceptance limits
 
-- External file-manager drag review is owner-accepted on both actual computers. This does not extend the earlier physical transfer receipt to all file classes.
+- Pre-Send external file-manager drag review is owner-accepted on both actual computers: correct file/recipient, source retained and cancellation before Send. Actual post-drop Send and delivery remain untested. The earlier chooser-based receipt does not close this gate.
 - Assistive technology, RTL, scale 2 and reduced-motion acceptance remain open.
 - A command accepted by KDE Connect is not a delivered file or audible sound.
 - No new offsite transfer or fleet-wide network conclusion is claimed.
-- The owner confirms CodeRabbit app access is enabled for this repository. A real
-  review on the acceptance follow-up PR is being verified separately. Marketplace
-  submission awaits maintainer review; these are distinct services and outcomes.
+- CodeRabbit posted a real `COMMENTED` review on PR #3 at `b6860b9`, with one minor acceptance-wording finding. That review covers the earlier documentation change, not the current identity/security diff. Marketplace submission and acceptance remain separate.
 
 These limits stay in release notes. The fork does not advertise a new protocol,
 VPN provisioner, Quick Share engine, native plugin store or synchronization core.
 
-## Final release receipt
+## Historical release receipt before the identity update
 
 The integrated preparation command completed successfully on 29 October 2026:
 164 Python tests, all three JS suites, native manifest validation, shell syntax,
@@ -83,14 +83,12 @@ Antigravity completed its scoped public-source review with no findings. Claude
 returned no review within its 240-second bound; no clean Claude result or
 reviewer agreement is claimed. See the outside report for snapshot and CLI limits.
 At the preparation check, the available browser was signed out and no bot review
-was observed. The owner has since confirmed that CodeRabbit is enabled for this
-repository. PRs #1 and #2 had already merged; a new acceptance-documentation PR
-provides a real open change for the app. Its actual review is recorded separately.
+was observed. The owner then confirmed CodeRabbit access. PRs #1 and #2 had already merged; PR #3 supplied a real documentation change. The observed scoped review is recorded below.
 
 
-### Publication and installed runtime
+### Historical publication and installed runtime
 
-Release `v0.1.0` is published from `256d50c`. Main-branch
+The earlier release `v0.1.0` was published from `256d50c` under the previous development identity. Main-branch
 [Functional run](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/runs/40917326019)
 and [CodeQL run](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/runs/40917326011)
 passed that exact commit. Main requires the three observed fixture/analysis checks,
@@ -117,13 +115,53 @@ laptop. External services and desktop associations may change later.
 
 The owner confirmed that the real file-manager drag check passed on **both the
 laptop and desktop**. The check asked for the correct file and recipient at review,
-with the original file retained, followed by cancellation before Send. This closes
-RP22/G5 for external drag review on these two installations. It does not claim a
-new file transfer, other file managers/platforms, or broad assistive-technology
-acceptance. Product code and provider ownership are unchanged.
+with the original file retained, followed by cancellation before Send. This accepts only the pre-Send external-drag review portion of RP22/G5 on these two installations. The explicit post-drop Send result and delivery portion remain open. It does not claim other file managers/platforms or broad assistive-technology acceptance. Product code and provider ownership are unchanged.
 
-The owner also confirmed that the official CodeRabbit app is enabled for this
-repository. The earlier two release PRs were already merged, so no open PR was
-available. The follow-up records these acceptance results and tests the live app
-on a real documentation change. Owner confirmation of app access and an observed
-completed review remain distinct evidence.
+The owner also confirmed repository app access. PR #3 subsequently received the observed CodeRabbit review recorded below. That review covered the earlier documentation change; it did not cover the later technical identity and security changes.
+
+
+### Observed CodeRabbit review and wording correction
+
+[PR #3 review](https://github.com/ryan-winkler/omaconnect-kde-plus/pull/3#pullrequestreview-5703659944) is an observed `COMMENTED` review of the three-document change at `b6860b9`. It identified one minor issue: G5 combined a required explicit Send result with evidence that stopped before Send. This document and the persona gate now preserve that distinction. The earlier LAN receipt is not a substitute. New identity/security code needs its own checks and review.
+
+
+### 0.2.0 source changes awaiting final receipts
+
+The current target changes plugin/IPC/storage identity to `Omaconnect.plus`, removes inherited privileged setup launchers, and stops rendering/fetching provider-supplied media-art URLs while keeping text/player controls. The parent release task must record final-source verification, hosted results, migration and both installed readbacks. Earlier 0.1.0 results above do not prove these changes.
+
+## 0.2.0 changed-boundary QA
+
+The identity/security/settings implementation uses `Omaconnect.plus`. The integrated release gate passed **216 Python tests and three JavaScript
+suites**, native manifest validation and per-file shell syntax. Local Markdown
+file targets also pass. The exact source revision is attached to PR #3; installed
+publication receipts are recorded separately. Earlier scans remain bound to their snapshots.
+
+Fresh focused checks cover private text/Ping through stdin and a fake native bus,
+no payload in live helper argv/environment/output, actual media/Activity sinks,
+shared-source snapshot replacement with an effective raw-path negative control,
+explicit cancellation acknowledgement, removed privilege helpers and SMS bounds.
+
+The settings completeness pass adds safe Syncthing draft/readback behavior,
+optional section visibility and initial collapse, 18 reviewed actions, and one
+Copy-only drop boundary for both Send and the actual bar icon. The native bar
+integration opens a persistent review window for the fixed peer and does not
+submit. These Qt calls are controlled fixtures, not a real file-manager drag.
+The owner's earlier physical pre-Send drag acceptance remains scoped to the Send
+window and previous identity on both computers. Post-drop Send/delivery stays open.
+
+Both hosts had KDE Connect26.08.2-1. Fresh package checks used temporary databases
+and found no KDE Connect update. No system packages, phone permissions, VPN
+profiles, router settings or KDE pairings changed during these checks.
+
+See [settings audit/frontier panel](2026-10-29-settings-completeness-audit.md),
+[privacy and remediation](security-privacy-review.md),
+[Standard scan coverage](security-scan-review.md),
+[scoped outside voices](final-outside-review.md) and
+[full upstream review](UPSTREAM-REVIEW.md).
+
+Final product-source digest (49 runtime/manifest files):
+`0ea9c318b6d91f49c8012f590cc546fbe4001e5a489e71645a93c6ad6655fbbb`.
+The last source change reserves a themed scrollbar gutter after inspection of the
+six native captures. The final gate retains QML host/unqualified-type diagnostics;
+this is not a warning-free lint claim. Native fixtures substitute providers and
+use a private owned namespace root; they do not relax production ownership checks.

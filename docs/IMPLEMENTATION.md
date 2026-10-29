@@ -8,7 +8,7 @@ The design pack remains in the audit workspace; this document records code scope
 | Package | First-release result | Required evidence |
 | --- | --- | --- |
 | T00 | Separate GitHub fork, upstream remote and pinned base, isolated worktree | Source identity and original installed-file hashes |
-| T01 | Separate plugin ID, staged allowlisted migration and conflict-aware rollback | Native/ryan.bar fixture preservation; no live activation |
+| T01 | Separate plugin ID, staged allowlisted migration and conflict-aware rollback | Native/replacement-bar fixture preservation; no live activation |
 | T02 | Bar/device icon chooser, aliases, private assets and metadata | Validation, native Apply/Cancel/reload and missing-asset fallback |
 | T03 | Portal multiselect, explicit recipient/file review | Private D-Bus portal and regular-file boundary fixtures |
 | T04 | Sequential KDE request queue and bounded activity | Fixed-target, accepted/failure/unknown/cancelled lifecycle |

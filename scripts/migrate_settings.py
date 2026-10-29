@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """Prepare private migration/rollback candidates. Never activate or edit sources.
 
-Native omarchy.bar and ryan.bar share Registry's config.bar.layout schema.
+Native omarchy.bar and custom.bar share Registry's config.bar.layout schema.
 Snapshots contain only understood settings, exact slots and binding hashes.
 Unknown old settings require review; they are never copied to the fork.
 """
@@ -15,15 +15,27 @@ import re
 import sys
 
 OLD = "omaconnect"
-NEW = "ryan.omaconnect"
+NEW = "Omaconnect.plus"
 MAX_BYTES = 2097152
 BOOL_SETTINGS = {"showBatteryStats", "showBarBattery", "showNetworkStats", "showTailscale", "showDeviceTypeIcons", "showMediaPlayer", "showRemoteCommands", "showTroubleshooting", "showActionRing", "showActionClipboard", "showActionFile", "showActionSms", "showActionPing", "showActionText"}
-ALLOWED = BOOL_SETTINGS | {"defaultPingMessage"}
+BOOL_SETTINGS |= {"networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled"}
+BOOL_SETTINGS |= frozenset(('showSavedAddresses', 'showSyncthingLinks', 'showNetworkControls', 'networkStartExpanded', 'mediaStartExpanded', 'commandsStartExpanded', 'addressesStartExpanded', 'syncthingStartExpanded'))
+BOOL_SETTINGS |= frozenset(("showNativeFeatures",))
+STRING_SETTINGS = {"defaultPingMessage", "bthHelperPath", "quickActionsOrder"}
+ALLOWED = BOOL_SETTINGS | STRING_SETTINGS
+ACTION_IDS = set(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock'))
 SECTIONS = ("left", "centerBegin", "center", "centerEnd", "right", "tray")
 
 
 class MigrationError(Exception):
     pass
+
+
+def source_identity(value):
+    if (not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,95}", value)
+            or ".." in value or value.startswith("omarchy.") or value == NEW):
+        raise MigrationError("source-id-invalid")
+    return value
 
 
 def identifier(entry):
@@ -71,7 +83,13 @@ def settings(entry):
     for key, item in value.items():
         if key in BOOL_SETTINGS and type(item) is not bool:
             raise MigrationError("settings-invalid")
-        if key == "defaultPingMessage" and (not isinstance(item, str) or len(item) > 4096 or any(ord(c) < 32 and c not in "\n\t" for c in item)):
+        if key in STRING_SETTINGS and (not isinstance(item, str) or len(item) > 4096 or any(ord(c) < 32 and c not in "\n\t" for c in item)):
+            raise MigrationError("settings-invalid")
+        if key == "quickActionsOrder":
+            ids = item.split(",") if item else []
+            if len(item) > 512 or len(set(ids)) != len(ids) or any(i not in ACTION_IDS for i in ids):
+                raise MigrationError("settings-invalid")
+        if key == "bthHelperPath" and item and (not item.startswith("/") or not item.endswith("/remote-access-mode") or ".." in item.split("/") or any(ord(c) < 32 or ord(c) == 127 for c in item)):
             raise MigrationError("settings-invalid")
     return dict(value)
 
@@ -94,38 +112,40 @@ def set_disabled(config, target, disabled):
     config["disabledPlugins"] = values
 
 
-def prepare(config):
-    found = locations(config, OLD)
+def prepare(config, source_id=OLD):
+    source_id = source_identity(source_id)
+    found = locations(config, source_id)
     if not found or sum(l["kind"] == "bar" for l in found) > 1 or sum(l["kind"] == "plugin" for l in found) > 1 or locations(config, NEW):
         raise MigrationError("entry-conflict")
     result = copy.deepcopy(config)
     disabled = config.get("disabledPlugins", [])
     if not isinstance(disabled, list) or len(disabled) != len(set(disabled)):
         raise MigrationError("disabled-list-invalid")
-    snapshot = {"schema_version":1, "old_id":OLD, "new_id":NEW, "entries":[], "bindings":[], "disabled_present":"disabledPlugins" in config,
-        "old_disabled":OLD in disabled, "new_disabled":NEW in disabled,
-        "disabled_positions":{key:disabled.index(key) for key in (OLD, NEW) if key in disabled}}
+    snapshot = {"schema_version":1, "old_id":source_id, "new_id":NEW, "entries":[], "bindings":[], "disabled_present":"disabledPlugins" in config,
+        "old_disabled":source_id in disabled, "new_disabled":NEW in disabled,
+        "disabled_positions":{key:disabled.index(key) for key in (source_id, NEW) if key in disabled}}
     legacy_icon = True
     for loc in reversed(found):
         source = entries_at(config, loc)[loc["index"]]
         before = settings(source)
         after = {k:v for k,v in before.items() if k != "showDeviceTypeIcons" and not k.startswith("showAction")}
-        after.update(showTailscale=False, showTroubleshooting=False, quickActionsOrder=legacy_actions(before))
+        after.update(showTailscale=False, showTroubleshooting=False, quickActionsOrder=before.get("quickActionsOrder", legacy_actions(before)))
         # Registry reads native bar/service entry settings inline, not under settings.
         entries_at(result, loc)[loc["index"]] = dict(after, id=NEW)
         snapshot["entries"].append(dict(loc, source_shape=source_shape(source), target_shape="inline", was_string=isinstance(source,str), settings_present=isinstance(source,dict) and "settings" in source, before=dict(before), after=dict(after)))
         if "showDeviceTypeIcons" in before:
             legacy_icon = before["showDeviceTypeIcons"]
-    set_disabled(result, OLD, True)
+    set_disabled(result, source_id, True)
     set_disabled(result, NEW, snapshot["old_disabled"])
-    snapshot["disabled_after"] = {OLD:True, NEW:snapshot["old_disabled"]}
+    snapshot["disabled_after"] = {source_id:True, NEW:snapshot["old_disabled"]}
     appearance = {"schema_version":1, "bar_icon": {"mode":"automatic", "render":"symbolic"} if legacy_icon else {"mode":"preset", "value":"phone", "render":"symbolic"}, "devices":{}}
-    return result, snapshot, appearance
+    return result, snapshot, appearance if source_id == OLD else None
 
 
 def rollback(config, snapshot):
-    if not isinstance(snapshot, dict) or type(snapshot.get("schema_version")) is not int or snapshot.get("schema_version") != 1 or snapshot.get("old_id") != OLD or snapshot.get("new_id") != NEW:
+    if not isinstance(snapshot, dict) or type(snapshot.get("schema_version")) is not int or snapshot.get("schema_version") != 1 or snapshot.get("new_id") != NEW:
         raise MigrationError("snapshot-invalid")
+    source_id = source_identity(snapshot.get("old_id"))
     result = copy.deepcopy(config)
     try:
         for receipt in snapshot["entries"]:
@@ -155,11 +175,11 @@ def rollback(config, snapshot):
             current.update(receipt["before"])
             shape = receipt.get("source_shape", "string" if receipt["was_string"] else "nested" if receipt["settings_present"] else "inline")
             if shape == "string" and not current and not extra:
-                restored = OLD
+                restored = source_id
             elif shape == "nested":
-                restored = dict(extra, id=OLD, settings=current)
+                restored = dict(extra, id=source_id, settings=current)
             elif shape in ("inline", "string"):
-                restored = dict(extra, **current, id=OLD)
+                restored = dict(extra, **current, id=source_id)
             else:
                 raise MigrationError("rollback-conflict")
             entries[receipt["index"]] = restored
@@ -167,15 +187,15 @@ def rollback(config, snapshot):
         for target, expected in snapshot["disabled_after"].items():
             if (target in disabled) != expected:
                 raise MigrationError("rollback-conflict")
-        set_disabled(result, OLD, snapshot["old_disabled"])
+        set_disabled(result, source_id, snapshot["old_disabled"])
         set_disabled(result, NEW, snapshot["new_disabled"])
         positions = snapshot.get("disabled_positions")
         if positions is not None:
-            if not isinstance(positions, dict) or set(positions) - {OLD, NEW} or any(type(index) is not int or index < 0 for index in positions.values()):
+            if not isinstance(positions, dict) or set(positions) - {source_id, NEW} or any(type(index) is not int or index < 0 for index in positions.values()):
                 raise MigrationError("rollback-conflict")
             values = [key for key in result["disabledPlugins"] if key not in positions]
             for target, index in sorted(positions.items(), key=lambda row: row[1]):
-                if not snapshot["old_disabled" if target == OLD else "new_disabled"]:
+                if not snapshot["old_disabled" if target == source_id else "new_disabled"]:
                     raise MigrationError("rollback-conflict")
                 values.insert(min(index, len(values)), target)
             result["disabledPlugins"] = values
@@ -194,9 +214,10 @@ def read_json(path):
     return json.loads(raw), hashlib.sha256(raw).hexdigest()
 
 
-def binding_provenance(paths):
+def binding_provenance(paths, source_id=OLD):
+    source_id = source_identity(source_id)
     rows = []
-    pattern = re.compile(r"(?<![A-Za-z0-9_.-])omaconnect(?![A-Za-z0-9_.-])")
+    pattern = re.compile(r"(?<![A-Za-z0-9_.-])" + re.escape(source_id) + r"(?![A-Za-z0-9_.-])")
     for path in paths:
         raw = Path(path).read_bytes()
         if len(raw) > MAX_BYTES:
@@ -204,7 +225,7 @@ def binding_provenance(paths):
         for number, line in enumerate(raw.decode("utf-8").splitlines(), 1):
             count = len(pattern.findall(line)) if not line.lstrip().startswith("#") else 0
             if count:
-                rows.append({"path":str(Path(path).resolve()), "line":number, "sha256":hashlib.sha256(line.encode()).hexdigest(), "old_id":OLD, "new_id":NEW, "occurrences":count, "action":"review-exact-binding"})
+                rows.append({"path":str(Path(path).resolve()), "line":number, "sha256":hashlib.sha256(line.encode()).hexdigest(), "old_id":source_id, "new_id":NEW, "occurrences":count, "action":"review-exact-binding"})
     return rows
 
 
@@ -240,6 +261,7 @@ def write_stage(directory, artifacts):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("prepare", "rollback"))
+    parser.add_argument("--source-id", default=OLD, help="Existing plugin ID; target is fixed to Omaconnect.plus")
     parser.add_argument("--source", required=True, help="Source shell JSON; never modified")
     parser.add_argument("--output", required=True, help="New private staging directory; must not exist")
     parser.add_argument("--snapshot", help="Previously staged minimal snapshot for rollback")
@@ -248,9 +270,11 @@ def main():
     try:
         config, digest = read_json(args.source)
         if args.action == "prepare":
-            candidate, snapshot, appearance = prepare(config)
-            snapshot.update(source={"path":str(Path(args.source).resolve()), "sha256":digest}, bindings=binding_provenance(args.bindings))
-            write_stage(args.output, {"candidate-shell.json":candidate, "snapshot.json":snapshot, "candidate-appearance.json":appearance})
+            candidate, snapshot, appearance = prepare(config, args.source_id)
+            snapshot.update(source={"path":str(Path(args.source).resolve()), "sha256":digest}, bindings=binding_provenance(args.bindings, args.source_id))
+            artifacts = {"candidate-shell.json":candidate, "snapshot.json":snapshot}
+            if appearance is not None: artifacts["candidate-appearance.json"] = appearance
+            write_stage(args.output, artifacts)
         else:
             if not args.snapshot:
                 raise MigrationError("snapshot-required")

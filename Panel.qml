@@ -12,8 +12,8 @@ import "ActionCatalog.js" as Actions
 
 Panel {
     id: root
-    moduleName: "ryan.omaconnect"
-    ipcTarget: "ryan.omaconnect"
+    moduleName: "Omaconnect.plus"
+    ipcTarget: "Omaconnect.plus"
     manageIpc: false
 
     property var anchorItem: hostWidget && hostWidget.button ? hostWidget.button : null
@@ -24,31 +24,48 @@ Panel {
     // hostWidget.service already carries the bridge fallback (see
     // BarWidget.qml); the bridge here covers standalone instantiation with
     // no host widget. See bridge/Bridge.qml.
-    readonly property var service: hostWidget && hostWidget.service ? hostWidget.service : (bar && bar.shell && typeof bar.shell.serviceFor === "function" ? (bar.shell.serviceFor("ryan.omaconnect") || OmaconnectBridge.Bridge.service) : OmaconnectBridge.Bridge.service)
+    readonly property var service: hostWidget && hostWidget.service ? hostWidget.service : (bar && bar.shell && typeof bar.shell.serviceFor === "function" ? (bar.shell.serviceFor("Omaconnect.plus") || OmaconnectBridge.Bridge.service) : OmaconnectBridge.Bridge.service)
     readonly property var device: service ? service.selectedDevice : null
     readonly property string deviceName: service ? service.displayName(device) : "KDE Connect"
     readonly property var incomingRequest: service ? service.incomingPairRequest : null
-    readonly property bool remoteCommandsVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.commands && (!getSetting || getSetting("showRemoteCommands", true)))
-    readonly property bool mediaPlayerVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.media && (!getSetting || getSetting("showMediaPlayer", true)))
+    property bool commandsActionRevealed: false
+    property bool mediaActionRevealed: false
+    readonly property bool remoteCommandsVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.commands && (commandsActionRevealed || getSetting("showRemoteCommands", true)))
+    readonly property bool mediaPlayerVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.media && (mediaActionRevealed || getSetting("showMediaPlayer", true)))
     readonly property bool networkVisible: false
 
-    property bool addressesExpanded: false
-    property bool syncthingExpanded: false
+    readonly property bool savedAddressesVisible: getSetting("showSavedAddresses", true)
+    readonly property bool syncthingVisible: getSetting("showSyncthingLinks", false)
+    readonly property bool networkControlsVisible: getSetting("showNetworkControls", true) && (networkOptions.tailscaleEnabled || networkOptions.bthEnabled || networkOptions.wireguardEnabled)
+    property bool networkControlsExpanded: getSetting("networkStartExpanded", true)
+    property bool addressesExpanded: getSetting("addressesStartExpanded", false)
+    property bool syncthingExpanded: getSetting("syncthingStartExpanded", false)
     property string currentView: "Devices"
     readonly property var viewNames: ["Devices", "Send", "Activity"]
     readonly property var settingsWindow: preferencesWindow
     function openSettings(page) { preferencesWindow.openSettings(page || "Appearance"); root.close() }
     function openSendWindow() { root.close(); sendWindow.openSend() }
-    onOpenedChanged: if (service) service.panelOpened = opened
+    onOpenedChanged: {
+        if (service) service.panelOpened = opened
+        if (opened) {
+            mediaActionRevealed = false
+            commandsActionRevealed = false
+            mediaExpanded = getSetting("mediaStartExpanded", true)
+            commandsExpanded = getSetting("commandsStartExpanded", false)
+            addressesExpanded = getSetting("addressesStartExpanded", false)
+            syncthingExpanded = getSetting("syncthingStartExpanded", false)
+            networkControlsExpanded = getSetting("networkStartExpanded", true)
+        }
+    }
     onCurrentViewChanged: { root.cursorActive = false; if (currentView !== "Devices") root.activeComposer = "none" }
 
     property string focusSection: "devices"
     property int selectedIndex: 0
     property int actionSelectedIndex: 0
     property bool cursorActive: false
-    property bool mediaExpanded: true
+    property bool mediaExpanded: getSetting("mediaStartExpanded", true)
     property int mediaControlIndex: 1
-    property bool commandsExpanded: false
+    property bool commandsExpanded: getSetting("commandsStartExpanded", false)
     property int commandSelectedIndex: 0
     property bool networkExpanded: false
     property int networkSelectedIndex: 0
@@ -261,7 +278,10 @@ Panel {
     }
 
     function triggerAction(actionId) {
-        if (actionId === "native-features") {
+        if (!(actionId === "file" && service && service.fileBusy) && !Actions.ready(actionId, device, service)) return
+        if (actionId === "plus-settings") { openSettings(); return }
+        var entry = Actions.entry(actionId)
+        if (entry && entry.handoff && actionId !== "sms") {
             if (service) service.openKdeConnectApp()
             return
         }
@@ -270,7 +290,7 @@ Panel {
         else if (actionId === "clipboard") service.sendClipboard(device.id)
         else if (actionId === "file") {
             if (service.fileBusy) service.cancelFileTransfer()
-            else service.startFileSelection(device.id)
+            else { root.currentView = "Send"; service.startFileSelection(device.id) }
         }
         else if (actionId === "sms") service.openSmsApp(device.id)
         else if (actionId === "ping") {
@@ -280,6 +300,22 @@ Panel {
         else if (actionId === "text") {
             if (activeComposer === "text") closeComposer()
             else openComposer("text")
+        }
+        else if (actionId === "media") {
+            currentView = "Devices"
+            mediaActionRevealed = true
+            mediaExpanded = true
+            service.fetchMediaStatus(device.id)
+            service.requestPlayerList(device.id)
+        }
+        else if (actionId === "media-previous") service.mediaPrevious(device.id)
+        else if (actionId === "media-play-pause") service.mediaPlayPause(device.id)
+        else if (actionId === "media-next") service.mediaNext(device.id)
+        else if (actionId === "commands") {
+            currentView = "Devices"
+            commandsActionRevealed = true
+            commandsExpanded = true
+            service.fetchRemoteCommands(device.id)
         }
     }
 
@@ -305,8 +341,10 @@ Panel {
         if (unpairConfirmingId && unpairConfirmingId !== id) cancelUnpairConfirm(unpairConfirmingId)
         unpairConfirmingId = ""
         resetComposer()
+        mediaActionRevealed = false
+        commandsActionRevealed = false
         commandSelectedIndex = 0
-        commandsExpanded = false
+        commandsExpanded = getSetting("commandsStartExpanded", false)
         mediaControlIndex = 1
         if (focusSection === "ping" || focusSection === "text") focusSection = availableActions.length > 0 ? "actions" : "devices"
         service.selectDevice(id)
@@ -711,7 +749,7 @@ Panel {
 
                 NativeFeaturesSection {
                     width: parent.width
-                    visible: root.currentView === "Devices"
+                    visible: root.currentView === "Devices" && root.getSetting("showNativeFeatures", true)
                     service: root.service
                 }
 
@@ -733,16 +771,24 @@ Panel {
                     panel: root
                 }
 
+                Button {
+                    focusable: true
+                    width: parent.width
+                    visible: root.currentView === "Devices" && root.networkControlsVisible
+                    text: root.networkControlsExpanded ? "Collapse network controls" : "Expand network controls"
+                    Accessible.name: text
+                    onClicked: root.networkControlsExpanded = !root.networkControlsExpanded
+                }
                 NetworkOptions {
                     id: networkOptions
                     width: parent.width
-                    visible: root.currentView === "Devices"
+                    visible: root.currentView === "Devices" && root.networkControlsVisible && root.networkControlsExpanded
                     panel: root
                 }
                 BthControlCard {
                     width: parent.width
-                    visible: root.currentView === "Devices" && networkOptions.bthEnabled
-                    panelOpened: root.opened && root.currentView === "Devices" && networkOptions.bthEnabled
+                    visible: root.currentView === "Devices" && root.networkControlsVisible && root.networkControlsExpanded && networkOptions.bthEnabled
+                    panelOpened: root.opened && root.currentView === "Devices" && root.networkControlsVisible && root.networkControlsExpanded && networkOptions.bthEnabled
                     helperPath: root.getSetting("bthHelperPath", "") || (Quickshell.env("HOME") + "/.local/bin/remote-access-mode")
                     property string lastRouteStatus: ""
                     onStatusChanged: {
@@ -754,28 +800,28 @@ Panel {
                 Button {
                     focusable: true
                     width: parent.width
-                    visible: root.currentView === "Devices"
+                    visible: root.currentView === "Devices" && root.savedAddressesVisible
                     text: root.addressesExpanded ? "Hide saved addresses" : "Manage saved addresses"
                     Accessible.name: text
                     onClicked: root.addressesExpanded = !root.addressesExpanded
                 }
                 SavedAddressesSection {
                     width: parent.width
-                    visible: root.currentView === "Devices" && root.addressesExpanded
+                    visible: root.currentView === "Devices" && root.savedAddressesVisible && root.addressesExpanded
                     discovery: root.service ? root.service.discovery : null
                     peerId: root.device ? root.device.id : ""
                 }
                 Button {
                     focusable: true
                     width: parent.width
-                    visible: root.currentView === "Devices"
-                    text: root.syncthingExpanded ? "Hide Syncthing link" : "Link Syncthing device"
+                    visible: root.currentView === "Devices" && root.syncthingVisible
+                    text: root.syncthingExpanded ? "Collapse Syncthing identity note" : "Syncthing identity note"
                     Accessible.name: text
                     onClicked: root.syncthingExpanded = !root.syncthingExpanded
                 }
                 SyncthingLinkSection {
                     width: parent.width
-                    visible: root.currentView === "Devices" && root.syncthingExpanded
+                    visible: root.currentView === "Devices" && root.syncthingVisible && root.syncthingExpanded
                     service: root.service
                 }
                 NetworkSection {

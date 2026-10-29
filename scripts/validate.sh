@@ -22,7 +22,9 @@ dbus-run-session -- python3 -m unittest discover -s tests -p 'test_*.py' -q
 node tests/appearance.cjs
 node tests/test-bth-control.cjs
 node tests/transfer_model_test.js
-bash -n scripts/*.sh
+for script in scripts/*.sh; do
+    bash -n "$script"
+done
 
 validator=""
 if command -v omarchy-plugin-validate >/dev/null 2>&1; then

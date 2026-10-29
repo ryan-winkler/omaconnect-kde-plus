@@ -46,9 +46,9 @@ private draft/import flow. See [source audit](icon-audit.md) for inspected evide
 
 | Data | Default path | Environment override |
 | --- | --- | --- |
-| Bar icon, device icons, aliases and explicit Syncthing links | `~/.config/ryan.omaconnect/appearance.json` | `$XDG_CONFIG_HOME/ryan.omaconnect/appearance.json` |
-| Imported asset copies | `~/.local/share/ryan.omaconnect/icons/<sha256>.png` or `.svg` | `$XDG_DATA_HOME/ryan.omaconnect/icons/` |
-| Saved private addresses, a separate domain | `~/.local/share/ryan.omaconnect/addresses.json` | `$XDG_DATA_HOME/ryan.omaconnect/addresses.json` |
+| Bar icon, device icons, aliases and explicit Syncthing links | `~/.config/Omaconnect.plus/appearance.json` | `$XDG_CONFIG_HOME/Omaconnect.plus/appearance.json` |
+| Imported asset copies | `~/.local/share/Omaconnect.plus/icons/<sha256>.png` or `.svg` | `$XDG_DATA_HOME/Omaconnect.plus/icons/` |
+| Saved private addresses, a separate domain | `~/.local/share/Omaconnect.plus/addresses.json` | `$XDG_DATA_HOME/Omaconnect.plus/addresses.json` |
 
 Metadata schema is version 1. Device keys use `kdeconnect:<stable KDE ID>`.
 Aliases and appearance do not change the underlying provider ID. Files are 0600;

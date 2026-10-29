@@ -265,14 +265,6 @@ Item {
         return scriptPath("scripts/open_app.sh")
     }
 
-    function getFirewallScriptPath() {
-        return scriptPath("scripts/setup_firewall.sh")
-    }
-
-    function getInstallScriptPath() {
-        return scriptPath("scripts/install_dependencies.sh")
-    }
-
     function getMediaScriptPath() {
         return scriptPath("scripts/media_control.sh")
     }
@@ -459,7 +451,7 @@ Item {
         }
     }
 
-    function startAction(id, command, acceptedMessage, operation) {
+    function startAction(id, command, acceptedMessage, operation, payload) {
         if (actionProcess.running || pairProcess.running || !canAct(id)) {
             var busy = actionProcess.running || pairProcess.running
             actionState = "blocked"
@@ -471,6 +463,10 @@ Item {
         actionProcess.targetGeneration = actionGeneration
         actionProcess.targetDeviceId = String(id)
         actionProcess.command = command
+        actionProcess.payload = payload || ""
+        actionProcess.privateSubmission = !!payload
+        actionProcess.resultState = ""
+        actionProcess.resultError = ""
         actionProcess.acceptedMessage = acceptedMessage
         actionProcess.operation = operation
         actionState = "running"
@@ -495,7 +491,13 @@ Item {
             actionMessage = ""
             return false
         }
-        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--ping-msg", text], "Ping sent", "ping")
+        if (text.length > 8192) {
+            actionState = "blocked"
+            actionError = "Use at most 8192 characters"
+            actionMessage = ""
+            return false
+        }
+        return startAction(id, ["python3", scriptPath("scripts/send_text.py")], "Ping request accepted. Delivery is not confirmed.", "ping", JSON.stringify({peerId: String(id), operation: "ping", text: text}) + "\n")
     }
 
     function shareText(id, text) {
@@ -513,7 +515,13 @@ Item {
             actionMessage = ""
             return false
         }
-        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--share-text", value], "Text sent", "text share")
+        if (value.length > 8192) {
+            actionState = "blocked"
+            actionError = "Use at most 8192 characters"
+            actionMessage = ""
+            return false
+        }
+        return startAction(id, ["python3", scriptPath("scripts/send_text.py")], "Text request accepted. Delivery is not confirmed.", "text share", JSON.stringify({peerId: String(id), operation: "text", text: value}) + "\n")
     }
 
     function ringDevice(id) {
@@ -541,7 +549,7 @@ Item {
             actionMessage = ""
             return false
         }
-        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--send-clipboard"], "Clipboard synced", "clipboard")
+        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--send-clipboard"], "Clipboard request accepted. Delivery is not confirmed.", "clipboard")
     }
 
     function openSmsApp(id) {
@@ -612,6 +620,7 @@ Item {
     function selectionErrorText(code) {
         if (code === "selection-limit") return "Select up to 100 files and 1 TiB in total"
         if (code === "portal-unavailable") return "The desktop file chooser is unavailable. Check the desktop portal and Python Gio support."
+        if (code === "source-preparation-failed") return "Could not prepare a private copy. Check cache access and free space, then choose again."
         if (code === "source-changed") return "A selected file changed. Choose the files again."
         return "Select readable local regular files. Folders and other locations are not supported."
     }
@@ -707,14 +716,18 @@ Item {
         if (!operationBusy || !activeOperation || operationId !== activeOperation.id) return
         var result
         try { result = JSON.parse(line) } catch (error) { return }
-        if (result.event === "submitting") {
+        if (result.event === "preparing") {
+            var preparing = Object.assign({}, activeOperation)
+            preparing.state = "preparing"
+            updateOperation(preparing)
+        } else if (result.event === "submitting") {
             fileTransferProcess.attempted = true
             var next = Object.assign({}, activeOperation)
             next.state = "submitting"
             updateOperation(next)
         } else if (["request_accepted", "submission_failed", "submission_unknown", "cancelled_before_submit", "cancellation_unconfirmed", "failed"].indexOf(result.state) !== -1) {
             fileTransferProcess.resultState = result.state === "failed" ? "submission_failed" : result.state
-            fileTransferProcess.resultError = ["source-path-rejected", "source-changed", "provider-missing", "submission-failed", "submission-unknown", "cancellation-unconfirmed", "identity-mismatch"].indexOf(result.error) !== -1 ? result.error : ""
+            fileTransferProcess.resultError = ["source-path-rejected", "source-changed", "source-preparation-failed", "provider-missing", "submission-failed", "submission-unknown", "cancellation-unconfirmed", "identity-mismatch"].indexOf(result.error) !== -1 ? result.error : ""
         }
     }
 
@@ -726,10 +739,12 @@ Item {
             state = fileTransferProcess.attempted ? "submission_unknown" : "submission_failed"
             error = fileTransferProcess.attempted ? "submission-unknown" : "submission-failed"
         }
-        if (cancellationRequested && fileTransferProcess.attempted) {
+        // Absence of a progress line does not prove that KDE was never called.
+        var confirmedBeforeSubmit = state === "cancelled_before_submit" && !fileTransferProcess.attempted
+        if (cancellationRequested && !confirmedBeforeSubmit) {
             state = "cancellation_unconfirmed"
             error = "cancellation-unconfirmed"
-        } else if (cancellationRequested && !fileTransferProcess.attempted) {
+        } else if (cancellationRequested && confirmedBeforeSubmit) {
             state = "cancelled_before_submit"
             error = ""
         }
@@ -891,7 +906,7 @@ Item {
             }
             return false
         }
-        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--execute-command", value], "Command executed", "remote command")
+        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--execute-command", value], "Command request accepted. Execution is not confirmed.", "remote command")
     }
 
     function setPendingPairing(id, state) {
@@ -1188,20 +1203,6 @@ Item {
         return true
     }
 
-    function configureFirewall() {
-        if (firewallProcess.running) return
-        var script = getFirewallScriptPath()
-        firewallProcess.command = ["bash", "-c", "if command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then omarchy-launch-floating-terminal-with-presentation \"bash '" + script + "'\"; else xdg-terminal-exec bash '" + script + "'; fi"]
-        firewallProcess.running = true
-    }
-
-    function installDependencies() {
-        if (installProcess.running) return
-        var script = getInstallScriptPath()
-        installProcess.command = ["bash", "-c", "if command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then omarchy-launch-floating-terminal-with-presentation \"bash '" + script + "'\"; else xdg-terminal-exec bash '" + script + "'; fi"]
-        installProcess.running = true
-    }
-
     Timer {
         id: actionDismissTimer
         interval: 4000
@@ -1314,6 +1315,22 @@ Item {
 
     Process {
         id: actionProcess
+        property string payload: ""
+        property bool privateSubmission: false
+        property string resultState: ""
+        property string resultError: ""
+        stdinEnabled: true
+        onStarted: { write(payload); payload = "" }
+        stdout: SplitParser {
+            onRead: function(line) {
+                if (!actionProcess.privateSubmission || line.length > 256) return
+                var result
+                try { result = JSON.parse(line) } catch (error) { return }
+                if (["request_accepted", "failed"].indexOf(result.state) === -1) return
+                actionProcess.resultState = result.state
+                actionProcess.resultError = ["invalid-input", "provider-unavailable", "capability-unavailable", "submission-failed", "submission-unknown"].indexOf(result.error) !== -1 ? result.error : ""
+            }
+        }
         property string targetDeviceId: ""
         property int targetGeneration: 0
         property string acceptedMessage: "Action completed"
@@ -1321,9 +1338,11 @@ Item {
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
             if (targetGeneration !== root.actionGeneration || targetDeviceId !== root.selectedDeviceId) return
-            root.actionState = code === 0 ? "accepted" : "failed"
-            root.actionMessage = code === 0 ? acceptedMessage : ""
-            root.actionError = code === 0 ? "" : root.safeError(code, operation)
+            var accepted = code === 0 && (!privateSubmission || resultState === "request_accepted")
+            var unknown = privateSubmission && (resultError === "submission-unknown" || !resultState)
+            root.actionState = unknown ? "unknown" : accepted ? "accepted" : "failed"
+            root.actionMessage = accepted ? acceptedMessage : ""
+            root.actionError = unknown ? "Submission unknown. Check the recipient before retrying." : accepted ? "" : resultError === "capability-unavailable" ? "The native feature is unavailable. Check KDE Connect Plugin Settings." : root.safeError(code, operation)
         }
     }
 
@@ -1529,20 +1548,6 @@ Item {
     }
 
     Process {
-        id: firewallProcess
-        onExited: function(code) {
-            root.refresh(true)
-        }
-    }
-
-    Process {
-        id: installProcess
-        onExited: function(code) {
-            root.refresh(true)
-        }
-    }
-
-    Process {
         id: appProcess
         onExited: function(code) {
             if (code === 0) {
@@ -1586,7 +1591,7 @@ Item {
                         album: String(parsed.album || ""),
                         player: activePlayer,
                         playerList: parsedPlayerList,
-                        albumArt: String(parsed.albumArt || "")
+                        albumArt: "" // Device-supplied resource URLs are not published to the shell UI.
                     }
                 } catch (e) {
                     root.mediaState = root.emptyMediaState()
@@ -1645,8 +1650,6 @@ Item {
         fileInspectProcess.running = false
         tailscaleProcess.running = false
         addressProcess.running = false
-        firewallProcess.running = false
-        installProcess.running = false
         appProcess.running = false
         mediaStatusProcess.running = false
         mediaActionProcess.running = false

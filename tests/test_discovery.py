@@ -38,7 +38,7 @@ class FakeBus:
 class AddressBoundary(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.directory = Path(self.temp.name) / "ryan.omaconnect"
+        self.directory = Path(self.temp.name) / "Omaconnect.plus"
         self.bus = FakeBus(["192.168.1.2", "external-host"])
 
     def tearDown(self):

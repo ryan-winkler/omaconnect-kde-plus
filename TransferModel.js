@@ -41,11 +41,12 @@ function formatBytes(value) {
 function status(operation) {
     if (!operation) return ""
     var evidence = operation.accepted + "/" + operation.count + " requests accepted. Delivery unknown."
+    if (operation.state === "preparing") return "Preparing a safe file handoff. No new request submitted yet. " + evidence
     if (operation.state === "submitting") return "Submitting to KDE Connect. " + evidence
     if (operation.state === "queued") return "Waiting to submit. " + evidence
     if (operation.state === "cancellation_unconfirmed") return "Cancellation unconfirmed. " + evidence
     if (operation.state === "submission_unknown") return "Submission unknown. Do not retry until you check for duplicates. " + evidence
-    if (operation.state === "submission_failed") return "Submission failed for " + operation.failed + " file(s). " + evidence
+    if (operation.state === "submission_failed") return "Submission failed for " + operation.failed + " file(s). " + (operation.error === "source-preparation-failed" ? "Could not prepare a private copy. Check cache access and free space, then choose again. " : "") + evidence
     if (operation.state === "cancelled_before_submit") return operation.cancelled + " file(s) cancelled before submission. " + evidence
     return evidence
 }

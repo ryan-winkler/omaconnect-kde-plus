@@ -1,5 +1,7 @@
 # Historical verification snapshots
 
+Identity note: this report describes the previous development identity. It does not establish runtime or migration acceptance for the current `Omaconnect.plus` ID. See [current verification](VERIFICATION.md).
+
 These are dated development receipts. They do not describe current installation
 or release state. See [current verification](VERIFICATION.md).
 
@@ -30,7 +32,7 @@ both new components without TypeError/ReferenceError in the isolated fixtures.
 - Keyboard: actual Qt key-event fixture now passes **29 assertions**, including
   native feature entry/details, Tailscale/WireGuard owner-button focus, BTH,
   addresses and Syncthing. Owner buttons are focused, not launched.
-- Intended desktop **Kintsugi, x86_64**: updated candidate passes **32 native
+- Intended desktop **the intended desktop, x86_64**: updated candidate passes **32 native
   assertions** with the actual installed KeyboardPanel and current Wayland socket.
   All providers/actions/state are private fakes. Seven protected installed files
   retain their hashes. The standard plugin remains active; no fork activation.
@@ -84,7 +86,7 @@ Focused suites cover:
 - Private address validation, baseline preservation, merge/readback conflicts,
   four concurrent writers, real busctl against private fake KDE and native
   queue/close-disable behavior with owned helpers.
-- Native/ryan.bar/tray migration, icon semantics, private staging and rollback
+- Native/replacement-bar/tray migration, icon semantics, private staging and rollback
   conflicts that preserve unrelated later edits.
 - Native QML component/control integration: actual Service, BarWidget, Panel,
   facade bridge, tabs, chooser Apply/Cancel/reload, aliases, portal review,
@@ -138,7 +140,7 @@ real transfer check. Test submission acknowledgement alone is not delivery proof
 
 ### Intended desktop and real phone check
 
-The owner clarified that ubiquitous/Kintsugi, paired with Leica 17, was the intended
+The owner clarified that the intended x86_64 desktop, paired with the owner-selected phone, was the intended
 desktop. The existing pinned `desktop` SSH connection verified Kintsugi/x86_64.
 A private source staging directory on that host passed all 124 Python tests, all
 three JS suites, the installed manifest validator and shell syntax. Its explicit
@@ -147,7 +149,7 @@ Standard OmaConnect remained installed and connected; its seven protected
 source/config/helper files retained their starting hashes.
 
 The fork's actual one-shot submission helper sent a generated 109-byte text file
-to the explicitly selected, paired and reachable Leica 17. The helper reported
+to the explicitly selected, paired and reachable the owner-selected phone. The helper reported
 request_accepted. The owner then confirmed reception, opening and the matching
 unique check code. This establishes one real text payload on this LAN; it does
 not establish every file type, zero-byte/multifile delivery, cancellation or away
