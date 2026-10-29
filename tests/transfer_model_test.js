@@ -22,7 +22,9 @@ assert.equal(history.length, 50);
 assert.equal(history[0].id, '54');
 assert.equal(model.formatBytes(2 ** 40), '1.00 TiB');
 // Run the actual QML functions against process doubles to catch selection coupling.
-const qml = fs.readFileSync(path.join(root, 'KdeConnectController.qml'), 'utf8');
+// File functions resolve in the file controller first; the core only forwards them.
+const qml = ['controller/FileTransferController.qml', 'KdeConnectController.qml']
+ .map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
 function extract(name) {
  const start = qml.indexOf('    function ' + name + '(');
  assert.ok(start >= 0, name);
@@ -53,7 +55,7 @@ assert.ok(!qml.includes('"File sent"'));
 // Exercise the real batch functions, including review, immutable peer and timeout.
 const pending = [];
 Object.assign(context, {
- TransferModel:model, Qt:{callLater:callback=>pending.push(callback)}, root:context,
+ TransferModel:model, Qt:{callLater:callback=>pending.push(callback)}, root:context, controller:context,
  devices:[{id:'A',name:'Original phone',paired:true,reachable:true,capabilities:{file:true}}, {id:'B',name:'Other phone',paired:true,reachable:true,capabilities:{file:true}}],
  selectedDeviceId:'A',selection:[],selectionBytes:0,selectionState:'idle',selectionError:'',draftTarget:null,
  selectionGeneration:0,fileTransferGeneration:0,operationSequence:0,operations:[],activeOperation:null,operationBusy:false,
