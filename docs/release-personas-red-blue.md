@@ -158,3 +158,16 @@ Use this checklist after the responsible owner lands fixes. Add evidence to the 
 | P2-10 | Public CI/review/catalog status. | Exact final-head CI and review URLs; resolved findings; catalog submission URL; accepted/pending/rejected stated separately. |
 
 Stop this audit when all applicable blocking findings have evidence, the final claims match that evidence, and remaining limits are explicit. Reopen a journey only after a relevant change, failed check, or new report. Do not manufacture extra persona votes or repeat the complete set to make the release look safer.
+
+
+### Parent integration receipt
+
+F01 is corrected with exact inline/native and legacy rollback fixtures; the full
+integrated preparation run passes 164 tests. F03 is corrected by the authoritative
+[verification matrix](VERIFICATION.md) with old state archived explicitly.
+F04 now has the agreed name, stable ID, proper upstream credit, supported lifecycle
+commands and contributor/security routes. The public fork is renamed with history
+retained; hosted Functional and both CodeQL jobs passed `a5c3470`. Publication,
+installed release readback and catalog state remain separate final receipts.
+[Outside review](release-outside-voices.md) records the completed Antigravity pass
+and Claude timeout. Physical drag/AT/away limits remain explicit.

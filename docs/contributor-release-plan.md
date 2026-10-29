@@ -56,7 +56,7 @@ Checked items record administrative actions confirmed by the release task on 202
 - [ ] Check whether default CodeQL setup is active before using the supplied advanced workflow; choose one setup and avoid duplicate scans.
 - [ ] Install or grant the official CodeRabbit GitHub app access to this repository. Confirm the organization/account's public-repository plan. Do not buy a plan to complete this release.
 - [ ] Open a real pull request after app access is set. Confirm a CodeRabbit review and configuration acceptance. If needed, comment `@coderabbitai review` on that PR. Record a link and outcome.
-- [ ] Confirm Functional checks and both CodeQL jobs run successfully on the actual release revision. Inspect any skip or warning. Add required branch checks only after the actual check names exist.
+- [x] Confirm Functional checks and both CodeQL jobs run on preparation revision `a5c3470`: all passed. Inspect native skips. Required branch checks and final release revision are recorded separately.
 - [ ] Confirm the issue chooser, forms, private security route, contributor links and release notes configuration work on GitHub after the rename.
 - [ ] Complete separately authorized installed-desktop and device checks. Report ARM, x86, fixture, physical receipt, keyboard and assistive-technology evidence separately.
 - [ ] Publish the reviewed version and source revision only after release gates pass. Automatic release notes can use `.github/release.yml`; they do not replace current known limits.

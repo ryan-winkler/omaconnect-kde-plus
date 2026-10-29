@@ -38,7 +38,8 @@ full Omarchy native runtime and must report that gap.
 See [native fixture scope](../tests/NATIVE-QA.md),
 [helper security review](release-security-qa.md),
 [50-persona/red-blue review](release-personas-red-blue.md), and
-[contributor/release checks](contributor-release-plan.md).
+[contributor/release checks](contributor-release-plan.md), and
+[bounded outside reviews](release-outside-voices.md).
 
 ## Acceptance limits
 
@@ -67,3 +68,18 @@ enabled; 16 labels and relevant topics are applied. Default CodeQL setup is not
 configured, so the supplied advanced workflow will be the only CodeQL setup.
 App access, actual hosted checks, installed release update and catalog submission
 remain separate receipts. No pending item above is implicitly accepted.
+
+
+Hosted checks passed for preparation revision `a5c3470`: Functional fixtures and
+local links, Analyze Python, Analyze Actions and the CodeQL result check.
+[Functional run](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/runs/40916543422)
+and [CodeQL run](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/runs/40916543493)
+are separate hosted receipts. Code scanning returned no open alerts at inspection.
+Hosted native prerequisites remain explicitly skipped.
+
+Antigravity completed its scoped public-source review with no findings. Claude
+returned no review within its 240-second bound; no clean Claude result or
+reviewer agreement is claimed. See the outside report for snapshot and CLI limits.
+The browser is signed out of GitHub, so CodeRabbit app access is awaiting the
+owner. Its configuration and explicit PR review request are present; no bot
+review has yet been observed. This does not block the independent local checks.
