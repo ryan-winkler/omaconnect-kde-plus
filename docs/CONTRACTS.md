@@ -54,8 +54,9 @@ Preparation has a 120-second work deadline, cancellation checks between chunks,
 a 64 MiB free-space reserve, and source identity checks after copying. Blocking
 filesystem calls cannot be forcibly preempted by that deadline. Snapshots have
 0700 directories and 0600 files below the XDG cache path documented in [Help](HELP.md).
-They become eligible after 24 hours and are removed on the next preparation,
-including a later fast path. Cleanup accepts only the exact owned flat snapshot
+They become eligible after 24 hours. Cleanup is attempted on later preparation
+when the cache is safe and available. Protected-file preparation treats cache
+housekeeping as best effort; shared-file snapshots still require a safe cache. Cleanup accepts only the exact owned flat snapshot
 shape; it preserves unrelated or unexpected state. A process deadline is 15 seconds. The queue invokes one helper per file in order.
 There is no automatic retry after an ambiguous timeout.
 

@@ -67,6 +67,52 @@ class PrivateSources(unittest.TestCase):
             self.assertEqual(prepared.path, str(source))
         self.assertFalse(self.cache.exists(), 'fast path needs no cache or payload copy')
 
+    def test_private_fast_path_does_not_depend_on_unsafe_or_unavailable_cache(self):
+        private = self.base / 'protected-file'
+        private.write_bytes(b'protected source')
+        self.cache.symlink_to(self.base, target_is_directory=True)
+        with self.m.prepared_source(reviewed(private), lambda: False) as prepared:
+            self.assertFalse(prepared.snapshot_used)
+            self.assertEqual(prepared.path, str(private))
+        self.assertTrue(self.cache.is_symlink(), 'unsafe existing cache is preserved')
+        with patch.object(self.m, '_cache_directory', side_effect=PermissionError('owned fixture')):
+            with self.m.prepared_source(reviewed(private), lambda: False) as prepared:
+                self.assertFalse(prepared.snapshot_used)
+
+    def test_private_fast_path_cache_expiry_io_error_is_optional(self):
+        private = self.base / 'protected-file'
+        private.write_bytes(b'protected source')
+        cache = self.m._cache_directory()
+        with patch.object(self.m, '_expire', side_effect=OSError(errno.EIO, 'owned fixture')) as expire:
+            with self.m.prepared_source(reviewed(private), lambda: False) as prepared:
+                self.assertFalse(prepared.snapshot_used)
+                self.assertEqual(Path(prepared.path).read_bytes(), b'protected source')
+            self.assertEqual(expire.call_args.args[0], cache)
+
+    def test_private_fast_path_preserves_expiry_cancellation_and_deadline(self):
+        private = self.base / 'protected-file'
+        private.write_bytes(b'protected source')
+        self.m._cache_directory()
+        for code in ('cancelled-before-submit', 'source-preparation-failed'):
+            with self.subTest(code=code), patch.object(self.m, '_expire', side_effect=ValueError(code)):
+                with self.assertRaisesRegex(ValueError, '^' + code + '$'):
+                    with self.m.prepared_source(reviewed(private), lambda: False):
+                        self.fail('expiry cancellation/deadline was ignored')
+        cancelled = False
+        def interrupted_expiry(*unused):
+            nonlocal cancelled
+            cancelled = True
+            raise OSError(errno.EIO, 'owned fixture')
+        with patch.object(self.m, '_expire', side_effect=interrupted_expiry):
+            with self.assertRaisesRegex(ValueError, '^cancelled-before-submit$'):
+                with self.m.prepared_source(reviewed(private), lambda: cancelled):
+                    self.fail('cancellation after optional housekeeping was ignored')
+        with patch.object(self.m, '_expire', side_effect=OSError(errno.EIO, 'owned fixture')):
+            with patch.object(self.m.time, 'monotonic', side_effect=[0, 1, 2, 121]):
+                with self.assertRaisesRegex(ValueError, '^source-preparation-failed$'):
+                    with self.m.prepared_source(reviewed(private), lambda: False):
+                        self.fail('deadline after optional housekeeping was ignored')
+
     def test_group_writable_file_requires_a_snapshot(self):
         self.shared.chmod(0o700)
         self.source.chmod(0o660)

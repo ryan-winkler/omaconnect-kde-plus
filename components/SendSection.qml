@@ -61,7 +61,7 @@ Column {
         textFormat: Text.PlainText
         visible: root.files.length > 0
         width: parent.width
-        text: "Files in shared locations can need a private cache copy. Copies become eligible for cleanup after 24 hours and are removed on a later preparation. See Help → Send files."
+        text: "Files in shared locations can need a private cache copy. Copies become eligible for cleanup after 24 hours. Cleanup is attempted later when the cache is safe and available. See Help → Send files."
         wrapMode: Text.Wrap
         color: root.foreground
         font.family: root.fontFamily

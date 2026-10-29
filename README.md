@@ -151,7 +151,11 @@ Use **enable**, **disable** or **remove** only for the action you want. Removal
 uses Omarchy’s confirmation flow. It does not remove KDE pairings, providers or
 private Plus metadata. Appearance assets and approved-address records stay under
 `~/.config/Omaconnect.plus/` and `~/.local/share/Omaconnect.plus/`
-unless you explicitly remove them. XDG overrides are supported. See the
+unless you explicitly remove them. Shared-source cache copies also remain after
+removal; they become eligible after 24 hours; cleanup is attempted on later
+preparation when the cache is safe and available. See [cache retention](docs/HELP.md#send-files-and-read-activity).
+Wait for native transfers to finish before explicitly removing that cache.
+XDG overrides are supported. See the
 [icon storage guide](docs/ICONS.md) for exact paths and backup scope.
 
 For rollback, disable `Omaconnect.plus` and re-enable the source plugin by its recorded ID if still installed.
@@ -189,7 +193,7 @@ private asset storage; originals remain unchanged. Corrupt or unsupported metada
 blocks changes. Activity stores at most 50 summaries in memory, without raw paths. Typed text and custom Ping content use stdin and native D-Bus, keeping content out of process arguments.
 The KDE CLI requires a path argument, which can appear in process metadata. Files in shared locations use a private snapshot from the validated descriptor;
 protected private files retain the native path flow. Copies become eligible after
-24 hours and are removed on the next preparation. See [retention and storage](docs/HELP.md#send-files-and-read-activity).
+24 hours. Cleanup is attempted later when the cache is safe and available. See [retention and storage](docs/HELP.md#send-files-and-read-activity).
 Same-user programs and root remain trusted. The UI does not claim a native atomic
 descriptor handoff or an end-to-end delivery receipt.
 

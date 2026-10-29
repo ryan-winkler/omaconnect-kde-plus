@@ -113,9 +113,10 @@ private temporary directory. SMS launch arguments are bounded before reaching th
 native launcher. These are isolation and validation hardening, not demonstrated
 current-host privilege escalation or shell injection.
 
-A stopped running helper without an explicit before-submit acknowledgement now
-leaves cancellation unconfirmed. A deterministic model regression covers both
-unknown and acknowledged-before-submit results; no Qt event-order race is claimed.
+When a running helper is stopped without an explicit before-submission
+acknowledgement, cancellation remains unconfirmed. A deterministic model regression
+covers both unknown and acknowledged-before-submit results; no Qt event-order race
+is claimed.
 
 ## Trusted CSO snapshot result
 
@@ -141,3 +142,18 @@ arguments. A private fake-bus integration checks the received content, while
 These checks establish the Plus process boundary; they do not audit the KDE daemon
 or make the session bus private from other applications running as the user.
 The exact fixed revision and hosted review belong to the final release receipt.
+
+## Post-review availability and fixture isolation
+
+CodeRabbit's full review identified optional cache housekeeping on protected
+sources as an unnecessary prerequisite. That path now skips unsafe/unavailable
+cache housekeeping and expiry I/O failures. Cancellation/deadline and held-source
+identity checks remain; shared-source snapshots still require a safe cache. The
+17 private-source tests and 7 transfer tests cover this boundary.
+
+The standalone transfer child's HOME/cache now belong to its temporary fixture.
+Canonical full runs already isolate HOME/XDG globally; direct focused runs must
+also be safe. No production cache was present at the parent's review-time check.
+This is a correction to test isolation, not retrospective proof about all earlier
+machines. Cleanup/retention language now says best effort when cache is safe and
+available. No maximum retention guarantee is added.

@@ -94,8 +94,8 @@ The preparation deadline is 120 seconds, checked between copy chunks. A blocked
 filesystem call can take longer. Copies live in
 `$XDG_CACHE_HOME/Omaconnect.plus/share-snapshots/` (default:
 `~/.cache/Omaconnect.plus/share-snapshots/`), with owner-only directories and files.
-They become eligible after 24 hours and are removed on the next preparation;
-this is not a guaranteed maximum retention time. Plus preserves unexpected files.
+They become eligible after 24 hours. Cleanup is attempted on later preparation
+when the cache is safe and available; there is no guaranteed maximum retention time. Plus preserves unexpected files.
 Private canonical sources normally use their existing path. KDE owns its later
 file open; programs running as your user and root remain trusted.
 Text, Ping, Clipboard and remote-command success messages also report request acceptance. Check the recipient or remote result for delivery or execution.

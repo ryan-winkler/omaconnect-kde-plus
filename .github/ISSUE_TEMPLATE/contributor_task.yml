@@ -1,0 +1,38 @@
+name: Contributor task
+description: Propose a bounded fix, guide change or fixture for community work.
+title: "[Task]: "
+labels: ["help wanted", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe one useful result. Read CONTRIBUTING.md and search related upstream work first.
+        This form does not mark work as approved or ready. Keep private configurations, addresses, identifiers and credentials out.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What should a user or contributor be able to do?
+      description: State the present problem and the desired result.
+    validations:
+      required: true
+  - type: textarea
+    id: owner
+    attributes:
+      label: Which domain and files own this change?
+      description: Use the domain map in CONTRIBUTING.md. Include relevant paths if known.
+    validations:
+      required: true
+  - type: textarea
+    id: upstream
+    attributes:
+      label: Related upstream work
+      description: Link the original OmaConnect or KDE issue/PR, or explain why this is unique to Plus. Avoid duplicates.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: What proves the task is complete?
+      description: Give a short check list and one focused validation command. Separate fixtures from real-device acceptance.
+    validations:
+      required: true

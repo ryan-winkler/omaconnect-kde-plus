@@ -44,6 +44,8 @@ For each contribution:
 - [ ] Explain any fork-only adaptation, deferred upstream offer or upstream decision that requires a local difference.
 - [ ] Include focused checks and remaining device/UI acceptance limits. Keep upstream review and merge status separate from those results.
 
+For a bounded contributor task, use the [task form](https://github.com/ryan-winkler/omaconnect-kde-plus/issues/new?template=contributor_task.yml). Give the outcome, owning paths, acceptance checks and upstream route. Maintainers apply **good first issue** only after reviewing the scope.
+
 ## Make the change
 
 1. Read [AGENTS.md](AGENTS.md) and the owning domain above.
@@ -85,7 +87,7 @@ Reuse the owning domain before creating a new abstraction:
 | A reviewed shortcut | `ActionCatalog.js`, then the existing `Panel.qml` dispatcher | Add the ID to preference/migration validation; keep the catalogue parity check. Expose capability, loaded state and help. Never turn a plugin name into an arbitrary command. |
 | A Plus preference | `manifest.json` and `PreferenceControls` in the owning Settings domain | Add its typed key to `network_preferences.py` and migration validation. Verify saved readback and defaults. Visibility must not change native permissions or VPN policy. |
 | File selection or drop | `FileDropArea.qml` and the existing controller/portal helper | Both the bar and Send target share Copy-only review. Do not add a second transfer engine or implicit Send. |
-| Native module support | Searchable `FeatureCatalog.js` and selected-device native handoff | Preserve unknown reported IDs. Use a verified native API before offering a direct action. |
+| Native module support | Searchable `components/NativeFeaturesSection.qml` and selected-device native handoff | Preserve unknown reported IDs. Use a verified native API before offering a direct action. |
 | Syncthing | The optional local identity note and existing owner route | Keep sync state, keys and folder operations with Syncthing/Syncshell. |
 
 Keep UI data catalogues small. Python validation remains an independent trust
