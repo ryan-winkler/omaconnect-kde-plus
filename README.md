@@ -1,97 +1,74 @@
-# OmaConnect
+# OmaConnect Plus
 
-Control phones and connected devices from the Omarchy bar using KDE Connect.
+An isolated Omarchy UI fork of [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect).
 
-![OmaConnect panel](preview.png)
+**Candidate version: 0.1.0-alpha.1.** The fork adds one place for known devices,
+file submission, appearance and the existing home-access controller. KDE Connect
+owns pairing and transfers. Your existing BTH helper owns VPN policy.
 
-## Install
-Just install the plugin with this command. It will handle dependencies and firewall in GUI.
-```bash
-omarchy plugin add https://github.com/jitendradara12/omaconnect.git --enable --yes
-```
+## First release
 
-## Features
+- **Appearance:** Choose a phone, computer, theme icon, custom symbol or local
+  PNG/SVG for the bar. Set a separate icon and local alias for each KDE identity.
+  Preview before Apply. Reset to Phone or follow the selected device.
+- **Files:** Use the desktop portal to select up to 100 regular files, with a
+  combined maximum of 1 TiB. Check the recipient, count and size, then select
+  Send. Selection alone sends nothing. Directories are not archived.
+- **Honest activity:** Each batch keeps its reviewed recipient. Changing the
+  selected device does not redirect it. “Request accepted” means KDE accepted
+  the command; delivery remains unknown. Timeout and cancellation remain explicit.
+- **Home access:** View the existing helper’s Automatic / On / Off controls.
+  Selected mode and actual interface state are separate. Missing or invalid
+  status disables unsafe actions. No VPN keys or profiles are imported.
+- **Private addresses:** Approve private IP literals for a specific KDE identity.
+  Preserve existing KDE addresses. Opt in to rediscovery while the panel is open;
+  route events are debounced and failures back off. An IP does not prove identity.
+- **Syncthing links:** Explicitly associate two full device IDs in local metadata
+  and open the existing Syncshell panel. Syncshell retains its own core and keys.
 
-- **Device status.** Battery level, charging state, cellular network type, signal strength, and reachability.
-- **Quick actions.** Ring phone, sync clipboard, send files, share text or links, and ping devices.
-- **SMS launcher.** Open `kdeconnect-sms` for paired devices.
-- **Media playback.** Track metadata, playback controls, and player switching.
-- **File picker.** Pick recent files with `omarchy-menu-select`.
-- **Remote commands.** Run custom commands configured on paired devices.
-- **Pairing.** Manage requests, verification keys, and unpairing.
-- **Network discovery.** Add Tailscale peers or custom LAN and VPN IP addresses.
-- **Bar widget.** Show connection and battery status directly in the Omarchy bar.
+Quick Share, router rosters, new VPN setup and inline Syncthing pause/resume are
+later work. This fork does not implement the separate Banatik/UniFi collector.
 
-## Preferences
+Existing pairing, battery, media playback and player switching, remote commands,
+clipboard, text and SMS entry points remain available through KDE Connect.
 
-Configure OmaConnect in Omarchy bar widget settings.
+## Requirements
 
-| Setting | Default | Description |
-|---|---|---|
-| `showBatteryStats` | `true` | Battery percentage and charging state |
-| `showBarBattery` | `false` | Battery percentage next to the icon in the bar |
-| `showNetworkStats` | `true` | Cellular network type and signal strength |
-| `showTailscale` | `true` | Tailscale and custom IP discovery |
-| `showDeviceTypeIcons` | `true` | Device type icons in bar and panel |
-| `showMediaPlayer` | `true` | Media player controls and track metadata |
-| `showRemoteCommands` | `true` | Remote commands section |
-| `showTroubleshooting` | `true` | Setup and firewall helpers when offline |
-| `showActionRing` | `true` | Ring device button |
-| `showActionClipboard` | `true` | Clipboard sync button |
-| `showActionFile` | `true` | File transfer button |
-| `showActionSms` | `true` | SMS launcher button |
-| `showActionPing` | `false` | Ping button |
-| `showActionText` | `true` | Text and link share button |
-| `defaultPingMessage` | `""` | Default ping message draft |
+Omarchy’s Quickshell UI, KDE Connect, Python 3 with PyGObject/Gio, a desktop file
+portal, and the existing system tools used by Omarchy. Node is for tests only.
+Optional home-access controls require the existing `remote-access-mode` helper.
+Its absolute path is configurable in plugin settings; an empty setting uses
+`~/.local/bin/remote-access-mode`. Syncthing opening requires the existing
+`io.github.ilyazar.syncthing` plugin. Missing optional providers remain unavailable.
 
-## Shortcuts
+This branch uses plugin ID `ryan.omaconnect`. It can be staged separately from
+`omaconnect`. **No installation or activation occurs from the tests or checkout.**
+Read [migration and recovery](docs/MIGRATION.md) before an eventual activation.
 
-(Optional) Add to `~/.config/omarchy/shortcuts.lua`:
-
-```lua
-o.bind("SUPER + SHIFT + C", "Toggle OmaConnect", "omarchy-shell shell toggle omaconnect")
-```
-
-## Dependencies
-
-Requires `kdeconnect`, `glib2`, `dbus`, and `omarchy-menu-select` (for file sharing). `tailscale` and `kdeconnect-sms` are optional.
+## Verify the candidate
 
 ```bash
-sudo pacman -S --needed kdeconnect glib2 dbus
+./scripts/validate.sh
 ```
 
-### Tailscale and custom IPs
+The runner uses temporary state, fake providers and private D-Bus sessions.
+Native offscreen tests run when Quickshell is available. The report identifies
+skipped prerequisites. A passing fixture is not proof of real-device delivery,
+an offsite VPN, a mapped desktop or assistive-technology acceptance.
 
-Expand **Network Discovery** to add detected Tailscale peers, or enter custom LAN and VPN IP addresses directly.
+See [verification evidence](docs/VERIFICATION.md), [implementation scope](docs/IMPLEMENTATION.md),
+[provider contracts](docs/CONTRACTS.md) and [upstream lineage](FORK.md).
+The [original README](docs/UPSTREAM-README.md) is retained as historical reference;
+its installation and capability claims apply to the upstream version.
 
-### Firewall
+## Privacy and limits
 
-KDE Connect requires ports `1714:1764` (TCP and UDP). Click **Allow in Firewall** in the panel when devices are offline, or allow them manually:
+Appearance and address metadata are owner-only. Imported images are copied into
+private asset storage; originals remain unchanged. Corrupt or unsupported metadata
+blocks changes. Activity stores at most 50 summaries in memory, without raw paths.
+The KDE CLI requires a path argument, which can appear in process metadata. Its
+later file open leaves a race after the final source check. The UI does not claim
+an atomic file handoff or an end-to-end delivery receipt.
 
-![Firewall setup in OmaConnect](preview1.png)
-
-```bash
-sudo ufw allow 1714:1764/tcp comment 'KDE Connect'
-sudo ufw allow 1714:1764/udp comment 'KDE Connect'
-sudo ufw reload
-```
-
-## Update
-
-```bash
-omarchy plugin update omaconnect
-```
-
-## Remove
-
-```bash
-omarchy plugin remove omaconnect
-```
-## Star History
-
-<a href="https://www.star-history.com/?repos=jitendradara12%2Fomaconnect&type=date&releases=&legend=bottom-right">
- <picture>
-   <source  srcset="https://api.star-history.com/chart?repos=jitendradara12/omaconnect&type=date&legend=bottom-right" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=jitendradara12/omaconnect&type=date&legend=bottom-right" />
- </picture>
-</a>
+MIT license. Preserve upstream and reused Bananet notices. See `LICENSE` and the
+notice in `BthControlCard.qml`.

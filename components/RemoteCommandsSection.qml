@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Column {
@@ -35,8 +36,8 @@ Column {
             hasCursor: panel.cursorActive && panel.focusSection === "commands" && !panel.commandsExpanded
             radius: Style.cornerRadius
             foreground: root.foreground
-            fill: Style.hoverFillFor(root.foreground, Color.accent)
-            currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+            fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+            currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
             MouseArea {
                 anchors.fill: parent
@@ -55,6 +56,7 @@ Column {
                 spacing: Style.space(6)
 
                 Text {
+                    textFormat: Text.PlainText
                     text: panel.commandsExpanded ? "󰅀" : "󰅂"
                     color: root.foreground
                     font.family: root.fontFamily
@@ -89,6 +91,7 @@ Column {
         spacing: Style.space(6)
 
         Text {
+            textFormat: Text.PlainText
             visible: !!root.service && root.service.commandsLoading
             text: "Loading commands..."
             color: Qt.darker(root.foreground, 1.4)
@@ -97,6 +100,7 @@ Column {
         }
 
         Text {
+            textFormat: Text.PlainText
             visible: !!root.service && !root.service.commandsLoading && (!root.service.remoteCommands || root.service.remoteCommands.length === 0)
             text: "No remote commands configured"
             color: Qt.darker(root.foreground, 1.4)
@@ -115,8 +119,8 @@ Column {
                 implicitHeight: cmdRow.implicitHeight + Style.space(8)
                 hasCursor: panel.cursorActive && panel.focusSection === "commands" && panel.commandsExpanded && panel.commandSelectedIndex === index
                 foreground: root.foreground
-                fill: Style.hoverFillFor(root.foreground, Color.accent)
-                currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+                fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+                currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
                 MouseArea {
                     anchors.fill: parent
@@ -139,6 +143,7 @@ Column {
                     spacing: Style.space(6)
 
                     Text {
+                        textFormat: Text.PlainText
                         text: "󰘳"
                         color: Qt.darker(root.foreground, 1.4)
                         font.family: root.fontFamily
@@ -147,6 +152,7 @@ Column {
                     }
 
                     Text {
+                        textFormat: Text.PlainText
                         id: cmdBtnText
                         text: cmdSurface.modelData ? cmdSurface.modelData.name : ""
                         color: root.foreground

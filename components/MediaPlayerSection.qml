@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Column {
@@ -41,8 +42,8 @@ Column {
         hasCursor: panel.cursorActive && panel.focusSection === "media" && !panel.mediaExpanded
         radius: Style.cornerRadius
         foreground: root.foreground
-        fill: Style.hoverFillFor(root.foreground, Color.accent)
-        currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+        fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+        currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
         MouseArea {
             anchors.fill: parent
@@ -56,16 +57,18 @@ Column {
         }
 
         Text {
+            textFormat: Text.PlainText
             id: musicIcon
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             text: root.isPlaying ? "󰝚" : "󰎈"
-            color: root.isPlaying ? Color.accent : root.foreground
+            color: root.isPlaying ? Commons.Color.accent : root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
         }
 
         Text {
+            textFormat: Text.PlainText
             id: chevronIcon
             anchors.right: parent.right
             anchors.rightMargin: Style.space(2)
@@ -77,6 +80,7 @@ Column {
         }
 
         Text {
+            textFormat: Text.PlainText
             id: titleText
             anchors.left: musicIcon.right
             anchors.leftMargin: Style.space(6)
@@ -98,7 +102,7 @@ Column {
         width: parent.width
         implicitHeight: cardContent.implicitHeight + Style.space(20)
         radius: Style.cornerRadius
-        color: Style.hoverFillFor(root.foreground, Color.accent)
+        color: Style.hoverFillFor(root.foreground, Commons.Color.accent)
         border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.08)
         border.width: 1
         clip: true
@@ -166,10 +170,11 @@ Column {
                     }
 
                     Text {
+                        textFormat: Text.PlainText
                         anchors.centerIn: parent
                         visible: bgArt.status !== Image.Ready
                         text: "󰎈"
-                        color: root.hasMedia ? Color.accent : Qt.darker(root.foreground, 1.5)
+                        color: root.hasMedia ? Commons.Color.accent : Qt.darker(root.foreground, 1.5)
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.display
                     }
@@ -181,6 +186,7 @@ Column {
                     anchors.verticalCenter: parent.verticalCenter
 
                     Text {
+                        textFormat: Text.PlainText
                         width: parent.width
                         text: root.trackTitle
                         color: root.foreground
@@ -191,6 +197,7 @@ Column {
                     }
 
                     Text {
+                        textFormat: Text.PlainText
                         width: parent.width
                         visible: root.trackArtist !== "" || root.trackAlbum !== ""
                         text: {
@@ -204,6 +211,7 @@ Column {
                     }
 
                     Text {
+                        textFormat: Text.PlainText
                         width: parent.width
                         visible: !root.hasMedia
                         text: root.device && root.device.name ? "Open media on " + root.device.name : "No active player"
@@ -231,8 +239,8 @@ Column {
                                 implicitHeight: Style.space(22)
                                 radius: Style.cornerRadius
                                 foreground: root.foreground
-                                fill: isCurrent ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.18) : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.06)
-                                currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+                                fill: isCurrent ? Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.18) : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.06)
+                                currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
                                 PanelToolTip {
                                     visible: chipMouseArea.containsMouse && !isCurrent
@@ -255,14 +263,16 @@ Column {
                                     spacing: Style.space(5)
 
                                     Text {
+                                        textFormat: Text.PlainText
                                         text: "󰐌"
-                                        color: isCurrent ? Color.accent : Qt.darker(root.foreground, 1.4)
+                                        color: isCurrent ? Commons.Color.accent : Qt.darker(root.foreground, 1.4)
                                         font.family: root.fontFamily
                                         font.pixelSize: Style.font.caption
                                         anchors.verticalCenter: parent.verticalCenter
                                     }
 
                                     Text {
+                                        textFormat: Text.PlainText
                                         id: playerNameText
                                         text: modelData
                                         color: isCurrent ? root.foreground : Qt.darker(root.foreground, 1.3)
@@ -291,8 +301,8 @@ Column {
                     hasCursor: panel.cursorActive && panel.focusSection === "media" && panel.mediaExpanded && panel.mediaControlIndex === 0
                     radius: width / 2
                     foreground: root.foreground
-                    fill: Style.hoverFillFor(root.foreground, Color.accent)
-                    currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+                    fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+                    currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
                     PanelToolTip {
                         visible: prevMouseArea.containsMouse
@@ -315,6 +325,7 @@ Column {
                     }
 
                     Text {
+                        textFormat: Text.PlainText
                         anchors.centerIn: parent
                         text: "󰒮"
                         color: root.foreground
@@ -332,8 +343,8 @@ Column {
                     hasCursor: panel.cursorActive && panel.focusSection === "media" && panel.mediaExpanded && panel.mediaControlIndex === 1
                     radius: width / 2
                     foreground: root.foreground
-                    fill: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.18)
-                    currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+                    fill: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.18)
+                    currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
                     PanelToolTip {
                         visible: playMouseArea.containsMouse
@@ -356,9 +367,10 @@ Column {
                     }
 
                     Text {
+                        textFormat: Text.PlainText
                         anchors.centerIn: parent
                         text: root.isPlaying ? "󰏤" : "󰐊"
-                        color: Color.accent
+                        color: Commons.Color.accent
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.title
                     }
@@ -373,8 +385,8 @@ Column {
                     hasCursor: panel.cursorActive && panel.focusSection === "media" && panel.mediaExpanded && panel.mediaControlIndex === 2
                     radius: width / 2
                     foreground: root.foreground
-                    fill: Style.hoverFillFor(root.foreground, Color.accent)
-                    currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+                    fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+                    currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
                     PanelToolTip {
                         visible: nextMouseArea.containsMouse
@@ -397,6 +409,7 @@ Column {
                     }
 
                     Text {
+                        textFormat: Text.PlainText
                         anchors.centerIn: parent
                         text: "󰒭"
                         color: root.foreground

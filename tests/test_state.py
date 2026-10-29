@@ -1373,101 +1373,23 @@ class ManifestValidationTests(unittest.TestCase):
 
 
 class ScriptIntegrationTests(unittest.TestCase):
-  def test_file_picker_bounds_option_list_and_skips_missing_roots(self):
-    with tempfile.TemporaryDirectory() as tmp:
-        home = Path(tmp)
-        (home / "Downloads").mkdir()
-        for index in range(400):
-            entry = home / "Downloads" / f"{'n' * 200}-{index:04d}.pdf"
-            entry.write_text("x")
-            os.utime(entry, (index, index))
+  def test_file_picker_uses_portal_instead_of_scanning_user_folders(self):
+    # Portal trust-boundary and private D-Bus interaction live in test_transfer.py.
+    content = (ROOT / "scripts" / "pick_file.sh").read_text()
+    self.assertIn("portal_files.py", content)
+    self.assertNotIn("find ", content)
+    self.assertNotIn("omarchy-menu-select", content)
 
-        # Shadow the real menu so the picker's option list lands on stdout.
-        stub_dir = home / ".local" / "bin"
-        stub_dir.mkdir(parents=True)
-        stub = stub_dir / "omarchy-menu-select"
-        stub.write_text("#!/usr/bin/env bash\ncat\n")
-        stub.chmod(0o755)
-
-        result = subprocess.run(
-            ["bash", str(ROOT / "scripts" / "pick_file.sh")],
-            capture_output=True,
-            text=True,
-            env={**os.environ, "HOME": str(home), "OMARCHY_PATH": ""},
-        )
-
-    # Documents/Pictures/Videos are absent, which must not abort the picker.
-    self.assertEqual(result.returncode, 0)
-    options = result.stdout.splitlines()
-    self.assertTrue(options)
-    self.assertLess(len(options), 400)
-    self.assertLess(len(result.stdout.encode()), 128 * 1024)
-    self.assertTrue(options[0].endswith("-0399.pdf"))
-
-  def test_file_picker_supports_expanded_formats_and_desktop(self):
-    with tempfile.TemporaryDirectory() as tmp:
-      home = Path(tmp)
-      desktop = home / "Desktop"
-      desktop.mkdir()
-      downloads = home / "Downloads"
-      downloads.mkdir()
-
-      desktop_file = desktop / "presentation.pptx"
-      desktop_file.write_text("dummy")
-
-      (downloads / "song.mp3").write_text("dummy")
-      (downloads / "lossless.flac").write_text("dummy")
-      (downloads / "voice.m4a").write_text("dummy")
-      (downloads / "audio.opus").write_text("dummy")
-
-      (downloads / "document.docx").write_text("dummy")
-      (downloads / "data.xlsx").write_text("dummy")
-      (downloads / "table.csv").write_text("dummy")
-      (downloads / "notes.md").write_text("dummy")
-      (downloads / "book.epub").write_text("dummy")
-
-      (downloads / "archive.7z").write_text("dummy")
-      (downloads / "compressed.zst").write_text("dummy")
-      (downloads / "app.apk").write_text("dummy")
-
-      stub_dir = home / ".local" / "bin"
-      stub_dir.mkdir(parents=True)
-      stub = stub_dir / "omarchy-menu-select"
-      stub.write_text("#!/usr/bin/env bash\ncat\n")
-      stub.chmod(0o755)
-
-      result = subprocess.run(
-          ["bash", str(ROOT / "scripts" / "pick_file.sh")],
-          capture_output=True,
-          text=True,
-          env={**os.environ, "HOME": str(home), "OMARCHY_PATH": ""},
-      )
-
-      self.assertEqual(result.returncode, 0)
-      options = result.stdout.splitlines()
-      basenames = {Path(line).name for line in options}
-
-      expected = {
-          "presentation.pptx", "song.mp3", "lossless.flac", "voice.m4a",
-          "audio.opus", "document.docx", "data.xlsx", "table.csv",
-          "notes.md", "book.epub", "archive.7z", "compressed.zst", "app.apk"
-      }
-      for filename in expected:
-        self.assertIn(filename, basenames)
-
-      deep_dir = downloads / "a" / "b" / "c" / "d" / "e"
-      deep_dir.mkdir(parents=True)
-      (deep_dir / "hidden_too_deep.mp3").write_text("dummy")
-
-      result2 = subprocess.run(
-          ["bash", str(ROOT / "scripts" / "pick_file.sh")],
-          capture_output=True,
-          text=True,
-          env={**os.environ, "HOME": str(home), "OMARCHY_PATH": ""},
-      )
-      options2 = result2.stdout.splitlines()
-      basenames2 = {Path(line).name for line in options2}
-      self.assertNotIn("hidden_too_deep.mp3", basenames2)
+  def test_file_picker_supports_arbitrary_regular_file_types(self):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("portal_files", ROOT / "scripts" / "portal_files.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    with tempfile.TemporaryDirectory() as temporary:
+      path = Path(temporary) / "deep" / "any.custom-extension"
+      path.parent.mkdir()
+      path.write_bytes(b"fixture")
+      self.assertEqual(module.inspect_uris([path.as_uri()])[0]["path"], str(path))
 
   def test_custom_address_update_merges_with_authoritative_dbus_state(self):
     with tempfile.TemporaryDirectory() as tmp:
@@ -1898,14 +1820,18 @@ fi
     # Falls back to kdeconnect-settings if kdeconnect-app is absent
     with tempfile.TemporaryDirectory() as tmp:
       stub_dir = Path(tmp)
+      # A closed PATH prevents the installed desktop app from winning fallback.
+      (stub_dir / "bash").symlink_to(BASH)
+      (stub_dir / "nohup").write_text("#!/bin/bash\nexec \"$@\"\n")
+      (stub_dir / "nohup").chmod(0o755)
       app_bin = stub_dir / "kdeconnect-settings"
-      app_bin.write_text("#!/usr/bin/env bash\nexit 0\n")
+      app_bin.write_text("#!/bin/bash\nexit 0\n")
       app_bin.chmod(0o755)
 
       res = subprocess.run(
           [BASH, str(script)],
           capture_output=True,
-          env={**os.environ, "PATH": f"{stub_dir}:{os.environ['PATH']}"},
+          env={**os.environ, "PATH": str(stub_dir)},
       )
       self.assertEqual(res.returncode, 0)
 
@@ -2035,7 +1961,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("filePickerProcess", controller_source)
     self.assertIn("getPickerScriptPath", controller_source)
     picker_sh = (ROOT / "scripts" / "pick_file.sh").read_text()
-    self.assertIn("omarchy-menu-select", picker_sh)
+    self.assertIn("portal_files.py", picker_sh)
 
   def test_refresh_does_not_reset_discovery_state_when_ready(self):
     controller_source = (ROOT / "KdeConnectController.qml").read_text()
@@ -2045,7 +1971,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
   def test_delegate_null_guards_prevent_typeerror(self):
     device_section_source = (ROOT / "components" / "DeviceSection.qml").read_text()
     self.assertIn("selectedDeviceId === modelData.id", device_section_source)
-    self.assertIn("deviceTypeIcon", device_section_source)
+    self.assertIn("appearance.deviceIcon", device_section_source)
     self.assertIn("modelData.paired", device_section_source)
 
   def test_dependency_installer_script_and_states(self):
@@ -2087,7 +2013,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn('"Text sent"', controller_source)
     self.assertIn('"Ringing device..."', controller_source)
     self.assertIn('"Clipboard synced"', controller_source)
-    self.assertIn('"File sent"', controller_source)
+    self.assertNotIn('"File sent"', controller_source)
+    self.assertIn("TransferModel.status", controller_source)
     self.assertIn('"Command executed"', controller_source)
     self.assertIn('"Pair request sent"', controller_source)
     self.assertIn('"Device unpaired"', controller_source)
@@ -2251,7 +2178,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("fileTransferProcess", controller_source)
     self.assertIn("function cancelFileTransfer()", controller_source)
     self.assertIn("fileTransferState", controller_source)
-    self.assertIn("fileTransferGeneration", controller_source)
+    self.assertIn("targetOperationId", controller_source)
     # Ensure startAction allows actions during file transfer (actionProcess is independent)
     self.assertIn("function startAction", controller_source)
     self.assertIn("actionProcess.running", controller_source)
@@ -2259,7 +2186,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     # Check ActionToolbar enables quick actions while file transfer is active
     toolbar_source = (ROOT / "components" / "ActionToolbar.qml").read_text()
     self.assertIn('modelData === "file"', toolbar_source)
-    self.assertIn('"Cancel File"', toolbar_source)
+    self.assertIn('"Stop submitting"', toolbar_source)
 
     # Check DeviceSection status banner handles file transfer status
     device_section_source = (ROOT / "components" / "DeviceSection.qml").read_text()
@@ -2274,8 +2201,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
 
     # Check canAct and lifecycle guards
     self.assertIn("!canAct(id)", controller_source)
-    self.assertIn("fileTransferGeneration += 1", controller_source)
-    self.assertIn("fileTransferDismissTimer.stop()", controller_source)
+    self.assertIn("operationId !== activeOperation.id", controller_source)
+    self.assertIn("function clearOperations()", controller_source)
 
   def test_dbus_signal_filtering_and_monitoring(self):
     controller_source = (ROOT / "KdeConnectController.qml").read_text()

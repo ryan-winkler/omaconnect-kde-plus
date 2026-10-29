@@ -1,0 +1,15 @@
+name: Functional checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  functional:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test prerequisites
+        run: sudo apt-get update && sudo apt-get install -y python3-gi dbus nodejs ripgrep
+      - name: Test helpers and models
+        run: PATH="/usr/bin:$PATH" ./scripts/validate.sh

@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Column {
@@ -27,6 +28,7 @@ Column {
         spacing: Style.space(6)
 
         Text {
+            textFormat: Text.PlainText
             text: "Ping " + root.deviceName
             color: root.foreground
             font.family: root.fontFamily
@@ -47,12 +49,12 @@ Column {
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.bodySmall
-                selectionColor: Style.selectionFillFor(root.foreground, Color.accent)
+                selectionColor: Style.selectionFillFor(root.foreground, Commons.Color.accent)
                 selectedTextColor: root.foreground
 
                 background: Rectangle {
-                    color: Style.hoverFillFor(root.foreground, Color.accent)
-                    border.color: pingInput.activeFocus ? Color.accent : Qt.darker(root.foreground, 1.6)
+                    color: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+                    border.color: pingInput.activeFocus ? Commons.Color.accent : Qt.darker(root.foreground, 1.6)
                     border.width: 1
                     radius: Style.cornerRadius
                 }
@@ -86,9 +88,10 @@ Column {
         }
 
         Text {
+            textFormat: Text.PlainText
             visible: panel.activeComposer === "ping" && panel.composerError !== ""
             text: panel.composerError
-            color: Color.urgent
+            color: Commons.Color.urgent
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
         }
@@ -100,6 +103,7 @@ Column {
         spacing: Style.space(6)
 
         Text {
+            textFormat: Text.PlainText
             text: "Share text or link with " + root.deviceName
             color: root.foreground
             font.family: root.fontFamily
@@ -120,12 +124,12 @@ Column {
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.bodySmall
-                selectionColor: Style.selectionFillFor(root.foreground, Color.accent)
+                selectionColor: Style.selectionFillFor(root.foreground, Commons.Color.accent)
                 selectedTextColor: root.foreground
 
                 background: Rectangle {
-                    color: Style.hoverFillFor(root.foreground, Color.accent)
-                    border.color: textInput.activeFocus ? Color.accent : Qt.darker(root.foreground, 1.6)
+                    color: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+                    border.color: textInput.activeFocus ? Commons.Color.accent : Qt.darker(root.foreground, 1.6)
                     border.width: 1
                     radius: Style.cornerRadius
                 }
@@ -159,9 +163,10 @@ Column {
         }
 
         Text {
+            textFormat: Text.PlainText
             visible: panel.activeComposer === "text" && panel.composerError !== ""
             text: panel.composerError
-            color: Color.urgent
+            color: Commons.Color.urgent
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
         }

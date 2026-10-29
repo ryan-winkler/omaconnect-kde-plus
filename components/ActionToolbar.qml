@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Column {
@@ -39,7 +40,7 @@ Column {
                 readonly property string actionName: {
                     if (modelData === "ring") return "Ring"
                     if (modelData === "clipboard") return "Clipboard"
-                    if (modelData === "file") return (root.service && root.service.fileBusy) ? "Cancel File" : "File"
+                    if (modelData === "file") return (root.service && root.service.fileBusy) ? "Stop submitting" : "File"
                     if (modelData === "sms") return "SMS"
                     if (modelData === "ping") return "Ping"
                     if (modelData === "text") return "Text"
@@ -76,8 +77,8 @@ Column {
                 hasCursor: panel.cursorActive && panel.focusSection === "actions" && panel.actionSelectedIndex === index
                 current: (modelData === "ping" && panel.activeComposer === "ping") || (modelData === "text" && panel.activeComposer === "text") || (modelData === "file" && !!(root.service && root.service.fileBusy))
                 foreground: root.foreground
-                fill: Style.hoverFillFor(root.foreground, Color.accent)
-                currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+                fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+                currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
                 enabled: !root.service || (modelData === "file" ? true : (root.service.actionState !== "running"))
 
                 MouseArea {
@@ -99,15 +100,17 @@ Column {
                     spacing: Style.space(6)
 
                     Text {
+                        textFormat: Text.PlainText
                         visible: actionSurface.actionIcon !== ""
                         text: actionSurface.actionIcon
-                        color: actionSurface.current ? Color.accent : root.foreground
+                        color: actionSurface.current ? Commons.Color.accent : root.foreground
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.caption
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     Text {
+                        textFormat: Text.PlainText
                         id: actionBtnText
                         text: actionSurface.actionName
                         color: root.foreground

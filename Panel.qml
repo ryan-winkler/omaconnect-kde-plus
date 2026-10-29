@@ -4,14 +4,15 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "./components"
 import "bridge" as OmaconnectBridge
 
 Panel {
     id: root
-    moduleName: "omaconnect"
-    ipcTarget: "omaconnect"
+    moduleName: "ryan.omaconnect"
+    ipcTarget: "ryan.omaconnect"
     manageIpc: false
 
     property var anchorItem: hostWidget && hostWidget.button ? hostWidget.button : null
@@ -22,13 +23,19 @@ Panel {
     // hostWidget.service already carries the bridge fallback (see
     // BarWidget.qml); the bridge here covers standalone instantiation with
     // no host widget. See bridge/Bridge.qml.
-    readonly property var service: hostWidget && hostWidget.service ? hostWidget.service : (bar && bar.shell && typeof bar.shell.serviceFor === "function" ? (bar.shell.serviceFor("omaconnect") || OmaconnectBridge.Bridge.service) : OmaconnectBridge.Bridge.service)
+    readonly property var service: hostWidget && hostWidget.service ? hostWidget.service : (bar && bar.shell && typeof bar.shell.serviceFor === "function" ? (bar.shell.serviceFor("ryan.omaconnect") || OmaconnectBridge.Bridge.service) : OmaconnectBridge.Bridge.service)
     readonly property var device: service ? service.selectedDevice : null
-    readonly property string deviceName: device && typeof device.name === "string" ? device.name : "KDE Connect"
+    readonly property string deviceName: service ? service.displayName(device) : "KDE Connect"
     readonly property var incomingRequest: service ? service.incomingPairRequest : null
     readonly property bool remoteCommandsVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.commands && (!getSetting || getSetting("showRemoteCommands", true)))
     readonly property bool mediaPlayerVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.media && (!getSetting || getSetting("showMediaPlayer", true)))
-    readonly property bool networkVisible: (!getSetting || getSetting("showTailscale", true))
+    readonly property bool networkVisible: false
+
+    property bool addressesExpanded: false
+    property string currentView: "Devices"
+    readonly property var viewNames: ["Devices", "Send", "Activity", "Appearance"]
+    onOpenedChanged: if (service) service.panelOpened = opened
+    onCurrentViewChanged: { root.cursorActive = false; if (currentView !== "Devices") root.activeComposer = "none" }
 
     property string focusSection: "devices"
     property int selectedIndex: 0
@@ -156,6 +163,7 @@ Panel {
     }
 
     function getSetting(key, defaultValue) {
+        if (key === "showTroubleshooting") return false
         if (!settings || typeof settings !== "object") return defaultValue
         if (key in settings && settings[key] !== undefined && settings[key] !== null) {
             return settings[key]
@@ -498,6 +506,7 @@ Panel {
         } else if (focusSection === "clipboard" && service && device) {
             service.sendClipboard(device.id)
         } else if (focusSection === "file" && service && device) {
+            root.currentView = "Send"
             service.startFileSelection(device.id)
         } else if (focusSection === "ping") {
             if (activeComposer === "ping") submitPing()
@@ -545,15 +554,15 @@ Panel {
         owner: root.barIdentity
         bar: root.bar
         open: root.opened
-        focusTarget: keyCatcher
+        focusTarget: root.currentView === "Devices" ? keyCatcher : viewTabs
         contentWidth: panel.fittedContentWidth(Style.space(380))
-        contentHeight: panel.fittedContentHeight(scrollView.implicitHeight)
+        contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight)
 
         PanelKeyCatcher {
             id: keyCatcher
             anchors.fill: parent
 
-            blocked: root.activeComposer !== "none" || !!(composerSection && ((composerSection.pingInput && composerSection.pingInput.activeFocus) || (composerSection.textInput && composerSection.textInput.activeFocus))) || !!(networkSection && networkSection.addressInput && networkSection.addressInput.activeFocus)
+            blocked: root.currentView !== "Devices" || root.activeComposer !== "none" || !!(composerSection && ((composerSection.pingInput && composerSection.pingInput.activeFocus) || (composerSection.textInput && composerSection.textInput.activeFocus))) || !!(networkSection && networkSection.addressInput && networkSection.addressInput.activeFocus)
             onMoveRequested: function(dx, dy) {
                 if (root.activeComposer !== "none") return
                 if (!root.cursorActive) {
@@ -633,33 +642,128 @@ Panel {
                 spacing: Style.space(12)
                 bottomPadding: Style.space(8)
 
+                TabBar {
+                    id: viewTabs
+                    width: parent.width
+                    currentIndex: root.viewNames.indexOf(root.currentView)
+                    Accessible.name: "OmaConnect views"
+                    Repeater {
+                        model: root.viewNames
+                        TabButton {
+                            required property string modelData
+                            text: modelData
+                            Accessible.name: modelData
+                            onClicked: root.currentView = modelData
+                        }
+                    }
+                }
+                Column {
+                    width: parent.width
+                    visible: root.currentView === "Send"
+                    spacing: Style.space(8)
+                    Text {
+                        width: parent.width
+                        text: root.device ? "Selected: " + root.deviceName + "\nKDE ID: " + root.device.id : "Choose a device in Devices first."
+                        textFormat: Text.PlainText
+                        wrapMode: Text.WrapAnywhere
+                        color: Commons.Color.popups.text
+                    }
+                    Button {
+                        focusable: true
+                        width: parent.width
+                        text: "Choose files"
+                        Accessible.name: text
+                        enabled: !!root.device && root.device.paired && root.device.reachable && root.device.capabilities && root.device.capabilities.file && root.service && !root.service.operationBusy
+                        onClicked: root.service.chooseFiles(root.device.id)
+                    }
+                    SendSection { width: parent.width; service: root.service; foreground: Commons.Color.popups.text; fontFamily: Style.font.family }
+                }
+                ActivitySection { width: parent.width; visible: root.currentView === "Activity"; service: root.service }
+                Column {
+                    width: parent.width
+                    visible: root.currentView === "Appearance"
+                    spacing: Style.space(8)
+                    Button {
+                        focusable: true
+                        width: parent.width
+                        text: "Change bar icon"
+                        Accessible.name: text
+                        onClicked: { iconChooser.openForBar(root.device ? root.device.id : "", root.device ? root.device.type : "phone") }
+                    }
+                    Button {
+                        focusable: true
+                        width: parent.width
+                        text: "Change selected device icon and alias"
+                        Accessible.name: text
+                        enabled: !!root.device
+                        onClicked: { if (root.device) iconChooser.openForDevice(root.device.id, root.device.name, root.device.type) }
+                    }
+                    IconChooser {
+                        id: iconChooser
+                        width: parent.width
+                        store: root.service ? root.service.appearance : null
+                    }
+                    SyncthingLinkSection { width: parent.width; service: root.service }
+                }
                 DeviceSection {
                     id: deviceSection
+                    visible: root.currentView === "Devices"
                     panel: root
                 }
 
                 ActionToolbar {
                     id: actionToolbar
+                    visible: root.currentView === "Devices"
                     panel: root
                 }
 
                 ComposerSection {
                     id: composerSection
+                    visible: root.currentView === "Devices"
                     panel: root
                 }
 
                 MediaPlayerSection {
                     id: mediaPlayerSection
+                    visible: root.currentView === "Devices" && root.mediaPlayerVisible
                     panel: root
                 }
 
                 RemoteCommandsSection {
                     id: remoteCommandsSection
+                    visible: root.currentView === "Devices" && root.remoteCommandsVisible
                     panel: root
                 }
 
+                BthControlCard {
+                    width: parent.width
+                    visible: root.currentView === "Devices"
+                    panelOpened: root.opened
+                    helperPath: root.getSetting("bthHelperPath", "") || (Quickshell.env("HOME") + "/.local/bin/remote-access-mode")
+                    property string lastRouteStatus: ""
+                    onStatusChanged: {
+                        var current = JSON.stringify(status)
+                        if (current !== lastRouteStatus && root.service) root.service.discovery.routeChanged()
+                        lastRouteStatus = current
+                    }
+                }
+                Button {
+                    focusable: true
+                    width: parent.width
+                    visible: root.currentView === "Devices"
+                    text: root.addressesExpanded ? "Hide saved addresses" : "Manage saved addresses"
+                    Accessible.name: text
+                    onClicked: root.addressesExpanded = !root.addressesExpanded
+                }
+                SavedAddressesSection {
+                    width: parent.width
+                    visible: root.currentView === "Devices" && root.addressesExpanded
+                    discovery: root.service ? root.service.discovery : null
+                    peerId: root.device ? root.device.id : ""
+                }
                 NetworkSection {
                     id: networkSection
+                    visible: false
                     panel: root
                 }
             }

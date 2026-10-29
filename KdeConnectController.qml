@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "TransferModel.js" as TransferModel
 
 Item {
     id: root
@@ -29,6 +30,20 @@ Item {
     property string fileTransferError: ""
     property int fileTransferGeneration: 0
     property bool fileBusy: false
+    property var selection: []
+    property real selectionBytes: 0
+    property bool legacyNetworkEnabled: false
+    property string selectionState: "idle"
+    property string selectionError: ""
+    property var draftTarget: null
+    property var operations: []
+    property var activeOperation: null
+    property bool operationBusy: false
+    property var submissionQueue: []
+    property int submissionIndex: 0
+    property int operationSequence: 0
+    property int selectionGeneration: 0
+    property bool cancellationRequested: false
 
     property var pendingPairing: ({})
     property var pairingRequestTimes: ({})
@@ -198,10 +213,6 @@ Item {
         actionState = "idle"
         actionMessage = ""
         actionError = ""
-        fileBusy = false
-        fileTransferState = "idle"
-        fileTransferMessage = ""
-        fileTransferError = ""
     }
 
     function selectDevice(id) {
@@ -212,21 +223,14 @@ Item {
         actionState = "idle"
         actionMessage = ""
         actionError = ""
-        fileBusy = false
-        fileTransferState = "idle"
-        fileTransferMessage = ""
-        fileTransferError = ""
         mediaState = emptyMediaState()
         mediaLoading = false
         mediaRefreshPending = false
         actionGeneration += 1
-        fileTransferGeneration += 1
         if (mediaStatusProcess.running) mediaStatusProcess.running = false
         if (mediaActionProcess.running) mediaActionProcess.running = false
         if (mediaPlayerProcess.running) mediaPlayerProcess.running = false
         if (actionProcess.running) actionProcess.running = false
-        if (fileTransferProcess.running) fileTransferProcess.running = false
-        if (filePickerProcess.running) filePickerProcess.running = false
         remoteCommands = []
         commandsLoading = false
         if (commandsProcess.running) commandsProcess.running = false
@@ -534,80 +538,230 @@ Item {
         return startAction(id, ["bash", getSmsScriptPath(), String(id)], "SMS app opened", "SMS app")
     }
 
-    function startFileSelection(id) {
+    function startFileSelection(id) { return chooseFiles(id) }
+
+    function chooseFiles(id) {
         var device = deviceById(id)
-        if (!device || !device.capabilities.file) {
-            actionState = "blocked"
-            actionError = "File transfer not supported by device"
-            actionMessage = ""
+        if (filePickerProcess.running || fileInspectProcess.running) return false
+        if (!device || !canAct(id) || !device.capabilities || !device.capabilities.file) {
+            selectionError = "Select a paired, reachable device that supports files"
             return false
         }
-        if (!canAct(id)) {
-            actionState = "blocked"
-            actionError = "Device must be paired and reachable"
-            actionMessage = ""
-            return false
-        }
-        if (filePickerProcess.running) return false
-        fileBusy = true
-        actionState = "busy"
-        actionMessage = "Selecting file"
-        actionError = ""
-        filePickerProcess.targetDeviceId = String(id)
+        selectionGeneration += 1
+        selection = []
+        selectionBytes = 0
+        selectionState = "choosing"
+        selectionError = ""
+        // The recipient belongs to this draft. Later navigation cannot change it.
+        draftTarget = Object.freeze({peerId: String(device.id), peerName: String(device.name || device.id), provider: "kdeconnect"})
+        filePickerProcess.targetGeneration = selectionGeneration
         filePickerProcess.running = true
         return true
     }
 
-    function cancelFileSelection() {
-        if (filePickerProcess.running) filePickerProcess.running = false
+    function applySelection(output, code, targetGeneration) {
+        if (targetGeneration !== selectionGeneration) return
+        selectionState = "idle"
+        var result
+        try { result = JSON.parse(output) } catch (error) { result = null }
+        if (code === 0 && result && result.state === "cancelled") {
+            cancelDraft()
+            return
+        }
+        if (code !== 0 || !result || result.state !== "selected" || !Array.isArray(result.files)
+                || !result.files.length || result.files.length > 100) {
+            selectionError = selectionErrorText(result ? result.error : "portal-unavailable")
+            return
+        }
+        var total = 0
+        for (var i = 0; i < result.files.length; i++) {
+            var item = result.files[i]
+            if (!item || typeof item.path !== "string" || item.path.charAt(0) !== "/"
+                    || typeof item.size !== "number" || item.size < 0 || !isFinite(item.size)) {
+                selectionError = "The selected files could not be checked"
+                return
+            }
+            total += item.size
+        }
+        if (total > Math.pow(2, 40)) {
+            selectionError = "Select up to 100 files and 1 TiB in total"
+            return
+        }
+        selection = result.files
+        selectionBytes = total
+        selectionState = "draft"
+        selectionError = ""
+    }
+
+    function selectionErrorText(code) {
+        if (code === "selection-limit") return "Select up to 100 files and 1 TiB in total"
+        if (code === "portal-unavailable") return "The desktop file chooser is unavailable. Check the desktop portal and Python Gio support."
+        if (code === "source-changed") return "A selected file changed. Choose the files again."
+        return "Select readable local regular files. Folders and other locations are not supported."
+    }
+
+    function cancelDraft() {
+        selectionGeneration += 1
+        if (filePickerProcess.running) filePickerProcess.signal(15)
+        if (fileInspectProcess.running) fileInspectProcess.signal(15)
+        selection = []
+        selectionBytes = 0
+        selectionState = "idle"
+        selectionError = ""
+        draftTarget = null
+        return true
+    }
+
+    function cancelFileSelection() { return cancelDraft() }
+
+    function submitSelection() {
+        if (operationBusy || fileTransferProcess.running || !draftTarget || selectionState !== "draft" || !selection.length) return false
+        var target = Object.assign({}, draftTarget)
+        var device = deviceById(target.peerId)
+        if (!device || !canAct(target.peerId) || !device.capabilities || !device.capabilities.file) {
+            selectionError = "The reviewed recipient is no longer paired and reachable"
+            return false
+        }
+        operationSequence += 1
+        fileTransferGeneration += 1
+        var id = "kde-" + Date.now() + "-" + operationSequence
+        submissionQueue = selection.map(function(item) { return Object.assign({}, item) })
+        submissionIndex = 0
+        cancellationRequested = false
+        activeOperation = TransferModel.create(id, target, submissionQueue, Date.now())
+        operations = TransferModel.remember(operations, activeOperation)
+        operationBusy = true
+        fileBusy = true
+        cancelDraft()
+        fileTransferState = "queued"
+        fileTransferMessage = TransferModel.status(activeOperation)
+        fileTransferError = ""
+        // Let an explicit cancel happen while still queued, before any CLI call.
+        Qt.callLater(function() { root.submitNextFile(id) })
+        return true
+    }
+
+    function updateOperation(operation) {
+        activeOperation = operation
+        operations = TransferModel.remember(operations, operation)
+        fileTransferState = operation.state
+        fileTransferMessage = TransferModel.status(operation)
+        fileTransferError = ""
+    }
+
+    function finishOperation() {
+        var done = Object.assign({}, activeOperation)
+        done.cancellable = false
+        done.observedAt = Date.now()
+        updateOperation(done)
+        operationBusy = false
         fileBusy = false
-        actionState = "cancelled"
-        actionMessage = "File selection cancelled"
-        actionError = ""
+        submissionQueue = []
+    }
+
+    function cancelRemaining() {
+        while (submissionIndex < submissionQueue.length) {
+            updateOperation(TransferModel.record(activeOperation, submissionIndex, "cancelled_before_submit", "", Date.now()))
+            submissionIndex += 1
+        }
+        finishOperation()
+    }
+
+    function submitNextFile(operationId) {
+        if (!operationBusy || !activeOperation || activeOperation.id !== operationId || fileTransferProcess.running) return
+        if (cancellationRequested) { cancelRemaining(); return }
+        if (submissionIndex >= submissionQueue.length) { finishOperation(); return }
+        // Do not redirect a batch when a scan selects a different device.
+        var device = deviceById(activeOperation.peerId)
+        if (!device || !canAct(activeOperation.peerId) || !device.capabilities || !device.capabilities.file) {
+            updateOperation(TransferModel.record(activeOperation, submissionIndex, "submission_failed", "peer-unreachable", Date.now()))
+            submissionIndex += 1
+            cancelRemaining()
+            return
+        }
+        fileTransferProcess.targetOperationId = activeOperation.id
+        fileTransferProcess.resultState = ""
+        fileTransferProcess.resultError = ""
+        fileTransferProcess.attempted = false
+        fileTransferProcess.payload = JSON.stringify({peerId: activeOperation.peerId, file: submissionQueue[submissionIndex]}) + "\n"
+        fileTransferProcess.running = true
+    }
+
+    function applySubmissionLine(line, operationId) {
+        if (!operationBusy || !activeOperation || operationId !== activeOperation.id) return
+        var result
+        try { result = JSON.parse(line) } catch (error) { return }
+        if (result.event === "submitting") {
+            fileTransferProcess.attempted = true
+            var next = Object.assign({}, activeOperation)
+            next.state = "submitting"
+            updateOperation(next)
+        } else if (["request_accepted", "submission_failed", "submission_unknown", "cancelled_before_submit", "cancellation_unconfirmed", "failed"].indexOf(result.state) !== -1) {
+            fileTransferProcess.resultState = result.state === "failed" ? "submission_failed" : result.state
+            fileTransferProcess.resultError = ["source-path-rejected", "source-changed", "provider-missing", "submission-failed", "submission-unknown", "cancellation-unconfirmed", "identity-mismatch"].indexOf(result.error) !== -1 ? result.error : ""
+        }
+    }
+
+    function submissionExited(operationId) {
+        if (!operationBusy || !activeOperation || operationId !== activeOperation.id) return
+        var state = fileTransferProcess.resultState
+        var error = fileTransferProcess.resultError
+        if (!state) {
+            state = fileTransferProcess.attempted ? "submission_unknown" : "submission_failed"
+            error = fileTransferProcess.attempted ? "submission-unknown" : "submission-failed"
+        }
+        if (cancellationRequested && fileTransferProcess.attempted) {
+            state = "cancellation_unconfirmed"
+            error = "cancellation-unconfirmed"
+        } else if (cancellationRequested && !fileTransferProcess.attempted) {
+            state = "cancelled_before_submit"
+            error = ""
+        }
+        updateOperation(TransferModel.record(activeOperation, submissionIndex, state, error, Date.now()))
+        submissionIndex += 1
+        // An ambiguous outcome stops this batch. Retry always requires review.
+        if (cancellationRequested || state === "submission_unknown" || state === "cancellation_unconfirmed") {
+            cancelRemaining()
+            return
+        }
+        var id = activeOperation.id
+        Qt.callLater(function() { root.submitNextFile(id) })
+    }
+
+    function cancelOperation() {
+        if (!operationBusy) return false
+        cancellationRequested = true
+        if (fileTransferProcess.running) {
+            fileTransferProcess.signal(15)
+            fileTransferMessage = "Stopping submission. Any request already submitted can still be delivered."
+        } else cancelRemaining()
+        return true
     }
 
     function cancelFileTransfer() {
-        fileTransferGeneration += 1
-        if (filePickerProcess.running) cancelFileSelection()
-        if (fileTransferProcess.running) fileTransferProcess.running = false
-        fileBusy = false
-        fileTransferState = "cancelled"
-        fileTransferMessage = "File transfer cancelled"
-        fileTransferError = ""
+        if (operationBusy) return cancelOperation()
+        return cancelDraft()
     }
 
+    function clearOperations() {
+        operations = operationBusy && activeOperation ? [Object.assign({}, activeOperation)] : []
+    }
+
+    // Compatibility entry point: inspect and review a supplied URI; never send it.
     function sendFile(id, path) {
-        var value = String(path || "").trim()
-        if (value.indexOf("file://") === 0) {
-            value = value.replace(/^file:\/\//, "")
-            try {
-                value = decodeURIComponent(value)
-            } catch (e) {}
-        }
         var device = deviceById(id)
-        if (!value || value.indexOf("\u0000") !== -1 || !device || !canAct(id) || !device.capabilities.file) {
-            fileBusy = false
-            fileTransferState = "failed"
-            fileTransferMessage = ""
-            fileTransferError = (!device || (device && !canAct(id))) ? "Device must be paired and reachable" : "File transfer not supported by device"
-            if (!value || value.indexOf("\u0000") !== -1) fileTransferError = "File transfer failed"
-            return false
-        }
-        if (fileTransferProcess.running) {
-            fileTransferState = "blocked"
-            fileTransferError = "A file transfer is already running"
-            fileTransferMessage = ""
-            return false
-        }
-        fileTransferGeneration += 1
-        fileTransferProcess.targetGeneration = fileTransferGeneration
-        fileTransferProcess.targetDeviceId = String(id)
-        fileTransferProcess.command = ["kdeconnect-cli", "-d", String(id), "--share", value]
-        fileBusy = true
-        fileTransferState = "transferring"
-        fileTransferMessage = "Sending file..."
-        fileTransferError = ""
-        fileTransferProcess.running = true
+        if (!device || !canAct(id) || !device.capabilities || !device.capabilities.file || filePickerProcess.running || fileInspectProcess.running) return false
+        var value = String(path || "")
+        if (value.charAt(0) === "/") value = "file://" + encodeURI(value).replace(/#/g, "%23").replace(/\?/g, "%3F")
+        selectionGeneration += 1
+        draftTarget = Object.freeze({peerId: String(id), peerName: String(device.name || id), provider: "kdeconnect"})
+        selection = []
+        selectionBytes = 0
+        selectionState = "choosing"
+        selectionError = ""
+        fileInspectProcess.payload = JSON.stringify([value]) + "\n"
+        fileInspectProcess.targetGeneration = selectionGeneration
+        fileInspectProcess.running = true
         return true
     }
 
@@ -916,6 +1070,8 @@ Item {
     }
 
     function refreshTailscale() {
+        // The first-release fork uses the separate approved-address provider.
+        if (!legacyNetworkEnabled) return
         if (tailscaleProcess.running) return
         tailscaleLoading = true
         tailscaleProcess.command = ["sh", "-c", "command -v tailscale >/dev/null 2>&1 || exit 127; exec tailscale status --json"]
@@ -1005,7 +1161,7 @@ Item {
         interval: 4000
         repeat: false
         onTriggered: {
-            if (root.fileBusy || root.fileTransferState === "transferring") return
+            if (root.fileBusy) return
             root.fileTransferMessage = ""
             root.fileTransferError = ""
             if (root.fileTransferState === "accepted" || root.fileTransferState === "cancelled" || root.fileTransferState === "failed") {
@@ -1117,16 +1273,18 @@ Item {
 
     Process {
         id: fileTransferProcess
-        property string targetDeviceId: ""
-        property int targetGeneration: 0
-        stderr: StdioCollector { waitForEnd: true }
-        onExited: function(code) {
-            root.fileBusy = false
-            if (targetGeneration !== root.fileTransferGeneration || targetDeviceId !== root.selectedDeviceId) return
-            root.fileTransferState = code === 0 ? "accepted" : "failed"
-            root.fileTransferMessage = code === 0 ? "File sent" : ""
-            root.fileTransferError = code === 0 ? "" : root.safeError(code, "file transfer")
+        property string targetOperationId: ""
+        property string payload: ""
+        property string resultState: ""
+        property string resultError: ""
+        property bool attempted: false
+        command: ["python3", root.scriptPath("scripts/portal_files.py"), "submit"]
+        stdinEnabled: true
+        onStarted: { write(payload); payload = "" }
+        stdout: SplitParser {
+            onRead: function(line) { root.applySubmissionLine(line, fileTransferProcess.targetOperationId) }
         }
+        onExited: function(code) { root.submissionExited(targetOperationId) }
     }
 
     Process {
@@ -1240,18 +1398,21 @@ Item {
 
     Process {
         id: filePickerProcess
-        property string targetDeviceId: ""
+        property int targetGeneration: 0
         command: ["bash", getPickerScriptPath()]
         stdout: StdioCollector { waitForEnd: true }
-        onExited: function(code) {
-            if (targetDeviceId !== root.selectedDeviceId) return
-            var selectedPath = stdout.text.trim()
-            if (code === 0 && selectedPath) {
-                root.sendFile(targetDeviceId, selectedPath)
-            } else {
-                root.cancelFileSelection()
-            }
-        }
+        onExited: function(code) { root.applySelection(stdout.text, code, targetGeneration) }
+    }
+
+    Process {
+        id: fileInspectProcess
+        property int targetGeneration: 0
+        property string payload: ""
+        command: ["python3", root.scriptPath("scripts/portal_files.py"), "inspect"]
+        stdinEnabled: true
+        onStarted: { write(payload); payload = "" }
+        stdout: StdioCollector { waitForEnd: true }
+        onExited: function(code) { root.applySelection(stdout.text, code, targetGeneration) }
     }
 
     Process {
@@ -1425,6 +1586,7 @@ Item {
         pairProcess.running = false
         pairResponseProcess.running = false
         filePickerProcess.running = false
+        fileInspectProcess.running = false
         tailscaleProcess.running = false
         addressProcess.running = false
         firewallProcess.running = false

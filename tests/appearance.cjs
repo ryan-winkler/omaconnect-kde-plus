@@ -1,0 +1,27 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const source = fs.readFileSync(path.join(__dirname,'../Appearance.js'),'utf8').replace(/^\.pragma library\s*/, '');
+const api = vm.createContext({}); vm.runInContext(source, api);
+function plain(value) { return JSON.parse(JSON.stringify(value)); }
+assert.equal(api.normalizeLegacy(undefined).value,'phone');
+assert.equal(api.normalizeLegacy(false).value,'phone');
+assert.equal(api.normalizeLegacy(true).mode,'automatic');
+const state = {bar_icon:{mode:'automatic'}, devices:{'kdeconnect:stable':{alias:'Travel',icon:{mode:'preset',value:'laptop'}}}};
+assert.equal(api.barIcon(state,'stable','phone').value,'laptop');
+assert.equal(api.deviceIcon(state,'other','unknown').value,'phone');
+assert.equal(api.deviceIcon(state,'other','tablet').value,'tablet-symbolic');
+assert.equal(api.deviceIcon(state,'other','tv').value,'video-display-symbolic');
+assert.equal(api.displayName(state,'stable','New advertised name'),'Travel');
+assert.equal(api.displayName(state,'other','<b>Phone</b>'),'<b>Phone</b>');
+state.bar_icon = {mode:'preset',value:'share'};
+assert.equal(api.barIcon(state,'stable','phone').value,'share');
+assert.equal(api.deviceIcon(state,'stable','phone').value,'laptop');
+assert.equal(api.normalizeIcon({mode:'image',value:'https://example.org/icon'}).value,'phone');
+assert.equal(api.normalizeIcon({mode:'theme',value:'../bad'}).value,'phone');
+assert.equal(api.normalizeIcon({mode:'glyph',value:'\u202e'}).value,'phone');
+assert.equal(api.glyphFor({mode:'preset',value:'phone'}).length > 0,true);
+assert.equal(api.presets.length,5);
+assert.equal(api.library('laptop',[]).some(x => x.value === 'laptop'),true);
+console.log('Appearance resolver: passed');
