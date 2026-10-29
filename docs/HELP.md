@@ -99,7 +99,6 @@ when the cache is safe and available; there is no guaranteed maximum retention t
 Private canonical sources normally use their existing path. KDE owns its later
 file open; programs running as your user and root remain trusted.
 Text, Ping, Clipboard and remote-command success messages also report request acceptance. Check the recipient or remote result for delivery or execution.
-Read [current verification and limits](VERIFICATION.md) for tested device scope.
 
 ## Syncthing identity note
 
@@ -119,9 +118,8 @@ Syncshell retains the synchronization engine and keys. Read the official
 
 ## Install, update or recover
 
-Use the supported commands in [Install and open](../README.md#install-and-open)
-and [Update, disable and remove](../README.md#update-disable-and-remove).
-Read [migration and recovery](MIGRATION.md) before moving settings. Native plugin
+Use the supported commands in [install, update and recovery](INSTALL.md),
+including how to move settings from the original OmaConnect. Native plugin
 removal does not remove pairing, VPN profiles or private Plus metadata.
 
 ## Get help or contribute

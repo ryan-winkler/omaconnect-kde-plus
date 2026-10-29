@@ -5,4 +5,4 @@
 - The reused **Bananet** BTH card retains its attribution and license notice in [BthControlCard.qml](BthControlCard.qml).
 - KDE Connect, Omarchy and Syncshell remain separate upstream projects. Their names identify the owners of the reused services and interfaces, not endorsements of this fork.
 
-See [LICENSE](LICENSE), [lineage](FORK.md) and Git history for notices and individual contributions. All contributors retain their applicable authorship rights.
+See [LICENSE](LICENSE) and Git history for notices and individual contributions. All contributors retain their applicable authorship rights.
