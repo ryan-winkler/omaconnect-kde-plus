@@ -1806,10 +1806,10 @@ class ScriptIntegrationTests(unittest.TestCase):
     self.assertTrue(device["pairRequested"])
 
   def test_discover_devices_keeps_quotes_backslashes_and_folds_newlines(self):
-    # The old gdbus text parser kept the quotes around "Ryan's phone",
+    # The old gdbus text parser kept the quotes around "Sam's phone",
     # doubled backslashes and printed a newline as a literal \n.
     script = ROOT / "scripts" / "discover_devices.sh"
-    for name, expected in (("Ryan's phone", "Ryan's phone"), ("C:\\Users\\phone", "C:\\Users\\phone"), ("Two\nlines", "Two lines")):
+    for name, expected in (("Sam's phone", "Sam's phone"), ("C:\\Users\\phone", "C:\\Users\\phone"), ("Two\nlines", "Two lines")):
       with self.subTest(name=name), tempfile.TemporaryDirectory() as tmp:
         device = {"type": "a{sv}", "data": [{"name": {"type": "s", "data": name}, "type": {"type": "s", "data": "phone"},
                                              "isPaired": {"type": "b", "data": True}, "isReachable": {"type": "b", "data": True}}]}
