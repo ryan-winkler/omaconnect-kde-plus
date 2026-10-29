@@ -941,7 +941,7 @@ Item {
     }
 
     function validDeviceId(id) {
-        return /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(String(id || ""))
+        return /^[A-Za-z0-9][A-Za-z0-9_]*$/.test(String(id || ""))
     }
 
     function respondToPairingRequest(id, accept) {

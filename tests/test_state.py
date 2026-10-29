@@ -1432,6 +1432,21 @@ class ScriptIntegrationTests(unittest.TestCase):
       self.assertEqual(result.returncode, 0, result)
       self.assertEqual(result.stdout, "CUSTOM_ADDRESSES_READY\n")
 
+      # A saved-address reply that does not parse is not reported as an empty list.
+      write_busctl_stub(stub_dir, [
+          ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+          ("*get-property*customDevices*", '{"type":"as","data":["100.64.0.1"'),
+          ("*daemon devices*", FIXTURES / "busctl-devices-empty.json"),
+      ])
+      result = subprocess.run(
+          ["bash", str(ROOT / "scripts" / "discover_devices.sh")],
+          capture_output=True,
+          text=True,
+          env={**os.environ, "PATH": f"{stub_dir}:{os.environ['PATH']}"},
+      )
+      self.assertEqual(result.returncode, 0, result)
+      self.assertEqual(result.stdout, "CUSTOM_ADDRESSES_UNAVAILABLE\n")
+
   def test_media_player_script_argument_validation(self):
     script_path = ROOT / "scripts" / "media_control.sh"
     self.assertTrue(script_path.is_file())
@@ -1455,6 +1470,15 @@ class ScriptIntegrationTests(unittest.TestCase):
     # Player switch with newline or carriage return exits with code 64
     res = subprocess.run(["bash", str(script_path), "player", "dev-1", "Spotify\nBad"], capture_output=True, check=False)
     self.assertEqual(res.returncode, 64)
+
+    # A leading-dash player name would be read as a busctl option.
+    with tempfile.TemporaryDirectory() as tmp:
+      log_path = Path(tmp) / "busctl.log"
+      write_busctl_stub(tmp, [("*", "")], log_path)
+      res = subprocess.run(["bash", str(script_path), "player", "dev-1", "--address=unix:path=/tmp/x"], capture_output=True, check=False,
+                           env={**os.environ, "PATH": f"{tmp}:{os.environ['PATH']}"})
+      self.assertEqual(res.returncode, 64)
+      self.assertFalse(log_path.exists())
 
     # Only the actions exposed by this UI are accepted.
     res = subprocess.run(["bash", str(script_path), "action", "dev-1", "Stop"], capture_output=True, check=False)
