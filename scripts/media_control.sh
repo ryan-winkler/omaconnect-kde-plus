@@ -45,7 +45,7 @@ case "$operation" in
         ;;
     player)
         target_player="$argument"
-        [[ -n "$target_player" && "$target_player" != *$'\n'* && "$target_player" != *$'\r'* ]] || exit 64
+        [[ -n "$target_player" && "$target_player" != -* && "$target_player" != *$'\n'* && "$target_player" != *$'\r'* ]] || exit 64
         busctl --user set-property org.kde.kdeconnect "$base" \
             org.kde.kdeconnect.device.mprisremote player s "$target_player" >/dev/null 2>&1 || exit 69
         ;;

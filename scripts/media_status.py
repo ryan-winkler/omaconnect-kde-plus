@@ -157,7 +157,8 @@ def main(argv):
     device_id = argv[1] if len(argv) > 1 else ""
     try:
         status, autoselect = build_status(fetch_props(device_id))
-        if autoselect:
+        # busctl would read a leading-dash player name as an option.
+        if autoselect and not autoselect.startswith("-"):
             select_player(device_id, autoselect)
     except Exception as exc:  # status must always emit valid JSON, never a traceback
         print("media_status: %s" % (exc,), file=sys.stderr)

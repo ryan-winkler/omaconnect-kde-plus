@@ -82,14 +82,15 @@ assert.equal(row.loadedKnown,true);assert.equal(row.loadedPluginIds.join(','),'k
 
     @unittest.skipUnless(shutil.which('node'), 'node unavailable')
     def test_pairing_response_rejects_ids_unsafe_for_a_dbus_path(self):
+        # D-Bus object-path elements allow only ASCII letters, digits and '_'.
         source = (ROOT / 'KdeConnectController.qml').read_text()
         function = source[source.index('    function validDeviceId('):source.index('    function respondToPairingRequest(')]
         self.assertIn('if (!validDeviceId(id)) return false', source[source.index('    function respondToPairingRequest('):])
         script = '''const assert=require('node:assert/strict');
 const vm=require('node:vm');const api=vm.createContext({});
 vm.runInContext(require('node:fs').readFileSync(0,'utf8'),api);
-for (const id of ['0123456789abcdef0123456789abcdef','a1b2c3d4_e5f6_4a1b_9c2d_0123456789ab','peer_123-abc']) assert.equal(api.validDeviceId(id),true,id);
-for (const id of ['','_peer','../peer','peer/sub','peer.name','peer id','peer;x',null]) assert.equal(api.validDeviceId(id),false,String(id));
+for (const id of ['0123456789abcdef0123456789abcdef','a1b2c3d4_e5f6_4a1b_9c2d_0123456789ab','peer_123_abc']) assert.equal(api.validDeviceId(id),true,id);
+for (const id of ['','_peer','peer-123','../peer','peer/sub','peer.name','peer id','peer;x',null]) assert.equal(api.validDeviceId(id),false,String(id));
 '''
         result = subprocess.run([shutil.which('node'), '-e', script], input=function, text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)

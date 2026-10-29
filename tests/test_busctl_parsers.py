@@ -9,6 +9,7 @@ or a valid empty JSON status (media), never a python traceback on stdout.
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -282,7 +283,7 @@ class DeviceTsvFormatterTests(unittest.TestCase):
 class SanitizeParityTests(unittest.TestCase):
     def test_python_sanitize_matches_the_bash_field_sanitizer(self):
         bash = subprocess.run(
-            [os.environ.get("SHELL", "bash"), "-c",
+            [shutil.which("bash") or "bash", "-c",
              'sanitize_field() { local field=$1; field=${field//$\'\\t\'/ }; field=${field//$\'\\n\'/ }; printf \'%s\' "$field"; };'
              ' sanitize_field "$(printf \'Evil\\t<[]> Name\\nrow2\')"'],
             capture_output=True, text=True, check=True)
@@ -307,6 +308,24 @@ class ScriptLevelGracefulFailureTests(unittest.TestCase):
                 self.assertNotIn("Traceback", res.stdout)
                 self.assertNotIn("Traceback", res.stderr)
                 self.assertEqual(json.loads(res.stdout), media_status.empty_status())
+
+    def test_media_status_never_autoselects_a_leading_dash_player(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "calls.log"
+            reply = json.dumps({"type": "a{sv}", "data": [{
+                "player": {"type": "s", "data": ""},
+                "playerList": {"type": "as", "data": ["--address=unix:path=/tmp/x", "VLC"]}}]})
+            stub = Path(tmp) / "busctl"
+            stub.write_text("#!/usr/bin/env bash\nprintf '%%s\\n' \"$*\" >> %s\ncase \"$*\" in *GetAll*) printf '%%s' %s ;; esac\n" % (log, json.dumps(reply)))
+            stub.chmod(0o755)
+            res = subprocess.run(
+                [PYTHON, str(SCRIPTS / "media_status.py"), "dev-1"],
+                capture_output=True, text=True,
+                env={**os.environ, "PATH": f"{tmp}:{os.environ['PATH']}"},
+            )
+            self.assertEqual(res.returncode, 0, res)
+            self.assertEqual(json.loads(res.stdout)["player"], "--address=unix:path=/tmp/x")
+            self.assertNotIn("set-property", log.read_text())
 
     def test_discover_report_device_rejects_garbage_without_traceback(self):
         for bad in ('{"type":"a{sv}","data":[{"name"', "not json", ""):
