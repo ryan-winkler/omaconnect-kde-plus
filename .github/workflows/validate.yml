@@ -21,13 +21,13 @@ jobs:
         with:
           repository: basecamp/omarchy
           ref: 225dcb80ef1ced9436f27eb34ff140659d3956dd
-          path: omarchy
+          path: .omarchy-validator
           persist-credentials: false
           sparse-checkout: bin/omarchy-plugin-validate
           sparse-checkout-cone-mode: false
       - name: Provide the Omarchy plugin validator
         run: |
-          mv omarchy "$RUNNER_TEMP/omarchy"
+          mv .omarchy-validator "$RUNNER_TEMP/omarchy"
           test -x "$RUNNER_TEMP/omarchy/bin/omarchy-plugin-validate"
           echo "$RUNNER_TEMP/omarchy/bin" >> "$GITHUB_PATH"
       - name: Install test prerequisites
