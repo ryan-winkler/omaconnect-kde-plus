@@ -38,6 +38,16 @@ panel-session switch. It runs while the panel is open, with a 60-second interval
 **Forget local address record** removes Plus metadata. **Review removal from KDE**
 needs a second selection and preserves pre-existing native addresses.
 
+Addresses must be private IP literals, not hostnames. Tailscale's `100.64.0.0/10`
+range is accepted only with the Tailscale source, and the BTH source accepts IPv4 only.
+
+## Keyboard
+
+In the Devices view, use the arrow keys or `h` `j` `k` `l` to move, and `Enter`
+or `Space` to activate. Press `r` to refresh, `p` to pair the selected device,
+`u` to unpair it and `y` to confirm, `c` to cancel, and `Esc` to close. `Tab`
+moves into the normal control order.
+
 ## Quick actions
 
 Choose a shortcut, then select **Add selected action**. Use **Up**, **Down** or
@@ -129,56 +139,6 @@ Use [support](../SUPPORT.md) for task help and safe issue evidence,
 [security reporting](../SECURITY.md) for private vulnerability reports.
 Do not publish private IDs, addresses, configurations or credentials.
 
----
-
-# Contextual help coverage
-
-Each feature has short task guidance beside its controls, a direct documentation
-link, or both. External links open only when the user selects them. Help stays in
-the owning domain; there is no extra daily help dashboard to search first.
-
-| Feature | In-app help and documentation |
-| --- | --- |
-| Bar/device icons and local aliases | Appearance explains identity versus display; chooser explains preview/Apply, advanced choices and validation. Appearance opens the installed ICONS.md contribution guide. |
-| Quick actions | Add/Up/Down/Remove instructions; each catalog item has a description and selected-device availability. Adding a shortcut does not enable or execute a native plugin. |
-| Native features and permissions | Search scope/state legend, offline next step, selected-device native route, and official KDE user guide. |
-| Tailscale | Independent display switch, existing-owner/address instructions and official quickstart. |
-| MikroTik BTH | Independent display switch, Automatic/On/Off intent-versus-state help, trusted helper-path help and official BTH manual. |
-| Other WireGuard profiles | Independent display switch, native manager/address instructions and official quickstart. |
-| File chooser and drop | Choose files or persistent Send window; local-file/count/size limits; review before explicit Send; Copy protects originals; existing draft/busy reasons remain visible. |
-| File activity and cancellation | Accepted-versus-delivered explanation, session-only retention and unconfirmed cancellation state. |
-| Saved addresses | Source labels, explicit approval, identity warning, opt-in rediscovery and separate removal review. Provider setup documentation is in Connections. |
-| Syncthing identity link | Full identity check, explicit local-only association explanation, existing owner button and official device setup guide. |
-| Ring unavailable | Known-unloaded module message and native Plugin Settings next step; command acceptance does not claim sound. |
-
-The official links were checked against provider documentation. Do not put API
-keys, addresses, private IDs or configuration contents into help URLs. Do not
-add a shell command or arbitrary URL field as a shortcut for documented features.
-
-A future native action needs a verified dispatch contract and catalog entry before
-it is offered as an executable shortcut. Safe unknown native modules remain
-searchable through the native owner route without inventing invocation semantics.
-
-## Choose visible sections and shortcuts
-
-In **Settings → Appearance**, choose saved addresses, optional Syncthing identity
-notes and network controls. Choose which sections start expanded. Media and remote
-command visibility lives in **Device features**. Each visible section can also
-collapse in Devices. These display choices preserve saved metadata and provider
-settings. They do not disconnect a VPN or change native plugin permissions.
-
-In **Quick actions**, add, remove and reorder the reviewed shortcuts. Media
-transport needs a reported player. Locally inactive modules show a reason. Native
-navigation shortcuts open KDE Connect for browsing, notifications, volume,
-input/presentation or locking; choose the action there. The complete native
-inventory remains searchable, including unknown future plugin IDs. Plus does not
-guess a command from a plugin name or install arbitrary plugin code.
-
-You can also drop local files onto the Plus bar icon. The same Copy-only boundary
-opens the persistent Send window for the selected device. Check the recipient and
-files; nothing is sent until **Send files**. Busy or existing drafts refuse a new
-drop so that the target cannot silently change.
-
 ## Update KDE Connect itself
 
 `omarchy plugin update Omaconnect.plus` updates this UI fork. KDE Connect's native
@@ -186,7 +146,4 @@ package follows the supported Omarchy system update route, `omarchy update`.
 That can update other packages, so review its normal system update scope first.
 Plus does not compile KDE's development branch or run a package update for you.
 
-On 29 October 2026, both comparison hosts had KDE Connect `26.08.2-1`. Fresh
-`checkupdates` runs used temporary repository databases and found no KDE Connect
-update on either architecture. No packages were installed or upgraded in that
-check. The [upstream watcher](UPSTREAM-WATCH.md) monitors provider changes separately.
+The [upstream watcher](UPSTREAM-WATCH.md) monitors provider changes separately.

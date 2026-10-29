@@ -50,7 +50,8 @@ cache copies become eligible for cleanup after 24 hours. See the
 
 Pairings stay in KDE Connect, so both UIs see the same devices. The helper below
 stages display settings for review. It never edits your configuration and has
-no apply command.
+no apply command. Run it from the installed plugin folder under
+`~/.config/omarchy/plugins/`.
 
 ```bash
 python3 scripts/migrate_settings.py prepare \
@@ -81,7 +82,9 @@ To switch:
 
 1. Add Plus without `--enable`, or decline the enable prompt.
 2. Disable the original UI: `omarchy plugin disable omaconnect`.
-3. Apply only the reviewed display settings, then enable `Omaconnect.plus`.
+3. Back up `~/.config/omarchy/shell.json`, then replace it with the reviewed
+   `candidate-shell.json`. Copy `candidate-appearance.json`, if present, to
+   `~/.config/Omaconnect.plus/appearance.json`. Then enable `Omaconnect.plus`.
 4. Check the bar, keyboard focus and your devices. Keep the original installed
    until you are satisfied.
 
@@ -94,6 +97,8 @@ python3 scripts/migrate_settings.py rollback \
   --output "$HOME/.local/state/omaconnect-rollback-review"
 ```
 
-This stages a rollback candidate that restores managed settings only and keeps
-later unrelated edits. It refuses changed managed values or a moved entry; resolve
-those by review. Then disable `Omaconnect.plus` and re-enable the original plugin.
+This stages a rollback `candidate-shell.json` that restores managed settings only
+and keeps later unrelated edits. It refuses changed managed values or a moved
+entry; resolve those by review. Review the candidate, replace
+`~/.config/omarchy/shell.json` with it, then disable `Omaconnect.plus` and
+re-enable the original plugin.

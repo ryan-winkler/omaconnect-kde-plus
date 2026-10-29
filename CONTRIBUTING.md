@@ -51,7 +51,7 @@ For a bounded contributor task, use the [task form](https://github.com/ryan-wink
 1. Read the owning domain above. AI coding agents also follow [AGENTS.md](AGENTS.md).
 2. For a behavior defect, add a focused check that fails for the reported case. Use owned temporary state and fake services.
 3. Make the smallest complete change. Reuse platform controls and existing domain helpers.
-4. Run `./scripts/validate.sh` and `python3 .github/check_doc_links.py`. Report missing prerequisites and skipped checks.
+4. Run `./scripts/validate.sh`. It needs Python 3 with PyGObject, `dbus-run-session`, Node.js and ripgrep; Quickshell enables the native tests. Report missing prerequisites and skipped checks.
 5. Update the relevant contract and [help map](docs/HELP.md). Each feature needs nearby helper text or a direct documentation link.
 6. Open a pull request. State the problem, resulting behavior, checks and open device/UI checks.
 
@@ -63,7 +63,7 @@ The stable plugin ID is `Omaconnect.plus`. Do not change it after release: Omarc
 
 The normal suite uses private temporary configuration and fake providers. See [native QA](tests/NATIVE-QA.md) for separate native checks. Hosted CI does not prove installed-bar use, keyboard or assistive-technology acceptance, real delivery or offsite connectivity.
 
-Do not make automated checks install a plugin, restart the shell, change VPN modes, pair devices, read router/phone state or send a real file. An authorized device check must name its scope and record the observed result separately. Never infer receipt from a successful submission command.
+Do not make automated checks install a plugin, restart the shell, change VPN modes, pair devices, read router/phone state or send a real file. Never infer receipt from a successful submission command.
 
 ## Keep review clear
 
