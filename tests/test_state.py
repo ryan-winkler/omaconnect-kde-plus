@@ -14,6 +14,13 @@ BASH = shutil.which("bash") or "bash"
 FIXTURES = ROOT / "tests" / "fixtures"
 
 
+def controller_layer_source():
+  # KdeConnectController.qml delegates file transfer to controller/; contracts
+  # apply to the whole controller layer.
+  files = [ROOT / "KdeConnectController.qml"] + sorted((ROOT / "controller").glob("*.qml"))
+  return "\n".join(path.read_text() for path in files)
+
+
 def parse_device(line):
     parts = line.split("\t")
     if len(parts) < 9 or parts[0] != "DEVICE":
@@ -615,7 +622,7 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
     self.assertEqual(device_type_icon(""), "󰄜")
     self.assertEqual(device_type_icon(None), "󰄜")
 
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     self.assertIn("function deviceTypeIcon(type)", controller_source)
     service_source = (ROOT / "Service.qml").read_text()
     self.assertIn("function deviceTypeIcon(type)", service_source)
@@ -642,7 +649,7 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
     # Neither
     self.assertEqual(format_battery_status(dev, show_battery=False, show_network=False), "")
 
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     self.assertIn("function deviceBatteryText(device, showBattery, showNetwork)", controller_source)
 
   def test_available_actions_computation_and_gating(self):
@@ -1896,7 +1903,7 @@ class ScriptIntegrationTests(unittest.TestCase):
 
 class QmlWiringAndContractTests(unittest.TestCase):
   def test_pairing_contracts(self):
-    source = (ROOT / "KdeConnectController.qml").read_text()
+    source = controller_layer_source()
     self.assertIn("setPendingPairing", source)
     self.assertIn("pairDevice", source)
     self.assertIn("unpairDevice", source)
@@ -1917,7 +1924,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("isUnpairConfirming", ui_source)
 
   def test_tailscale_and_custom_address_contracts(self):
-    controller = (ROOT / "KdeConnectController.qml").read_text()
+    controller = controller_layer_source()
     discovery = (ROOT / "scripts" / "discover_devices.sh").read_text()
     network_ui = (ROOT / "components" / "NetworkSection.qml").read_text()
     address_script = (ROOT / "scripts" / "update_custom_address.sh").read_text()
@@ -1943,7 +1950,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn('showBarBattery', bar_widget)
 
   def test_incoming_pairing_contracts(self):
-    controller = (ROOT / "KdeConnectController.qml").read_text()
+    controller = controller_layer_source()
     ui = (ROOT / "components" / "DeviceSection.qml").read_text()
     self.assertIn('isPairRequestedByPeer', (ROOT / "scripts" / "discover_devices.sh").read_text())
     self.assertIn('function acceptPairing(id)', controller)
@@ -1967,7 +1974,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("acceptPairing", service_source)
 
   def test_open_kdeconnect_app_contract(self):
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     device_ui = (ROOT / "components" / "DeviceSection.qml").read_text()
     app_script = (ROOT / "scripts" / "open_app.sh").read_text()
 
@@ -1978,7 +1985,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("kdeconnect-app", app_script)
 
   def test_scan_and_picker_lifecycle_guards(self):
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     self.assertIn("function clearActionState()", controller_source)
     self.assertIn("filePickerProcess.running", controller_source)
 
@@ -1998,7 +2005,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
 
   def test_media_status_update_references_process_ids_directly(self):
     import re
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     # QML child ids are in component scope but are NOT properties of the root
     # item: `root.<processId>` resolves to undefined, so reading `.running`
     # off it throws and the surrounding try/catch wipes mediaState to empty.
@@ -2014,14 +2021,14 @@ class QmlWiringAndContractTests(unittest.TestCase):
     sources = "\n".join(path.read_text() for path in ROOT.glob("*.qml"))
     self.assertNotIn("QtQuick.Dialogs", sources)
     self.assertNotIn("FileDialog {", sources)
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     self.assertIn("filePickerProcess", controller_source)
     self.assertIn("getPickerScriptPath", controller_source)
     picker_sh = (ROOT / "scripts" / "pick_file.sh").read_text()
     self.assertIn("portal_files.py", picker_sh)
 
   def test_refresh_does_not_reset_discovery_state_when_ready(self):
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     self.assertIn('if (discoveryState !== "ready")', controller_source)
     self.assertIn('dbusDebounceTimer', controller_source)
 
@@ -2035,7 +2042,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     discovery_source = (ROOT / "scripts" / "discover_devices.sh").read_text()
     self.assertIn("kdeconnect-cli", discovery_source)
     self.assertIn("exit 127", discovery_source)
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     self.assertIn('discoveryState = "not_installed"', controller_source)
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
     self.assertIn("KDE Connect setup guide", device_section)
@@ -2053,7 +2060,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn('root.panel.composerError = ""', device_section)
 
   def test_action_verbiage_and_auto_dismiss_contracts(self):
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     # State the evidence: command success does not establish delivery/execution.
     self.assertIn('"Ping request accepted. Delivery is not confirmed."', controller_source)
     self.assertIn('"Text request accepted. Delivery is not confirmed."', controller_source)
@@ -2108,7 +2115,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertNotIn("configureFirewall", device_section)
 
   def test_media_player_qml_contracts_and_components(self):
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     self.assertIn("function fetchMediaStatus(id)", controller_source)
     self.assertIn("function requestPlayerList(id)", controller_source)
     self.assertIn("requestPlayerList(next.id)", controller_source)
@@ -2203,7 +2210,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     )
 
   def test_file_transfer_concurrency_decoupling(self):
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     self.assertIn("fileTransferProcess", controller_source)
     self.assertIn("function cancelFileTransfer()", controller_source)
     self.assertIn("fileTransferState", controller_source)
@@ -2234,7 +2241,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("function clearOperations()", controller_source)
 
   def test_dbus_signal_filtering_and_monitoring(self):
-    controller_source = (ROOT / "KdeConnectController.qml").read_text()
+    controller_source = controller_layer_source()
     # Fine-grained match rules
     self.assertIn("org.kde.kdeconnect.daemon", controller_source)
     self.assertIn("org.kde.kdeconnect.device.battery", controller_source)

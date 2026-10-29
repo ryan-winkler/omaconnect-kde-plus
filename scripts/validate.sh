@@ -54,7 +54,7 @@ if [[ -n "$qmllint_cmd" ]]; then
     
     qml_files=(Service.qml BarWidget.qml KdeConnectController.qml AppearanceStore.qml BthControlCard.qml DiscoveryController.qml)
     if [ -f Panel.qml ]; then qml_files+=(Panel.qml); fi
-    for file in components/*.qml; do
+    for file in controller/*.qml components/*.qml; do
         if [ -f "$file" ]; then qml_files+=("$file"); fi
     done
 
