@@ -39,10 +39,10 @@ def parse_device(line):
             "text": "kdeconnect_share" in plugins,
             "clipboard": "kdeconnect_clipboard" in plugins,
             "file": "kdeconnect_share" in plugins,
-            "commands": "kdeconnect_runcommand" in plugins,
+            "commands": "kdeconnect_remotecommands" in plugins,
             "network": "kdeconnect_connectivity_report" in plugins,
             "sms": "kdeconnect_sms" in plugins,
-            "media": ("kdeconnect_mprisremote" in plugins) or ("kdeconnect_mpriscontrol" in plugins) or ("kdeconnect_mpris" in plugins),
+            "media": "kdeconnect_mprisremote" in plugins,
             "pair": True,
         },
     }
@@ -137,29 +137,6 @@ def format_battery_status(device, show_battery=True, show_network=True):
     if net_text:
         return net_text
     return ""
-
-
-def compute_available_actions(device, settings=None):
-    if not device or not device.get("paired") or not device.get("reachable"):
-        return []
-    caps = device.get("capabilities", {})
-    s = settings or {}
-    res = []
-    if caps.get("ring") and s.get("showActionRing", True):
-        res.append("ring")
-    if caps.get("clipboard") and s.get("showActionClipboard", True):
-        res.append("clipboard")
-    if caps.get("file") and s.get("showActionFile", True):
-        res.append("file")
-    if caps.get("sms") and s.get("showActionSms", True):
-        res.append("sms")
-    if caps.get("ping") and s.get("showActionPing", False):
-        res.append("ping")
-    if caps.get("text") and s.get("showActionText", True):
-        res.append("text")
-    return res
-
-
 
 
 def validate_composer_input(text):
@@ -573,7 +550,7 @@ class PairingState:
 class DeviceParsingAndFormattingTests(unittest.TestCase):
   def test_authoritative_snapshot_is_stable_and_capability_aware(self):
     # Full capability set
-    full_line = "DEVICE\tdev-full\tFull Phone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_runcommand,kdeconnect_findmyphone,kdeconnect_clipboard,kdeconnect_connectivity_report,kdeconnect_sms,kdeconnect_mprisremote\t5G\t4"
+    full_line = "DEVICE\tdev-full\tFull Phone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_remotecommands,kdeconnect_findmyphone,kdeconnect_clipboard,kdeconnect_connectivity_report,kdeconnect_sms,kdeconnect_mprisremote\t5G\t4"
     self.assertEqual(parse_device(full_line)["capabilities"], {
         "battery": True, "ping": True, "ring": True, "text": True, "clipboard": True, "file": True, "commands": True, "network": True, "sms": True, "media": True, "pair": True
     })
@@ -651,33 +628,11 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
     service_source = (ROOT / "Service.qml").read_text()
     self.assertIn("function deviceTypeIcon(type)", service_source)
 
-  def test_settings_action_filtering(self):
-    full_line = "DEVICE\tdev-full\tFull Phone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_findmyphone,kdeconnect_clipboard,kdeconnect_sms\t5G\t4"
-    dev = parse_device(full_line)
-
-    # Ping is disabled by default
-    default_acts = compute_available_actions(dev, {})
-    self.assertEqual(default_acts, ["ring", "clipboard", "file", "sms", "text"])
-
-    # Explicitly enable ping
-    all_acts = compute_available_actions(dev, {"showActionPing": True})
-    self.assertEqual(all_acts, ["ring", "clipboard", "file", "sms", "ping", "text"])
-
-    # Disable SMS with ping enabled
-    filtered_acts = compute_available_actions(dev, {"showActionSms": False, "showActionPing": True})
-    self.assertEqual(filtered_acts, ["ring", "clipboard", "file", "ping", "text"])
-
-    # Disable ring and clipboard
-    filtered_acts2 = compute_available_actions(dev, {"showActionRing": False, "showActionClipboard": False})
-    self.assertEqual(filtered_acts2, ["file", "sms", "text"])
-
-    panel_source = (ROOT / "Panel.qml").read_text()
-    self.assertIn("root.getSetting(\"showActionRing\", true)", panel_source)
-    self.assertIn("root.getSetting(\"showActionClipboard\", true)", panel_source)
-    self.assertIn("root.getSetting(\"showActionFile\", true)", panel_source)
-    self.assertIn("root.getSetting(\"showActionSms\", true)", panel_source)
-    self.assertIn("root.getSetting(\"showActionPing\", false)", panel_source)
-    self.assertIn("root.getSetting(\"showActionText\", true)", panel_source)
+  def test_settings_action_filtering_uses_the_shared_ordered_catalog(self):
+    source = (ROOT / "Panel.qml").read_text()
+    self.assertIn('import "ActionCatalog.js" as Actions', source)
+    self.assertIn('Actions.available(root.getSetting("quickActionsOrder", Actions.DEFAULT_ORDER), root.device)', source)
+    self.assertNotIn('root.getSetting("showActionRing", true)', source)
 
   def test_settings_telemetry_filtering(self):
     full_line = "DEVICE\tdev-full\tFull Phone\tphone\ttrue\ttrue\t85\ttrue\tkdeconnect_battery,kdeconnect_connectivity_report\tLTE\t3"
@@ -716,7 +671,7 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
             res.append("text")
         return res
 
-    full_dev = parse_device("DEVICE\tdev-full\tPhone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_runcommand,kdeconnect_findmyphone,kdeconnect_clipboard")
+    full_dev = parse_device("DEVICE\tdev-full\tPhone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_remotecommands,kdeconnect_findmyphone,kdeconnect_clipboard")
     self.assertEqual(available_actions_for(full_dev), ["ring", "clipboard", "file", "ping", "text"])
 
     part_dev = parse_device("DEVICE\tdev-part\tPhone\tphone\ttrue\ttrue\t50\tfalse\tkdeconnect_findmyphone,kdeconnect_clipboard")
@@ -733,14 +688,14 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
     self.assertTrue(dev_with_mpris["capabilities"]["media"])
 
     dev_with_control = parse_device("DEVICE\tdev-2\tLaptop\tlaptop\ttrue\ttrue\t90\tfalse\tkdeconnect_mpriscontrol")
-    self.assertTrue(dev_with_control["capabilities"]["media"])
+    self.assertFalse(dev_with_control["capabilities"]["media"])
 
     dev_without_media = parse_device("DEVICE\tdev-3\tTablet\ttablet\ttrue\ttrue\t60\tfalse\tkdeconnect_battery,kdeconnect_ping")
     self.assertFalse(dev_without_media["capabilities"]["media"])
 
     discovery_source = (ROOT / "scripts" / "discover_devices.sh").read_text()
-    self.assertIn("kdeconnect_mprisremote", discovery_source)
-    self.assertIn("kdeconnect_mpriscontrol", discovery_source)
+    self.assertIn("plugin_ids", discovery_source)
+    self.assertNotIn("for plugin in kdeconnect_", discovery_source)
 
   def test_unreachable_device_suppresses_battery_display(self):
     offline_device = parse_device("DEVICE\tdev-off\tPhone\tphone\ttrue\tfalse\t80\ttrue\tkdeconnect_battery")
@@ -956,7 +911,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
     self.assertFalse(toggled)
 
   def test_remote_commands_supported_empty(self):
-    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand"
+    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands"
     dev = parse_device(line)
     self.assertTrue(dev["capabilities"]["commands"])
 
@@ -980,7 +935,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
     self.assertEqual(state.remote_commands, [])
 
   def test_remote_commands_supported_populated(self):
-    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand"
+    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands"
     dev = parse_device(line)
     state = RemoteCommandsState(selected_device_id="dev-supp")
     state.toggle_commands_expanded(dev["capabilities"])
@@ -1041,7 +996,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
     ])
 
   def test_remote_commands_failed_cli_call(self):
-    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand"
+    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands"
     dev = parse_device(line)
     state = RemoteCommandsState(selected_device_id="dev-supp")
     state.toggle_commands_expanded(dev["capabilities"])
@@ -1060,7 +1015,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
 
   def test_remote_commands_stale_target_rejection(self):
     state = RemoteCommandsState(selected_device_id="dev-1")
-    dev1 = parse_device("DEVICE\tdev-1\tPhone1\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand")
+    dev1 = parse_device("DEVICE\tdev-1\tPhone1\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands")
     state.toggle_commands_expanded(dev1["capabilities"])
 
     # User switches to dev-2 before dev-1 commands load
@@ -1082,7 +1037,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
     self.assertEqual(state.remote_commands, [])
 
   def test_remote_commands_on_demand_and_repeated_toggling(self):
-    dev = parse_device("DEVICE\tdev-1\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand")
+    dev = parse_device("DEVICE\tdev-1\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands")
     state = RemoteCommandsState(selected_device_id="dev-1")
 
     # Initial state: collapsed, not loading, no commands
@@ -1373,101 +1328,23 @@ class ManifestValidationTests(unittest.TestCase):
 
 
 class ScriptIntegrationTests(unittest.TestCase):
-  def test_file_picker_bounds_option_list_and_skips_missing_roots(self):
-    with tempfile.TemporaryDirectory() as tmp:
-        home = Path(tmp)
-        (home / "Downloads").mkdir()
-        for index in range(400):
-            entry = home / "Downloads" / f"{'n' * 200}-{index:04d}.pdf"
-            entry.write_text("x")
-            os.utime(entry, (index, index))
+  def test_file_picker_uses_portal_instead_of_scanning_user_folders(self):
+    # Portal trust-boundary and private D-Bus interaction live in test_transfer.py.
+    content = (ROOT / "scripts" / "pick_file.sh").read_text()
+    self.assertIn("portal_files.py", content)
+    self.assertNotIn("find ", content)
+    self.assertNotIn("omarchy-menu-select", content)
 
-        # Shadow the real menu so the picker's option list lands on stdout.
-        stub_dir = home / ".local" / "bin"
-        stub_dir.mkdir(parents=True)
-        stub = stub_dir / "omarchy-menu-select"
-        stub.write_text("#!/usr/bin/env bash\ncat\n")
-        stub.chmod(0o755)
-
-        result = subprocess.run(
-            ["bash", str(ROOT / "scripts" / "pick_file.sh")],
-            capture_output=True,
-            text=True,
-            env={**os.environ, "HOME": str(home), "OMARCHY_PATH": ""},
-        )
-
-    # Documents/Pictures/Videos are absent, which must not abort the picker.
-    self.assertEqual(result.returncode, 0)
-    options = result.stdout.splitlines()
-    self.assertTrue(options)
-    self.assertLess(len(options), 400)
-    self.assertLess(len(result.stdout.encode()), 128 * 1024)
-    self.assertTrue(options[0].endswith("-0399.pdf"))
-
-  def test_file_picker_supports_expanded_formats_and_desktop(self):
-    with tempfile.TemporaryDirectory() as tmp:
-      home = Path(tmp)
-      desktop = home / "Desktop"
-      desktop.mkdir()
-      downloads = home / "Downloads"
-      downloads.mkdir()
-
-      desktop_file = desktop / "presentation.pptx"
-      desktop_file.write_text("dummy")
-
-      (downloads / "song.mp3").write_text("dummy")
-      (downloads / "lossless.flac").write_text("dummy")
-      (downloads / "voice.m4a").write_text("dummy")
-      (downloads / "audio.opus").write_text("dummy")
-
-      (downloads / "document.docx").write_text("dummy")
-      (downloads / "data.xlsx").write_text("dummy")
-      (downloads / "table.csv").write_text("dummy")
-      (downloads / "notes.md").write_text("dummy")
-      (downloads / "book.epub").write_text("dummy")
-
-      (downloads / "archive.7z").write_text("dummy")
-      (downloads / "compressed.zst").write_text("dummy")
-      (downloads / "app.apk").write_text("dummy")
-
-      stub_dir = home / ".local" / "bin"
-      stub_dir.mkdir(parents=True)
-      stub = stub_dir / "omarchy-menu-select"
-      stub.write_text("#!/usr/bin/env bash\ncat\n")
-      stub.chmod(0o755)
-
-      result = subprocess.run(
-          ["bash", str(ROOT / "scripts" / "pick_file.sh")],
-          capture_output=True,
-          text=True,
-          env={**os.environ, "HOME": str(home), "OMARCHY_PATH": ""},
-      )
-
-      self.assertEqual(result.returncode, 0)
-      options = result.stdout.splitlines()
-      basenames = {Path(line).name for line in options}
-
-      expected = {
-          "presentation.pptx", "song.mp3", "lossless.flac", "voice.m4a",
-          "audio.opus", "document.docx", "data.xlsx", "table.csv",
-          "notes.md", "book.epub", "archive.7z", "compressed.zst", "app.apk"
-      }
-      for filename in expected:
-        self.assertIn(filename, basenames)
-
-      deep_dir = downloads / "a" / "b" / "c" / "d" / "e"
-      deep_dir.mkdir(parents=True)
-      (deep_dir / "hidden_too_deep.mp3").write_text("dummy")
-
-      result2 = subprocess.run(
-          ["bash", str(ROOT / "scripts" / "pick_file.sh")],
-          capture_output=True,
-          text=True,
-          env={**os.environ, "HOME": str(home), "OMARCHY_PATH": ""},
-      )
-      options2 = result2.stdout.splitlines()
-      basenames2 = {Path(line).name for line in options2}
-      self.assertNotIn("hidden_too_deep.mp3", basenames2)
+  def test_file_picker_supports_arbitrary_regular_file_types(self):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("portal_files", ROOT / "scripts" / "portal_files.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    with tempfile.TemporaryDirectory() as temporary:
+      path = Path(temporary) / "deep" / "any.custom-extension"
+      path.parent.mkdir()
+      path.write_bytes(b"fixture")
+      self.assertEqual(module.inspect_uris([path.as_uri()])[0]["path"], str(path))
 
   def test_custom_address_update_merges_with_authoritative_dbus_state(self):
     with tempfile.TemporaryDirectory() as tmp:
@@ -1898,14 +1775,18 @@ fi
     # Falls back to kdeconnect-settings if kdeconnect-app is absent
     with tempfile.TemporaryDirectory() as tmp:
       stub_dir = Path(tmp)
+      # A closed PATH prevents the installed desktop app from winning fallback.
+      (stub_dir / "bash").symlink_to(BASH)
+      (stub_dir / "nohup").write_text("#!/bin/bash\nexec \"$@\"\n")
+      (stub_dir / "nohup").chmod(0o755)
       app_bin = stub_dir / "kdeconnect-settings"
-      app_bin.write_text("#!/usr/bin/env bash\nexit 0\n")
+      app_bin.write_text("#!/bin/bash\nexit 0\n")
       app_bin.chmod(0o755)
 
       res = subprocess.run(
           [BASH, str(script)],
           capture_output=True,
-          env={**os.environ, "PATH": f"{stub_dir}:{os.environ['PATH']}"},
+          env={**os.environ, "PATH": str(stub_dir)},
       )
       self.assertEqual(res.returncode, 0)
 
@@ -2035,7 +1916,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("filePickerProcess", controller_source)
     self.assertIn("getPickerScriptPath", controller_source)
     picker_sh = (ROOT / "scripts" / "pick_file.sh").read_text()
-    self.assertIn("omarchy-menu-select", picker_sh)
+    self.assertIn("portal_files.py", picker_sh)
 
   def test_refresh_does_not_reset_discovery_state_when_ready(self):
     controller_source = (ROOT / "KdeConnectController.qml").read_text()
@@ -2045,7 +1926,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
   def test_delegate_null_guards_prevent_typeerror(self):
     device_section_source = (ROOT / "components" / "DeviceSection.qml").read_text()
     self.assertIn("selectedDeviceId === modelData.id", device_section_source)
-    self.assertIn("deviceTypeIcon", device_section_source)
+    self.assertIn("appearance.deviceIcon", device_section_source)
     self.assertIn("modelData.paired", device_section_source)
 
   def test_dependency_installer_script_and_states(self):
@@ -2085,9 +1966,10 @@ class QmlWiringAndContractTests(unittest.TestCase):
     # Check natural action verbiages
     self.assertIn('"Ping sent"', controller_source)
     self.assertIn('"Text sent"', controller_source)
-    self.assertIn('"Ringing device..."', controller_source)
+    self.assertIn('"Ring request accepted. Audible ringing is not confirmed."', controller_source)
     self.assertIn('"Clipboard synced"', controller_source)
-    self.assertIn('"File sent"', controller_source)
+    self.assertNotIn('"File sent"', controller_source)
+    self.assertIn("TransferModel.status", controller_source)
     self.assertIn('"Command executed"', controller_source)
     self.assertIn('"Pair request sent"', controller_source)
     self.assertIn('"Device unpaired"', controller_source)
@@ -2145,10 +2027,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("sudo pacman", device_section)
     self.assertIn("sudo ufw", device_section)
 
-    action_toolbar = (ROOT / "components" / "ActionToolbar.qml").read_text()
-    self.assertIn("PanelToolTip", action_toolbar)
-    self.assertIn("actionTooltip", action_toolbar)
-    self.assertIn("id: actionMouseArea", action_toolbar)
+    # Daily toolbar help/focus/activation is verified with the actual native
+    # component in test_action_toolbar_accessibility, not a MouseArea spelling.
 
   def test_media_player_qml_contracts_and_components(self):
     controller_source = (ROOT / "KdeConnectController.qml").read_text()
@@ -2251,7 +2131,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("fileTransferProcess", controller_source)
     self.assertIn("function cancelFileTransfer()", controller_source)
     self.assertIn("fileTransferState", controller_source)
-    self.assertIn("fileTransferGeneration", controller_source)
+    self.assertIn("targetOperationId", controller_source)
     # Ensure startAction allows actions during file transfer (actionProcess is independent)
     self.assertIn("function startAction", controller_source)
     self.assertIn("actionProcess.running", controller_source)
@@ -2259,7 +2139,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     # Check ActionToolbar enables quick actions while file transfer is active
     toolbar_source = (ROOT / "components" / "ActionToolbar.qml").read_text()
     self.assertIn('modelData === "file"', toolbar_source)
-    self.assertIn('"Cancel File"', toolbar_source)
+    self.assertIn('"Stop submitting"', toolbar_source)
 
     # Check DeviceSection status banner handles file transfer status
     device_section_source = (ROOT / "components" / "DeviceSection.qml").read_text()
@@ -2274,8 +2154,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
 
     # Check canAct and lifecycle guards
     self.assertIn("!canAct(id)", controller_source)
-    self.assertIn("fileTransferGeneration += 1", controller_source)
-    self.assertIn("fileTransferDismissTimer.stop()", controller_source)
+    self.assertIn("operationId !== activeOperation.id", controller_source)
+    self.assertIn("function clearOperations()", controller_source)
 
   def test_dbus_signal_filtering_and_monitoring(self):
     controller_source = (ROOT / "KdeConnectController.qml").read_text()

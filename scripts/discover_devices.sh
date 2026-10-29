@@ -59,6 +59,25 @@ value() {
     printf '%s' "$1" | sed -E "s/^\((true|false),\)$/\1/; s/^\(<[[:space:]]*'(.*)',[[:space:]]*>,\)$/\1/; s/^\(<('([^']|\\\\')*'|[^>]+)>.*$/\1/; s/^<'(.*)'>,?$/\1/; s/^<([^>]*)>,?$/\1/; s/^'(.*)'$/\1/; s/^'(.*)',$/\1/"
 }
 
+plugin_ids() {
+    # Native GVariant string arrays only. Keep future plugin IDs without a UI whitelist.
+    # ponytail: 256 IDs / 32 KiB per list; raise with evidence if native KDE grows past this.
+    local raw=$1 list token result="" count=0
+    local pattern="^[[:space:]]*'([A-Za-z0-9_][A-Za-z0-9_.-]{0,127})'[[:space:]]*(,|$)"
+    [[ ${#raw} -le 32768 && "$raw" == *'['*']'* ]] || return 1
+    list=${raw#*\[}
+    list=${list%%\]*}
+    while [[ "$list" =~ $pattern ]]; do
+        token=${BASH_REMATCH[1]}
+        list=${list:${#BASH_REMATCH[0]}}
+        ((count+=1))
+        [[ $count -le 256 ]] || return 1
+        [[ ",$result," == *",$token,"* ]] || result="${result:+$result,}$token"
+    done
+    [[ "$list" =~ ^[[:space:]]*$ ]] || return 1
+    printf '%s' "$result"
+}
+
 ids=$(gdbus call --session --dest org.kde.kdeconnect --object-path "$base" \
     --method org.kde.kdeconnect.daemon.devices false false) || exit 69
 entries=$(printf '%s' "$ids" | sed -E 's/.*\[//; s/\].*//' | tr ',' '\n' \
@@ -95,12 +114,15 @@ while IFS= read -r entry; do
     [[ "$pair_requested_by_peer" == true ]] || pair_requested_by_peer=false
 
     supported=$(property "$path" org.kde.kdeconnect.device supportedPlugins) || continue
-    plugins=
-    for plugin in kdeconnect_battery kdeconnect_ping kdeconnect_share kdeconnect_runcommand kdeconnect_findmyphone kdeconnect_clipboard kdeconnect_connectivity_report kdeconnect_sms kdeconnect_mprisremote kdeconnect_mpriscontrol kdeconnect_mpris; do
-        if [[ "$supported" == *"'$plugin'"* || "$supported" == *"<$plugin>"* ]]; then
-            plugins="${plugins:+$plugins,}$plugin"
-        fi
-    done
+    plugins=$(plugin_ids "$supported") || plugins=""
+    # Loading is distinct from support and from a user's enabled setting.
+    loaded_plugins=""
+    loaded_known=false
+    if loaded_raw=$(gdbus call --session --dest org.kde.kdeconnect \
+        --object-path "$path" --method org.kde.kdeconnect.device.loadedPlugins 2>/dev/null) \
+        && loaded_plugins=$(plugin_ids "$loaded_raw"); then
+        loaded_known=true
+    fi
 
     charge=-1
     charging=false
@@ -120,6 +142,6 @@ while IFS= read -r entry; do
         [[ -n "$type_raw" && "$type_raw" != "null" ]] && net_type=$type_raw
         [[ "$strength_raw" =~ ^[0-9]+$ ]] && net_strength=$strength_raw
     fi
-    printf 'DEVICE\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$(sanitize_field "$id")" "$(sanitize_field "$name")" "$(sanitize_field "$type")" "$paired" "$reachable" "$charge" "$charging" "$plugins" "$(sanitize_field "$net_type")" "$net_strength" "$pair_requested" "$pair_requested_by_peer" "$(sanitize_field "$verification_key")"
+    printf 'DEVICE\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$(sanitize_field "$id")" "$(sanitize_field "$name")" "$(sanitize_field "$type")" "$paired" "$reachable" "$charge" "$charging" "$plugins" "$(sanitize_field "$net_type")" "$net_strength" "$pair_requested" "$pair_requested_by_peer" "$(sanitize_field "$verification_key")" "$loaded_plugins" "$loaded_known"
 done <<< "$entries"

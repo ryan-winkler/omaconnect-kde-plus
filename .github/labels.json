@@ -1,0 +1,82 @@
+[
+  {
+    "name": "accessibility",
+    "color": "006b75",
+    "description": "Accessibility, assistive technology or cognitive barrier"
+  },
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "A supported task does not work as expected"
+  },
+  {
+    "name": "ci",
+    "color": "1d76db",
+    "description": "Checks, packaging or release engineering"
+  },
+  {
+    "name": "dependencies",
+    "color": "0366d6",
+    "description": "Dependency or pinned action update"
+  },
+  {
+    "name": "documentation",
+    "color": "0075ca",
+    "description": "Guides, help text or contributor information"
+  },
+  {
+    "name": "duplicate",
+    "color": "cfd3d7",
+    "description": "An existing issue or pull request covers this"
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "An improvement or new supported task"
+  },
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "Bounded task with a clear starting point and check"
+  },
+  {
+    "name": "help wanted",
+    "color": "008672",
+    "description": "Contributor help is welcome; scope is documented"
+  },
+  {
+    "name": "invalid",
+    "color": "e4e669",
+    "description": "Report cannot be used in its current form"
+  },
+  {
+    "name": "proposal",
+    "color": "c2e0c6",
+    "description": "Discuss a design or domain change before implementation"
+  },
+  {
+    "name": "question",
+    "color": "d876e3",
+    "description": "Usage or contribution question"
+  },
+  {
+    "name": "security",
+    "color": "e11d48",
+    "description": "Public security hardening; vulnerabilities use private reporting"
+  },
+  {
+    "name": "triage",
+    "color": "ededed",
+    "description": "Needs maintainer review and routing"
+  },
+  {
+    "name": "ux",
+    "color": "fbca04",
+    "description": "Interaction, wording or cognitive friction"
+  },
+  {
+    "name": "wontfix",
+    "color": "ffffff",
+    "description": "Maintainer does not plan to implement this"
+  }
+]

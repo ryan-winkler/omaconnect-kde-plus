@@ -5,11 +5,12 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 import qs.Ui
+import "components"
 import "bridge" as OmaconnectBridge
 
 BarWidget {
     id: root
-    moduleName: "omaconnect"
+    moduleName: "ryan.omaconnect"
 
     // Primary path: the bar host's scoped facade (service-capable under the
     // first-party bar). Fallback: the engine-wide bridge singleton -- under
@@ -19,11 +20,11 @@ BarWidget {
     // torn down). See bridge/Bridge.qml.
     readonly property var service: {
         var viaHost = bar && bar.shell && typeof bar.shell.serviceFor === "function"
-            ? bar.shell.serviceFor("omaconnect") : null
+            ? bar.shell.serviceFor("ryan.omaconnect") : null
         return viaHost || OmaconnectBridge.Bridge.service
     }
     readonly property var device: service ? service.selectedDevice : null
-    readonly property string deviceName: device && typeof device.name === "string" ? device.name : "KDE Connect"
+    readonly property string deviceName: service ? service.displayName(device) : "KDE Connect"
     readonly property bool hasBattery: !!(device && device.reachable && device.capabilities && device.capabilities.battery && device.battery >= 0)
     readonly property bool showBarBattery: !!(root.settings && root.settings.showBarBattery && root.hasBattery)
     readonly property Item button: buttonItem
@@ -57,6 +58,13 @@ BarWidget {
         if (panelLoader.item && panelLoader.item.open) panelLoader.item.open()
     }
 
+    function openSettings() {
+        if (panelLoader.item && panelLoader.item.openSettings) panelLoader.item.openSettings()
+    }
+    function openSendWindow() {
+        if (panelLoader.item && panelLoader.item.openSendWindow) panelLoader.item.openSendWindow()
+    }
+
     function close() {
         if (panelLoader.item && panelLoader.item.close) panelLoader.item.close()
     }
@@ -70,17 +78,24 @@ BarWidget {
         anchors.fill: parent
         bar: root.bar
         slotSize: Style.bar.iconSlot * (root.showBarBattery && (!root.bar || !root.bar.vertical) ? 2 : 1)
-        text: {
-            var icon = root.device && root.service && root.settings && root.settings.showDeviceTypeIcons !== false
-                ? root.service.deviceTypeIcon(root.device.type) : "󰄜"
-            return root.showBarBattery ? (icon + " " + root.device.battery + "%") : icon
+        text: ""
+        labelText: root.showBarBattery && root.device ? (root.device.battery + "%") : ""
+        iconComponent: Component {
+            AppearanceIcon {
+                icon: root.service ? root.service.appearance.barIcon(root.device ? root.device.id : "", root.device ? root.device.type : "phone") : ({mode:"preset", value:"phone", render:"glyph"})
+                assetBaseUrl: root.service ? root.service.appearance.assetBaseUrl : ""
+                foreground: buttonItem.foreground
+                fontFamily: buttonItem.fontFamily
+            }
         }
         tooltipText: {
+            var name = "Omaconnect KDE Plus · " + root.deviceName
+            if (root.device && root.device.name && root.device.name !== name) name += " (" + root.device.name + ")"
             var showBat = !root.settings || root.settings.showBatteryStats !== false
-            if (showBat && root.hasBattery) {
-                return root.deviceName + " (" + root.device.battery + "%)"
+            if (showBat && root.hasBattery && root.device) {
+                return name + " (" + root.device.battery + "%)"
             }
-            return root.deviceName
+            return name
         }
 
         onPressed: function(b) {
@@ -89,7 +104,7 @@ BarWidget {
     }
 
     IpcHandler {
-        target: "omaconnect"
+        target: "ryan.omaconnect"
 
         function open(): void { root.open() }
         function close(): void { root.close() }
@@ -97,6 +112,8 @@ BarWidget {
         function hide(): void { root.close() }
         function toggle(): void { root.togglePanel() }
         function refresh(): void { if (root.service) root.service.refresh(true) }
+        function configure(): void { root.openSettings() }
+        function sendWindow(): void { root.openSendWindow() }
     }
 
     Loader {

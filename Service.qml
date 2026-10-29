@@ -1,8 +1,50 @@
 import QtQuick
+import Quickshell.Io
 import "bridge" as OmaconnectBridge
 
 Item {
     id: root
+
+    property bool panelOpened: false
+    property var appearance: appearanceStore
+    property var discovery: discoveryController
+    property string ownerPanelMessage: ""
+    AppearanceStore { id: appearanceStore }
+    DiscoveryController {
+        id: discoveryController
+        panelOpened: root.panelOpened
+        selectedDeviceId: controller.selectedDeviceId
+        onRefreshRequested: controller.refresh(false)
+    }
+    Process {
+        id: ownerPanel
+        command: ["/usr/bin/timeout", "4", "/usr/bin/omarchy-shell", "shell", "summon", "io.github.ilyazar.syncthing", "{}"]
+        stdout: StdioCollector { id: ownerReply; waitForEnd: false; onDataChanged: if (text.length > 8192) ownerPanel.running = false }
+        onExited: function(code) {
+            root.ownerPanelMessage = code === 0 && ownerReply.text.trim() === "ok" ? "Opened the existing Syncthing panel." : "Syncthing panel unavailable. Enable the existing Syncshell plugin first."
+        }
+    }
+    function openSyncthingPanel() {
+        if (!ownerPanel.running) {
+            ownerPanelMessage = "Opening the existing Syncthing panel…"
+            ownerPanel.running = true
+        }
+    }
+    function displayName(device) { return device ? appearanceStore.displayName(device.id, device.name) : "KDE Connect" }
+    property alias selection: controller.selection
+    property alias selectionBytes: controller.selectionBytes
+    property alias selectionError: controller.selectionError
+    property alias selectionState: controller.selectionState
+    property alias draftTarget: controller.draftTarget
+    property alias operations: controller.operations
+    property alias activeOperation: controller.activeOperation
+    property alias operationBusy: controller.operationBusy
+    function chooseFiles(id) { return controller.chooseFiles(id) }
+    function stageDroppedFiles(id, urls) { return controller.stageDroppedFiles(id, urls) }
+    function submitSelection() { return controller.submitSelection() }
+    function cancelDraft() { return controller.cancelDraft() }
+    function clearOperations() { return controller.clearOperations() }
+    function cancelOperation() { return controller.cancelOperation() }
 
     property string omarchyPath: ""
     property var shell: null

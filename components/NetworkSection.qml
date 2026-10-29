@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Column {
@@ -38,8 +39,8 @@ Column {
             hasCursor: panel.cursorActive && panel.focusSection === "network" && (!panel.networkExpanded || panel.networkSelectedIndex === 0)
             radius: Style.cornerRadius
             foreground: root.foreground
-            fill: Style.hoverFillFor(root.foreground, Color.accent)
-            currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+            fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+            currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
             MouseArea {
                 anchors.fill: parent
@@ -59,6 +60,7 @@ Column {
                 spacing: Style.space(6)
 
                 Text {
+                    textFormat: Text.PlainText
                     text: panel.networkExpanded ? "󰅀" : "󰅂"
                     color: root.foreground
                     font.family: root.fontFamily
@@ -74,13 +76,14 @@ Column {
                 }
 
                 Text {
+                    textFormat: Text.PlainText
                     visible: !panel.networkExpanded && !!(root.service && root.service.tailscaleInstalled)
                     text: {
                         if (!root.service) return ""
                         if (root.service.tailscaleLoading) return "Checking…"
                         return root.service.tailscaleStatus || ""
                     }
-                    color: (root.service && root.service.tailscaleRunning) ? Color.accent : Qt.darker(root.foreground, 1.4)
+                    color: (root.service && root.service.tailscaleRunning) ? Commons.Color.accent : Qt.darker(root.foreground, 1.4)
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
                     anchors.verticalCenter: parent.verticalCenter
@@ -106,6 +109,7 @@ Column {
         spacing: Style.space(8)
 
         Text {
+            textFormat: Text.PlainText
             visible: !!(root.service && root.service.localTailscaleAddress)
             width: parent.width
             text: "This computer: " + (root.service ? root.service.localTailscaleAddress : "")
@@ -116,16 +120,18 @@ Column {
         }
 
         Text {
+            textFormat: Text.PlainText
             visible: !!(root.service && !root.service.customAddressesReady && root.service.discoveryState === "ready")
             width: parent.width
             text: "KDE Connect's saved address list is unavailable. Refresh before adding or removing addresses."
-            color: Color.urgent
+            color: Commons.Color.urgent
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
             wrapMode: Text.WordWrap
         }
 
         Text {
+            textFormat: Text.PlainText
             visible: !!(root.service && !root.service.tailscaleLoading && !root.service.tailscaleInstalled)
             width: parent.width
             text: "Install Tailscale on both devices for simple connections across networks, or enter another VPN IP below."
@@ -147,11 +153,11 @@ Column {
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.bodySmall
-                selectionColor: Style.selectionFillFor(root.foreground, Color.accent)
+                selectionColor: Style.selectionFillFor(root.foreground, Commons.Color.accent)
                 selectedTextColor: root.foreground
                 background: Rectangle {
-                    color: Style.hoverFillFor(root.foreground, Color.accent)
-                    border.color: addressInput.activeFocus ? Color.accent : Qt.darker(root.foreground, 1.6)
+                    color: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+                    border.color: addressInput.activeFocus ? Commons.Color.accent : Qt.darker(root.foreground, 1.6)
                     border.width: 1
                     radius: Style.cornerRadius
                 }
@@ -191,8 +197,8 @@ Column {
                     hasCursor: panel.cursorActive && panel.focusSection === "network" && panel.networkExpanded && panel.networkSelectedIndex === (1 + index)
                     radius: Style.cornerRadius
                     foreground: root.foreground
-                    fill: Style.hoverFillFor(root.foreground, Color.accent)
-                    currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+                    fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+                    currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
                     MouseArea {
                         anchors.fill: parent
@@ -211,13 +217,15 @@ Column {
                         spacing: Style.space(8)
 
                         Text {
+                            textFormat: Text.PlainText
                             text: "●"
-                            color: (modelData && modelData.online) ? Color.accent : Qt.darker(root.foreground, 1.6)
+                            color: (modelData && modelData.online) ? Commons.Color.accent : Qt.darker(root.foreground, 1.6)
                             font.pixelSize: Style.font.caption
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
                         Text {
+                            textFormat: Text.PlainText
                             width: Math.max(1, parent.width - peerButton.implicitWidth - Style.space(24))
                             text: modelData ? (modelData.name + "  " + modelData.address + (modelData.online ? "" : "  Offline")) : ""
                             color: (modelData && modelData.online) ? root.foreground : Qt.darker(root.foreground, 1.5)
@@ -247,6 +255,7 @@ Column {
             spacing: Style.space(4)
 
             Text {
+                textFormat: Text.PlainText
                 text: "SAVED ADDRESSES"
                 color: Qt.darker(root.foreground, 1.35)
                 font.family: root.fontFamily
@@ -264,8 +273,8 @@ Column {
                     hasCursor: panel.cursorActive && panel.focusSection === "network" && panel.networkExpanded && panel.networkSelectedIndex === (1 + ((root.service && root.service.tailscaleRunning) ? root.filteredPeers.length : 0) + index)
                     radius: Style.cornerRadius
                     foreground: root.foreground
-                    fill: Style.hoverFillFor(root.foreground, Color.accent)
-                    currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+                    fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+                    currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
                     MouseArea {
                         anchors.fill: parent
@@ -284,6 +293,7 @@ Column {
                         spacing: Style.space(6)
 
                         Text {
+                            textFormat: Text.PlainText
                             width: Math.max(1, parent.width - removeButton.implicitWidth - Style.space(6))
                             text: modelData
                             color: root.foreground

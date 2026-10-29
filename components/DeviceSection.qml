@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Column {
@@ -64,16 +65,19 @@ Column {
                 width: parent.width
                 spacing: Style.space(6)
 
-                Text {
-                    visible: root.showDeviceTypeIcons && !!(root.device && root.device.type && root.device.type !== "unknown")
-                    text: root.service ? root.service.deviceTypeIcon(root.device ? root.device.type : "") : ""
-                    color: (root.device && root.device.reachable) ? Color.accent : Qt.darker(root.foreground, 1.4)
-                    font.family: root.fontFamily
-                    font.pixelSize: Style.font.title
+                AppearanceIcon {
+                    visible: !!root.device
+                    width: Style.space(24); height: width
+                    icon: root.service ? root.service.appearance.deviceIcon(root.device ? root.device.id : "", root.device ? root.device.type : "") : ({mode:"preset",value:"phone"})
+                    assetBaseUrl: root.service ? root.service.appearance.assetBaseUrl : ""
+                    foreground: (root.device && root.device.reachable) ? Commons.Color.accent : root.foreground
+                    fontFamily: root.fontFamily
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
                 Text {
+                    textFormat: Text.PlainText
+
                     text: root.device ? root.deviceName : "KDE Connect"
                     color: root.foreground
                     font.family: root.fontFamily
@@ -86,6 +90,7 @@ Column {
             }
 
             Text {
+                textFormat: Text.PlainText
                 width: parent.width
                 text: {
                     if (!root.service) return "Service unavailable"
@@ -105,20 +110,24 @@ Column {
                 spacing: Style.space(6)
 
                 Text {
+                    textFormat: Text.PlainText
+
                     text: root.service ? ((root.showBattery && root.device && root.device.capabilities && root.device.capabilities.battery && root.device.battery >= 0) ? root.service.deviceBatteryIcon(root.device) : root.service.deviceNetworkIcon(root.device)) : ""
                     color: (root.showBattery && root.device && root.device.capabilities && root.device.capabilities.battery && root.device.battery >= 0 && root.device.battery <= 20 && !(root.device.isCharging || root.device.charging))
-                        ? Color.urgent
-                        : ((root.device && (root.device.isCharging || root.device.charging)) ? Color.accent : root.foreground)
+                        ? Commons.Color.urgent
+                        : ((root.device && (root.device.isCharging || root.device.charging)) ? Commons.Color.accent : root.foreground)
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.bodySmall
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
                 Text {
+                    textFormat: Text.PlainText
+
                     text: root.service ? root.service.deviceBatteryText(root.device, root.showBattery, root.showNetwork) : ""
                     color: (root.showBattery && root.device && root.device.battery >= 0 && root.device.battery <= 20 && !(root.device.isCharging || root.device.charging))
-                        ? Color.urgent
-                        : ((root.device && (root.device.isCharging || root.device.charging)) ? Color.accent : root.foreground)
+                        ? Commons.Color.urgent
+                        : ((root.device && (root.device.isCharging || root.device.charging)) ? Commons.Color.accent : root.foreground)
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.bodySmall
                     font.bold: !!(root.showBattery && root.device && root.device.battery >= 0 && root.device.battery <= 20 && !(root.device.isCharging || root.device.charging))
@@ -135,10 +144,11 @@ Column {
         implicitHeight: Math.max(bannerText.implicitHeight, Style.space(18)) + Style.space(8)
         radius: Style.cornerRadius
         color: ((root.service && (root.service.actionError || root.service.fileTransferError)) || (root.panel && root.panel.composerError))
-            ? Qt.rgba(Color.urgent.r, Color.urgent.g, Color.urgent.b, 0.15)
-            : Style.hoverFillFor(root.foreground, Color.accent)
+            ? Qt.rgba(Commons.Color.urgent.r, Commons.Color.urgent.g, Commons.Color.urgent.b, 0.15)
+            : Style.hoverFillFor(root.foreground, Commons.Color.accent)
 
         Text {
+            textFormat: Text.PlainText
             id: bannerText
             anchors.left: parent.left
             anchors.right: dismissButton.left
@@ -153,7 +163,7 @@ Column {
                 if (root.service && root.service.fileTransferMessage) return root.service.fileTransferMessage
                 return ""
             }
-            color: ((root.service && (root.service.actionError || root.service.fileTransferError)) || (root.panel && root.panel.composerError)) ? Color.urgent : root.foreground
+            color: ((root.service && (root.service.actionError || root.service.fileTransferError)) || (root.panel && root.panel.composerError)) ? Commons.Color.urgent : root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
             elide: Text.ElideRight
@@ -182,9 +192,10 @@ Column {
             }
 
             Text {
+                textFormat: Text.PlainText
                 anchors.centerIn: parent
                 text: "✕"
-                color: ((root.service && (root.service.actionError || root.service.fileTransferError)) || (root.panel && root.panel.composerError)) ? Color.urgent : root.foreground
+                color: ((root.service && (root.service.actionError || root.service.fileTransferError)) || (root.panel && root.panel.composerError)) ? Commons.Color.urgent : root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 opacity: parent.pressed ? 0.6 : 0.85
@@ -197,8 +208,8 @@ Column {
         width: parent.width
         implicitHeight: incomingContent.implicitHeight + Style.space(16)
         radius: Style.cornerRadius
-        color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.14)
-        border.color: Color.accent
+        color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.14)
+        border.color: Commons.Color.accent
         border.width: 1
 
         Column {
@@ -210,6 +221,7 @@ Column {
             spacing: Style.space(6)
 
             Text {
+                textFormat: Text.PlainText
                 width: parent.width
                 text: (panel.incomingRequest && panel.incomingRequest.name) ? "Pairing request from " + panel.incomingRequest.name : "Pairing request"
                 color: root.foreground
@@ -220,6 +232,7 @@ Column {
             }
 
             Text {
+                textFormat: Text.PlainText
                 visible: !!(panel.incomingRequest && panel.incomingRequest.verificationKey)
                 width: parent.width
                 text: "Verify on both devices: " + ((panel.incomingRequest && panel.incomingRequest.verificationKey) ? (root.service ? root.service.formatVerificationKey(panel.incomingRequest.verificationKey) : panel.incomingRequest.verificationKey) : "")
@@ -281,8 +294,8 @@ Column {
             hasCursor: !!(modelData && panel.cursorActive && panel.focusSection === "devices" && panel.selectedIndex === index)
             current: isCurrent
             foreground: root.foreground
-            fill: Style.hoverFillFor(root.foreground, Color.accent)
-            currentFill: Style.selectedFillFor(root.foreground, Color.accent)
+            fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
+            currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
 
             MouseArea {
                 anchors.fill: parent
@@ -312,32 +325,36 @@ Column {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: Style.space(8)
 
-                    Text {
-                        visible: root.showDeviceTypeIcons
-                        text: (root.service && modelData) ? root.service.deviceTypeIcon(modelData.type) : "󰄜"
-                        color: (modelData && modelData.paired && modelData.reachable) ? Color.accent : Qt.darker(root.foreground, 1.5)
-                        font.family: root.fontFamily
-                        font.pixelSize: Style.font.body
+                    AppearanceIcon {
+                        width: Style.space(20); height: width
+                        icon: root.service && modelData ? root.service.appearance.deviceIcon(modelData.id, modelData.type) : ({mode:"preset",value:"phone"})
+                        assetBaseUrl: root.service ? root.service.appearance.assetBaseUrl : ""
+                        foreground: (modelData && modelData.paired && modelData.reachable) ? Commons.Color.accent : root.foreground
+                        fontFamily: root.fontFamily
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     Column {
                         spacing: Style.space(1)
-                        width: Math.max(1, leftInfoRow.width - (root.showDeviceTypeIcons ? Style.space(22) : 0))
+                        width: Math.max(1, leftInfoRow.width - Style.space(28))
                         anchors.verticalCenter: parent.verticalCenter
 
                         Text {
+                            textFormat: Text.PlainText
+
                             id: nameText
-                            text: (modelData && modelData.name) ? modelData.name : ""
+                            text: root.service && modelData ? root.service.displayName(modelData) : ""
                             color: root.foreground
                             font.family: root.fontFamily
                             font.pixelSize: Style.font.body
-                            font.bold: isCurrent
+                            font.bold: !!isCurrent
                             elide: Text.ElideRight
                             width: parent.width
                         }
 
                         Text {
+                            textFormat: Text.PlainText
+
                             visible: !!modelData && (!modelData.paired || !modelData.reachable)
                             text: (!modelData || !modelData.paired) ? "Unpaired" : "Offline"
                             color: Qt.darker(root.foreground, 1.5)
@@ -463,6 +480,7 @@ Column {
         width: parent.width
 
         Text {
+            textFormat: Text.PlainText
             text: {
                 if (root.service && root.service.scanning) return "Scanning..."
                 if (root.service && root.service.discoveryState === "not_installed") return "Required packages missing"
@@ -479,6 +497,7 @@ Column {
             spacing: Style.space(6)
 
             Text {
+                textFormat: Text.PlainText
                 text: "kdeconnect needed"
                 color: Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily
@@ -501,6 +520,7 @@ Column {
             spacing: Style.space(6)
 
             Text {
+                textFormat: Text.PlainText
                 text: "daemon not running"
                 color: Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily
@@ -523,6 +543,7 @@ Column {
             spacing: Style.space(6)
 
             Text {
+                textFormat: Text.PlainText
                 text: "Firewall blocking?"
                 color: Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily

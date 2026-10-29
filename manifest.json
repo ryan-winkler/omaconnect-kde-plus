@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "id": "omaconnect",
-  "name": "OmaConnect",
-  "version": "1.5.0",
-  "author": "Jitendra Dara (jitendradara12)",
-  "description": "Seamless KDE Connect integration for Omarchy: Tailscale discovery, pairing, SMS, battery stats, clipboard sync, file sharing, remote commands, and media controls.",
+  "id": "ryan.omaconnect",
+  "name": "Omaconnect KDE Plus",
+  "version": "0.1.0",
+  "author": "Ryan Winkler; based on Jitendra Dara’s OmaConnect",
+  "description": "KDE Connect device actions, file sharing, custom icons and optional Tailscale, MikroTik Back to Home and WireGuard views for Omarchy.",
   "license": "MIT",
-  "homepage": "https://github.com/jitendradara12/omaconnect",
-  "repository": "https://github.com/jitendradara12/omaconnect",
+  "homepage": "https://github.com/ryan-winkler/omaconnect-kde-plus",
+  "repository": "https://github.com/ryan-winkler/omaconnect-kde-plus",
   "kinds": [
     "service",
     "bar-widget"
@@ -17,27 +17,112 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "OmaConnect",
-    "description": "KDE Connect devices, Tailscale discovery, pairing, battery, media controls, and remote actions",
+    "displayName": "Omaconnect KDE Plus",
+    "description": "Devices, file submission, appearance and existing home-access controls",
     "category": "Productivity",
     "allowMultiple": false,
     "defaultSection": "right"
   },
   "settings": {
-    "showBatteryStats": { "type": "boolean", "default": true, "description": "Display battery percentage and charging state" },
-    "showBarBattery": { "type": "boolean", "default": false, "description": "Display battery percentage next to the icon in the bar" },
-    "showNetworkStats": { "type": "boolean", "default": true, "description": "Display cellular network type and signal strength" },
-    "showTailscale": { "type": "boolean", "default": true, "description": "Display optional Tailscale and custom address discovery" },
-    "showDeviceTypeIcons": { "type": "boolean", "default": true, "description": "Show device type icons" },
-    "showMediaPlayer": { "type": "boolean", "default": true, "description": "Display media player controls for paired devices" },
-    "showRemoteCommands": { "type": "boolean", "default": true, "description": "Display remote commands section" },
-    "showTroubleshooting": { "type": "boolean", "default": true, "description": "Display setup and firewall helpers when devices are offline" },
-    "showActionRing": { "type": "boolean", "default": true, "description": "Include Ring device action" },
-    "showActionClipboard": { "type": "boolean", "default": true, "description": "Include Clipboard sync action" },
-    "showActionFile": { "type": "boolean", "default": true, "description": "Include File transfer action" },
-    "showActionSms": { "type": "boolean", "default": true, "description": "Include SMS conversation action" },
-    "showActionPing": { "type": "boolean", "default": false, "description": "Include Ping action" },
-    "showActionText": { "type": "boolean", "default": true, "description": "Include Text and link sharing action" },
-    "defaultPingMessage": { "type": "string", "default": "", "description": "Default draft message for ping" }
+    "showBatteryStats": {
+      "type": "boolean",
+      "default": true,
+      "description": "Display battery percentage and charging state"
+    },
+    "showBarBattery": {
+      "type": "boolean",
+      "default": false,
+      "description": "Display battery percentage next to the icon in the bar"
+    },
+    "showNetworkStats": {
+      "type": "boolean",
+      "default": true,
+      "description": "Display cellular network type and signal strength"
+    },
+    "showTailscale": {
+      "type": "boolean",
+      "default": false,
+      "description": "Legacy discovery setting; disabled in this fork. Use networkTailscaleEnabled to show the current Tailscale integration."
+    },
+    "showDeviceTypeIcons": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show device type icons"
+    },
+    "showMediaPlayer": {
+      "type": "boolean",
+      "default": true,
+      "description": "Display media player controls for paired devices"
+    },
+    "showRemoteCommands": {
+      "type": "boolean",
+      "default": true,
+      "description": "Display remote commands section"
+    },
+    "showTroubleshooting": {
+      "type": "boolean",
+      "default": false,
+      "description": "Legacy setting retained for migration; setup actions are disabled in this fork."
+    },
+    "showActionRing": {
+      "type": "boolean",
+      "default": true,
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
+    },
+    "showActionClipboard": {
+      "type": "boolean",
+      "default": true,
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
+    },
+    "showActionFile": {
+      "type": "boolean",
+      "default": true,
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
+    },
+    "showActionSms": {
+      "type": "boolean",
+      "default": true,
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
+    },
+    "showActionPing": {
+      "type": "boolean",
+      "default": false,
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
+    },
+    "showActionText": {
+      "type": "boolean",
+      "default": true,
+      "description": "Legacy visibility preference. Use quickActionsOrder in Plus Settings → Quick actions."
+    },
+    "defaultPingMessage": {
+      "type": "string",
+      "default": "",
+      "description": "Default draft message for ping"
+    },
+    "bthHelperPath": {
+      "type": "string",
+      "default": "",
+      "description": "Absolute path to the existing remote-access-mode helper. Empty uses ~/.local/bin/remote-access-mode."
+    },
+    "networkTailscaleEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show Tailscale integration. This display setting does not connect or disconnect a VPN."
+    },
+    "networkBthEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show MikroTik Back to Home integration. This display setting does not connect or disconnect a VPN."
+    },
+    "networkWireguardEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show other WireGuard profiles integration. This display setting does not connect or disconnect a VPN."
+    },
+    "quickActionsOrder": {
+      "type": "string",
+      "default": "file,text,clipboard",
+      "description": "Ordered optional quick action IDs. Configure add, remove and order in Plus Settings → Quick actions."
+    }
   }
 }

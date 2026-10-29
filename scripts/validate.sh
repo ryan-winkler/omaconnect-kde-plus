@@ -4,7 +4,24 @@ set -euo pipefail
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_dir"
 
-python3 -m unittest -q tests/test_state.py
+# Never inherit the host display, runtime sockets or personal configuration.
+validation_home="$(mktemp -d)"
+trap 'rm -rf "$validation_home"' EXIT
+export HOME="$validation_home"
+export XDG_CONFIG_HOME="$validation_home/config"
+export XDG_DATA_HOME="$validation_home/data"
+export XDG_CACHE_HOME="$validation_home/cache"
+export XDG_STATE_HOME="$validation_home/state"
+export XDG_RUNTIME_DIR="$validation_home/runtime"
+mkdir -m 700 "$XDG_RUNTIME_DIR"
+unset WAYLAND_DISPLAY DISPLAY DBUS_SESSION_BUS_ADDRESS HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP DESKTOP_SESSION GTK_USE_PORTAL GDK_BACKEND
+export QT_QPA_PLATFORMTHEME=generic QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic
+export QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software PYTHONDONTWRITEBYTECODE=1
+# Tests substitute all provider mutations. Portal fixtures create their own bus.
+dbus-run-session -- python3 -m unittest discover -s tests -p 'test_*.py' -q
+node tests/appearance.cjs
+node tests/test-bth-control.cjs
+node tests/transfer_model_test.js
 bash -n scripts/*.sh
 
 validator=""
@@ -29,11 +46,11 @@ fi
 
 if [[ -n "$qmllint_cmd" ]]; then
     qml_output="$(mktemp)"
-    trap 'rm -f "$qml_output"' EXIT
+    trap 'rm -f "$qml_output"; rm -rf "$validation_home"' EXIT
     set +e
     omarchy_shell="${OMARCHY_PATH:-/usr/share/omarchy}/shell"
     
-    qml_files=(Service.qml BarWidget.qml KdeConnectController.qml)
+    qml_files=(Service.qml BarWidget.qml KdeConnectController.qml AppearanceStore.qml BthControlCard.qml DiscoveryController.qml)
     if [ -f Panel.qml ]; then qml_files+=(Panel.qml); fi
     for file in components/*.qml; do
         if [ -f "$file" ]; then qml_files+=("$file"); fi
@@ -49,10 +66,10 @@ if [[ -n "$qmllint_cmd" ]]; then
         printf '%s\n' "qmllint reported actual errors; runtime loader checks are also required"
         printf '%s\n' "$(<"$qml_output")"
         exit "$status"
-    elif grep -q 'Warning:' "$qml_output"; then
+    elif rg -q 'Warning:' "$qml_output"; then
         printf '%s\n' "qmllint emitted host-import/unqualified-type diagnostics; not claimed warning-free"
         printf '%s\n' "QML loader/runtime verification is the authoritative error check"
-        else
+    else
         printf '%s\n' "qmllint completed without diagnostics"
     fi
 else

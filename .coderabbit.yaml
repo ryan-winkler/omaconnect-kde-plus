@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+early_access: false
+enable_free_tier: true
+tone_instructions: "Use concise, plain English. State the behavior, evidence and effect. Use short active sentences and stable domain terms. Avoid vague praise and speculative redesign."
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  fail_commit_status: false
+  suggested_labels: true
+  auto_review:
+    enabled: true
+    drafts: false
+    ignore_title_keywords: [WIP, wip, Draft, draft]
+  path_instructions:
+    - path: "**/*.qml"
+      instructions: "Preserve native Omarchy controls, keyboard focus, plain-text state and concise helper text or direct help links. Keep each settings domain clear. Do not duplicate native KDE Connect module ownership. Distinguish requested and observed state."
+    - path: "**/*.js"
+      instructions: "Keep domain catalogs and models shared. Check provider capability, stable identity, bounded data and truthful operation state. Avoid speculative plugin frameworks or duplicate engines."
+    - path: "scripts/**"
+      instructions: "Check fixed argv, bounded input/output, private atomic state, exact target scope, symlink/permission handling and explicit approval. Never infer file receipt from command success or add automatic provider mutations."
+    - path: "tests/**"
+      instructions: "Require owned temporary state and fake providers. Do not pair devices, change network modes, restart the shell or send real files in automated tests. Separate native fixture evidence from real-device acceptance."
+    - path: "**/*.md"
+      instructions: "Use concise plain English and helpful task links. Preserve source/license attribution. Report actual evidence and open checks. Do not expose personal configurations or credentials."
+    - path: ".github/workflows/**"
+      instructions: "Use minimum token permissions, verified full action SHAs, timeouts and untrusted-PR-safe triggers. Do not use pull_request_target to execute pull-request code. Do not claim skipped native checks passed."
+  tools:
+    shellcheck:
+      enabled: true
+    markdownlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    actionlint:
+      enabled: true
+    zizmor:
+      enabled: true
+    gitleaks:
+      enabled: true
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - AGENTS.md
+      - CONTRIBUTING.md
+      - docs/CONTRACTS.md
