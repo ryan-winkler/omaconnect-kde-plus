@@ -81,14 +81,13 @@ controls instead.
 To switch:
 
 1. Add Plus without `--enable`, or decline the enable prompt.
-2. Disable the original UI: `omarchy plugin disable omaconnect`.
-3. Back up `~/.config/omarchy/shell.json`, then replace it with the reviewed
+2. Back up `~/.config/omarchy/shell.json`, then replace it with the reviewed
    `candidate-shell.json`. If you changed shell settings after `prepare`, run
    `prepare` again first so the candidate keeps those changes. The candidate
-   gives `Omaconnect.plus` the same enabled or disabled state the original had.
+   disables `omaconnect` and gives `Omaconnect.plus` the state the original had.
    Copy `candidate-appearance.json`, if present, to
    `${XDG_CONFIG_HOME:-$HOME/.config}/Omaconnect.plus/appearance.json`.
-4. Check the bar, keyboard focus and your devices. Keep the original installed
+3. Check the bar, keyboard focus and your devices. Keep the original installed
    until you are satisfied.
 
 ## Roll back
