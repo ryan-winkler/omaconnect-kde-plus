@@ -13,13 +13,18 @@ Column {
 
     width: parent ? parent.width : 0
     spacing: Style.space(8)
-    visible: !!(panel && panel.device && panel.device.paired && panel.device.reachable)
+    visible: !!(panel && panel.availableActions && panel.availableActions.length > 0)
 
     readonly property var bar: panel ? panel.bar : null
     readonly property var service: panel ? panel.service : null
     readonly property var device: panel ? panel.device : null
     readonly property color foreground: bar ? bar.foreground : "#ffffff"
     readonly property string fontFamily: bar ? bar.fontFamily : "sans-serif"
+    readonly property var blockedActions: panel && panel.availableActions ? panel.availableActions.filter(function(id) { return !root.actionReady(id); }) : []
+
+    function actionReady(id) {
+        return (id === "file" && service && service.fileBusy) || Actions.ready(id,device,service)
+    }
 
     PanelSeparator { foreground: root.foreground }
 
@@ -42,7 +47,7 @@ Column {
                 readonly property string actionName: modelData === "file" && root.service && root.service.fileBusy
                     ? "Stop submitting" : catalogEntry ? catalogEntry.label : modelData
                 readonly property string actionTooltip: modelData === "file" && root.service && root.service.fileBusy
-                    ? "Cancel the current file submission" : catalogEntry ? catalogEntry.description : modelData
+                    ? "Cancel the current file submission" : catalogEntry ? catalogEntry.description + (root.actionReady(modelData) ? "" : "\n" + Actions.availabilityText(modelData,root.device,root.service)) : modelData
                 readonly property string actionIcon: modelData === "file" && root.service && root.service.fileBusy
                     ? "󰅖" : catalogEntry ? catalogEntry.icon : ""
 
@@ -60,7 +65,7 @@ Column {
                 hasCursor: panel.cursorActive && panel.focusSection === "actions" && panel.actionSelectedIndex === index
                 selected: (modelData === "ping" && panel.activeComposer === "ping") || (modelData === "text" && panel.activeComposer === "text") || (modelData === "file" && !!(root.service && root.service.fileBusy))
                 foreground: root.foreground
-                enabled: !root.service || (modelData === "file" ? true : (root.service.actionState !== "running"))
+                enabled: root.actionReady(modelData)
                 onHovered: function(isHovered) {
                     if (isHovered) {
                         panel.cursorActive = true
@@ -71,5 +76,16 @@ Column {
                 onClicked: if (enabled) panel.triggerAction(modelData)
             }
         }
+    }
+    Text {
+        width: parent.width
+        visible: root.blockedActions.length > 0
+        text: root.blockedActions.length > 0 ? Actions.availabilityText(root.blockedActions[0],root.device,root.service)
+            + (root.blockedActions.length > 1 ? " Other unavailable actions: " + root.blockedActions.slice(1).map(function(id) { return Actions.entry(id).label; }).join(", ") + "." : "") : ""
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
     }
 }

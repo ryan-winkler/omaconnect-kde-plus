@@ -124,6 +124,8 @@ Window {
                 width: parent.width - x
                 height: parent.height
                 clip: true
+                // Reserve space so the native overlay scrollbar cannot cover text.
+                rightPadding: Style.space(12)
                 contentWidth: availableWidth
                 Controls.ScrollBar.horizontal.policy: Controls.ScrollBar.AlwaysOff
                 Controls.ScrollBar.vertical.policy: pageScroll.contentHeight > pageScroll.availableHeight ? Controls.ScrollBar.AlwaysOn : Controls.ScrollBar.AlwaysOff
@@ -201,7 +203,17 @@ Window {
                         PreferenceControls {
                             width: parent.width
                             panel: root.panel
-                            preferences: [{key: "showBarBattery", label: "Show battery beside the bar icon", defaultValue: false, description: "Show the selected device’s reported charge beside the icon. Devices without a battery report show no percentage."}]
+                            preferences: [
+                                {key: "showBarBattery", label: "Show battery beside the bar icon", defaultValue: false, description: "Show the selected device’s reported charge beside the icon. Devices without a battery report show no percentage."},
+                                {key: "showNetworkControls", label: "Show network controls in Devices", defaultValue: true, description: "Show the providers enabled in Connections. Hiding controls does not disconnect a VPN."},
+                                {key: "showSavedAddresses", label: "Show saved addresses", defaultValue: true, description: "Keep approved per-device addresses available for review. Hiding this section keeps saved records and rediscovery preferences."},
+                                {key: "showSyncthingLinks", label: "Show Syncthing identity notes", defaultValue: false, description: "Optional reminder that a KDE device and a Syncthing device are the same machine. Opens the existing Syncshell owner; does not show live sync status or share folders."},
+                                {key: "networkStartExpanded", label: "Start network controls expanded", defaultValue: true, description: "You can expand or collapse the section in Devices. This sets its state when you open the panel."},
+                                {key: "mediaStartExpanded", label: "Start media expanded", defaultValue: true, description: "Choose a compact summary or expanded player when the panel opens."},
+                                {key: "commandsStartExpanded", label: "Start remote commands expanded", defaultValue: false, description: "Keep configured remote commands collapsed until needed, or show them when the panel opens."},
+                                {key: "addressesStartExpanded", label: "Start saved addresses expanded", defaultValue: false, description: "Applies when saved addresses are shown. Changing this does not approve an address."},
+                                {key: "syncthingStartExpanded", label: "Start Syncthing notes expanded", defaultValue: false, description: "Applies when Syncthing identity notes are enabled. Association remains local metadata."}
+                            ]
                         }
                     }
                     Column {
@@ -232,7 +244,7 @@ Window {
                         spacing: Style.space(12)
                         Text {
                             width: parent.width
-                            text: "KDE Connect opens in its own window. Use its Plugin settings for native modules and permissions. Return here for Plus appearance, sharing and connection preferences."
+                            text: "Native modules and permissions stay in KDE Connect. Plus preferences stay here."
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text
@@ -244,6 +256,7 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
+                                {key: "showNativeFeatures", label: "Show native feature entry in Devices", defaultValue: true, description: "The full searchable inventory stays here in Settings, even when the daily entry is hidden."},
                                 {key: "showBatteryStats", label: "Show battery details", defaultValue: true, description: "Show charge and charging state when the selected device reports them."},
                                 {key: "showNetworkStats", label: "Show cellular connection details", defaultValue: true, description: "Show the device’s reported cellular type and signal. This does not describe Wi-Fi or VPN reachability."},
                                 {key: "showMediaPlayer", label: "Show media controls", defaultValue: true, description: "Control a reported media player on the selected device. Open Media in Devices to choose a player."},

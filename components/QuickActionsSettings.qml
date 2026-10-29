@@ -11,9 +11,11 @@ Column {
     id: root
     required property var panel
     readonly property var device: panel ? panel.device : null
+    readonly property var service: panel && "service" in panel ? panel.service : null
     readonly property string storedOrder: panel ? panel.getSetting("quickActionsOrder", Actions.DEFAULT_ORDER) : Actions.DEFAULT_ORDER
     readonly property var order: Actions.order(storedOrder)
-    readonly property var addable: Actions.entries.filter(function(row) { return root.order.indexOf(row.id) < 0; }).map(function(row) { return {value:row.id,label:row.label,description:row.description}; })
+    readonly property var addable: Actions.entries.filter(function(row) { return root.order.indexOf(row.id) < 0; }).map(function(row) { return {value:row.id,label:row.label,description:row.group + " · " + row.description}; })
+    readonly property var selectedEntry: Actions.entry(selectedAction)
     property string selectedAction: ""
     property string message: ""
     readonly property bool busy: saver.running
@@ -43,7 +45,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "Choose a shortcut, then Add. Use Up, Down or Remove to edit the toolbar. These choices do not enable or run native plugins."
+        text: "Choose a shortcut, then Add. Use Up, Down or Remove to edit the toolbar. Native shortcuts open KDE Connect for that task or its Plugin settings. Saving a shortcut does not enable or run a plugin."
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -69,6 +71,16 @@ Column {
         foreground: Commons.Color.popups.text
         enabled: !root.busy && root.addable.length > 0
         onChanged: function(value) { root.selectedAction = value }
+    }
+    Text {
+        width: parent.width
+        visible: !!root.selectedEntry
+        text: root.selectedEntry ? root.selectedEntry.description + "\n" + Actions.availabilityText(root.selectedAction,root.device,root.service) : ""
+        textFormat: Text.PlainText
+        color: Commons.Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.caption
+        wrapMode: Text.Wrap
     }
     Kit.Button {
         width: parent.width
@@ -98,7 +110,7 @@ Column {
             }
             Text {
                 width: parent.width
-                text: action.description + "\n" + Actions.availabilityText(modelData,root.device)
+                text: action.description + "\n" + Actions.availabilityText(modelData,root.device,root.service)
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
@@ -134,6 +146,15 @@ Column {
                 }
             }
         }
+    }
+    Text {
+        width: parent.width
+        text: "More native modules, including unfamiliar plugin IDs, stay searchable in Device features. KDE Connect owns their configuration and permissions."
+        textFormat: Text.PlainText
+        color: Commons.Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.caption
+        wrapMode: Text.Wrap
     }
     Text {
         width: parent.width

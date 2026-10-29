@@ -1,6 +1,6 @@
 # Contributor and release checks
 
-Date: 2026-10-29. Public name: **Omaconnect KDE Plus**. Stable plugin ID: **`ryan.omaconnect`**. Canonical repository: [ryan-winkler/omaconnect-kde-plus](https://github.com/ryan-winkler/omaconnect-kde-plus).
+Date: 2026-10-29. Public name: **Omaconnect KDE Plus**. Stable plugin ID: **`Omaconnect.plus`**. Canonical repository: [ryan-winkler/omaconnect-kde-plus](https://github.com/ryan-winkler/omaconnect-kde-plus).
 
 **Repository files prepare the process. GitHub settings and a real run prove that a service works.** Do not describe an app, scan or branch rule as enabled because its configuration exists.
 
@@ -48,20 +48,20 @@ The full functional suite, GitHub workflow results, live app review and installe
 
 Checked items record administrative actions confirmed by the release task on 2026-10-29. Unchecked items still need live evidence; repository configuration alone does not complete them.
 
-- [x] Renamed the existing public fork to `ryan-winkler/omaconnect-kde-plus`; retained upstream history. The stable plugin ID remains `ryan.omaconnect`. No pairing or provider migration is part of this rename.
+- [x] Renamed the existing public fork to `ryan-winkler/omaconnect-kde-plus`; retained upstream history. That rename preserved the previous development ID. The later technical identity update selects `Omaconnect.plus`; its migration/readback is a separate gate.
 - [x] Enabled Issues and Discussions. Applied the 16 label definitions additively and set repository topics.
 - [x] Enabled private vulnerability reporting. The security policy includes the maintainer email fallback.
 - [ ] Open the advisory route without submitting a report and confirm its live public entry point after publication.
-- [x] Enabled Dependabot alerts, secret scanning and push protection for the public repository.
-- [ ] Check whether default CodeQL setup is active before using the supplied advanced workflow; choose one setup and avoid duplicate scans.
-- [ ] Install or grant the official CodeRabbit GitHub app access to this repository. Confirm the organization/account's public-repository plan. Do not buy a plan to complete this release.
-- [ ] Open a real pull request after app access is set. Confirm a CodeRabbit review and configuration acceptance. If needed, comment `@coderabbitai review` on that PR. Record a link and outcome.
+- [x] Enabled Dependabot alerts, secret scanning and push protection for the public repository. Automated security-fix PRs are now enabled and not paused, confirmed by live API readback.
+- [x] Live API readback confirms default CodeQL is not configured. The supplied advanced workflow is the only configured CodeQL scan path.
+- [x] Owner confirms the official CodeRabbit GitHub app is enabled for this repository. The public-repository offer is the documented free route; no purchase is authorized or needed.
+- [x] Observed CodeRabbit `COMMENTED` [review on PR #3](https://github.com/ryan-winkler/omaconnect-kde-plus/pull/3#pullrequestreview-5703659944) at `b6860b9`. It used repository YAML and raised one minor G5 wording issue; the documentation now distinguishes pre-Send acceptance from untested post-drop Send. This review does not cover the later identity/security changes.
 - [x] Confirm Functional checks and both CodeQL jobs run on preparation revision `a5c3470`: all passed. Inspect native skips. Required branch checks and final release revision are recorded separately.
 - [ ] Confirm the issue chooser, forms, private security route, contributor links and release notes configuration work on GitHub after the rename.
-- [x] Update and verify the published revision on ARM and x86 comparison installs. [Current verification](VERIFICATION.md) keeps mapped UI, fixtures, physical receipt and open AT/drag/away checks separate.
-- [x] Publish reviewed `v0.1.0` at `256d50c`. Release notes record actual checks and open acceptance limits. [Marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/13289) is open; maintainer review is separate.
+- [x] Updated and verified the earlier published revision under the previous development identity on ARM and x86 comparison installs. [Current verification](VERIFICATION.md) keeps mapped UI, fixtures, physical receipt and open AT/drag/away checks separate.
+- [x] Published the earlier reviewed `v0.1.0` at `256d50c` under the previous development identity. Release notes record actual checks and open acceptance limits. [Marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/13289) is open; maintainer review is separate.
 
-The GitHub CLI token available during preparation could not list user GitHub App installations (`GET /user/installations` returned 403). That is a token-capability limit, not proof that CodeRabbit is missing. An authorized browser/admin check or actual PR review is needed.
+The GitHub CLI token available during preparation could not list user GitHub App installations (`GET /user/installations` returned 403). That is a token-capability limit, not proof that CodeRabbit is missing. The observed PR #3 review now proves scoped app activity; this API limit still does not reveal every account installation.
 
 ## Fasti patterns and source decisions
 
@@ -84,5 +84,29 @@ These service details can change. Recheck them at a later release rather than tr
 Live setup receipt: main now requires the observed Functional, Analyze Python and
 Analyze Actions checks, PRs and conversation resolution. Main’s actual release
 checks passed `256d50c`; force pushes and branch deletion are disabled. CodeRabbit
-app access remains pending, with the official GitHub app page left for the owner.
-No paid service was enabled. See [current verification](VERIFICATION.md).
+app access is owner-confirmed and the scoped PR #3 review is observed. Its metadata reports the existing account tier as Advanced; no purchase or plan change was made for this release. See [current verification](VERIFICATION.md).
+
+
+## Current 0.2.0 identity-update gates
+
+- [ ] Validate the exact `Omaconnect.plus` ID across manifest, IPC, preferences, metadata paths, examples and migration. Historical receipts remain labelled with their prior scope.
+- [ ] Review removal of inherited privileged setup entry points. Manual prerequisite guidance uses supported Omarchy commands; the fork must not keep a hidden installer/firewall execution path.
+- [ ] Run final source checks and actual hosted scans on the identity/security revision. Preserve the real scanner results and limits.
+- [ ] Obtain installed new-ID readback separately for ARM and x86 without losing previous appearance, address records or provider settings.
+- [ ] Publish the new revision and update marketplace identity only after their own gates pass. The earlier release/catalog submission does not establish the new ID.
+
+## Fasti comparison
+
+The owner's [Fasti contribution guide](https://github.com/Scrobble-dev/Fasti/blob/main/CONTRIBUTING.md),
+[issue routes](https://github.com/Scrobble-dev/Fasti/blob/main/.github/ISSUE_TEMPLATE/config.yml)
+and contributor-task form were inspected live on 29 October 2026. Plus adopts the
+useful pattern: welcome different contributor skills, route questions to
+Discussions and vulnerabilities privately, label bounded work, ask for outcome/
+owner/acceptance evidence, preserve DCO/source credit, and link related upstream
+work. The new task form enters triage; it does not claim every submission is
+contributor-ready. Maintainers choose good-first-issue scope after review.
+
+Fasti's media identity rules, YouTrack references, AGPL terms, Rust/Cargo monorepo,
+contract generators and development/release branch gates are specific to Fasti.
+They are not copied into this small MIT-licensed native UI fork. Plus retains its
+existing domain helpers, native owner routes and isolated validation command.

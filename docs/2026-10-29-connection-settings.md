@@ -35,7 +35,7 @@ Its existing filename and boolean request stay compatible. It accepts the active
 manifest boolean keys plus two explicitly permitted strings (`defaultPingMessage`
 and `bthHelperPath`). It rejects inactive legacy fields and unknown keys/types.
 Input limit: 32 KiB. The fixed native command is
-`omarchy-shell shell setBarWidget ryan.omaconnect KEY JSON_VALUE {}`.
+`omarchy-shell shell setBarWidget Omaconnect.plus KEY JSON_VALUE {}`.
 The existing bounded command helper enforces a four-second deadline and bounded
 output. Only exact `ok` confirms the save. The native shell serializes its own
 configuration mutations; no extra config writer or speculative queue is added.

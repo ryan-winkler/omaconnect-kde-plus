@@ -1,5 +1,7 @@
 # Settings, file-drop and outside review — 29 October 2026
 
+Identity note: this report describes the previous development identity. It does not establish runtime or migration acceptance for the current `Omaconnect.plus` ID. See [current verification](VERIFICATION.md).
+
 **Decision: continue the dedicated Plus Settings window and native KDE handoff.**
 The separate 50-scenario/RICE report challenges full native control duplication
 and a module installer. RICE inputs remain hypothetical planning assumptions.
@@ -15,7 +17,7 @@ Both favored the native-owner approach with focused corrections.
 
 | Finding | Disposition |
 | --- | --- |
-| Both claimed that hardcoded ryan.omaconnect collides with the original | Rejected. The original is omaconnect; Plus is ryan.omaconnect. Source manifest, live side-by-side installation and a parity check establish isolation. Parameterizing this fixed trust boundary adds no value. |
+| Both claimed the fixed fork ID collides with the original | Rejected for the inspected snapshot. The original `omaconnect` and previous development identity were distinct. Source manifest, side-by-side installation and a parity check established that historical isolation. The later `Omaconnect.plus` change requires its own migration and readback. |
 | Header/list/native handoff could use different peers | Current Panel.device is an alias of service.selectedDevice; the controller passes selectedDeviceId. No second authority exists. Keep the selected context visible and native launch argv checks. |
 | Choose could replace an existing reviewed draft while Drop refused | Fixed. Both now preserve draft/busy boundaries and require clear/review before another selection. |
 | Raw search field and mixed typography | Fixed with native Kit.TextField and shared font tokens. |

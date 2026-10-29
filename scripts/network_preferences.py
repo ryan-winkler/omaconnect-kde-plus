@@ -12,8 +12,10 @@ from manage_addresses import AddressError, bounded_command
 KEYS = frozenset(("networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled",
                   "showBatteryStats", "showBarBattery", "showNetworkStats", "showMediaPlayer",
                   "showRemoteCommands"))
+KEYS |= frozenset(('showSavedAddresses', 'showSyncthingLinks', 'showNetworkControls', 'networkStartExpanded', 'mediaStartExpanded', 'commandsStartExpanded', 'addressesStartExpanded', 'syncthingStartExpanded'))
+KEYS |= frozenset(("showNativeFeatures",))
 STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath", "quickActionsOrder"))
-ACTION_IDS = frozenset(("ring", "clipboard", "file", "sms", "ping", "text", "native-features"))
+ACTION_IDS = frozenset(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock'))
 MAX_REQUEST = 32768
 
 
@@ -30,7 +32,7 @@ def setting_value(request):
         raise ValueError()
     if key == "quickActionsOrder":
         values = value.split(",") if value else []
-        if len(value) > 128 or len(values) > len(ACTION_IDS) or len(set(values)) != len(values) or any(item not in ACTION_IDS for item in values):
+        if len(value) > 512 or len(values) > len(ACTION_IDS) or len(set(values)) != len(values) or any(item not in ACTION_IDS for item in values):
             raise ValueError()
     elif key == "defaultPingMessage":
         if any(ord(char) < 32 and char not in "\n\t" for char in value):
@@ -47,7 +49,7 @@ def save(request):
     except (ValueError, KeyError, TypeError):
         return {"ok": False, "message": "Invalid setting. Check its value and try again."}
     try:
-        reply = bounded_command(["/usr/bin/omarchy-shell", "shell", "setBarWidget", "ryan.omaconnect",
+        reply = bounded_command(["/usr/bin/omarchy-shell", "shell", "setBarWidget", "Omaconnect.plus",
                                  request["key"], json.dumps(value, ensure_ascii=True), "{}"],
                                 time.monotonic() + 4)
         if reply.strip() == b"ok":

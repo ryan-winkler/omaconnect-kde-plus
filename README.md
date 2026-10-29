@@ -6,14 +6,16 @@ Jitendra’s plugin and KDE Connect are the upstream foundations. We retain thei
 credit, follow their interfaces, and aim to contribute reusable fixes back.
 This is an independent community fork. See [lineage and licenses](FORK.md).
 
-**Version 0.1.0.** The fork adds one place for known devices,
+**Current plugin ID: `Omaconnect.plus`.** The display name remains Omaconnect KDE Plus. The earlier `v0.1.0` publication used the previous development ID; the identity update needs its own release and installed-runtime receipts. See [verification](docs/VERIFICATION.md).
+
+**Version 0.2.0 candidate.** The fork adds one place for known devices,
 file submission, appearance and network access through **Tailscale, MikroTik Back
 to Home, or WireGuard**. KDE Connect owns pairing and transfers. Existing native
 network tools retain connection ownership; the BTH helper retains its policy.
 
 ![Native settings with invented sample device data](preview.png)
 
-[Release 0.1.0](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0) ·
+[Earlier release 0.1.0](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0) ·
 [Functional checks](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml) ·
 [CodeQL](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml) ·
 [Marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/13289)
@@ -21,12 +23,27 @@ network tools retain connection ownership; the BTH helper retains its policy.
 Marketplace submission is pending maintainer review. It is not a listing or a
 security certification. Use the repository install command below in the meantime.
 
+## Why Plus?
+
+OmaConnect already provides pairing, battery, clipboard, SMS, media and remote commands. Plus builds on those features; KDE Connect remains the engine.
+
+| If you need… | Plus adds… |
+| --- | --- |
+| Your own bar/device appearance | Searchable icon choices, local images, aliases and preview before Apply. |
+| A normal file workflow | Desktop file chooser, bounded multiselect, file-manager Copy drops and explicit recipient/file review. |
+| Shortcuts that match your tasks | Add/remove/reorder controls; Ring is optional. |
+| Clear settings and all native features | Four domain pages, nearby help, searchable native inventory and selected-device KDE settings links. |
+| Existing remote-access choices | Separate Tailscale/BTH/WireGuard opt-ins and owner routes; existing BTH policy controls. |
+| Honest results and safe route hints | Accepted-versus-delivered state, private per-device addresses and reviewed rediscovery/removal. |
+
+Read the [source-verified feature matrix and decision](docs/WHY-PLUS.md) for the exact comparison with upstream 1.5.0, inherited features and limits. Keep upstream OmaConnect if its workflow meets your needs.
+
 ## First release
 
-- **Settings:** Open a dedicated native window for Appearance, Connections,
+- **Settings:** Choose visible sections and which ones start expanded. Open a dedicated native window for Appearance, Connections,
   Quick actions and Device features. All active Plus preferences have a domain; native
   plugin enablement and permissions link to the selected device in KDE Connect.
-- **Quick actions:** Add, remove and reorder verified shortcuts in Settings. Ring
+- **Quick actions:** Add, remove and reorder 18 reviewed shortcuts in Settings, including media transport and explicit native KDE routes. Ring
   is optional; new installs start with Files, Text/link and Clipboard. Native
   plugin enablement stays independent.
 - **Appearance:** Choose a phone, computer, theme icon, custom symbol or local
@@ -37,7 +54,7 @@ security certification. Use the repository install command below in the meantime
   in [upstream issue #17](https://github.com/jitendradara12/omaconnect/issues/17),
   through the desktop portal. Check the recipient, count and size, then select
   Send. Or open the persistent **Send window** and drag local files from your file
-  manager. Drops prepare review only and accept Copy, preserving originals.
+  manager, or drop onto the Plus bar icon to open review. Drops accept Copy and preserve originals.
   Selection alone sends nothing. Directories are not archived.
 - **Honest activity:** Each batch keeps its reviewed recipient. Changing the
   selected device does not redirect it. “Request accepted” means KDE accepted
@@ -54,8 +71,7 @@ security certification. Use the repository install command below in the meantime
   specific KDE identity, including Tailscale’s CGNAT range for that source.
   Preserve existing KDE addresses. Opt in to rediscovery while the panel is open;
   route events are debounced and failures back off. An IP does not prove identity.
-- **Syncthing links:** Explicitly associate two full device IDs in local metadata
-  and open the existing Syncshell panel. Syncshell retains its own core and keys.
+- **Syncthing identity notes:** Optionally remember that two full device IDs refer to the same machine. The section starts hidden and is configurable. Drafts stay with their reviewed KDE peer; saved readback confirms changes. Open the general existing Syncshell panel for folders/status. Syncshell retains its own core and keys.
 
 Quick Share, router rosters, new VPN setup and inline Syncthing pause/resume are
 later work. This fork does not implement the separate Banatik/UniFi collector.
@@ -70,6 +86,7 @@ KDE Connect keeps permissions, plugin configuration and its native capabilities,
 including pairing, battery, notifications, file browsing, media playback and
 player switching, remote commands,
 clipboard, text, SMS and remote input where the peer/platform supports them.
+Media shows track text and player controls. Plus does not render or fetch provider-supplied album-art URLs.
 
 ## Requirements
 
@@ -80,20 +97,27 @@ Its absolute path is configurable in plugin settings; an empty setting uses
 `~/.local/bin/remote-access-mode`. Syncthing opening requires the existing
 `io.github.ilyazar.syncthing` plugin. Missing optional providers remain unavailable.
 
-This branch uses plugin ID `ryan.omaconnect`. It can be staged separately from
+This branch uses the case-sensitive plugin ID `Omaconnect.plus`. It can be staged separately from
 `omaconnect`. **No installation or activation occurs from the tests or checkout.**
-Read [migration and recovery](docs/MIGRATION.md) before moving existing settings.
+Read [migration and recovery](docs/MIGRATION.md) before moving existing settings or upgrading an earlier fork identity.
 
 ## Install and open
 
 Requirements: an existing Omarchy shell, `kdeconnect`, `python`, `python-gobject`
 and a working desktop file portal. Omarchy supplies Quickshell and its UI kit.
-Install missing packages through the supported package command:
+1. **Prerequisites:** install missing packages through the supported package command:
 
 ```bash
 omarchy pkg add kdeconnect python python-gobject
+```
+
+2. **Install the plugin:** run one native command:
+
+```bash
 omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --enable
 ```
+
+3. **First use:** open the new bar icon and select a device.
 
 The native installer asks for approval and bar placement. It reads the root
 manifest; it does not run a repository install script. Open the new bar icon,
@@ -101,26 +125,40 @@ select **All KDE Connect features** and pair your device in native KDE Connect.
 Open **Settings** for appearance, connections, quick actions and device features.
 Use the [task guide](docs/HELP.md) for each control and its owner documentation.
 
+This is a Git-native Omarchy plugin: the root `manifest.json` is the package contract. No build step, custom installer, dependency downloader, Python virtual environment or AUR package is required. See [packaging and installation](docs/PACKAGING.md).
+
 If you use the original OmaConnect, keep it for comparison or disable its UI after
 review: `omarchy plugin disable omaconnect`. Pairings stay in KDE Connect. Read
 [migration and recovery](docs/MIGRATION.md) before moving existing display settings.
 
+
+If a firewall blocks discovery, use its owner tool to allow KDE Connect ports
+**1714–1764 TCP and UDP** for the intended trusted network. Read the
+[official troubleshooting guide](https://userbase.kde.org/KDEConnect/en#Troubleshooting).
+Plus does not change firewall policy.
+
 ## Update, disable and remove
 
+These commands apply after `Omaconnect.plus` is installed. If you have an earlier Plus identity, follow [migration](docs/MIGRATION.md) first; updating its old checkout does not register the new ID.
+
 ```bash
-omarchy plugin update ryan.omaconnect
-omarchy plugin disable ryan.omaconnect
-omarchy plugin remove ryan.omaconnect
+omarchy plugin update Omaconnect.plus
+omarchy plugin disable Omaconnect.plus
+omarchy plugin remove Omaconnect.plus
 ```
 
 Use **enable**, **disable** or **remove** only for the action you want. Removal
 uses Omarchy’s confirmation flow. It does not remove KDE pairings, providers or
 private Plus metadata. Appearance assets and approved-address records stay under
-`~/.config/ryan.omaconnect/` and `~/.local/share/ryan.omaconnect/`
-unless you explicitly remove them. XDG overrides are supported. See the
+`~/.config/Omaconnect.plus/` and `~/.local/share/Omaconnect.plus/`
+unless you explicitly remove them. Shared-source cache copies also remain after
+removal; they become eligible after 24 hours; cleanup is attempted on later
+preparation when the cache is safe and available. See [cache retention](docs/HELP.md#send-files-and-read-activity).
+Wait for native transfers to finish before explicitly removing that cache.
+XDG overrides are supported. See the
 [icon storage guide](docs/ICONS.md) for exact paths and backup scope.
 
-For rollback, disable the fork and re-enable `omaconnect` if still installed.
+For rollback, disable `Omaconnect.plus` and re-enable the source plugin by its recorded ID if still installed.
 The migration helper prepares a reviewed rollback candidate and preserves later
 unrelated edits; it never applies an old full configuration over your active one.
 
@@ -152,10 +190,12 @@ its installation and capability claims apply to the upstream version.
 
 Appearance and address metadata are owner-only. Imported images are copied into
 private asset storage; originals remain unchanged. Corrupt or unsupported metadata
-blocks changes. Activity stores at most 50 summaries in memory, without raw paths.
-The KDE CLI requires a path argument, which can appear in process metadata. Its
-later file open leaves a race after the final source check. The UI does not claim
-an atomic file handoff or an end-to-end delivery receipt.
+blocks changes. Activity stores at most 50 summaries in memory, without raw paths. Typed text and custom Ping content use stdin and native D-Bus, keeping content out of process arguments.
+The KDE CLI requires a path argument, which can appear in process metadata. Files in shared locations use a private snapshot from the validated descriptor;
+protected private files retain the native path flow. Copies become eligible after
+24 hours. Cleanup is attempted later when the cache is safe and available. See [retention and storage](docs/HELP.md#send-files-and-read-activity).
+Same-user programs and root remain trusted. The UI does not claim a native atomic
+descriptor handoff or an end-to-end delivery receipt.
 
 MIT license. Preserve upstream and reused Bananet notices. See `LICENSE` and the
 notice in `BthControlCard.qml`.
@@ -166,6 +206,16 @@ Contributions are welcome: code, documentation, design, accessibility and device
 checks. Start with [CONTRIBUTING.md](CONTRIBUTING.md). Use the
 [issue chooser](https://github.com/ryan-winkler/omaconnect-kde-plus/issues/new/choose)
 for defects, ideas and questions, or read [SUPPORT.md](SUPPORT.md).
+Use [Discussions](https://github.com/ryan-winkler/omaconnect-kde-plus/discussions)
+for Q&A and ideas. The [feedback form](https://github.com/ryan-winkler/omaconnect-kde-plus/issues/new?template=feedback.yml)
+asks which task was hard and what would help. Share a sanitized example; omit keys,
+private addresses and device identifiers.
+
+The [upstream review](docs/UPSTREAM-REVIEW.md) records the original project's open
+and closed work. The [daily upstream watcher](docs/UPSTREAM-WATCH.md) tracks KDE
+Connect desktop, KDE Connect Android and original OmaConnect in one review issue.
+It does not execute upstream code or merge updates. Dependabot opens dependency
+and security update PRs; maintainers review application changes.
 Report vulnerabilities privately through [SECURITY.md](SECURITY.md).
 See the [code of conduct](CODE_OF_CONDUCT.md), [review checks](docs/contributor-release-plan.md)
 and [50-persona/red-team review](docs/release-personas-red-blue.md).

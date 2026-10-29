@@ -33,7 +33,7 @@ class KeyboardUi(unittest.TestCase):
         modes = [row for row in calls if row['tool'] == 'remote-access-mode']
         self.assertTrue(modes, calls)
         self.assertTrue(all(row['args'] == ['control-status'] for row in modes), modes)
-        self.assertFalse((home / '.config/ryan.omaconnect/appearance.json').exists())
+        self.assertFalse((home / '.config/Omaconnect.plus/appearance.json').exists())
 
     def test_real_key_events_reach_views_bth_and_editors(self):
         qt_test = Path('/usr/lib/qt6/qml/QtTest/qmldir')

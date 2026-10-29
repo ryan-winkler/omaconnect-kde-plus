@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "ryan.omaconnect",
+  "id": "Omaconnect.plus",
   "name": "Omaconnect KDE Plus",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Ryan Winkler; based on Jitendra Dara’s OmaConnect",
   "description": "KDE Connect device actions, file sharing, custom icons and optional Tailscale, MikroTik Back to Home and WireGuard views for Omarchy.",
   "license": "MIT",
@@ -123,6 +123,51 @@
       "type": "string",
       "default": "file,text,clipboard",
       "description": "Ordered optional quick action IDs. Configure add, remove and order in Plus Settings → Quick actions."
+    },
+    "showSavedAddresses": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show the saved-address review section; no automatic rediscovery is enabled"
+    },
+    "showSyncthingLinks": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show optional local identity notes and the existing Syncthing owner route"
+    },
+    "showNetworkControls": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show enabled network-provider controls in Devices"
+    },
+    "networkStartExpanded": {
+      "type": "boolean",
+      "default": true,
+      "description": "Expand network-provider controls when the daily panel opens"
+    },
+    "mediaStartExpanded": {
+      "type": "boolean",
+      "default": true,
+      "description": "Expand media controls when the daily panel opens"
+    },
+    "commandsStartExpanded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Expand remote commands when the daily panel opens"
+    },
+    "addressesStartExpanded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Expand saved addresses when the daily panel opens"
+    },
+    "syncthingStartExpanded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Expand the optional Syncthing identity note when the daily panel opens"
+    },
+    "showNativeFeatures": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show the native KDE feature entry in Devices; inventory remains available in Settings"
     }
   }
 }

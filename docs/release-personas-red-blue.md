@@ -1,6 +1,6 @@
 # Release readiness: 50 personas and red-team / blue-team review
 
-Date: 29 October 2026. Initial source snapshot: `f8b3e11`. Product release name: **Omaconnect KDE Plus**. The source snapshot still contains the former display name, OmaConnect Plus. Release work can change files after this review; use the pass-two ledger below for the final revision.
+Date: 29 October 2026. Initial source snapshot: `f8b3e11`. Product release name: **Omaconnect KDE Plus**. This report initially assessed the previous development identity; current `Omaconnect.plus` runtime acceptance needs a separate receipt. The source snapshot still contains the former display name, OmaConnect Plus. Release work can change files after this review; use the pass-two ledger below for the final revision.
 
 **Decision: proceed with the narrow fork, after the release gates below. Do not replace native KDE Connect settings or protocol services.** The fork has useful source controls for explicit sharing, configurable quick actions, local appearance, and optional network views. The review found concrete migration, accessibility, copy, and release-evidence work. It does not establish broad physical-device acceptance or production security.
 
@@ -131,7 +131,7 @@ These are opposing arguments about specific boundaries. They are not separate se
 | G2 — Supported install/update/rollback | Published commands and URLs; actual native schema migration; conflict and round-trip tests; explicit side-by-side and removal instructions. | F01 and final public route are blocking for this path. |
 | G3 — Core behavior regressions | Final-revision validation output with test counts/skips and lint limits; targeted recipient, cancellation, unknown result, permissions, and state corruption tests. | Existing 155-test receipt belongs to its recorded revision and scope. It is not the final release result. |
 | G4 — Native app behavior | Final candidate maps on both intended host architectures; settings/native handoff; chooser cancel/focus; ordinary key actions; no extra protocol daemon. | Prior ARM/x86 fixture receipts exist. Resolve F02/F03 and record final-revision scope. |
-| G5 — External drop acceptance | Actual separate file-manager → Send drag under Wayland; Copy source retained; recipient/file review; explicit Send; no unsolicited transfer. | No new cross-client acceptance in this report. Fake events are insufficient. Disable/defer the advertised path if it cannot be accepted. |
+| G5 — External drop acceptance | Actual separate file-manager → Send drag under Wayland; Copy source retained; recipient/file review; explicit Send; no unsolicited transfer. | **Owner-accepted on both laptop and desktop, 29 October 2026:** real file-manager drag showed correct file/recipient review and retained the original. The check stopped before Send. Only the pre-Send drag/review portion of RP22/G5 is accepted. The required actual post-drop Send result remains open; G6's earlier receipt is not a substitute. |
 | G6 — Physical transfer claim | User-confirmed actual receipt/opening for each promised class of transfer. No automatic physical test in this review. | One earlier nonempty text-file receipt is documented. Batch/zero-byte/cancel/away claims remain limited. |
 | G7 — Accessibility and context recovery | F02 action semantics and focus fixed; F05/F06 clear text/labels; final native keyboard/scale/focus checks; stated RTL/AT/reduced-motion limits. | Source review identifies work. Do not claim clinical usability, full AT support, or WCAG certification. |
 | G8 — Optional providers and ownership | Fresh off defaults; off stops adapter work; missing tools handled; fixed owner route; policy unchanged; UniFi/BTH owner coordination retained. | Source guard present. Each actual owner launch/policy/away check needs its own receipt. |
@@ -171,3 +171,15 @@ retained; hosted Functional and both CodeQL jobs passed `a5c3470`. Publication,
 installed release readback and catalog state remain separate final receipts.
 [Outside review](release-outside-voices.md) records the completed Antigravity pass
 and Claude timeout. Physical drag/AT/away limits remain explicit.
+
+
+### Owner acceptance closure
+
+The owner confirmed the requested external file-manager drag check passed on both
+intended computers. The pre-Send drag/review portion of G5/RP22 is accepted within that physical desktop scope. Its actual post-drop Send result remains open.
+P2-07 has owner evidence for external drag/review/source retention; the automated
+portal/chooser fixtures and earlier native portal observations remain separate.
+The check did not send a payload. Do not reopen the accepted drag journey after
+unrelated documentation changes.
+
+CodeRabbit posted an observed `COMMENTED` [PR #3 review](https://github.com/ryan-winkler/omaconnect-kde-plus/pull/3#pullrequestreview-5703659944) at `b6860b9`. It found one minor G5 wording issue. The correction above keeps the actual post-drop Send result open. This records a real scoped review for G10/RP48; it does not establish review of later identity/security changes or marketplace acceptance.

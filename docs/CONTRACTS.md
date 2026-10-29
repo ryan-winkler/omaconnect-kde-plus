@@ -24,8 +24,8 @@ metadata; it does not prove that Syncthing has configured that peer.
 
 Modes are automatic, preset, theme, glyph, image and device inherit. Rendering is
 symbolic or color. Limits: 80 Unicode characters per alias, 8 per symbol, 256 device
-records and 256 KiB metadata. State is in XDG_CONFIG_HOME/ryan.omaconnect; copied
-assets are in XDG_DATA_HOME/ryan.omaconnect/icons. Private directories/files use
+records and 256 KiB metadata. State is in XDG_CONFIG_HOME/Omaconnect.plus; copied
+assets are in XDG_DATA_HOME/Omaconnect.plus/icons. Private directories/files use
 0700/0600. Writes lock, merge and atomically replace; incompatible state is kept.
 Imported PNG/SVG is at most 1 MiB and 512×512. Active/external SVG, animation,
 recursive reuse, invalid PNG structure and unsafe files are rejected. Hash-named
@@ -44,14 +44,26 @@ FIFO/devices and changed source identity are rejected. Parent-path links are
 resolved by the normal filesystem; they are not treated as trust credentials.
 
 `portal_files.py submit` reads `peerId` and one inspected `file` through stdin.
-The helper rechecks file identity, then launches exactly
+The helper rechecks file identity and holds an `O_NOFOLLOW` descriptor. It uses a
+canonical existing path only when the source and every ancestor have trusted
+ownership and write permissions. Other sources use a private descriptor-backed
+snapshot through `private_sources.py`, with a reflink first and a 1 MiB copy loop
+fallback. The helper then launches exactly
 `kdeconnect-cli -d <reviewed-id> --share <path>`. No shell interpolation occurs.
-A process deadline is 15 seconds. The queue invokes one helper per file in order.
+Preparation has a 120-second work deadline, cancellation checks between chunks,
+a 64 MiB free-space reserve, and source identity checks after copying. Blocking
+filesystem calls cannot be forcibly preempted by that deadline. Snapshots have
+0700 directories and 0600 files below the XDG cache path documented in [Help](HELP.md).
+They become eligible after 24 hours. Cleanup is attempted on later preparation
+when the cache is safe and available. Protected-file preparation treats cache
+housekeeping as best effort; shared-file snapshots still require a safe cache. Cleanup accepts only the exact owned flat snapshot
+shape; it preserves unrelated or unexpected state. A process deadline is 15 seconds. The queue invokes one helper per file in order.
 There is no automatic retry after an ambiguous timeout.
 
 | State | Evidence |
 | --- | --- |
 | `queued` | Not yet submitted |
+| `preparing` | Validating or snapshotting; this file has not reached KDE |
 | `submitting` | CLI invocation has started |
 | `request_accepted` | CLI exit 0; delivery unknown |
 | `submission_failed` | Request could not be submitted / nonzero exit |
@@ -62,8 +74,27 @@ There is no automatic retry after an ambiguous timeout.
 Operation summaries contain provider, reviewed ID/name, count/size, aggregate
 counters and timestamps. They hold no raw paths and have a 50-operation memory
 limit. The transient draft/queue does hold selected paths until use/cancellation.
-The CLI path argument can appear in process metadata and the provider's later
-open is outside the helper's source check. No atomic descriptor handoff is claimed.
+The CLI path argument can appear in process metadata. Shared sources reach KDE
+through the retained private snapshot. Protected private sources keep the native
+pathname flow. Same-UID code and root remain trusted. No native atomic descriptor
+handoff is claimed. A running helper without a final cancellation acknowledgement
+leaves cancellation unconfirmed, even if the progress event was not observed.
+
+## Private text and ping submission
+
+Text/link composition and custom Ping messages use `scripts/send_text.py`.
+The process command is fixed: Python plus the installed helper path. The reviewed
+peer, operation and content travel in one JSON line through stdin. Content does
+not enter argv, environment variables or temporary files. The bound is 8192 text
+characters and 64 KiB input. Native D-Bus object-path validation is independent
+of the normal device label.
+
+The helper uses the existing session bus with a fixed service, object path suffix,
+interface and method: KDE `shareText(s)` or `sendPing(s)`. It disables service
+auto-start and applies a five-second method timeout. Replies/errors use fixed
+codes and never reflect payloads or provider diagnostics. A successful method
+reply means request acceptance; it does not prove delivery. The user session,
+KDE daemon and same-user bus clients remain trusted.
 
 ## Existing BTH controller
 
@@ -132,7 +163,7 @@ conditions are explained. The searchable inventory is reported support, not an
 installation catalog or enabled-state writer.
 
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
-keys, two bounded strings and a 32 KiB request limit. `setBarWidget` receives fixed
+keys, three bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
 arguments and JSON-typed values. Exact `ok` plus native config readback controls
 feedback. A visibility setting never changes a VPN. Hidden BTH does not poll.
 
@@ -151,3 +182,22 @@ Ring remains discoverable when advertised. Known missing loaded metadata blocks
 dispatch with a native Plugin Settings next step. Unknown loading state retains
 older-version fallback. Successful CLI return means a ring request was accepted,
 not that a person heard a phone.
+
+## Optional section and action contract
+
+Section visibility and start-expanded flags are typed boolean preferences. The
+native helper allowlists their keys and requires saved readback. Expanding a
+section is session UI state; opening the panel restores the selected defaults.
+Hiding a section preserves provider configuration and local metadata. Collapsed
+or hidden BTH controls do not poll their controller.
+
+`ActionCatalog.js` owns the 18 reviewed shortcut IDs, groups, help, supported and
+locally-active readiness. The preference/migration boundary accepts only those
+IDs, no duplicates, with a 512-character CSV limit. Native handoffs remain explicit
+and keep the selected KDE peer. They do not directly invoke a guessed plugin
+method. Explicit media/command navigation can reveal a hidden section for the
+current view without changing its saved preference.
+
+The bar and the Send card instantiate the same `FileDropArea.qml`. It locks the
+selected recipient through `stageDroppedFiles`, refuses busy/existing drafts,
+accepts Copy only, and emits a review-window signal after staging. It never sends.

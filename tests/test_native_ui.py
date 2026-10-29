@@ -91,7 +91,17 @@ else: raise SystemExit(99)
                 env.update(QT_QPA_PLATFORM='wayland', QSG_RHI_BACKEND='opengl', WAYLAND_DISPLAY='validation-wayland', OMACONNECT_DESKTOP_VALIDATION='1')
             # Read-only host root, a single writable fixture, private process and
             # network namespaces, and fixed absolute actions replaced as well.
-            command = ['/usr/bin/bwrap','--ro-bind','/','/','--tmpfs','/tmp','--bind',str(fixture),str(fixture),'--unshare-net','--unshare-pid','--proc','/proc','--dev','/dev','--die-with-parent']
+            # A synthetic root is owned by this test UID. A bound host root has
+            # unmapped ownership (65534) inside the unprivileged user namespace,
+            # which production source/cache checks must refuse. Keep those checks
+            # intact; expose only runtime libraries/config and the owned fixture.
+            command = ['/usr/bin/bwrap','--tmpfs','/','--ro-bind','/usr','/usr',
+                       '--ro-bind','/etc','/etc','--symlink','usr/bin','/bin',
+                       '--symlink','usr/bin','/sbin','--symlink','usr/lib','/lib']
+            if Path('/lib64').exists(): command += ['--symlink','usr/lib','/lib64']
+            command += ['--dir','/tmp','--bind',str(fixture),str(fixture),
+                        '--chdir',str(fixture),'--unshare-net','--unshare-pid',
+                        '--proc','/proc','--dev','/dev','--die-with-parent']
             for name in ('omarchy-shell','nmcli','hyprctl','kdeconnect-cli','dbus-monitor'):
                 path=Path('/usr/bin')/name
                 if path.exists(): command += ['--ro-bind',str(fake),str(path)]
@@ -126,7 +136,7 @@ else: raise SystemExit(99)
         self.assertEqual(len(submissions), 3, output)
         self.assertTrue(all(call['args'][:2] == ['-d','A'] for call in submissions), submissions)
         self.assertEqual(len(json.loads((fixture/'portal-receipt.json').read_text())), 2)
-        state = json.loads((home/'.config/ryan.omaconnect/appearance.json').read_text())
+        state = json.loads((home/'.config/Omaconnect.plus/appearance.json').read_text())
         self.assertEqual(state['bar_icon']['value'], 'laptop')
         owner_calls = [call for call in calls if call['tool']=='omarchy-shell']
         self.assertEqual(len(owner_calls), 1, calls)

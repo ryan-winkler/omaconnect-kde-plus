@@ -48,7 +48,8 @@ Column {
     }
     Text {
         width: parent.width
-        text: "Open the selected device in KDE Connect for more tasks and Plugin settings. Features depend on both devices and permissions."
+        visible: !root.configuration
+        text: "Open the selected device for native tasks and Plugin settings."
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -81,20 +82,12 @@ Column {
         }
         Text {
             width: parent.width
-            text: "KDE Connect supplies its native modules with the installed package. Open Plugin settings there to enable or configure them. This is separate from installing Omarchy bar plugins."
+            text: "Use native Plugin settings to enable bundled modules. These are separate from Omarchy bar plugins."
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
-        }
-        Kit.Button {
-            width: parent.width
-            text: "KDE Connect user guide ↗"
-            Accessible.name: "Open the official KDE Connect user guide"
-            focusable: true
-            foreground: Commons.Color.popups.text
-            onClicked: Qt.openUrlExternally("https://kdeconnect.kde.org/users.html")
         }
         Text {
             width: parent.width
@@ -147,6 +140,14 @@ Column {
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
             }
+        }
+        Kit.Button {
+            width: parent.width
+            text: "KDE Connect user guide ↗"
+            Accessible.name: "Open the official KDE Connect user guide"
+            focusable: true
+            foreground: Commons.Color.popups.text
+            onClicked: Qt.openUrlExternally("https://kdeconnect.kde.org/users.html")
         }
     }
 }

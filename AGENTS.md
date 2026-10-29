@@ -1,5 +1,7 @@
 # Omaconnect KDE Plus development
 
+The public display name is Omaconnect KDE Plus. The exact plugin, IPC and private-storage ID is `Omaconnect.plus`. Keep names in runtime metadata neutral; retain author and source attribution in AUTHORS.md, LICENSE and FORK.md.
+
 This is an isolated fork. Develop on the feature branch. Keep upstream history
 and MIT attribution. Never modify installed plugins, user shell configuration,
 VPN profiles, router state or other projects from this checkout.
@@ -29,3 +31,5 @@ link. Put it next to its owning control/domain. Use verified fixed official URLs
 for external help; local contributor guides can open installed documentation.
 Update docs/HELP.md when adding a feature. Keep toolbar action labels, readiness
 and ordering in ActionCatalog.js; do not add another hardcoded toolbar branch.
+
+Do not reintroduce privileged dependency/firewall setup launchers. Document prerequisites with supported Omarchy commands. Media retains text/player controls but must not render or fetch a provider-supplied artwork URI. Keep scanner findings and scope visible; no tool result is a security certification.

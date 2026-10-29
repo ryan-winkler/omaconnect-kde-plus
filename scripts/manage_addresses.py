@@ -285,7 +285,7 @@ def main():
         data_home = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local/share")))
         if not data_home.is_absolute():
             raise AddressError("metadata-path-invalid")
-        result = manage(request, data_home / "ryan.omaconnect")
+        result = manage(request, data_home / "Omaconnect.plus")
     except AddressError as error:
         result = {"schema_version": 1, "ok": False, "error": str(error)}
     except (ValueError, OSError):

@@ -22,13 +22,31 @@ const api=vm.createContext({});vm.runInContext(fs.readFileSync(process.argv[1],'
 assert.equal(api.DEFAULT_ORDER,'file,text,clipboard');assert.ok(!api.order(api.DEFAULT_ORDER).includes('ring'));
 assert.equal(new Set(api.entries.map(row=>row.id)).size,api.entries.length);
 assert.equal(api.parse('').length,0);assert.equal(api.parse('ring,file').join(','),'ring,file');
-for(const value of [null,{},['ring'],'ring,ring','file,unknown',' ring','file,','ring;id','x'.repeat(129)])assert.equal(api.parse(value),null);
+for(const value of [null,{},['ring'],'ring,ring','file,unknown',' ring','file,','ring;id','x'.repeat(513)])assert.equal(api.parse(value),null);
 assert.equal(api.order('invalid').join(','),api.DEFAULT_ORDER);
+const every=api.entries.map(row=>row.id).join(',');assert.ok(every.length>128 && every.length<=512);assert.equal(api.parse(every).length,18);
+for(const row of api.entries){assert.ok(row.label && row.description && row.group);assert.ok(row.description.length<200)}
 const phone={paired:true,reachable:true,capabilities:{file:true,ring:true},loadedKnown:true,loadedPluginIds:[]};
 assert.equal(api.available('ring,text,file,native-features',phone).join(','),'ring,file,native-features');
 assert.match(api.availabilityText('ring',phone),/not active locally/);assert.match(api.availabilityText('text',phone),/does not report/);
 phone.reachable=false;assert.equal(api.available('file,ring',phone).length,0);assert.match(api.availabilityText('ring',phone),/reachable/);
 assert.match(api.availabilityText('file',null),/Choose a device/);
+assert.equal(api.available('plus-settings,native-features,file',null).join(','),'plus-settings,native-features');
+assert.equal(api.ready('plus-settings',null,null),true);assert.equal(api.ready('native-features',null,null),false);
+const service={actionState:'idle',mediaLoading:false,mediaState:{}};
+assert.equal(api.ready('native-features',null,service),true);
+phone.reachable=true;assert.equal(api.compatible('ring',phone),true);assert.equal(api.ready('ring',phone,service),false,'inactive module stays visible but cannot dispatch');
+phone.loadedPluginIds=['kdeconnect_findmyphone'];assert.equal(api.ready('ring',phone,service),true);
+const media={paired:true,reachable:true,capabilities:{media:true,commands:true},pluginIds:['kdeconnect_mprisremote','kdeconnect_sftp','kdeconnect_systemvolume'],loadedKnown:true,loadedPluginIds:['kdeconnect_mprisremote']};
+assert.equal(api.compatible('browse-files',media),true,'new native task can use the reported plugin inventory');
+assert.equal(api.ready('browse-files',media,service),true,'native handoff remains available to configure an unloaded module');
+assert.equal(api.compatible('native-volume',media),true);assert.equal(api.compatible('native-lock',media),false);
+assert.equal(api.ready('media',media,service),true);assert.equal(api.ready('media-next',media,service),false);
+assert.match(api.availabilityText('media-next',media,service),/choose a reported player/);
+service.mediaState={player:'Owned player'};assert.equal(api.ready('media-next',media,service),true);
+service.actionState='running';assert.equal(api.ready('media-next',media,service),false);assert.equal(api.ready('media',media,service),true);assert.equal(api.ready('native-features',null,service),true);
+assert.match(api.availabilityText('native-volume',media,service),/native KDE Connect/);
+assert.equal(api.entry('unfamiliar_native_plugin'),null,'unknown module IDs are native inventory, never generated commands');
 '''
         result=subprocess.run([shutil.which('node'),'-e',code,str(ROOT/'ActionCatalog.js')],text=True,capture_output=True,timeout=5)
         self.assertEqual(result.returncode,0,result.stderr)
@@ -45,7 +63,7 @@ assert.match(api.availabilityText('file',null),/Choose a device/);
         manifest=json.loads((ROOT/'manifest.json').read_text())
         self.assertEqual(set(catalog['ids']),helper.ACTION_IDS)
         self.assertEqual(catalog['defaultOrder'],manifest['settings']['quickActionsOrder']['default'])
-        self.assertEqual(manifest['id'],'ryan.omaconnect')
+        self.assertEqual(manifest['id'],'Omaconnect.plus')
         self.assertNotEqual(manifest['id'],'omaconnect')
 
     def configure_fixture(self,fixture,plugin,home,fake_bin):
@@ -59,7 +77,7 @@ assert.match(api.availabilityText('file',null),/Choose a device/);
         self.assertIn('QUICK_ACTIONS_PASS',output,output)
         writes=[row['args'] for row in calls if row['tool']=='omarchy-shell']
         self.assertEqual([json.loads(row[-2]) for row in writes],['file,text,clipboard,ring','file,text,ring,clipboard','file,text,clipboard','file,clipboard'])
-        self.assertTrue(all(row[:4]==['shell','setBarWidget','ryan.omaconnect','quickActionsOrder'] and row[-1]=='{}' for row in writes))
+        self.assertTrue(all(row[:4]==['shell','setBarWidget','Omaconnect.plus','quickActionsOrder'] and row[-1]=='{}' for row in writes))
         self.assertFalse(any(row['tool'] in ('kdeconnect-cli','nmcli','remote-access-mode') for row in calls),calls)
         self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()),[])
 

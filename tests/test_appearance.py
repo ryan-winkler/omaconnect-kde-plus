@@ -25,7 +25,7 @@ class AppearanceTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.home = Path(self.temp.name)
         self.env = dict(os.environ, HOME=str(self.home), XDG_CONFIG_HOME=str(self.home/'config'), XDG_DATA_HOME=str(self.home/'data'))
-        self.config = self.home/'config'/'ryan.omaconnect'/'appearance.json'
+        self.config = self.home/'config'/'Omaconnect.plus'/'appearance.json'
 
     def tearDown(self):
         self.temp.cleanup()

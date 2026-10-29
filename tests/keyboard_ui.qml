@@ -114,7 +114,7 @@ ShellRoot {
         width: 500
         height: 900
         Item { id: anchor; width: 26; height: 26 }
-        Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false, networkTailscaleEnabled:true, networkBthEnabled:true, networkWireguardEnabled:true}) }
+        Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showSyncthingLinks:true,showTailscale:false, networkTailscaleEnabled:true, networkBthEnabled:true, networkWireguardEnabled:true}) }
         Item { TestEvent { id: events } }
     }
     Timer {
@@ -211,7 +211,7 @@ ShellRoot {
             } else if (test.phase === 22) {
                 test.check(test.isWithin(preview.activeFocusItem, test.named("Hide saved addresses")), "Shift+Tab returns to address disclosure")
                 test.phase = 23
-            } else if (test.phase === 23 && test.seek(test.named("Link Syncthing device"))) {
+            } else if (test.phase === 23 && test.seek(test.named("Syncthing identity note"))) {
                 test.key(Qt.Key_Return)
                 test.phase = 24
             } else if (test.phase === 24) {

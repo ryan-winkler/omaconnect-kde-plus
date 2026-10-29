@@ -6,3 +6,6 @@ contact_links:
   - name: Read help and support
     url: https://github.com/ryan-winkler/omaconnect-kde-plus/blob/main/SUPPORT.md
     about: Find task guides, native settings and contribution routes.
+  - name: Ask a question or share an idea
+    url: https://github.com/ryan-winkler/omaconnect-kde-plus/discussions
+    about: Use Q&A for usage help and Ideas for early proposals. Keep private device data out.

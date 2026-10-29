@@ -1,17 +1,26 @@
 # Staging, activation and recovery
 
-The original `omaconnect` and the fork `ryan.omaconnect` have separate UI identities.
+The original `omaconnect` and the fork `Omaconnect.plus` have separate UI identities.
+The ID is case-sensitive and also names the IPC target and private metadata directories. Earlier fork releases used a previous development identity. A source update alone does not move its settings or private metadata.
+
 KDE pairing data and VPN profiles remain with their existing owners. Development
-comparison has used both UIs on ARM and x86_64; normal migration should leave one
+comparison used the previous development identity on ARM and x86_64; acceptance for the new ID requires its own receipt. Normal migration should leave one
 daily UI enabled. This guide stages settings changes for review. It never applies them.
+
+## Select the source identity
+
+Version 0.2.0 changes the fork identity to `Omaconnect.plus`. Updating an old checkout does not rename its registered plugin entry, IPC target or private directories. Keep the old source available until the reviewed migration and new-ID readback pass.
+
+Use `--source-id omaconnect` when moving from Jitendra's original plugin. For an earlier Plus install, read its `id` from that installed copy's `manifest.json` and pass that exact value as `--source-id SOURCE_ID`. Replace `SOURCE_ID` with the value you read; do not infer it from a display name. This option selects the existing source, never the target.
 
 ## Prepare an offline candidate
 
 Use a **new private directory outside the repository** for each run. The tool
-never edits the source or talks to a running shell. For example:
+never edits the source or talks to a running shell. The example below moves from the original plugin; for an earlier Plus install, replace `omaconnect` with the source ID from its manifest (`--source-id SOURCE_ID`).
 
 ```bash
 python3 scripts/migrate_settings.py prepare \
+  --source-id omaconnect \
   --source "$HOME/.config/omarchy/shell.json" \
   --output "$HOME/.local/state/omaconnect-migration-review" \
   --bindings "$HOME/.config/hypr/bindings.conf"
@@ -19,24 +28,26 @@ python3 scripts/migrate_settings.py prepare \
 
 Omit `--bindings` if that file does not exist. Repeat it for other known binding
 files. Binding receipts contain file/line/hash/count only. They do not change
-shortcuts; review the old `omaconnect` IPC target separately.
+shortcuts; review bindings that target the selected source ID separately. The new target is `Omaconnect.plus`.
 
 The new directory uses mode 0700 and its JSON files use mode 0600:
 
 - `candidate-shell.json`: a private full configuration candidate. Do not commit
   or publish it. Unrelated fields remain in this private copy.
-- `candidate-appearance.json`: schema 1 display metadata. An explicit legacy
-  `showDeviceTypeIcons=false` becomes Phone; true or the upstream default becomes
-  automatic. A fresh fork installation defaults to Phone.
+- `candidate-appearance.json`: emitted only for the original upstream source ID `omaconnect`. An explicit legacy `showDeviceTypeIcons=false` becomes Phone; true or the upstream default becomes automatic. For an earlier Plus source ID, the helper returns no inferred appearance and emits no candidate appearance file. Copy and validate existing private metadata separately. A fresh installation defaults to Phone.
 - `snapshot.json`: understood old/new settings, exact layout slot, disabled flags,
   source hash and binding provenance. No pairing or VPN secrets are copied.
 
 Unknown source settings, duplicate locations and an existing fork entry require
-review. Native and `ryan.bar` layouts use the same supported `bar.layout` schema,
+review. Native and replacement-bar layouts use the same supported `bar.layout` schema,
 including tray. The legacy Tailscale discovery list and automatic setup remain
 disabled. Current network guidance and saved-address approval cover Tailscale,
 BTH and WireGuard. They do not reinstall or connect a provider. Saved-address
 controls default to no automatic rediscovery.
+
+## Review private metadata
+
+The staging helper prepares shell settings and appearance metadata; do not assume it moves every private file. Review the old identity's private `appearance.json`, imported `icons/` and `addresses.json` separately. The new locations are documented in the [icon/storage guide](ICONS.md). Preserve file ownership, private modes and the original copies until new-ID readback is confirmed. Do not copy pairing databases, provider keys or unrelated configuration. Refuse existing conflicting target metadata instead of overwriting it.
 
 ## Activate after review
 
@@ -52,7 +63,7 @@ Use supported `omarchy plugin` commands and user configuration only. Never edit
    command before use. Do not assume the remote default branch contains this
    candidate branch.
 2. Validate the staged manifest. Confirm optional providers fail safely.
-3. Stop the original UI watcher before enabling the fork. Preserve its exact
+3. Stop the source identity's UI watcher before enabling the new fork. Preserve its exact
    layout position, and use a coordinated supported shell restart when changed
    QML needs reload. Use both UIs only for an explicit comparison, then choose one daily UI.
 4. Apply only the reviewed display settings and appearance metadata. Recheck the

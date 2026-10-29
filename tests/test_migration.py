@@ -18,13 +18,13 @@ class Migration(unittest.TestCase):
         return {"bar": {"id":bar,"layout":{"left":["clock"],"right":["tray", {"id":"omaconnect","settings":{"showDeviceTypeIcons":True,"showTailscale":True,"showBatteryStats":False,"defaultPingMessage":"Hello"}}, "power"]}}, "plugins":[{"id":"other","settings":{"private":"DO_NOT_SNAPSHOT"}}], "disabledPlugins":["unrelated"]}
 
     def test_native_and_replacement_bar_keep_the_exact_slot(self):
-        for bar in ("omarchy.bar", "ryan.bar"):
+        for bar in ("omarchy.bar", "custom.bar"):
             original = self.source(bar)
             before = copy.deepcopy(original)
             result, snapshot, appearance = M.prepare(original)
             self.assertEqual(original, before)
             entry = result["bar"]["layout"]["right"][1]
-            self.assertEqual(entry["id"], "ryan.omaconnect")
+            self.assertEqual(entry["id"], "Omaconnect.plus")
             self.assertEqual(result["bar"]["id"], bar)
             self.assertEqual(result["bar"]["layout"]["right"][::2], ["tray", "power"])
             self.assertFalse(entry["showTailscale"])
@@ -45,16 +45,16 @@ class Migration(unittest.TestCase):
         entry = original["bar"]["layout"]["right"].pop(1)
         original["bar"]["layout"]["tray"] = ["other", entry]
         candidate, snapshot, _ = M.prepare(original)
-        self.assertEqual(candidate["bar"]["layout"]["tray"][1]["id"], "ryan.omaconnect")
+        self.assertEqual(candidate["bar"]["layout"]["tray"][1]["id"], "Omaconnect.plus")
         self.assertEqual(M.rollback(candidate, snapshot), original)
 
     def test_dual_bar_and_service_settings_migrate_without_two_active_ids(self):
         original = self.source()
         original["plugins"].append({"id":"omaconnect","settings":{"showBarBattery":True}})
         candidate, snapshot, _appearance = M.prepare(original)
-        self.assertEqual(candidate["plugins"][-1]["id"], "ryan.omaconnect")
+        self.assertEqual(candidate["plugins"][-1]["id"], "Omaconnect.plus")
         self.assertIn("omaconnect", candidate["disabledPlugins"])
-        self.assertNotIn("ryan.omaconnect", candidate["disabledPlugins"])
+        self.assertNotIn("Omaconnect.plus", candidate["disabledPlugins"])
         self.assertEqual(M.rollback(candidate, snapshot), original)
 
     def test_rollback_preserves_unrelated_later_changes_and_rejects_conflict(self):

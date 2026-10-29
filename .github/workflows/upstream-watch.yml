@@ -1,0 +1,39 @@
+name: Upstream watch
+
+on:
+  schedule:
+    - cron: '23 7 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Read upstream metadata and preview queue status without writes
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    if: github.event_name == 'workflow_dispatch' || vars.UPSTREAM_WATCH_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Check fixed public upstreams
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WATCH_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
+        run: |
+          if [ "$WATCH_DRY_RUN" = true ]; then
+            python3 .github/upstream_watch.py --dry-run
+          else
+            python3 .github/upstream_watch.py --apply
+          fi

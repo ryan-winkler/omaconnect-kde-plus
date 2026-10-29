@@ -28,7 +28,6 @@ Column {
     readonly property string trackAlbum: (media && media.album) ? media.album : ""
     readonly property string trackPlayer: (media && media.player) ? media.player : ""
     readonly property var playerList: (media && Array.isArray(media.playerList)) ? media.playerList : []
-    readonly property string albumArt: (media && media.albumArt) ? media.albumArt : ""
 
     PanelSeparator {
         foreground: root.foreground
@@ -36,9 +35,17 @@ Column {
 
     CursorSurface {
         id: collapsedBar
+        activeFocusOnTab: true
+        Accessible.role: Accessible.Button
+        Accessible.name: "Expand media controls"
+        Accessible.description: "Show the selected device's reported player and transport controls."
+        Accessible.onPressAction: panel.toggleMediaExpanded()
+        Keys.onReturnPressed: panel.toggleMediaExpanded()
+        Keys.onEnterPressed: panel.toggleMediaExpanded()
+        Keys.onSpacePressed: panel.toggleMediaExpanded()
         visible: !panel.mediaExpanded
         width: parent.width
-        implicitHeight: Style.space(20)
+        implicitHeight: Math.max(32, Style.space(32))
         hasCursor: panel.cursorActive && panel.focusSection === "media" && !panel.mediaExpanded
         radius: Style.cornerRadius
         foreground: root.foreground
@@ -107,30 +114,17 @@ Column {
         border.width: 1
         clip: true
 
-        Image {
-            id: backdropArt
-            anchors.fill: parent
-            source: root.albumArt
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            smooth: true
-            opacity: 0.14
-            visible: status === Image.Ready
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            visible: backdropArt.visible
-            color: Qt.rgba(0, 0, 0, 0.35)
-        }
-
         PanelActionButton {
             id: minimizeBtn
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.margins: Style.space(8)
             iconText: "󰅃"
-            tooltipText: "Minimize"
+            tooltipText: "Collapse media controls"
+            focusable: true
+            Accessible.role: Accessible.Button
+            Accessible.name: "Collapse media controls"
+            Accessible.onPressAction: panel.toggleMediaExpanded()
             foreground: root.foreground
             fontFamily: root.fontFamily
             onClicked: panel.toggleMediaExpanded()
@@ -147,7 +141,7 @@ Column {
 
             Text {
                 width: parent.width
-                text: "Control media on the selected device. Choose a reported player below; playback stays in its owner app."
+                text: "Control media on the selected device. Choose a reported player below; playback stays in its owner app. Artwork stays in the native app; Plus does not fetch device-supplied image URLs."
                 textFormat: Text.PlainText
                 wrapMode: Text.Wrap
                 color: root.foreground
@@ -168,20 +162,9 @@ Column {
                     border.width: 1
                     clip: true
 
-                    Image {
-                        id: bgArt
-                        anchors.fill: parent
-                        source: root.albumArt
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        smooth: true
-                        visible: status === Image.Ready
-                    }
-
                     Text {
                         textFormat: Text.PlainText
                         anchors.centerIn: parent
-                        visible: bgArt.status !== Image.Ready
                         text: "󰎈"
                         color: root.hasMedia ? Commons.Color.accent : Qt.darker(root.foreground, 1.5)
                         font.family: root.fontFamily
