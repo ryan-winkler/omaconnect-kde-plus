@@ -15,7 +15,7 @@ Inventory at inspection:
 - **1 open non-PR issue**, #17, was also inspected because it directly concerns the file picker.
 - Of the 15 PRs marked merged, **13 merge commits are ancestors of the pinned base**. #21 and #26 have divergent merge histories; their relevant behavior is nevertheless present in later source. An unavailable/nonancestor merge SHA is not proof that its feature is absent.
 
-The source worktree was undergoing the 0.2.0 identity/security update. Findings below name behaviors and functions, not an assertion that every later parent edit was absent. Recheck only the changed boundary after a fix. No real device action, install, file transfer, VPN change, native setting change, upstream comment, or Git mutation ran in this audit.
+The source worktree was undergoing the 0.1.1 identity/security update. Findings below name behaviors and functions, not an assertion that every later parent edit was absent. Recheck only the changed boundary after a fix. No real device action, install, file transfer, VPN change, native setting change, upstream comment, or Git mutation ran in this audit.
 
 ## Prioritized decisions
 

@@ -6,9 +6,9 @@ Jitendra’s plugin and KDE Connect are the upstream foundations. We retain thei
 credit, follow their interfaces, and aim to contribute reusable fixes back.
 This is an independent community fork. See [lineage and licenses](FORK.md).
 
-**Current plugin ID: `Omaconnect.plus`.** The display name remains Omaconnect KDE Plus. The earlier `v0.1.0` publication used the previous development ID; the identity update needs its own release and installed-runtime receipts. See [verification](docs/VERIFICATION.md).
+**Current plugin ID: `Omaconnect.plus`.** The display name remains Omaconnect KDE Plus. The earlier `v0.1.0` tag used a development ID. Version 0.1.1 has no supported public upgrade path; owner development installs retain separate preservation and installed-runtime checks. See [verification](docs/VERIFICATION.md).
 
-**Version 0.2.0 candidate.** The fork adds one place for known devices,
+**Version 0.1.1 candidate.** The fork adds one place for known devices,
 file submission, appearance and network access through **Tailscale, MikroTik Back
 to Home, or WireGuard**. KDE Connect owns pairing and transfers. Existing native
 network tools retain connection ownership; the BTH helper retains its policy.
@@ -99,7 +99,7 @@ Its absolute path is configurable in plugin settings; an empty setting uses
 
 This branch uses the case-sensitive plugin ID `Omaconnect.plus`. It can be staged separately from
 `omaconnect`. **No installation or activation occurs from the tests or checkout.**
-Read [migration and recovery](docs/MIGRATION.md) before moving existing settings or upgrading an earlier fork identity.
+Read [migration and recovery](docs/MIGRATION.md) before moving settings from the original OmaConnect.
 
 ## Install and open
 
@@ -139,7 +139,7 @@ Plus does not change firewall policy.
 
 ## Update, disable and remove
 
-These commands apply after `Omaconnect.plus` is installed. If you have an earlier Plus identity, follow [migration](docs/MIGRATION.md) first; updating its old checkout does not register the new ID.
+These commands apply after `Omaconnect.plus` is installed.
 
 ```bash
 omarchy plugin update Omaconnect.plus

@@ -1,22 +1,20 @@
 # Staging, activation and recovery
 
 The original `omaconnect` and the fork `Omaconnect.plus` have separate UI identities.
-The ID is case-sensitive and also names the IPC target and private metadata directories. Earlier fork releases used a previous development identity. A source update alone does not move its settings or private metadata.
+The ID is case-sensitive and also names the IPC target and private metadata directories. This guide covers moving from the original plugin.
 
 KDE pairing data and VPN profiles remain with their existing owners. Development
-comparison used the previous development identity on ARM and x86_64; acceptance for the new ID requires its own receipt. Normal migration should leave one
+comparison used an earlier development ID on ARM and x86_64; acceptance for `Omaconnect.plus` requires its own receipt. Normal migration should leave one
 daily UI enabled. This guide stages settings changes for review. It never applies them.
 
 ## Select the source identity
 
-Version 0.2.0 changes the fork identity to `Omaconnect.plus`. Updating an old checkout does not rename its registered plugin entry, IPC target or private directories. Keep the old source available until the reviewed migration and new-ID readback pass.
-
-Use `--source-id omaconnect` when moving from Jitendra's original plugin. For an earlier Plus install, read its `id` from that installed copy's `manifest.json` and pass that exact value as `--source-id SOURCE_ID`. Replace `SOURCE_ID` with the value you read; do not infer it from a display name. This option selects the existing source, never the target.
+Use `--source-id omaconnect` (the default) when moving from Jitendra's original plugin. For another source plugin, read its `id` from that installed copy's `manifest.json` and pass that exact value as `--source-id SOURCE_ID`; do not infer it from a display name. This option selects the existing source, never the target.
 
 ## Prepare an offline candidate
 
 Use a **new private directory outside the repository** for each run. The tool
-never edits the source or talks to a running shell. The example below moves from the original plugin; for an earlier Plus install, replace `omaconnect` with the source ID from its manifest (`--source-id SOURCE_ID`).
+never edits the source or talks to a running shell. The example below moves from the original plugin.
 
 ```bash
 python3 scripts/migrate_settings.py prepare \
@@ -34,7 +32,7 @@ The new directory uses mode 0700 and its JSON files use mode 0600:
 
 - `candidate-shell.json`: a private full configuration candidate. Do not commit
   or publish it. Unrelated fields remain in this private copy.
-- `candidate-appearance.json`: emitted only for the original upstream source ID `omaconnect`. An explicit legacy `showDeviceTypeIcons=false` becomes Phone; true or the upstream default becomes automatic. For an earlier Plus source ID, the helper returns no inferred appearance and emits no candidate appearance file. Copy and validate existing private metadata separately. A fresh installation defaults to Phone.
+- `candidate-appearance.json`: emitted only for the original upstream source ID `omaconnect`. An explicit legacy `showDeviceTypeIcons=false` becomes Phone; true or the upstream default becomes automatic. For any other source ID, the helper returns no inferred appearance and emits no candidate appearance file. A fresh installation defaults to Phone.
 - `snapshot.json`: understood old/new settings, exact layout slot, disabled flags,
   source hash and binding provenance. No pairing or VPN secrets are copied.
 
@@ -47,7 +45,7 @@ controls default to no automatic rediscovery.
 
 ## Review private metadata
 
-The staging helper prepares shell settings and appearance metadata; do not assume it moves every private file. Review the old identity's private `appearance.json`, imported `icons/` and `addresses.json` separately. The new locations are documented in the [icon/storage guide](ICONS.md). Preserve file ownership, private modes and the original copies until new-ID readback is confirmed. Do not copy pairing databases, provider keys or unrelated configuration. Refuse existing conflicting target metadata instead of overwriting it.
+The staging helper prepares shell settings and appearance metadata; do not assume it moves every private file. The original plugin has no Plus `appearance.json`, imported `icons/` or `addresses.json`. Their locations are documented in the [icon/storage guide](ICONS.md). Preserve file ownership, private modes and the original copies until readback is confirmed. Do not copy pairing databases, provider keys or unrelated configuration. Refuse existing conflicting target metadata instead of overwriting it.
 
 ## Activate after review
 

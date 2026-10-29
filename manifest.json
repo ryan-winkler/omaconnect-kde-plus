@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "Omaconnect.plus",
   "name": "Omaconnect KDE Plus",
-  "version": "0.2.0",
+  "version": "0.1.1",
   "author": "Ryan Winkler; based on Jitendra Dara’s OmaConnect",
   "description": "KDE Connect device actions, file sharing, custom icons and optional Tailscale, MikroTik Back to Home and WireGuard views for Omarchy.",
   "license": "MIT",
