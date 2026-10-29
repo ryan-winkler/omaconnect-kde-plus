@@ -61,6 +61,18 @@ Item {
         syncthingPause.running = true
         return true
     }
+    // shortcut: only the r-quick-share package path is detected; add others when users ask.
+    property bool quickShareAvailable: false
+    onPanelOpenedChanged: if (panelOpened && !quickShareCheck.running) quickShareCheck.running = true
+    Process {
+        id: quickShareCheck
+        command: ["/usr/bin/test", "-x", "/usr/bin/rquickshare"]
+        onExited: function(code) { root.quickShareAvailable = code === 0 }
+    }
+    Process { id: quickShareLaunch; command: ["/usr/bin/setsid", "-f", "/usr/bin/rquickshare"] }
+    function openQuickShare() {
+        if (quickShareAvailable && !quickShareLaunch.running) quickShareLaunch.running = true
+    }
     function displayName(device) { return device ? appearanceStore.displayName(device.id, device.name) : "KDE Connect" }
     property alias selection: controller.selection
     property alias selectionBytes: controller.selectionBytes

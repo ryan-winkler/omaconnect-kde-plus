@@ -48,6 +48,9 @@ Each action shows its description and selected-device availability.
 - **Files:** Open the normal desktop file chooser, then review before Send.
 - **Text or link:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
 - **Clipboard:** Send the current clipboard to the selected device.
+- **Quick Share:** Open [RQuickShare](https://github.com/Martichou/rquickshare)
+  to share with Android Quick Share. Install the `r-quick-share` package first.
+  It is a separate app with its own pairing; KDE Connect does not use it.
 - **Ring:** Request a sound. If unavailable, open native **Plugin settings** and
   check Find my phone. A successful command does not confirm an audible sound.
 - **SMS:** Open native KDE Connect conversations, where the platform permits it.

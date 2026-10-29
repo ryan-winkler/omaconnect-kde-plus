@@ -73,8 +73,9 @@ Read the [source-verified feature matrix and decision](docs/WHY-PLUS.md) for the
   route events are debounced and failures back off. An IP does not prove identity.
 - **Syncthing identity notes:** Optionally remember that two full device IDs refer to the same machine. The section starts hidden and is configurable. Drafts stay with their reviewed KDE peer; saved readback confirms changes. Pause or resume syncing with the linked device; a readback confirms the state. Open the general existing Syncshell panel for folders. Syncshell retains its own core and keys.
 
-Quick Share, router rosters and new VPN setup are
-later work. This fork does not implement the separate Banatik/UniFi collector.
+The optional **Quick Share** shortcut opens an installed RQuickShare app; Plus
+does not speak the Quick Share protocol itself. Router rosters and new VPN setup
+are later work. This fork does not implement the separate Banatik/UniFi collector.
 
 **All KDE Connect features** opens the selected peer in the native app, including
 its Plugin Settings. Common actions stay in the bar; the full returned native
