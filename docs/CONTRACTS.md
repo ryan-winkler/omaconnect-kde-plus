@@ -158,7 +158,7 @@ WireGuard profiles to the installed NetworkManager editor. Launch requests use
 fixed arguments and bounded feedback. They do not install, connect, copy keys,
 choose a profile or introduce a second policy writer. BTH mode control remains
 on the reviewed helper contract above. No native-owner launch is a reachability
-receipt. See the network coverage audit for exact first-release limits.
+receipt.
 
 ## Settings window and typed preferences
 
@@ -197,7 +197,7 @@ section is session UI state; opening the panel restores the selected defaults.
 Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
 
-`ActionCatalog.js` owns the 18 reviewed shortcut IDs, groups, help, supported and
+`ActionCatalog.js` owns the 19 reviewed shortcut IDs, groups, help, supported and
 locally-active readiness. The preference/migration boundary accepts only those
 IDs, no duplicates, with a 512-character CSV limit. Native handoffs remain explicit
 and keep the selected KDE peer. They do not directly invoke a guessed plugin
