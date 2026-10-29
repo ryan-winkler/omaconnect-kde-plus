@@ -14,7 +14,7 @@ older observations; their blocked/staged status is superseded where shown here.
 | ARM helper/model/UI fixtures | Final integrated preparation: 164 Python tests and three JS suites pass; manifest validation, shell syntax and local Markdown targets pass. | Private temporary state and fake providers. |
 | Migration | Native inline, legacy nested and string entries; output uses native inline settings. Exact rollback, conflict refusal and unrelated later edits covered. | Stages reviewed candidates only; no live apply. |
 | Daily action accessibility | Regression first failed on missing button role. Corrected native Button passes 24 actual Qt assertions: names/help, Tab, Enter, Space, accessible press, disabled refusal and Stop. | Offscreen component; no Orca acceptance claim. |
-| Settings and sharing UI | Native domains, six width/page captures, scrolling, back/close/Escape; drop/controller inspection; persistent Send window and explicit review. | Owner confirmed real external file-manager drag on both laptop and desktop: correct file/recipient review and original retained. No new transfer was part of that check. |
+| Settings and sharing UI | Native domains, six width/page captures, scrolling, back/close/Escape; drop/controller inspection; persistent Send window and explicit review. | Owner accepted pre-Send external file-manager drag review on both laptop and desktop: correct file/recipient review and original retained. The explicit Send result remains open for RP22/G5. |
 | Installed laptop, ARM | Original and fork enabled side by side by explicit owner request. Published `256d50c` downloaded through native `omarchy plugin update`; supported shell restart, shell ping and mapped new Settings title confirmed. Appearance and connection preferences retained. | Original UI remains active beside the fork by owner request. |
 | Installed desktop, x86_64 | Published `256d50c` updated from the public repository; mapped new Settings and shell ping confirmed after supported shell restart. Original source, preferences, metadata and layout retained. | Source checkout alone does not prove runtime reload. |
 | Real phone receipt | One generated 109-byte text payload sent from the selected desktop to the owner-selected paired phone. Owner confirmed receipt, opening and matching check code. | One LAN text payload; not all types, multifile, empty file, cancellation or offsite acceptance. |
@@ -44,7 +44,7 @@ See [native fixture scope](../tests/NATIVE-QA.md),
 
 ## Acceptance limits
 
-- External file-manager drag review is owner-accepted on both actual computers. This does not extend the earlier physical transfer receipt to all file classes.
+- Pre-Send external file-manager drag review is owner-accepted on both actual computers. The explicit Send result remains open for RP22/G5; G6’s earlier physical transfer receipt does not close it or establish acceptance for all file classes.
 - Assistive technology, RTL, scale 2 and reduced-motion acceptance remain open.
 - A command accepted by KDE Connect is not a delivered file or audible sound.
 - No new offsite transfer or fleet-wide network conclusion is claimed.
@@ -117,10 +117,12 @@ laptop. External services and desktop associations may change later.
 
 The owner confirmed that the real file-manager drag check passed on **both the
 laptop and desktop**. The check asked for the correct file and recipient at review,
-with the original file retained, followed by cancellation before Send. This closes
-RP22/G5 for external drag review on these two installations. It does not claim a
-new file transfer, other file managers/platforms, or broad assistive-technology
-acceptance. Product code and provider ownership are unchanged.
+with the original file retained, followed by cancellation before Send. Only the
+pre-Send external-drag review is accepted for RP22/G5 on these two installations.
+The explicit Send result remains open; G6’s earlier phone receipt does not close
+it. This does not claim a new file transfer, other file managers/platforms, or
+broad assistive-technology acceptance. Product code and provider ownership are
+unchanged.
 
 The owner also confirmed that the official CodeRabbit app is enabled for this
 repository. The earlier two release PRs were already merged, so no open PR was
