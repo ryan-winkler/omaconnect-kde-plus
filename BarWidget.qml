@@ -82,7 +82,7 @@ BarWidget {
             }
         }
         tooltipText: {
-            var name = root.deviceName
+            var name = "OmaConnect Plus · " + root.deviceName
             if (root.device && root.device.name && root.device.name !== name) name += " (" + root.device.name + ")"
             var showBat = !root.settings || root.settings.showBatteryStats !== false
             if (showBat && root.hasBattery && root.device) {
