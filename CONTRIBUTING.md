@@ -59,6 +59,15 @@ Small documentation and focused bug fixes can go directly to a PR. For a new pro
 
 The stable plugin ID is `Omaconnect.plus`. Do not change it after release: Omarchy registers plugins by manifest ID, and `omarchy plugin update` cannot rename an installed plugin, so a new ID would drop users' bar placement, settings and private metadata. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
 
+## Change the version slowly
+
+The version in `manifest.json` follows [Semantic Versioning](https://semver.org/) loosely, in the form `MAJOR.MINOR.PATCH`. Change it rarely.
+
+- **Patch** (`0.1.1` → `0.1.2`): routine work. This includes fixes, small features, settings, help text and refactors.
+- **Minor and major** (the first two numbers): only for big changes, such as a new provider, a removed feature or a new settings model. The maintainer makes this decision. Contributors do not.
+- Do not bump the version in a normal pull request. The maintainer bumps it once, at release, and tags the same commit `vX.Y.Z`.
+- Never decrease a released version. The upstream `v1.x` tags in this repository belong to OmaConnect, not to Plus.
+
 ## Test without changing personal state
 
 The normal suite uses private temporary configuration and fake providers. See [native QA](tests/NATIVE-QA.md) for separate native checks. Hosted CI does not prove installed-bar use, keyboard or assistive-technology acceptance, real delivery or offsite connectivity.
