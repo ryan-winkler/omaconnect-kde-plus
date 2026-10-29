@@ -13,6 +13,14 @@ network tools retain connection ownership; the BTH helper retains its policy.
 
 ![Native settings with invented sample device data](preview.png)
 
+[Release 0.1.0](https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0) ·
+[Functional checks](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml) ·
+[CodeQL](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml) ·
+[Marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/13289)
+
+Marketplace submission is pending maintainer review. It is not a listing or a
+security certification. Use the repository install command below in the meantime.
+
 ## First release
 
 - **Settings:** Open a dedicated native window for Appearance, Connections,

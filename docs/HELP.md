@@ -98,6 +98,13 @@ removes only the association. **Open existing Syncthing panel** opens Syncshell;
 it retains the synchronization engine and keys. Read the official
 [Syncthing device setup guide](https://docs.syncthing.net/intro/getting-started.html).
 
+## Install, update or recover
+
+Use the supported commands in [Install and open](../README.md#install-and-open)
+and [Update, disable and remove](../README.md#update-disable-and-remove).
+Read [migration and recovery](MIGRATION.md) before moving settings. Native plugin
+removal does not remove pairing, VPN profiles or private Plus metadata.
+
 ## Get help or contribute
 
 Use [support](../SUPPORT.md) for task help and safe issue evidence,
