@@ -11,7 +11,7 @@ KDE Connect owns pairing, its native modules and the device protocol. Existing n
 | Improve help or report a confusing step | [Help map](docs/HELP.md), [support](SUPPORT.md) | The instruction names the task, result and next step. |
 | Add or improve an icon | [Icon guide](docs/ICONS.md), `Appearance.js`, `components/AppearanceIcon.qml` | Source/license, preset parity and fallback. |
 | Change icon selection, aliases or local identity links | `components/IconChooser.qml`, `AppearanceStore.qml`, `scripts/appearance.py` | Apply/Cancel, keyboard use, stable IDs and private atomic state. |
-| Change sharing or file drops | `KdeConnectController.qml`, `TransferModel.js`, `components/SendWindow.qml`, `scripts/portal_files.py` | Fixed recipient, explicit Send, cancellation and honest delivery state. |
+| Change sharing or file drops | `controller/FileTransferController.qml`, `TransferModel.js`, `components/SendWindow.qml`, `scripts/portal_files.py` | Fixed recipient, explicit Send, cancellation and honest delivery state. |
 | Change quick actions | `ActionCatalog.js`, `components/QuickActionsSettings.qml` | Capability, order, labels, contextual help and disabled reasons. |
 | Change native device features | `components/NativeFeaturesSection.qml`, `scripts/discover_devices.sh`, `scripts/open_app.sh` | Native ownership, exact device, readback and handoff failures. |
 | Change connection guidance or address discovery | `components/NetworkOptions.qml`, `DiscoveryController.qml`, `DiscoveryModel.js`, `scripts/manage_addresses.py` | Opt-in sources, approval, input bounds and baseline preservation. |
