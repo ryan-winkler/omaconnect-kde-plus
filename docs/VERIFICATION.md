@@ -46,7 +46,7 @@ See [native fixture scope](../tests/NATIVE-QA.md),
 
 ## Acceptance limits
 
-- Pre-Send external file-manager drag review is owner-accepted on both actual computers: correct file/recipient, source retained and cancellation before Send. Actual post-drop Send and delivery remain untested. The earlier chooser-based receipt does not close this gate.
+- Pre-Send external file-manager drag review is owner-accepted on both actual computers: correct file/recipient and source retained; the check stopped before Send. Actual post-drop Send and delivery remain untested. The earlier chooser-based receipt does not close this gate.
 - Assistive technology, RTL, scale 2 and reduced-motion acceptance remain open.
 - A command accepted by KDE Connect is not a delivered file or audible sound.
 - No new offsite transfer or fleet-wide network conclusion is claimed.
@@ -115,7 +115,7 @@ laptop. External services and desktop associations may change later.
 
 The owner confirmed that the real file-manager drag check passed on **both the
 laptop and desktop**. The check asked for the correct file and recipient at review,
-with the original file retained, followed by cancellation before Send. This accepts only the pre-Send external-drag review portion of RP22/G5 on these two installations. The explicit post-drop Send result and delivery portion remain open. It does not claim other file managers/platforms or broad assistive-technology acceptance. Product code and provider ownership are unchanged.
+with the original file retained; the check stopped before Send. This accepts only the pre-Send external-drag review portion of RP22/G5 on these two installations. The explicit post-drop Send result and delivery portion remain open. It does not claim other file managers/platforms or broad assistive-technology acceptance. Product code and provider ownership are unchanged.
 
 The owner also confirmed repository app access. PR #3 subsequently received the observed CodeRabbit review recorded below. That review covered the earlier documentation change; it did not cover the later technical identity and security changes.
 
