@@ -14,7 +14,7 @@ older observations; their blocked/staged status is superseded where shown here.
 | ARM helper/model/UI fixtures | Final integrated preparation: 164 Python tests and three JS suites pass; manifest validation, shell syntax and local Markdown targets pass. | Private temporary state and fake providers. |
 | Migration | Native inline, legacy nested and string entries; output uses native inline settings. Exact rollback, conflict refusal and unrelated later edits covered. | Stages reviewed candidates only; no live apply. |
 | Daily action accessibility | Regression first failed on missing button role. Corrected native Button passes 24 actual Qt assertions: names/help, Tab, Enter, Space, accessible press, disabled refusal and Stop. | Offscreen component; no Orca acceptance claim. |
-| Settings and sharing UI | Native domains, six width/page captures, scrolling, back/close/Escape; drop/controller inspection; persistent Send window and explicit review. | External file-manager drag under the actual compositor is a separate owner check. |
+| Settings and sharing UI | Native domains, six width/page captures, scrolling, back/close/Escape; drop/controller inspection; persistent Send window and explicit review. | Owner confirmed real external file-manager drag on both laptop and desktop: correct file/recipient review and original retained. No new transfer was part of that check. |
 | Installed laptop, ARM | Original and fork enabled side by side by explicit owner request. Published `256d50c` downloaded through native `omarchy plugin update`; supported shell restart, shell ping and mapped new Settings title confirmed. Appearance and connection preferences retained. | Original UI remains active beside the fork by owner request. |
 | Installed desktop, x86_64 | Published `256d50c` updated from the public repository; mapped new Settings and shell ping confirmed after supported shell restart. Original source, preferences, metadata and layout retained. | Source checkout alone does not prove runtime reload. |
 | Real phone receipt | One generated 109-byte text payload sent from the selected desktop to the owner-selected paired phone. Owner confirmed receipt, opening and matching check code. | One LAN text payload; not all types, multifile, empty file, cancellation or offsite acceptance. |
@@ -44,13 +44,13 @@ See [native fixture scope](../tests/NATIVE-QA.md),
 
 ## Acceptance limits
 
-- External file-manager drag on both actual desktops awaits owner acceptance.
+- External file-manager drag review is owner-accepted on both actual computers. This does not extend the earlier physical transfer receipt to all file classes.
 - Assistive technology, RTL, scale 2 and reduced-motion acceptance remain open.
 - A command accepted by KDE Connect is not a delivered file or audible sound.
 - No new offsite transfer or fleet-wide network conclusion is claimed.
-- CodeRabbit app access awaits the owner’s signed-in step; no completed bot review
-  is claimed. Marketplace submission awaits maintainer review. Hosted checks and
-  installed updates are confirmed below; neither implies those open checks passed.
+- The owner confirms CodeRabbit app access is enabled for this repository. A real
+  review on the acceptance follow-up PR is being verified separately. Marketplace
+  submission awaits maintainer review; these are distinct services and outcomes.
 
 These limits stay in release notes. The fork does not advertise a new protocol,
 VPN provisioner, Quick Share engine, native plugin store or synchronization core.
@@ -82,9 +82,10 @@ Hosted native prerequisites remain explicitly skipped.
 Antigravity completed its scoped public-source review with no findings. Claude
 returned no review within its 240-second bound; no clean Claude result or
 reviewer agreement is claimed. See the outside report for snapshot and CLI limits.
-The browser is signed out of GitHub, so CodeRabbit app access is awaiting the
-owner. Its configuration and explicit PR review request are present; no bot
-review has yet been observed. This does not block the independent local checks.
+At the preparation check, the available browser was signed out and no bot review
+was observed. The owner has since confirmed that CodeRabbit is enabled for this
+repository. PRs #1 and #2 had already merged; a new acceptance-documentation PR
+provides a real open change for the app. Its actual review is recorded separately.
 
 
 ### Publication and installed runtime
@@ -110,3 +111,19 @@ submission or a retained approval label.
 All five in-app official provider-help URLs returned HTTP 200 at the release
 check. The local Markdown guide has a registered default viewer on the tested
 laptop. External services and desktop associations may change later.
+
+
+### Owner acceptance follow-up — 29 October 2026
+
+The owner confirmed that the real file-manager drag check passed on **both the
+laptop and desktop**. The check asked for the correct file and recipient at review,
+with the original file retained, followed by cancellation before Send. This closes
+RP22/G5 for external drag review on these two installations. It does not claim a
+new file transfer, other file managers/platforms, or broad assistive-technology
+acceptance. Product code and provider ownership are unchanged.
+
+The owner also confirmed that the official CodeRabbit app is enabled for this
+repository. The earlier two release PRs were already merged, so no open PR was
+available. The follow-up records these acceptance results and tests the live app
+on a real documentation change. Owner confirmation of app access and an observed
+completed review remain distinct evidence.

@@ -54,7 +54,7 @@ Checked items record administrative actions confirmed by the release task on 202
 - [ ] Open the advisory route without submitting a report and confirm its live public entry point after publication.
 - [x] Enabled Dependabot alerts, secret scanning and push protection for the public repository.
 - [ ] Check whether default CodeQL setup is active before using the supplied advanced workflow; choose one setup and avoid duplicate scans.
-- [ ] Install or grant the official CodeRabbit GitHub app access to this repository. Confirm the organization/account's public-repository plan. Do not buy a plan to complete this release.
+- [x] Owner confirms the official CodeRabbit GitHub app is enabled for this repository. The public-repository offer is the documented free route; no purchase is authorized or needed.
 - [ ] Open a real pull request after app access is set. Confirm a CodeRabbit review and configuration acceptance. If needed, comment `@coderabbitai review` on that PR. Record a link and outcome.
 - [x] Confirm Functional checks and both CodeQL jobs run on preparation revision `a5c3470`: all passed. Inspect native skips. Required branch checks and final release revision are recorded separately.
 - [ ] Confirm the issue chooser, forms, private security route, contributor links and release notes configuration work on GitHub after the rename.
@@ -84,5 +84,6 @@ These service details can change. Recheck them at a later release rather than tr
 Live setup receipt: main now requires the observed Functional, Analyze Python and
 Analyze Actions checks, PRs and conversation resolution. Main’s actual release
 checks passed `256d50c`; force pushes and branch deletion are disabled. CodeRabbit
-app access remains pending, with the official GitHub app page left for the owner.
+app access is now owner-confirmed for this repository; an actual review is being
+verified on the acceptance follow-up PR.
 No paid service was enabled. See [current verification](VERIFICATION.md).
