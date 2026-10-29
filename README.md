@@ -9,17 +9,27 @@ network tools retain connection ownership; the BTH helper retains its policy.
 
 ## First release
 
+- **Settings:** Open a dedicated native window for Appearance, Connections,
+  Sharing and Device features. All active Plus preferences have a domain; native
+  plugin enablement and permissions link to the selected device in KDE Connect.
 - **Appearance:** Choose a phone, computer, theme icon, custom symbol or local
   PNG/SVG for the bar. Set a separate icon and local alias for each KDE identity.
   Preview before Apply. Reset to Phone or follow the selected device.
 - **Files:** Use the desktop portal to select up to 100 regular files, with a
-  combined maximum of 1 TiB. Check the recipient, count and size, then select
-  Send. Selection alone sends nothing. Directories are not archived.
+  combined maximum of 1 TiB. This uses the default graphical file picker requested
+  in [upstream issue #17](https://github.com/jitendradara12/omaconnect/issues/17),
+  through the desktop portal. Check the recipient, count and size, then select
+  Send. Or open the persistent **Send window** and drag local files from your file
+  manager. Drops prepare review only and accept Copy, preserving originals.
+  Selection alone sends nothing. Directories are not archived.
 - **Honest activity:** Each batch keeps its reviewed recipient. Changing the
   selected device does not redirect it. “Request accepted” means KDE accepted
   the command; delivery remains unknown. Timeout and cancellation remain explicit.
 - **Network access:** Find Tailscale, MikroTik Back to Home and generic WireGuard
-  in one labelled section. Use the existing native owner for each service.
+  in **Settings → Connections**. Enable only the sections you want, read the short
+  guide and open official help. These saved visibility choices do not connect or
+  disconnect a VPN. All optional sections start hidden; use each native owner
+  for connection control.
 - **Home access:** View the existing BTH helper’s Automatic / On / Off controls.
   Selected mode and actual interface state are separate. Missing or invalid
   status disables unsafe actions. No VPN keys or profiles are imported.
@@ -35,7 +45,10 @@ later work. This fork does not implement the separate Banatik/UniFi collector.
 
 **All KDE Connect features** opens the selected peer in the native app, including
 its Plugin Settings. Common actions stay in the bar; the full returned native
-plugin inventory is available on demand. Supported and loaded states stay distinct.
+plugin inventory is searchable in **Settings → Device features**. Supported and
+loaded states stay distinct. Native Plugin Settings becomes available when the
+peer is paired and reachable. Enabling an installed module differs from installing
+new native code; the standard KDE page is not an add-on store.
 KDE Connect keeps permissions, plugin configuration and its native capabilities,
 including pairing, battery, notifications, file browsing, media playback and
 player switching, remote commands,

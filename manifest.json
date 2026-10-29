@@ -42,7 +42,7 @@
     "showTailscale": {
       "type": "boolean",
       "default": false,
-      "description": "Display optional Tailscale and custom address discovery"
+      "description": "Legacy discovery setting; disabled in this fork. Use networkTailscaleEnabled to show the current Tailscale integration."
     },
     "showDeviceTypeIcons": {
       "type": "boolean",
@@ -103,6 +103,21 @@
       "type": "string",
       "default": "",
       "description": "Absolute path to the existing remote-access-mode helper. Empty uses ~/.local/bin/remote-access-mode."
+    },
+    "networkTailscaleEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show Tailscale integration. This display setting does not connect or disconnect a VPN."
+    },
+    "networkBthEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show MikroTik Back to Home integration. This display setting does not connect or disconnect a VPN."
+    },
+    "networkWireguardEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show other WireGuard profiles integration. This display setting does not connect or disconnect a VPN."
     }
   }
 }

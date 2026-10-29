@@ -2011,7 +2011,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     # Check natural action verbiages
     self.assertIn('"Ping sent"', controller_source)
     self.assertIn('"Text sent"', controller_source)
-    self.assertIn('"Ringing device..."', controller_source)
+    self.assertIn('"Ring request accepted. Audible ringing is not confirmed."', controller_source)
     self.assertIn('"Clipboard synced"', controller_source)
     self.assertNotIn('"File sent"', controller_source)
     self.assertIn("TransferModel.status", controller_source)

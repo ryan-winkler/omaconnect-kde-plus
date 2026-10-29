@@ -524,7 +524,13 @@ Item {
             actionMessage = ""
             return false
         }
-        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--ring"], "Ringing device...", "ring")
+        if (device.loadedKnown && (!Array.isArray(device.loadedPluginIds) || device.loadedPluginIds.indexOf("kdeconnect_findmyphone") === -1)) {
+            actionState = "blocked"
+            actionError = "Ring is not active locally for this device. Open KDE Connect → Plugin Settings and check Find My Phone."
+            actionMessage = ""
+            return false
+        }
+        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--ring"], "Ring request accepted. Audible ringing is not confirmed.", "ring")
     }
 
     function sendClipboard(id) {
@@ -548,7 +554,11 @@ Item {
 
     function chooseFiles(id) {
         var device = deviceById(id)
-        if (filePickerProcess.running || fileInspectProcess.running) return false
+        if (operationBusy || fileTransferProcess.running || filePickerProcess.running || fileInspectProcess.running) return false
+        if (selectionState === "draft" || selection.length) {
+            selectionError = "Review or clear the current file selection before choosing more files."
+            return false
+        }
         if (!device || !canAct(id) || !device.capabilities || !device.capabilities.file) {
             selectionError = "Select a paired, reachable device that supports files"
             return false
@@ -753,22 +763,61 @@ Item {
         operations = operationBusy && activeOperation ? [Object.assign({}, activeOperation)] : []
     }
 
-    // Compatibility entry point: inspect and review a supplied URI; never send it.
-    function sendFile(id, path) {
+    // Drop and compatibility entry points share the chooser's inspection boundary.
+    // Selection is a review draft. Neither entry point submits a file.
+    function stageDroppedFiles(id, urls) {
+        if (operationBusy || fileTransferProcess.running || filePickerProcess.running || fileInspectProcess.running) {
+            selectionError = "Wait for the current file action, then drop the files again."
+            return false
+        }
+        if (selectionState === "draft" || selection.length) {
+            selectionError = "Review or clear the current file selection before dropping more files."
+            return false
+        }
         var device = deviceById(id)
-        if (!device || !canAct(id) || !device.capabilities || !device.capabilities.file || filePickerProcess.running || fileInspectProcess.running) return false
-        var value = String(path || "")
-        if (value.charAt(0) === "/") value = "file://" + encodeURI(value).replace(/#/g, "%23").replace(/\?/g, "%3F")
+        if (!device || !canAct(id) || !device.capabilities || !device.capabilities.file) {
+            selectionError = "Select a paired, reachable device that supports files"
+            return false
+        }
+        if (!Array.isArray(urls) || urls.length < 1 || urls.length > 100) {
+            selectionError = "Drop up to 100 local files. Folders and links are not supported."
+            return false
+        }
+        var values = []
+        var units = 0
+        for (var i = 0; i < urls.length; i++) {
+            var value = urls[i]
+            if (typeof value !== "string" || value.length > 16384
+                    || !/^file:\/\/(?:localhost)?\//.test(value)
+                    || /[\u0000-\u001f\u007f]/.test(value)) {
+                selectionError = "Drop readable local files. Folders and links are not supported."
+                return false
+            }
+            units += value.length
+            // Bound UTF-8 stdin below the helper's 512 KiB input limit.
+            if (units > 128 * 1024) {
+                selectionError = "The dropped file list is too large. Choose fewer files."
+                return false
+            }
+            values.push(value)
+        }
         selectionGeneration += 1
-        draftTarget = Object.freeze({peerId: String(id), peerName: String(device.name || id), provider: "kdeconnect"})
+        draftTarget = Object.freeze({peerId: String(device.id), peerName: String(device.name || device.id), provider: "kdeconnect"})
         selection = []
         selectionBytes = 0
         selectionState = "choosing"
         selectionError = ""
-        fileInspectProcess.payload = JSON.stringify([value]) + "\n"
+        fileInspectProcess.payload = JSON.stringify(values) + "\n"
         fileInspectProcess.targetGeneration = selectionGeneration
         fileInspectProcess.running = true
         return true
+    }
+
+    // Compatibility entry point: inspect and review a supplied path; never send it.
+    function sendFile(id, path) {
+        var value = String(path || "")
+        if (value.charAt(0) === "/") value = "file://" + encodeURI(value).replace(/#/g, "%23").replace(/\?/g, "%3F")
+        return stageDroppedFiles(id, [value])
     }
 
     function fetchRemoteCommands(id) {

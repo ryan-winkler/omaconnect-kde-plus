@@ -122,3 +122,32 @@ fixed arguments and bounded feedback. They do not install, connect, copy keys,
 choose a profile or introduce a second policy writer. BTH mode control remains
 on the reviewed helper contract above. No native-owner launch is a reachability
 receipt. See the network coverage audit for exact first-release limits.
+
+## Settings window and typed preferences
+
+`SettingsPanel.qml` is an independent nonmodal native Window. Its four domains
+share the current device context and retain a Back to devices route. Native KDE
+module settings open in KDE Connect with the selected ID; peer pairing/reachability
+conditions are explained. The searchable inventory is reported support, not an
+installation catalog or enabled-state writer.
+
+The shared preference helper has a fixed fork ID, an allowlist of active boolean
+keys, two bounded strings and a 32 KiB request limit. `setBarWidget` receives fixed
+arguments and JSON-typed values. Exact `ok` plus native config readback controls
+feedback. A visibility setting never changes a VPN. Hidden BTH does not poll.
+
+## Drop selection and persistent Send window
+
+`stageDroppedFiles(id, urls)` accepts at most 100 local URI strings with a bounded
+aggregate payload, freezes the reviewed recipient before the existing inspector,
+and refuses busy state or overwriting a review draft. Choose files uses the same
+draft protection. Only the existing explicit submit action sends files. The native
+DropArea accepts Copy, never Move. Directories, symlinks and remote/active URIs
+remain rejected by the shared file inspector. A normal Send Window stays mapped
+while the user focuses a file manager; closing it preserves service-owned draft
+and activity. Physical external Wayland DND is a separate acceptance claim.
+
+Ring remains discoverable when advertised. Known missing loaded metadata blocks
+dispatch with a native Plugin Settings next step. Unknown loading state retains
+older-version fallback. Successful CLI return means a ring request was accepted,
+not that a person heard a phone.

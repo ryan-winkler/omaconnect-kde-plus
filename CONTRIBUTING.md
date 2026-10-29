@@ -53,3 +53,9 @@ for Tailscale/BTH/WireGuard coverage and the boundary between approval and contr
 | Native feature metadata / app handoff | `scripts/discover_devices.sh`, `KdeConnectController.qml`, `components/NativeFeaturesSection.qml`, `scripts/open_app.sh` | `python3 -m unittest tests/test_native_features.py -q` |
 | Tailscale / BTH / WireGuard guidance and approved address sources | `components/NetworkOptions.qml`, `scripts/open_network_owner.py`, existing discovery domain | `python3 -m unittest tests/test_network_coverage.py -q` |
 | Ordinary keyboard routes | `Panel.qml`, native controls | `python3 -m unittest discover -s tests -p test_keyboard.py -q` |
+
+Settings composition lives in `components/SettingsPanel.qml`; its shared native
+preference control and typed helper keep configuration ownership distinct from
+protocol control. File drops use `stageDroppedFiles` and the existing inspector;
+`SendWindow.qml` owns presentation only. Add no second transfer queue or permission
+writer. See the settings RICE decision before proposing a native-module installer.

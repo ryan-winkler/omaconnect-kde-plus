@@ -34,7 +34,10 @@ Panel {
     property bool addressesExpanded: false
     property bool syncthingExpanded: false
     property string currentView: "Devices"
-    readonly property var viewNames: ["Devices", "Send", "Activity", "Appearance"]
+    readonly property var viewNames: ["Devices", "Send", "Activity"]
+    readonly property var settingsWindow: preferencesWindow
+    function openSettings(page) { preferencesWindow.openSettings(page || "Appearance"); root.close() }
+    function openSendWindow() { root.close(); sendWindow.openSend() }
     onOpenedChanged: if (service) service.panelOpened = opened
     onCurrentViewChanged: { root.cursorActive = false; if (currentView !== "Devices") root.activeComposer = "none" }
 
@@ -661,6 +664,13 @@ Panel {
                         }
                     }
                 }
+                Button {
+                    focusable: true
+                    width: parent.width
+                    text: "Settings"
+                    Accessible.name: "OmaConnect Plus settings"
+                    onClicked: root.openSettings()
+                }
                 Column {
                     width: parent.width
                     visible: root.currentView === "Send"
@@ -678,45 +688,20 @@ Panel {
                         width: parent.width
                         text: "Choose files"
                         Accessible.name: text
-                        enabled: !!root.device && root.device.paired && root.device.reachable && root.device.capabilities && root.device.capabilities.file && root.service && !root.service.operationBusy
+                        enabled: !!root.device && root.device.paired && root.device.reachable && root.device.capabilities && root.device.capabilities.file && root.service && !root.service.operationBusy && root.service.selectionState !== "choosing" && root.service.selectionState !== "draft"
                         onClicked: root.service.chooseFiles(root.device.id)
                     }
+                    Button {
+                        focusable: true
+                        width: parent.width
+                        text: "Open Send window"
+                        Accessible.name: text
+                        onClicked: root.openSendWindow()
+                    }
+                    FileDropZone { width: parent.width; service: root.service; device: root.device }
                     SendSection { width: parent.width; service: root.service; foreground: Commons.Color.popups.text; fontFamily: Style.font.family }
                 }
                 ActivitySection { width: parent.width; visible: root.currentView === "Activity"; service: root.service }
-                Column {
-                    width: parent.width
-                    visible: root.currentView === "Appearance"
-                    spacing: Style.space(8)
-                    Button {
-                        focusable: true
-                        width: parent.width
-                        text: "Change bar icon"
-                        Accessible.name: text
-                        onClicked: { iconChooser.openForBar(root.device ? root.device.id : "", root.device ? root.device.type : "phone") }
-                    }
-                    Button {
-                        focusable: true
-                        width: parent.width
-                        text: "Change selected device icon and alias"
-                        Accessible.name: text
-                        enabled: !!root.device
-                        onClicked: { if (root.device) iconChooser.openForDevice(root.device.id, root.device.name, root.device.type) }
-                    }
-                    IconChooser {
-                        id: iconChooser
-                        width: parent.width
-                        store: root.service ? root.service.appearance : null
-                    }
-                    Text {
-                        width: parent.width
-                        visible: !root.device
-                        text: "Select a device in Devices first to change its icon or local name."
-                        textFormat: Text.PlainText
-                        wrapMode: Text.Wrap
-                        color: Commons.Color.popups.text
-                    }
-                }
                 DeviceSection {
                     id: deviceSection
                     visible: root.currentView === "Devices"
@@ -754,13 +739,15 @@ Panel {
                 }
 
                 NetworkOptions {
+                    id: networkOptions
                     width: parent.width
                     visible: root.currentView === "Devices"
+                    panel: root
                 }
                 BthControlCard {
                     width: parent.width
-                    visible: root.currentView === "Devices"
-                    panelOpened: root.opened
+                    visible: root.currentView === "Devices" && networkOptions.bthEnabled
+                    panelOpened: root.opened && root.currentView === "Devices" && networkOptions.bthEnabled
                     helperPath: root.getSetting("bthHelperPath", "") || (Quickshell.env("HOME") + "/.local/bin/remote-access-mode")
                     property string lastRouteStatus: ""
                     onStatusChanged: {
@@ -804,4 +791,16 @@ Panel {
             }
         }
     }
+    SettingsPanel {
+        id: preferencesWindow
+        panel: root
+        onReturnToPanelRequested: { root.currentView = "Devices"; root.open() }
+    }
+    SendWindow {
+        id: sendWindow
+        service: root.service
+        device: root.device
+        onReturnToPanelRequested: { root.currentView = "Devices"; root.open() }
+    }
+
 }

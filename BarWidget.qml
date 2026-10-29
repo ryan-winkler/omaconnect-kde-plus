@@ -58,6 +58,13 @@ BarWidget {
         if (panelLoader.item && panelLoader.item.open) panelLoader.item.open()
     }
 
+    function openSettings() {
+        if (panelLoader.item && panelLoader.item.openSettings) panelLoader.item.openSettings()
+    }
+    function openSendWindow() {
+        if (panelLoader.item && panelLoader.item.openSendWindow) panelLoader.item.openSendWindow()
+    }
+
     function close() {
         if (panelLoader.item && panelLoader.item.close) panelLoader.item.close()
     }
@@ -105,6 +112,8 @@ BarWidget {
         function hide(): void { root.close() }
         function toggle(): void { root.togglePanel() }
         function refresh(): void { if (root.service) root.service.refresh(true) }
+        function configure(): void { root.openSettings() }
+        function sendWindow(): void { root.openSendWindow() }
     }
 
     Loader {

@@ -40,6 +40,7 @@ Item {
     property alias activeOperation: controller.activeOperation
     property alias operationBusy: controller.operationBusy
     function chooseFiles(id) { return controller.chooseFiles(id) }
+    function stageDroppedFiles(id, urls) { return controller.stageDroppedFiles(id, urls) }
     function submitSelection() { return controller.submitSelection() }
     function cancelDraft() { return controller.cancelDraft() }
     function clearOperations() { return controller.clearOperations() }

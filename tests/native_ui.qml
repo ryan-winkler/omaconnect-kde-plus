@@ -108,9 +108,9 @@ ShellRoot {
             if(test.phase === 0 && (!test.desktopMode || panel.opened) && service.appearance.ready && !service.appearance.busy && service.devices.length === 2) {
                 test.check(Bridge.Bridge.service === service, "own-service bridge")
                 test.check(widget.service === service && panel.service === service, "bar and panel bridge fallback")
-                test.check(panel.viewNames.join(",") === "Devices,Send,Activity,Appearance", "all four views load")
-                test.click("Appearance")
-                test.check(panel.currentView === "Appearance", "Appearance tab action")
+                test.check(panel.viewNames.join(",") === "Devices,Send,Activity", "all three daily views load")
+                test.click("Settings")
+                test.check(panel.settingsWindow.visible, "dedicated settings window opens")
                 test.activeChooser = test.find(panel,function(object) { return typeof object.openForBar === "function" },[])
                 test.check(!!test.activeChooser,"panel icon chooser exists")
                 test.click("Change bar icon")
@@ -135,6 +135,8 @@ ShellRoot {
                 test.phase=4
             } else if(test.phase === 4 && !service.appearance.busy) {
                 test.check(service.displayName(service.devices[0]) === "Local phone", "device alias uses own metadata")
+                panel.settingsWindow.closeSettings()
+                panel.open()
                 test.click("Send")
                 test.check(panel.currentView === "Send", "Send tab action")
                 service.selectDevice("A")

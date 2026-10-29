@@ -78,3 +78,37 @@ toggles. Existing native owners retain those controls.
 Source: [Kathy Sierra, publisher overview](https://www.oreilly.com/library/view/badass-making-users/9781491919057/)
 and [KDE Connect features](https://kdeconnect.kde.org/). Native API details are
 checked against the installed version and KDE source, not inferred from marketing.
+
+## Owner follow-up: independent network choices and comparison installation
+
+Connection settings has independent saved visibility choices for Tailscale, BTH
+and other WireGuard profiles, with short instructions and official links. Optional
+sections default off. A hidden BTH section does not poll the helper. These switches
+do not change connection policy. Current owner installations explicitly show BTH
+and hide the other two, matching the existing setup.
+
+The owner explicitly requested both original and fork on both hosts for comparison.
+This permits two UI signal subscribers during that test. Both use the existing KDE
+daemon; the original stays installed/enabled and untouched. Keep ordinary migration
+advice to replace the UI after testing; do not turn comparison into a new daemon.
+The fork's Link icon and app-name tooltip distinguish it from the original.
+
+The default graphical portal file picker implements the request in
+[upstream issue #17](https://github.com/jitendradara12/omaconnect/issues/17).
+This is file selection for sending, distinct from browsing a remote filesystem.
+
+## Dedicated settings decision and file drop
+
+The [new 50-persona/RICE challenge](2026-10-29-settings-rice-personas.md) recommends
+continuing the dedicated four-domain native Settings window and native KDE handoff.
+Its hypothetical RICE comparison is 97.50/19.67/5.63 for current flow/full native
+control duplication/new module installer. These are declared planning assumptions,
+not measured adoption or votes. Native Plugin Settings has search and installed-
+module enable/config controls; a store/install action was not present in the
+inspected version. A specific future adapter can be reconsidered from task evidence.
+
+The Send view now offers a persistent managed Send window with copy-only native
+drop selection, the existing inspection/review lifecycle and explicit Send. This
+avoids losing the drop surface when the file manager receives focus. The default
+graphical portal chooser remains an equal selection path. No drop replaces a draft
+or redirects a frozen recipient.

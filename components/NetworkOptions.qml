@@ -8,38 +8,96 @@ import qs.Ui as Kit
 
 Column {
     id: root
+    required property var panel
     spacing: Style.space(6)
     property string message: ""
-    readonly property bool busy: opener.running
-    readonly property string helperPath: decodeURIComponent(Qt.resolvedUrl("../scripts/open_network_owner.py").toString().replace(/^file:\/\//, ""))
-
+    property bool configuration: false
+    readonly property bool busy: opener.running || preferences.running
+    readonly property bool tailscaleEnabled: valueFor("networkTailscaleEnabled")
+    readonly property bool bthEnabled: valueFor("networkBthEnabled")
+    readonly property bool wireguardEnabled: valueFor("networkWireguardEnabled")
+    readonly property string helperPath: localScript("open_network_owner.py")
+    readonly property var providers: [
+        {key: "networkTailscaleEnabled", label: "Tailscale", description: "Use your existing Tailscale app to connect. Save the other device's Tailscale IP under Manage saved addresses.", help: "https://tailscale.com/docs/how-to/quickstart"},
+        {key: "networkBthEnabled", label: "MikroTik Back to Home", description: "Use your existing BTH setup. Automatic / On / Off controls appear in Devices when the reviewed helper is available. Save the peer's BTH IP for rediscovery.", help: "https://manual.mikrotik.com/docs/network-management/cloud/back-to-home/"},
+        {key: "networkWireguardEnabled", label: "Other WireGuard profiles", description: "Use the manager that owns your existing profile to connect. The profiles button opens NetworkManager when installed. Save the peer's private IP for rediscovery.", help: "https://www.wireguard.com/quickstart/"}
+    ]
+    function localScript(name) {
+        return decodeURIComponent(Qt.resolvedUrl("../scripts/" + name).toString().replace(/^file:\/\//, ""))
+    }
+    function valueFor(key) { return !!(panel && panel.getSetting(key, false) === true) }
+    function savePreference(key, enabled) {
+        if (busy || !providers.some(function(p) { return p.key === key }) || typeof enabled !== "boolean") return
+        message = "Saving display setting…"
+        preferences.payload = JSON.stringify({key: key, enabled: enabled})
+        preferences.running = true
+    }
     function openOwner(owner) {
-        if (busy || ["tailscale", "wireguard"].indexOf(owner) < 0) return
+        if (busy || (owner === "tailscale" ? !tailscaleEnabled : owner === "wireguard" ? !wireguardEnabled : true)) return
         message = "Opening the existing network manager…"
         opener.command = ["/usr/bin/timeout", "5", "/usr/bin/python3", helperPath, owner]
         opener.running = true
     }
-    Text {
-        width: parent.width
-        text: "Tailscale · Back to Home · WireGuard"
-        textFormat: Text.PlainText
-        color: Commons.Color.popups.text
-        font.family: Style.font.family
-        font.pixelSize: Style.font.body
-        font.bold: true
-        wrapMode: Text.Wrap
+    function feedback(code, text, oversized) {
+        var result
+        try { result = !oversized ? JSON.parse(text) : null } catch (_) { result = null }
+        return result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length < 512
+            && (code === 0) === result.ok ? result.message : "Request was not confirmed. Check the saved setting and try again."
     }
-    Text {
+    Column {
         width: parent.width
-        text: "Use any existing connection, then save its peer IP under Manage saved addresses. Back to Home uses the reviewed controller below. Tailscale and other WireGuard profiles stay with their native managers."
-        textFormat: Text.PlainText
-        color: Commons.Color.popups.text
-        font.family: Style.font.family
-        font.pixelSize: Style.font.caption
-        wrapMode: Text.Wrap
+        visible: root.configuration
+        spacing: Style.space(8)
+        Text {
+            width: parent.width
+            text: "Show only the integrations you use. These switches show or hide controls; they do not connect, disconnect or install a VPN."
+            textFormat: Text.PlainText
+            color: Commons.Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.Wrap
+        }
+        Repeater {
+            model: root.providers
+            delegate: Column {
+                required property var modelData
+                width: parent.width
+                spacing: Style.space(4)
+                Kit.Toggle {
+                    width: parent.width
+                    label: "Show " + modelData.label
+                    Accessible.role: Accessible.CheckBox
+                    Accessible.name: label
+                    Accessible.checkable: true
+                    Accessible.checked: checked
+                    enabled: !root.busy
+                    foreground: Commons.Color.popups.text
+                    checked: root.valueFor(modelData.key)
+                    onClicked: root.savePreference(modelData.key, !root.valueFor(modelData.key))
+                }
+                Text {
+                    width: parent.width
+                    text: modelData.description
+                    textFormat: Text.PlainText
+                    color: Commons.Color.popups.text
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.caption
+                    wrapMode: Text.Wrap
+                }
+                Kit.Button {
+                    width: parent.width
+                    text: modelData.label + " help ↗"
+                    Accessible.name: "Open official " + modelData.label + " help in your browser"
+                    focusable: true
+                    foreground: Commons.Color.popups.text
+                    onClicked: Qt.openUrlExternally(modelData.help)
+                }
+            }
+        }
     }
     Kit.Button {
         width: parent.width
+        visible: !root.configuration && root.tailscaleEnabled
         focusable: true
         foreground: Commons.Color.popups.text
         text: "Open Tailscale panel"
@@ -49,6 +107,7 @@ Column {
     }
     Kit.Button {
         width: parent.width
+        visible: !root.configuration && root.wireguardEnabled
         focusable: true
         foreground: Commons.Color.popups.text
         text: "Open WireGuard profiles"
@@ -67,6 +126,23 @@ Column {
         wrapMode: Text.Wrap
     }
     Process {
+        id: preferences
+        property string payload: ""
+        property bool oversized: false
+        command: ["/usr/bin/timeout", "5", "/usr/bin/python3", root.localScript("network_preferences.py")]
+        stdinEnabled: true
+        onStarted: { oversized = false; write(payload); stdinEnabled = false }
+        stdout: StdioCollector {
+            id: preferenceReply
+            waitForEnd: false
+            onDataChanged: if (text.length > 8192) { preferences.oversized = true; preferences.running = false }
+        }
+        onExited: function(code) {
+            root.message = root.feedback(code, preferenceReply.text, oversized)
+            stdinEnabled = true
+        }
+    }
+    Process {
         id: opener
         property bool oversized: false
         onStarted: oversized = false
@@ -75,11 +151,6 @@ Column {
             waitForEnd: false
             onDataChanged: if (text.length > 8192) { opener.oversized = true; opener.running = false }
         }
-        onExited: function(code) {
-            var result
-            try { result = !oversized ? JSON.parse(reply.text) : null } catch (_) { result = null }
-            root.message = result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length < 512
-                ? result.message : "Network manager unavailable. Use your existing VPN app."
-        }
+        onExited: function(code) { root.message = root.feedback(code, reply.text, oversized) }
     }
 }

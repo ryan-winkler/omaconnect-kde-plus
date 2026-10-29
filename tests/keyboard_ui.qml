@@ -114,7 +114,7 @@ ShellRoot {
         width: 500
         height: 900
         Item { id: anchor; width: 26; height: 26 }
-        Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false}) }
+        Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false, networkTailscaleEnabled:true, networkBthEnabled:true, networkWireguardEnabled:true}) }
         Item { TestEvent { id: events } }
     }
     Timer {
@@ -138,7 +138,7 @@ ShellRoot {
                 test.key(Qt.Key_Tab)
                 test.phase = 2
             } else if (test.phase === 2) {
-                var tabs = test.find(panel, function(object) { return "itemAt" in object && "count" in object && object.count === 4 }, [])
+                var tabs = test.find(panel, function(object) { return "itemAt" in object && "count" in object && object.count === panel.viewNames.length }, [])
                 if (!test.check(!!tabs && test.isWithin(preview.activeFocusItem, tabs), "Tab enters view tabs from device catcher")) return
                 test.check(fakeBar.switches === 0, "Tab stays inside this panel")
                 test.phase = 3
@@ -154,11 +154,7 @@ ShellRoot {
             } else if (test.phase === 42) {
                 if (!test.check(panel.currentView === "Activity", "keyboard activates Activity view")) return
                 test.phase = 5
-            } else if (test.phase === 5 && test.seek(test.named("Appearance"))) {
-                test.key(Qt.Key_Space)
-                test.phase = 6
-            } else if (test.phase === 6) {
-                if (!test.check(panel.currentView === "Appearance", "keyboard activates Appearance view")) return
+            } else if (test.phase === 5) {
                 test.phase = 10
             } else if (test.phase === 10 && test.seek(test.named("Devices"))) {
                 test.key(Qt.Key_Space)
@@ -180,13 +176,6 @@ ShellRoot {
                 test.phase = 15
             } else if (test.phase === 15 && test.seek(test.named("All KDE Connect features"))) {
                 test.check(true, "Tab reaches all native KDE features")
-                test.phase = 151
-            } else if (test.phase === 151 && test.seek(test.named("Feature support details"))) {
-                test.key(Qt.Key_Return)
-                test.phase = 152
-            } else if (test.phase === 152 && test.seek(test.named("Hide feature support details"))) {
-                test.check(true, "keyboard opens native feature details")
-                test.key(Qt.Key_Return)
                 test.phase = 153
             } else if (test.phase === 153 && test.seek(test.named("Open Tailscale panel"))) {
                 test.check(true, "Tab reaches native Tailscale owner route without launching")

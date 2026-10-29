@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Controls as Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
@@ -8,7 +9,12 @@ Column {
     id: root
     required property var service
     readonly property var device: service ? service.selectedDevice : null
-    property bool expanded: false
+    property bool configuration: false
+    property alias searchText: featureSearch.text
+    readonly property var filteredPluginIds: {
+        var query = featureSearch.text.trim().toLowerCase()
+        return pluginIds.filter(function(id) { return !query || id.toLowerCase().indexOf(query) !== -1 || root.taskName(id).toLowerCase().indexOf(query) !== -1 })
+    }
     readonly property var pluginIds: device && device.pluginIds ? device.pluginIds : []
     // IDs remain visible even when this version has no friendly task label.
     function taskName(id) {
@@ -27,7 +33,7 @@ Column {
             kdeconnect_pausemusic: "Pause media during calls", kdeconnect_systemvolume: "System volume",
             kdeconnect_remotesystemvolume: "Volume controls", kdeconnect_shareinputdevices: "Share input devices"
         }
-        return tasks[id] || "Native KDE Connect feature"
+        return tasks[id] || id
     }
     width: parent ? parent.width : 0
     spacing: Style.space(6)
@@ -46,46 +52,91 @@ Column {
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
+        font.family: Style.font.family
         font.pixelSize: Style.font.caption
     }
-    Kit.Button {
+    Text {
         width: parent.width
-        text: root.expanded ? "Hide feature support details" : "Feature support details"
-        Accessible.name: text
-        focusable: true
-        enabled: !!root.device
-        onClicked: root.expanded = !root.expanded
+        visible: root.configuration && (!root.device || !root.device.paired || !root.device.reachable)
+        text: !root.device ? "Choose a device in Devices first. KDE Connect can still open its device list."
+            : "Native Plugin Settings appears when this device is paired and reachable. Connect it, then open KDE Connect."
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: Commons.Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.caption
     }
     Column {
         width: parent.width
-        visible: root.expanded && !!root.device
-        spacing: Style.space(6)
+        visible: root.configuration
+        spacing: Style.space(8)
         Text {
             width: parent.width
-            text: "Supported means compatible with this device. Loaded means active in the local daemon now. Neither proves permission or that a task will succeed. Change enabled features in native Plugin settings. If the older settings app opens, select your device there."
+            text: "Native plugins and permissions"
+            textFormat: Text.PlainText
+            color: Commons.Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.body
+            font.bold: true
+        }
+        Text {
+            width: parent.width
+            text: "KDE Connect supplies its native modules with the installed package. Open Plugin settings there to enable or configure them. This is separate from installing Omarchy bar plugins."
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
+            font.family: Style.font.family
             font.pixelSize: Style.font.caption
         }
         Text {
             width: parent.width
-            visible: root.pluginIds.length === 0
-            text: "No supported feature list is available. Open KDE Connect to inspect this device."
+            text: "Search device features"
+            textFormat: Text.PlainText
+            color: Commons.Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.bodySmall
+        }
+        Kit.TextField {
+            id: featureSearch
+            objectName: "native-feature-search"
+            width: parent.width
+            placeholderText: "Task name or plugin ID"
+            foreground: Commons.Color.popups.text
+            Accessible.name: "Search device features"
+            selectByMouse: true
+            maximumLength: 128
+        }
+        Text {
+            width: parent.width
+            text: root.pluginIds.length === 0 ? "No feature list was reported. Open KDE Connect to inspect the selected device."
+                : root.filteredPluginIds.length === 0 ? "No matching features. Clear the search or open native Plugin settings."
+                : "Matching reported features: " + root.filteredPluginIds.length + " / " + root.pluginIds.length
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+        }
+        Text {
+            width: parent.width
+            text: "Supported describes compatibility. Loaded describes the local daemon now. Neither proves that a feature is enabled or permitted."
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: Commons.Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
         }
         Repeater {
-            model: root.pluginIds
+            model: root.filteredPluginIds
             delegate: Text {
                 required property string modelData
                 width: parent.width
                 text: root.taskName(modelData) + "\n" + modelData + " · Supported · "
-                    + (!root.device.loadedKnown ? "Loading status unknown" : root.device.loadedPluginIds.indexOf(modelData) !== -1 ? "Loaded" : "Not loaded")
+                    + (!root.device || !root.device.loadedKnown ? "Loading status unknown" : (root.device.loadedPluginIds || []).indexOf(modelData) !== -1 ? "Loaded" : "Not loaded")
                 textFormat: Text.PlainText
                 wrapMode: Text.WrapAnywhere
                 color: Commons.Color.popups.text
+                font.family: Style.font.family
                 font.pixelSize: Style.font.caption
             }
         }

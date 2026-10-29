@@ -131,6 +131,7 @@ else: raise SystemExit(99)
         owner_calls = [call for call in calls if call['tool']=='omarchy-shell']
         self.assertEqual(len(owner_calls), 1, calls)
         self.assertFalse(any(call['tool']=='nmcli' for call in calls), calls)
+        self.assertFalse(any(call['tool']=='remote-access-mode' for call in calls), 'Hidden BTH must not poll')
 
 
 if __name__ == '__main__':
