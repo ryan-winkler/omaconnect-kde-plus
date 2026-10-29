@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Qt5Compat.GraphicalEffects
+import qs.Ui as Kit
 import "../Appearance.js" as Appearance
 
 Item {
@@ -13,12 +14,16 @@ Item {
     property int iconSize: 20
     readonly property var normalized: Appearance.normalizeIcon(icon,false)
     readonly property bool fontMissing: normalized.mode === "glyph" && !!normalized.font && Qt.fontFamilies().indexOf(normalized.font) < 0
-    readonly property string themedSource: normalized.mode === "theme" || normalized.mode === "preset" ? Quickshell.iconPath(Appearance.themeFor(normalized),true) : ""
+    property string themedSource: normalized.mode === "theme" || normalized.mode === "preset" ? Quickshell.iconPath(Appearance.themeFor(normalized),true) : ""
     readonly property string sourceUrl: normalized.mode === "image" && /^file:\/\//.test(assetBaseUrl) ? assetBaseUrl + normalized.value : themedSource
-    readonly property bool useGlyph: normalized.mode === "glyph" && !fontMissing
+    readonly property string presetFont: Appearance.symbolFont(Qt.fontFamilies(),fontFamily)
+    readonly property bool imageUnavailable: !sourceUrl || image.status === Image.Error || image.status === Image.Null
+    readonly property bool usePresetGlyph: normalized.mode === "preset" && imageUnavailable && presetFont !== ""
+    readonly property bool useGlyph: (normalized.mode === "glyph" && !fontMissing) || usePresetGlyph
+    readonly property string renderedGlyph: usePresetGlyph ? Appearance.glyphFor(normalized) : useGlyph ? normalized.value : ""
     readonly property bool imageReady: image.status === Image.Ready
-    readonly property bool fallback: !useGlyph && (!sourceUrl || image.status === Image.Error || image.status === Image.Null)
-    readonly property string warning: fontMissing ? qsTr("Font unavailable. Phone is shown.") : normalized.mode === "image" && fallback ? qsTr("Imported image is unavailable. Phone is shown.") : normalized.mode === "theme" && fallback ? qsTr("Theme icon is unavailable. Phone is shown.") : ""
+    readonly property bool fallback: !useGlyph && imageUnavailable
+    readonly property string warning: fontMissing ? qsTr("Font unavailable. Phone is shown.") : normalized.mode === "image" && fallback ? qsTr("Imported image is unavailable. Phone is shown.") : normalized.mode === "theme" && fallback ? qsTr("Theme icon is unavailable. Phone is shown.") : normalized.mode === "preset" && fallback ? qsTr("Icon fonts are unavailable. Phone is shown.") : ""
     implicitWidth: iconSize
     implicitHeight: iconSize
     Accessible.role: Accessible.StaticText
@@ -27,7 +32,7 @@ Item {
     Image {
         id: image
         anchors.fill: parent
-        source: root.useGlyph ? "" : root.sourceUrl
+        source: root.normalized.mode === "glyph" ? "" : root.sourceUrl
         sourceSize.width: Math.max(1,root.width * 2)
         sourceSize.height: Math.max(1,root.height * 2)
         fillMode: Image.PreserveAspectFit
@@ -41,18 +46,15 @@ Item {
         color: root.foreground
         visible: root.imageReady && root.normalized.render !== "color"
     }
-    Text {
-        textFormat: Text.PlainText
+    Kit.OpticalGlyph {
+        objectName: "appearance-glyph"
         anchors.fill: parent
         visible: root.useGlyph
-        text: root.useGlyph ? root.normalized.value : ""
-
+        text: root.renderedGlyph
         color: root.foreground
-        font.family: root.normalized.font || root.fontFamily
-        font.pixelSize: Math.max(1,root.height)
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-        fontSizeMode: Text.Fit
+        fontFamily: root.usePresetGlyph ? root.presetFont : root.normalized.font || root.fontFamily
+        fontSize: Math.max(1,root.height)
+        paintedSize: Math.max(1,Math.min(root.width,root.height))
     }
     // A built-in phone outline also works after a missing font/theme change.
     Rectangle {

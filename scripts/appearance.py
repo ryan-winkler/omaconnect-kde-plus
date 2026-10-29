@@ -268,35 +268,43 @@ def asset_warnings(snapshot, assets):
     return list(dict.fromkeys(warnings)), invalid
 
 
+# Required defaults stay discoverable even when other themes exhaust the bank.
+PRESET_THEME_NAMES = {'smartphone-symbolic', 'computer-symbolic', 'laptop-symbolic', 'insert-link-symbolic', 'document-send-symbolic'}
+
+
 def theme_library():
-    # Bounded inventory only; QML requests previews from Qt's installed theme.
-    roots = [Path.home()/'.local/share/icons', Path('/usr/share/icons'), Path('/usr/share/pixmaps')]
-    names = set()
+    # Inventory candidates only. QML verifies each name through the active Qt theme.
+    data_home = Path(os.environ.get('XDG_DATA_HOME', str(Path.home()/'.local/share')))
+    data_dirs = os.environ.get('XDG_DATA_DIRS', '/usr/local/share:/usr/share').split(':')[:16]
+    roots = [data_home/'icons', Path.home()/'.icons']
+    roots += [Path(value)/'icons' for value in data_dirs if value.startswith('/') and len(value) <= 4096]
+    roots.append(Path('/usr/share/pixmaps'))
+    names = set(PRESET_THEME_NAMES)
     visited = 0
-    for root in roots:
+    for root in dict.fromkeys(roots):
         if not root.is_dir():
             continue
         for directory, children, files in os.walk(root, followlinks=False):
             visited += 1
             if visited >= 30000:
-                return sorted(names)
+                return sorted(names), True
             children.sort()
             for filename in sorted(files):
                 visited += 1
-                if filename.endswith(('.svg','.png')) and '-symbolic.' in filename:
+                if filename.lower().endswith(('.svg', '.png')):
                     name = Path(filename).stem
                     if re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', name):
                         names.add(name)
                 if visited >= 30000 or len(names) >= 1024:
-                    return sorted(names)
-    return sorted(names)
+                    return sorted(names), True
+    return sorted(names), False
 
 
 def main(command, request):
     config, assets = paths()
     result = {'ok': True, 'snapshot': default(), 'asset_dir': str(assets), 'warnings': []}
     if command == 'library':
-        result['theme_icons'] = theme_library()
+        result['theme_icons'], result['library_truncated'] = theme_library()
         return result
     if command == 'import':
         source = request.get('path')

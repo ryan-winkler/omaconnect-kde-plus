@@ -3,8 +3,9 @@
 An isolated Omarchy UI fork of [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect).
 
 **Candidate version: 0.1.0-alpha.1.** The fork adds one place for known devices,
-file submission, appearance and the existing home-access controller. KDE Connect
-owns pairing and transfers. Your existing BTH helper owns VPN policy.
+file submission, appearance and network access through **Tailscale, MikroTik Back
+to Home, or WireGuard**. KDE Connect owns pairing and transfers. Existing native
+network tools retain connection ownership; the BTH helper retains its policy.
 
 ## First release
 
@@ -17,10 +18,13 @@ owns pairing and transfers. Your existing BTH helper owns VPN policy.
 - **Honest activity:** Each batch keeps its reviewed recipient. Changing the
   selected device does not redirect it. “Request accepted” means KDE accepted
   the command; delivery remains unknown. Timeout and cancellation remain explicit.
-- **Home access:** View the existing helper’s Automatic / On / Off controls.
+- **Network access:** Find Tailscale, MikroTik Back to Home and generic WireGuard
+  in one labelled section. Use the existing native owner for each service.
+- **Home access:** View the existing BTH helper’s Automatic / On / Off controls.
   Selected mode and actual interface state are separate. Missing or invalid
   status disables unsafe actions. No VPN keys or profiles are imported.
-- **Private addresses:** Approve private IP literals for a specific KDE identity.
+- **Private addresses:** Approve LAN, BTH, WireGuard or Tailscale IP literals for a
+  specific KDE identity, including Tailscale’s CGNAT range for that source.
   Preserve existing KDE addresses. Opt in to rediscovery while the panel is open;
   route events are debounced and failures back off. An IP does not prove identity.
 - **Syncthing links:** Explicitly associate two full device IDs in local metadata
@@ -29,8 +33,13 @@ owns pairing and transfers. Your existing BTH helper owns VPN policy.
 Quick Share, router rosters, new VPN setup and inline Syncthing pause/resume are
 later work. This fork does not implement the separate Banatik/UniFi collector.
 
-Existing pairing, battery, media playback and player switching, remote commands,
-clipboard, text and SMS entry points remain available through KDE Connect.
+**All KDE Connect features** opens the selected peer in the native app, including
+its Plugin Settings. Common actions stay in the bar; the full returned native
+plugin inventory is available on demand. Supported and loaded states stay distinct.
+KDE Connect keeps permissions, plugin configuration and its native capabilities,
+including pairing, battery, notifications, file browsing, media playback and
+player switching, remote commands,
+clipboard, text, SMS and remote input where the peer/platform supports them.
 
 ## Requirements
 
@@ -55,6 +64,12 @@ The runner uses temporary state, fake providers and private D-Bus sessions.
 Native offscreen tests run when Quickshell is available. The report identifies
 skipped prerequisites. A passing fixture is not proof of real-device delivery,
 an offsite VPN, a mapped desktop or assistive-technology acceptance.
+
+Contributors: start with [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[icon source/storage guide](docs/ICONS.md).
+
+Read the [current product/spec addendum](docs/2026-10-29-product-addendum.md) for
+native KDE features, all three network services and user-success acceptance.
 
 See [verification evidence](docs/VERIFICATION.md), [implementation scope](docs/IMPLEMENTATION.md),
 [provider contracts](docs/CONTRACTS.md) and [upstream lineage](FORK.md).

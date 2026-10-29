@@ -12,6 +12,7 @@ Item {
     property string helperPath: Qt.resolvedUrl("scripts/appearance.py").toString().replace(/^file:\/\//, "")
     property var snapshot: ({schema_version:1,bar_icon:Appearance.phone(),devices:{}})
     property var themeIcons: []
+    property bool libraryTruncated: false
     property var invalidAssets: []
     property string assetBaseUrl: ""
     property string error: ""
@@ -83,7 +84,10 @@ Item {
                     root.fail(result.error || "Appearance could not be saved. Existing metadata was preserved.");
                     return;
                 }
-                if (root.currentAction === "library") root.themeIcons = (result.theme_icons || []).filter(function(name) { return Quickshell.iconPath(name,true) !== ""; });
+                if (root.currentAction === "library") {
+                    root.themeIcons = (result.theme_icons || []).filter(function(name) { return Quickshell.iconPath(name,true) !== ""; });
+                    root.libraryTruncated = result.library_truncated === true;
+                }
                 else {
                     root.snapshot = result.snapshot;
                     root.warnings = result.warnings || [];

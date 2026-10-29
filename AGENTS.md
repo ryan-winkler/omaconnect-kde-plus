@@ -20,3 +20,6 @@ is part of automated tests. Run focused checks, then the full suite before commi
 
 Subagents own only their assigned files. The parent integrates shared files and
 commits after reviewing the changes. Do not overwrite another agent's edits.
+
+For contributions, start with CONTRIBUTING.md. docs/ICONS.md explains icon
+sources, resolver ownership, private storage and the preset parity check.

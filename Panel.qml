@@ -32,6 +32,7 @@ Panel {
     readonly property bool networkVisible: false
 
     property bool addressesExpanded: false
+    property bool syncthingExpanded: false
     property string currentView: "Devices"
     readonly property var viewNames: ["Devices", "Send", "Activity", "Appearance"]
     onOpenedChanged: if (service) service.panelOpened = opened
@@ -581,9 +582,9 @@ Panel {
                 else root.close()
             }
             onTabRequested: function(direction) {
-                if (root.bar && typeof root.bar.switchPanelFrom === "function") {
-                    root.bar.switchPanelFrom(root.barIdentity, direction)
-                }
+                // Enter the form's normal Tab chain; all daily controls must be reachable.
+                var entry = viewTabs.currentItem || viewTabs
+                entry.forceActiveFocus(direction < 0 ? Qt.BacktabFocusReason : Qt.TabFocusReason)
             }
             onTextKey: function(value) {
                 if (root.activeComposer !== "none") return
@@ -648,6 +649,8 @@ Panel {
                     width: parent.width
                     currentIndex: root.viewNames.indexOf(root.currentView)
                     Accessible.name: "OmaConnect views"
+                    Keys.onDownPressed: if (root.currentView === "Devices") keyCatcher.forceActiveFocus()
+                    Keys.onEscapePressed: root.close()
                     Repeater {
                         model: root.viewNames
                         TabButton {
@@ -664,7 +667,8 @@ Panel {
                     spacing: Style.space(8)
                     Text {
                         width: parent.width
-                        text: root.device ? "Selected: " + root.deviceName + "\nKDE ID: " + root.device.id : "Choose a device in Devices first."
+                        text: root.service && root.service.draftTarget ? "Reviewed recipient: " + root.service.draftTarget.peerName + "\nKDE ID: " + root.service.draftTarget.peerId
+                            : root.device ? "Selected: " + root.deviceName + "\nKDE ID: " + root.device.id : "Choose a device in Devices first."
                         textFormat: Text.PlainText
                         wrapMode: Text.WrapAnywhere
                         color: Commons.Color.popups.text
@@ -704,7 +708,14 @@ Panel {
                         width: parent.width
                         store: root.service ? root.service.appearance : null
                     }
-                    SyncthingLinkSection { width: parent.width; service: root.service }
+                    Text {
+                        width: parent.width
+                        visible: !root.device
+                        text: "Select a device in Devices first to change its icon or local name."
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        color: Commons.Color.popups.text
+                    }
                 }
                 DeviceSection {
                     id: deviceSection
@@ -716,6 +727,12 @@ Panel {
                     id: actionToolbar
                     visible: root.currentView === "Devices"
                     panel: root
+                }
+
+                NativeFeaturesSection {
+                    width: parent.width
+                    visible: root.currentView === "Devices"
+                    service: root.service
                 }
 
                 ComposerSection {
@@ -736,6 +753,10 @@ Panel {
                     panel: root
                 }
 
+                NetworkOptions {
+                    width: parent.width
+                    visible: root.currentView === "Devices"
+                }
                 BthControlCard {
                     width: parent.width
                     visible: root.currentView === "Devices"
@@ -761,6 +782,19 @@ Panel {
                     visible: root.currentView === "Devices" && root.addressesExpanded
                     discovery: root.service ? root.service.discovery : null
                     peerId: root.device ? root.device.id : ""
+                }
+                Button {
+                    focusable: true
+                    width: parent.width
+                    visible: root.currentView === "Devices"
+                    text: root.syncthingExpanded ? "Hide Syncthing link" : "Link Syncthing device"
+                    Accessible.name: text
+                    onClicked: root.syncthingExpanded = !root.syncthingExpanded
+                }
+                SyncthingLinkSection {
+                    width: parent.width
+                    visible: root.currentView === "Devices" && root.syncthingExpanded
+                    service: root.service
                 }
                 NetworkSection {
                     id: networkSection

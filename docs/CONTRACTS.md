@@ -31,6 +31,10 @@ Imported PNG/SVG is at most 1 MiB and 512×512. Active/external SVG, animation,
 recursive reuse, invalid PNG structure and unsafe files are rejected. Hash-named
 assets are checked on load. Missing/rejected assets show Phone with a warning.
 
+The installed-icon inventory includes a `library_truncated` boolean and at most
+1,024 candidate names. The UI resolves them through the active Qt theme; presence
+in the inventory alone is not an availability claim. See [icon sources](ICONS.md).
+
 ## File chooser and submission
 
 `scripts/pick_file.sh` runs `portal_files.py choose`. A normal FileChooser portal
@@ -76,7 +80,9 @@ change NM directly, enroll profiles or prove a handshake/service connection.
 
 `python3 scripts/manage_addresses.py` receives `{"changes":[...]}`. Batch maximum:
 32; metadata/candidate maximum: 256 / 256 KiB. Entries require `peer_id`, a private
-IP literal, source manual/bth/wireguard and explicit approval. BTH IPv6 is disabled
+IP literal, source manual/bth/wireguard/tailscale and explicit approval. Tailscale
+provenance additionally permits IPv4 100.64.0.0/10. Other sources still reject that
+range; it is an address hint, not an authenticated Tailscale identity. BTH IPv6 is disabled
 under the current policy. No hostnames, subnets, scans, automatic pairing or trust
 from an address is accepted.
 
@@ -99,3 +105,20 @@ The fixed `omarchy-shell shell summon io.github.ilyazar.syncthing {}` call must
 return `ok` before the UI reports it opened. A missing plugin, unknown response or
 failed call remains unavailable. No API key, CoreProcess or raw owner object is
 loaded. Inline status and device actions remain deferred.
+
+## Native feature visibility and network owners
+
+KDE native plugin discovery preserves bounded safe IDs instead of a quick-action
+whitelist. `pluginIds` is supported metadata. Optional `loadedPluginIds` plus
+`loadedKnown` report the daemon's runtime list. Neither means an enabled setting
+or granted phone permission. Failed metadata reads remain unknown. Quick actions
+must use the matching sender interface, not a receiver plugin with a similar name.
+The selected-peer native route passes only a validated device ID to
+`kdeconnect-app --device`; older settings frontends open the device list.
+
+Network options delegate Tailscale to its existing Omarchy panel and generic
+WireGuard profiles to the installed NetworkManager editor. Launch requests use
+fixed arguments and bounded feedback. They do not install, connect, copy keys,
+choose a profile or introduce a second policy writer. BTH mode control remains
+on the reviewed helper contract above. No native-owner launch is a reachability
+receipt. See the network coverage audit for exact first-release limits.

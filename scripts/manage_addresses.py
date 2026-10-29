@@ -26,6 +26,8 @@ BUSCTL = "/usr/bin/busctl"
 DEST = "org.kde.kdeconnect"
 OBJECT = "/modules/kdeconnect"
 INTERFACE = "org.kde.kdeconnect.daemon"
+SOURCES = ("manual", "bth", "wireguard", "tailscale")
+TAILSCALE_IPV4 = ipaddress.ip_network("100.64.0.0/10")
 PRIVATE = tuple(ipaddress.ip_network(n) for n in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7"))
 
 
@@ -46,7 +48,7 @@ def private_address(value, host_route=False, source="manual"):
             address = ipaddress.ip_address(value)
     except ValueError:
         raise AddressError("address-invalid") from None
-    if address.is_loopback or address.is_link_local or address.is_multicast or address.is_unspecified or not any(address.version == n.version and address in n for n in PRIVATE):
+    if address.is_loopback or address.is_link_local or address.is_multicast or address.is_unspecified or not (any(address.version == n.version and address in n for n in PRIVATE) or (source == "tailscale" and address.version == 4 and address in TAILSCALE_IPV4)):
         raise AddressError("address-not-private")
     if source == "bth" and address.version == 6:
         raise AddressError("bth-ipv6-disabled")
@@ -71,7 +73,7 @@ def changes_from(request):
             raise AddressError("request-invalid")
         op = item["op"]
         source = item.get("source", "manual")
-        if source not in ("manual", "bth", "wireguard"):
+        if source not in SOURCES:
             raise AddressError("source-invalid")
         address = private_address(item.get("address"), source=source)
         peer = peer_id(item.get("peer_id"))
@@ -161,7 +163,7 @@ def load_metadata(directory):
         rows = document["addresses"]
         seen = set()
         for row in rows:
-            if not isinstance(row, dict) or set(row) != {"peer_id", "address", "source", "auto_discover", "manual_baseline"} or row["source"] not in ("manual", "bth", "wireguard") or type(row["auto_discover"]) is not bool or type(row["manual_baseline"]) is not bool:
+            if not isinstance(row, dict) or set(row) != {"peer_id", "address", "source", "auto_discover", "manual_baseline"} or row["source"] not in SOURCES or type(row["auto_discover"]) is not bool or type(row["manual_baseline"]) is not bool:
                 raise ValueError()
             key = (peer_id(row["peer_id"]), private_address(row["address"], source=row["source"]))
             if key in seen:

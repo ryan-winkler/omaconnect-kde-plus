@@ -307,6 +307,9 @@ Item {
         if (parts.length < 9 || parts[0] !== "DEVICE") return null
         var plugins = String(parts[8] || "").split(",")
         function hasPlugin(name) { return plugins.indexOf(name) !== -1 }
+        plugins = plugins.filter(function(id) { return /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(id) }).slice(0, 256)
+        var loadedKnown = parts.length > 15 && parts[15] === "true"
+        var loadedPlugins = loadedKnown ? String(parts[14] || "").split(",").filter(function(id) { return /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(id) }).slice(0, 256) : []
         var netType = parts.length > 9 ? String(parts[9] || "").trim() : ""
         var netStrengthRaw = parts.length > 10 ? String(parts[10] || "").trim() : ""
         var netStrength = /^\d+$/.test(netStrengthRaw) ? Number(netStrengthRaw) : -1
@@ -324,6 +327,9 @@ Item {
             pairRequested: parts.length > 11 && parts[11] === "true",
             pairRequestedByPeer: parts.length > 12 && parts[12] === "true",
             verificationKey: parts.length > 13 ? String(parts[13] || "").trim() : "",
+            pluginIds: plugins,
+            loadedPluginIds: loadedPlugins,
+            loadedKnown: loadedKnown,
             capabilities: {
                 battery: hasPlugin("kdeconnect_battery"),
                 ping: hasPlugin("kdeconnect_ping"),
@@ -331,10 +337,10 @@ Item {
                 text: hasPlugin("kdeconnect_share"),
                 clipboard: hasPlugin("kdeconnect_clipboard"),
                 file: hasPlugin("kdeconnect_share"),
-                commands: hasPlugin("kdeconnect_runcommand"),
+                commands: hasPlugin("kdeconnect_remotecommands"),
                 network: hasPlugin("kdeconnect_connectivity_report"),
                 sms: hasPlugin("kdeconnect_sms"),
-                media: hasPlugin("kdeconnect_mprisremote") || hasPlugin("kdeconnect_mpriscontrol") || hasPlugin("kdeconnect_mpris"),
+                media: hasPlugin("kdeconnect_mprisremote"),
                 pair: true
             }
         }
@@ -1128,6 +1134,7 @@ Item {
         actionMessage = "Opening KDE Connect"
         actionError = ""
         appProcess.command = ["bash", getAppScriptPath()]
+        if (selectedDeviceId) appProcess.command = appProcess.command.concat([selectedDeviceId])
         appProcess.running = true
         return true
     }
@@ -1491,7 +1498,7 @@ Item {
         onExited: function(code) {
             if (code === 0) {
                 root.actionState = "accepted"
-                root.actionMessage = "KDE Connect opened"
+                root.actionMessage = "KDE Connect launch requested"
                 root.actionError = ""
             } else {
                 root.actionState = "failed"

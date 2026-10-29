@@ -4,8 +4,8 @@ var MAX_BYTES = 262144
 var MAX_CANDIDATES = 256
 var MAX_BATCH = 32
 var ERRORS = {
-    "address-invalid": "Enter one private IP address. Subnets and hostnames are not accepted.",
-    "address-not-private": "Use a private IPv4 or IPv6 address.",
+    "address-invalid": "Enter one LAN or VPN IP address. Subnets and hostnames are not accepted.",
+    "address-not-private": "Use a private IP, or select Tailscale for its 100.64.0.0/10 addresses.",
     "bth-ipv6-disabled": "BTH IPv6 addresses are disabled by the current policy.",
     "approval-required": "Approve this address before registration.",
     "peer-invalid": "Select the KDE device identity for this local address record.",
@@ -35,7 +35,7 @@ function parse(raw) {
         var r = data.addresses[i]
         if (!r || typeof r.peer_id !== "string" || r.peer_id.length > 256
             || typeof r.address !== "string" || r.address.length > 80
-            || ["manual", "bth", "wireguard"].indexOf(r.source) < 0
+            || ["manual", "bth", "wireguard", "tailscale"].indexOf(r.source) < 0
             || typeof r.auto_discover !== "boolean" || typeof r.manual_baseline !== "boolean"
             || typeof r.registered !== "boolean") return null
         rows.push({peer_id: r.peer_id, address: r.address, source: r.source,

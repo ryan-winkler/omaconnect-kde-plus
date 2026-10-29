@@ -11,11 +11,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class NativeUi(unittest.TestCase):
+    qml_fixture = 'native_ui.qml'
+    force_offscreen = False
+
+    def configure_fixture(self, fixture, plugin, home, fake_bin):
+        """Allow another isolated scenario to replace only its temporary doubles."""
+
     @unittest.skipUnless(shutil.which('quickshell') and shutil.which('bwrap') and shutil.which('dbus-run-session'), 'native isolated runtime absent')
     def test_actual_service_bar_panel_and_controls(self):
         with tempfile.TemporaryDirectory(prefix='omaconnect-native-') as temporary:
             fixture = Path(temporary)
-            desktop = os.environ.get('OMACONNECT_DESKTOP_VALIDATION') == '1'
+            desktop = not self.force_offscreen and os.environ.get('OMACONNECT_DESKTOP_VALIDATION') == '1'
             wayland = Path(os.environ.get('XDG_RUNTIME_DIR','')) / os.environ.get('WAYLAND_DISPLAY','')
             if desktop and not wayland.is_socket(): self.fail('Current Wayland socket is unavailable')
             plugin = fixture / 'plugin'
@@ -44,7 +50,7 @@ Item {
             if desktop:
                 (ui/'KeyboardPanel.qml').unlink()
                 (ui/'KeyboardPanel.qml').symlink_to('/usr/share/omarchy/shell/Ui/KeyboardPanel.qml')
-            shutil.copy(ROOT / 'tests/native_ui.qml', fixture / 'shell.qml')
+            shutil.copy(ROOT / 'tests' / self.qml_fixture, fixture / 'shell.qml')
             shutil.copy(ROOT / 'tests/native_ui_session.py', fixture / 'session.py')
             for name, content in [('one', b'abc'), ('two', b'defg'), ('slow', b'delay')]:
                 (fixture / name).write_bytes(content)
@@ -78,6 +84,7 @@ else: raise SystemExit(99)
             (home/'.local/bin').mkdir(parents=True)
             (home/'.local/bin/remote-access-mode').symlink_to(fake_bin/'remote-access-mode')
             runtime = fixture/'runtime'; runtime.mkdir(mode=0o700)
+            self.configure_fixture(fixture, plugin, home, fake_bin)
             env = {'PATH':str(fake_bin), 'HOME':str(home), 'XDG_CONFIG_HOME':str(home/'.config'), 'XDG_CACHE_HOME':str(home/'.cache'), 'XDG_DATA_HOME':str(home/'.local/share'), 'XDG_STATE_HOME':str(home/'.local/state'), 'XDG_RUNTIME_DIR':str(runtime), 'QT_QPA_PLATFORM':'offscreen', 'QT_QUICK_BACKEND':'software', 'LANG':'C.UTF-8', 'NATIVE_COMMAND_LOG':str(fixture/'commands.jsonl'), 'DBUS_SYSTEM_BUS_ADDRESS':'unix:path='+str(fixture/'no-system-bus')}
             if desktop:
                 env.pop('QT_QUICK_BACKEND',None)
@@ -111,16 +118,19 @@ else: raise SystemExit(99)
             self.assertNotIn('ReferenceError:', output, output)
             self.assertNotIn('Error loading configuration', output, output)
             calls = [json.loads(row) for row in (fixture/'commands.jsonl').read_text().splitlines()]
-            submissions = [call for call in calls if call['tool']=='kdeconnect-cli']
-            self.assertEqual(len(submissions), 3, output)
-            self.assertTrue(all(call['args'][:2] == ['-d','A'] for call in submissions), submissions)
-            self.assertEqual(len(json.loads((fixture/'portal-receipt.json').read_text())), 2)
-            state = json.loads((home/'.config/ryan.omaconnect/appearance.json').read_text())
-            self.assertEqual(state['bar_icon']['value'], 'laptop')
-            owner_calls = [call for call in calls if call['tool']=='omarchy-shell']
-            self.assertEqual(len(owner_calls), 1, calls)
-            self.assertFalse(any(call['tool']=='nmcli' for call in calls), calls)
+            self.assert_fixture(fixture, home, output, calls)
             print(output)
+
+    def assert_fixture(self, fixture, home, output, calls):
+        submissions = [call for call in calls if call['tool']=='kdeconnect-cli']
+        self.assertEqual(len(submissions), 3, output)
+        self.assertTrue(all(call['args'][:2] == ['-d','A'] for call in submissions), submissions)
+        self.assertEqual(len(json.loads((fixture/'portal-receipt.json').read_text())), 2)
+        state = json.loads((home/'.config/ryan.omaconnect/appearance.json').read_text())
+        self.assertEqual(state['bar_icon']['value'], 'laptop')
+        owner_calls = [call for call in calls if call['tool']=='omarchy-shell']
+        self.assertEqual(len(owner_calls), 1, calls)
+        self.assertFalse(any(call['tool']=='nmcli' for call in calls), calls)
 
 
 if __name__ == '__main__':

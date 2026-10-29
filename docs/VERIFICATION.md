@@ -1,5 +1,42 @@
 # Candidate verification — 29 October 2026
 
+## Current icon, native-feature and network follow-up
+
+**141 Python tests and all three JavaScript suites pass.** Shell syntax and the
+installed Omarchy manifest validator pass. QML lint succeeds with known host/
+unqualified-access diagnostics; it is not warning-free. Actual native QML loads
+both new components without TypeError/ReferenceError in the isolated fixtures.
+
+- Appearance: 13 checks, including distinct rendered preset fallbacks, visible
+  choices, saved drafts, operation-error priority and late-import invalidation.
+- Native feature boundary: four checks cover full/third-party IDs, optional loaded
+  state, sender/receiver directions and strict selected-device launcher arguments.
+- Network coverage: seven checks cover Tailscale source-scoped CGNAT, add/readback/
+  auto/remove, fixed native-owner routes, unavailable owners and unchanged policy.
+- Keyboard: actual Qt key-event fixture now passes **29 assertions**, including
+  native feature entry/details, Tailscale/WireGuard owner-button focus, BTH,
+  addresses and Syncthing. Owner buttons are focused, not launched.
+- Intended desktop **Kintsugi, x86_64**: updated candidate passes **32 native
+  assertions** with the actual installed KeyboardPanel and current Wayland socket.
+  All providers/actions/state are private fakes. Seven protected installed files
+  retain their hashes. The standard plugin remains active; no fork activation.
+  Nonfatal sandbox Wayland text-input warnings were observed. This does not prove
+  live pointer/focus or assistive-technology acceptance.
+
+The separate review found one launch-success wording issue, now corrected to
+“launch requested”; no blocking finding remains. Exactly 50 unique synthetic
+persona scenarios were checked. Claude and Antigravity each completed independent
+initial and scope-addendum reviews; recommendations were source-checked, with
+incorrect loaded/disabled and glyph claims rejected. See the decision ledger.
+
+New native owner launches, real pointer/AT, scale/RTL and away-network transfers
+remain untested. The earlier owner-confirmed phone payload below is valid evidence
+for that payload only. No real send was repeated during this follow-up. Logs and
+machine-readable receipts are in the adjacent desktop-validation and
+ux-contribution-audit delivery folders. The committed source stays isolated.
+
+## Earlier first-release receipt
+
 Local full-run result: **124 Python tests passed**, all three JavaScript suites
 passed (including 18 BTH/discovery checks), manifest validation and shell syntax
 passed. Quickshell 0.3.2 ran the native fixtures. QML lint returned success with

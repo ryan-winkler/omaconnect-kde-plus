@@ -104,3 +104,17 @@ Optional content-only PNGs and a log are saved outside the source checkout in
 native popup card. They are layout evidence, not composited contrast acceptance.
 Expected isolation warning: no Hyprland IPC connection. Qt Wayland text-input
 warnings also occurred during popup focus changes; the run is not warning-free.
+
+## Current follow-up evidence
+
+The full runner now executes 141 Python tests plus the three JS suites. In addition
+to the original control-signal fixture, `test_keyboard.py` sends actual Qt key
+events and passes 29 assertions. It reaches native feature details and each new
+owner button without launching a live owner, then BTH and both text editors.
+This offscreen evidence uses the same hosting substitution described above.
+
+On Kintsugi x86_64, the updated native integration passed 32 assertions with the real
+installed KeyboardPanel and Wayland socket under the opt-in isolated desktop mode.
+No hosting substitution is used for that run. Provider actions remain fake and
+private HOME/D-Bus/network isolation remain. Nonfatal Wayland text-input warnings
+were observed; pointer/focus/AT, scale/RTL and owner-launch acceptance remain open.

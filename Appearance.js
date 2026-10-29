@@ -6,7 +6,7 @@ var presets = [
     {label:"Desktop", mode:"preset", value:"desktop", glyph:"󰍹", theme:"computer-symbolic"},
     {label:"Laptop", mode:"preset", value:"laptop", glyph:"󰌢", theme:"laptop-symbolic"},
     {label:"Link", mode:"preset", value:"link", glyph:"󰌷", theme:"insert-link-symbolic"},
-    {label:"Share", mode:"preset", value:"share", glyph:"󰒪", theme:"document-send-symbolic"}
+    {label:"Share", mode:"preset", value:"share", glyph:"󰒗", theme:"document-send-symbolic"}
 ];
 var glyphs = [
     {label:"Phone symbol",mode:"glyph",value:"☎"},
@@ -51,6 +51,15 @@ function glyphFor(icon) {
     if (value.mode === "glyph") return value.value;
     var entry = presets.filter(function(p) { return p.value === value.value; })[0];
     return entry ? entry.glyph : presets[0].glyph;
+}
+// Prefer an installed symbol font; never assume an unpatched text font has
+// private-use glyphs. The renderer retains its built-in phone as the last fallback.
+function symbolFont(families, preferred) {
+    var available = families || [];
+    if (/nerd|symbols/i.test(String(preferred || "")) && available.indexOf(preferred) >= 0) return preferred;
+    var known = ["JetBrainsMono Nerd Font","Symbols Nerd Font Mono","Symbols Nerd Font","JetBrainsMonoNL Nerd Font"];
+    for (var i = 0; i < known.length; i++) if (available.indexOf(known[i]) >= 0) return known[i];
+    return "";
 }
 function themeFor(icon) {
     if (icon.mode === "theme") return icon.value;

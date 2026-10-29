@@ -144,8 +144,7 @@ Window {
  Timer { interval: 1700; running: true; onTriggered: { console.log(\"RESULT\",store.displayName(\"fixture\",\"Renamed\"),store.deviceIcon(\"fixture\",\"phone\").value,store.barIcon(\"fixture\",\"phone\").value,store.error); Qt.quit(); } }
 }
 """)
-        env = dict(self.env, QT_QPA_PLATFORM='offscreen', XDG_RUNTIME_DIR=str(self.home))
-        env.pop('WAYLAND_DISPLAY', None)
+        env = self.native_env()
         result = subprocess.run(['qs','-p',str(wrapper)], capture_output=True, text=True, env=env, timeout=7)
         output = result.stdout + result.stderr
         self.assertIn('CHOOSER_OPEN true', output, output)
@@ -196,14 +195,196 @@ Window {
  Timer { interval: 4000; running: true; onTriggered: Qt.quit() }
 }
 """)
-        env = dict(self.env, QT_QPA_PLATFORM='offscreen', XDG_RUNTIME_DIR=str(self.home))
-        env.pop('WAYLAND_DISPLAY', None)
+        env = self.native_env()
         result = subprocess.run(['qs','-p',str(wrapper)], capture_output=True, text=True, env=env, timeout=7)
         output = result.stdout + result.stderr
         for label in ('REJECT_BAR','REJECT_DEVICE','FOLLOW_OVERRIDE','FOLLOW_TYPE'):
             self.assertIn(label+' true', output, output)
         for error in ('ReferenceError','TypeError','Unable to assign','Failed to load'):
             self.assertNotIn(error, output, output)
+
+    def native_env(self):
+        shell = Path('/usr/share/omarchy/shell')
+        if not (shell/'Ui/SearchableDropdown.qml').is_file():
+            self.skipTest('Native Omarchy UI kit is unavailable')
+        for name in ('Commons','Ui'):
+            target = self.home/name
+            if not target.exists():
+                target.symlink_to(shell/name, target_is_directory=True)
+        env = dict(self.env, QT_QPA_PLATFORM='offscreen', QT_QUICK_BACKEND='software', XDG_RUNTIME_DIR=str(self.home))
+        for name in ('WAYLAND_DISPLAY','DISPLAY','QT_QPA_PLATFORMTHEME'):
+            env.pop(name, None)
+        return env
+
+    @unittest.skipUnless(shutil.which('qs'), 'Quickshell is unavailable')
+    def test_native_visible_choices_and_distinct_preset_fallbacks(self):
+        root = HELPER.parent.parent
+        wrapper = self.home/'choices.qml'
+        wrapper.write_text("""import QtQuick
+import QtQuick.Window
+import Quickshell
+import \""""+root.as_uri()+"""\" as App
+import \""""+(root/'components').as_uri()+"""\" as Components
+import \""""+(root/'Appearance.js').as_uri()+"""\" as Appearance
+Window {
+ id: test; width: 360; height: 800; visible: true
+ property int captures: 0
+ property bool checked: false
+ function find(item,name,seen) {
+  if (!item || seen.indexOf(item)>=0) return null;
+  seen.push(item);
+  if (item.objectName === name) return item;
+  for (var prop of [\"children\",\"data\"]) if (prop in item && item[prop]) for(var child of item[prop]) { var result=find(child,name,seen); if(result) return result; }
+  for (var prop of [\"contentItem\",\"footer\",\"header\"]) if(prop in item) { var result=find(item[prop],name,seen); if(result) return result; }
+  return null;
+ }
+ function check(value,label) { console.log(\"CHECK\",label,!!value); }
+ App.AppearanceStore { id: store }
+ Components.IconChooser { id: chooser; store: store }
+ Components.AppearanceIcon {
+  id: themeResolved; icon: ({mode:\"preset\",value:\"desktop\"}); width: 24; height: 24
+  themedSource: \"file:///usr/share/icons/Adwaita/symbolic/devices/computer-symbolic.svg\"
+ }
+ Row {
+  anchors.bottom: parent.bottom
+  Repeater {
+   id: fallbackIcons; model: Appearance.presets
+   Components.AppearanceIcon {
+    required property var modelData
+    icon: modelData; themedSource: \"\"; width: 32; height: 32
+   }
+  }
+ }
+ Timer {
+  interval: 150; running: store.ready && !store.busy && !test.checked && themeResolved.imageReady
+  onTriggered: {
+   test.checked=true;
+   test.check(themeResolved.imageReady && !themeResolved.usePresetGlyph,\"theme-precedes-font\");
+   var snapshot=JSON.parse(JSON.stringify(store.snapshot)); snapshot.bar_icon={mode:\"automatic\"}; store.snapshot=snapshot;
+   chooser.openForBar(\"fixture\",\"phone\");
+   test.check(test.find(chooser,\"preset-laptop\",[]).visible,\"bar-automatic-choice-visible\");
+   chooser.openForDevice(\"fixture\",\"<b>Advertised</b>\",\"phone\");
+   for(var preset of Appearance.presets) {
+    var button=test.find(chooser,\"preset-\"+preset.value,[]);
+    test.check(button && button.visible && button.text===preset.label,\"choice-\"+preset.value);
+   }
+   var picker=test.find(chooser,\"installed-icon-picker\",[]);
+   test.check(picker && picker.visible,\"library-in-automatic\");
+   chooser.choose({mode:\"glyph\",value:\"★\",font:\"sans-serif\"});
+   test.check(picker && picker.visible,\"library-after-symbol\");
+   var symbol=test.find(chooser,\"custom-symbol-input\",[]);
+   test.check(symbol && symbol.text===\"★\",\"symbol-field-synced\");
+   var before=JSON.stringify(chooser.draft);
+   if(picker) { picker.open(); picker.close(); }
+   test.check(JSON.stringify(chooser.draft)===before,\"browse-preserves-draft\");
+   var savedBefore=JSON.stringify(store.snapshot);
+   test.find(chooser,\"preset-laptop\",[]).clicked();
+   test.check(chooser.draft.mode===\"preset\" && chooser.draft.value===\"laptop\",\"preset-click-selects\");
+   test.check(test.find(chooser,\"icon-choice-label\",[]).text===\"Choice: Laptop\",\"choice-not-colour-only\");
+   test.find(chooser,\"appearance-cancel\",[]).clicked();
+   test.check(JSON.stringify(store.snapshot)===savedBefore,\"cancel-button-preserves-state\");
+   var unique=[];
+   for(var i=0;i<fallbackIcons.count;i++) {
+    var icon=fallbackIcons.itemAt(i);
+    test.check(icon.usePresetGlyph && icon.presetFont!==\"\" && icon.renderedGlyph===Appearance.glyphFor(Appearance.presets[i]),\"font-fallback-\"+Appearance.presets[i].value);
+    unique.push(icon.renderedGlyph);
+    (function(item,label) { item.grabToImage(function(result) { result.saveToFile(Quickshell.env(\"XDG_RUNTIME_DIR\")+\"/fallback-\"+label+\".png\"); test.captures++; }); })(icon,Appearance.presets[i].value);
+   }
+   test.check((new Set(unique)).size===Appearance.presets.length,\"distinct-preset-glyphs\");
+  }
+ }
+ Timer { interval: 50; repeat: true; running: test.checked; onTriggered: if(test.captures===Appearance.presets.length) { console.log(\"CHOICES_PASS\"); Qt.quit(); } }
+ Timer { interval: 5000; running: true; onTriggered: Qt.quit() }
+}
+""")
+        result = subprocess.run(['qs','-p',str(wrapper)], capture_output=True, text=True, env=self.native_env(), timeout=8)
+        output = result.stdout+result.stderr
+        self.assertIn('CHOICES_PASS',output,output)
+        self.assertNotIn(' false',output,output)
+        for error in ('ReferenceError','TypeError','Unable to assign','Failed to load','Error loading configuration'):
+            self.assertNotIn(error,output,output)
+        captures=list(self.home.glob('fallback-*.png'))
+        for name in ('phone','desktop','laptop','link','share'):
+            self.assertIn(self.home/('fallback-'+name+'.png'),captures)
+        images=[path.read_bytes() for path in captures]
+        self.assertEqual(len(set(images)),len(images),'All actual rendered preset images must differ')
+
+    @unittest.skipUnless(shutil.which('qs'), 'Quickshell is unavailable')
+    def test_native_error_priority_and_late_import_choice(self):
+        root = HELPER.parent.parent
+        wrapper = self.home/'async-choice.qml'
+        wrapper.write_text("""import QtQuick
+import QtQuick.Window
+import Quickshell
+import \""""+(root/'components').as_uri()+"""\" as Components
+Window {
+ id: test; width: 400; height: 800; visible: true
+ property int phase: 0
+ property var imported: ({mode:\"image\",value:\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png\",render:\"color\"})
+ function find(item,expected,seen) {
+  if(!item || seen.indexOf(item)>=0) return null;
+  seen.push(item);
+  if(\"text\" in item && item.text===expected && item.visible) return item;
+  for(var prop of [\"children\",\"data\"]) if(prop in item && item[prop]) for(var child of item[prop]) {var result=find(child,expected,seen);if(result) return result;}
+  if(\"contentItem\" in item) return find(item.contentItem,expected,seen);
+  return null;
+ }
+ function check(value,label) { console.log(\"CHECK\",label,!!value); }
+ QtObject {
+  id: fake
+  property var snapshot: ({schema_version:1,bar_icon:{mode:\"preset\",value:\"phone\"},devices:{}})
+  property bool ready: true
+  property bool busy: false
+  property string error: \"\"
+  property var warnings: []
+  property var themeIcons: [\"fixture-only\"]
+  property bool libraryTruncated: false
+  property string assetBaseUrl: \"\"
+  signal saved()
+  signal imageImported(var icon)
+  signal operationFailed(string message)
+  function safeIcon(icon) { return icon; }
+  function deviceAppearance(id) { return {}; }
+ }
+ Components.IconChooser { id: chooser; store: fake }
+ Timer {
+  interval: 80; repeat: true; running: true
+  onTriggered: {
+   if(test.phase===0) {
+    chooser.openForBar();
+    chooser.choose({mode:\"theme\",value:\"fixture-nonexistent-icon\",render:\"symbolic\"});
+    fake.error=\"The icon could not be saved. Review private metadata permissions.\";
+   } else if(test.phase===1) {
+    test.check(!!test.find(chooser.contentItem,fake.error,[]),\"operation-error-visible-before-preview-warning\");
+    fake.error=\"\";
+    chooser.pendingImport=true;
+    chooser.choose({mode:\"preset\",value:\"laptop\"});
+   } else if(test.phase===2) {
+    fake.imageImported(test.imported);
+    test.check(chooser.draft.mode===\"preset\" && chooser.draft.value===\"laptop\",\"late-import-preserves-later-preset\");
+    chooser.pendingImport=true;
+    chooser.draft={mode:\"glyph\",value:\"★\",render:\"symbolic\"};
+   } else if(test.phase===3) {
+    fake.imageImported(test.imported);
+    test.check(chooser.draft.mode===\"glyph\" && chooser.draft.value===\"★\",\"late-import-preserves-later-symbol-edit\");
+    chooser.pendingImport=true;
+   } else if(test.phase===4) {
+    fake.imageImported(test.imported);
+    test.check(chooser.draft.mode===\"image\" && chooser.draft.value===test.imported.value && !chooser.pendingImport,\"current-import-still-applies\");
+    console.log(\"ASYNC_CHOICE_PASS\");
+    Qt.quit();
+   }
+   test.phase++;
+  }
+ }
+}
+""")
+        result = subprocess.run(['qs','-p',str(wrapper)], capture_output=True, text=True, env=self.native_env(), timeout=6)
+        output=result.stdout+result.stderr
+        self.assertIn('ASYNC_CHOICE_PASS',output,output)
+        self.assertNotIn(' false',output,output)
+        for error in ('ReferenceError','TypeError','Unable to assign','Failed to load','Error loading configuration'):
+            self.assertNotIn(error,output,output)
 
     def test_explicit_syncthing_link_preserves_alias(self):
         self.call('update', action='device', device_id='a', alias='Phone', icon={'mode':'inherit'})

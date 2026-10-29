@@ -22,6 +22,11 @@ assert.equal(api.normalizeIcon({mode:'image',value:'https://example.org/icon'}).
 assert.equal(api.normalizeIcon({mode:'theme',value:'../bad'}).value,'phone');
 assert.equal(api.normalizeIcon({mode:'glyph',value:'\u202e'}).value,'phone');
 assert.equal(api.glyphFor({mode:'preset',value:'phone'}).length > 0,true);
-assert.equal(api.presets.length,5);
+for (const value of ['phone','desktop','laptop','link','share']) assert.ok(api.presets.some(entry => entry.value === value));
+assert.equal(new Set(api.presets.map(entry => api.glyphFor(entry))).size,api.presets.length);
+assert.equal(api.glyphFor({mode:'preset',value:'share'}).codePointAt(0),0xF0497);
+assert.equal(api.symbolFont(['Liberation Sans','Symbols Nerd Font'],'Liberation Sans'),'Symbols Nerd Font');
+assert.equal(api.symbolFont(['JetBrainsMono Nerd Font','Symbols Nerd Font'],'JetBrainsMono Nerd Font'),'JetBrainsMono Nerd Font');
+assert.equal(api.symbolFont(['Liberation Sans'],'Liberation Sans'),'');
 assert.equal(api.library('laptop',[]).some(x => x.value === 'laptop'),true);
 console.log('Appearance resolver: passed');

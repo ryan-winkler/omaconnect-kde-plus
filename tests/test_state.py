@@ -39,10 +39,10 @@ def parse_device(line):
             "text": "kdeconnect_share" in plugins,
             "clipboard": "kdeconnect_clipboard" in plugins,
             "file": "kdeconnect_share" in plugins,
-            "commands": "kdeconnect_runcommand" in plugins,
+            "commands": "kdeconnect_remotecommands" in plugins,
             "network": "kdeconnect_connectivity_report" in plugins,
             "sms": "kdeconnect_sms" in plugins,
-            "media": ("kdeconnect_mprisremote" in plugins) or ("kdeconnect_mpriscontrol" in plugins) or ("kdeconnect_mpris" in plugins),
+            "media": "kdeconnect_mprisremote" in plugins,
             "pair": True,
         },
     }
@@ -573,7 +573,7 @@ class PairingState:
 class DeviceParsingAndFormattingTests(unittest.TestCase):
   def test_authoritative_snapshot_is_stable_and_capability_aware(self):
     # Full capability set
-    full_line = "DEVICE\tdev-full\tFull Phone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_runcommand,kdeconnect_findmyphone,kdeconnect_clipboard,kdeconnect_connectivity_report,kdeconnect_sms,kdeconnect_mprisremote\t5G\t4"
+    full_line = "DEVICE\tdev-full\tFull Phone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_remotecommands,kdeconnect_findmyphone,kdeconnect_clipboard,kdeconnect_connectivity_report,kdeconnect_sms,kdeconnect_mprisremote\t5G\t4"
     self.assertEqual(parse_device(full_line)["capabilities"], {
         "battery": True, "ping": True, "ring": True, "text": True, "clipboard": True, "file": True, "commands": True, "network": True, "sms": True, "media": True, "pair": True
     })
@@ -716,7 +716,7 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
             res.append("text")
         return res
 
-    full_dev = parse_device("DEVICE\tdev-full\tPhone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_runcommand,kdeconnect_findmyphone,kdeconnect_clipboard")
+    full_dev = parse_device("DEVICE\tdev-full\tPhone\tphone\ttrue\ttrue\t100\ttrue\tkdeconnect_battery,kdeconnect_ping,kdeconnect_share,kdeconnect_remotecommands,kdeconnect_findmyphone,kdeconnect_clipboard")
     self.assertEqual(available_actions_for(full_dev), ["ring", "clipboard", "file", "ping", "text"])
 
     part_dev = parse_device("DEVICE\tdev-part\tPhone\tphone\ttrue\ttrue\t50\tfalse\tkdeconnect_findmyphone,kdeconnect_clipboard")
@@ -733,14 +733,14 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
     self.assertTrue(dev_with_mpris["capabilities"]["media"])
 
     dev_with_control = parse_device("DEVICE\tdev-2\tLaptop\tlaptop\ttrue\ttrue\t90\tfalse\tkdeconnect_mpriscontrol")
-    self.assertTrue(dev_with_control["capabilities"]["media"])
+    self.assertFalse(dev_with_control["capabilities"]["media"])
 
     dev_without_media = parse_device("DEVICE\tdev-3\tTablet\ttablet\ttrue\ttrue\t60\tfalse\tkdeconnect_battery,kdeconnect_ping")
     self.assertFalse(dev_without_media["capabilities"]["media"])
 
     discovery_source = (ROOT / "scripts" / "discover_devices.sh").read_text()
-    self.assertIn("kdeconnect_mprisremote", discovery_source)
-    self.assertIn("kdeconnect_mpriscontrol", discovery_source)
+    self.assertIn("plugin_ids", discovery_source)
+    self.assertNotIn("for plugin in kdeconnect_", discovery_source)
 
   def test_unreachable_device_suppresses_battery_display(self):
     offline_device = parse_device("DEVICE\tdev-off\tPhone\tphone\ttrue\tfalse\t80\ttrue\tkdeconnect_battery")
@@ -956,7 +956,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
     self.assertFalse(toggled)
 
   def test_remote_commands_supported_empty(self):
-    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand"
+    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands"
     dev = parse_device(line)
     self.assertTrue(dev["capabilities"]["commands"])
 
@@ -980,7 +980,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
     self.assertEqual(state.remote_commands, [])
 
   def test_remote_commands_supported_populated(self):
-    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand"
+    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands"
     dev = parse_device(line)
     state = RemoteCommandsState(selected_device_id="dev-supp")
     state.toggle_commands_expanded(dev["capabilities"])
@@ -1041,7 +1041,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
     ])
 
   def test_remote_commands_failed_cli_call(self):
-    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand"
+    line = "DEVICE\tdev-supp\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands"
     dev = parse_device(line)
     state = RemoteCommandsState(selected_device_id="dev-supp")
     state.toggle_commands_expanded(dev["capabilities"])
@@ -1060,7 +1060,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
 
   def test_remote_commands_stale_target_rejection(self):
     state = RemoteCommandsState(selected_device_id="dev-1")
-    dev1 = parse_device("DEVICE\tdev-1\tPhone1\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand")
+    dev1 = parse_device("DEVICE\tdev-1\tPhone1\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands")
     state.toggle_commands_expanded(dev1["capabilities"])
 
     # User switches to dev-2 before dev-1 commands load
@@ -1082,7 +1082,7 @@ class RemoteCommandsStateTests(unittest.TestCase):
     self.assertEqual(state.remote_commands, [])
 
   def test_remote_commands_on_demand_and_repeated_toggling(self):
-    dev = parse_device("DEVICE\tdev-1\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_runcommand")
+    dev = parse_device("DEVICE\tdev-1\tPhone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_remotecommands")
     state = RemoteCommandsState(selected_device_id="dev-1")
 
     # Initial state: collapsed, not loading, no commands

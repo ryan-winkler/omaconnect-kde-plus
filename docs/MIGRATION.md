@@ -1,7 +1,7 @@
 # Staging, activation and recovery
 
 This candidate has not been installed or enabled on the owner's desktop. The
-installed `omaconnect`, its KDE pairing data, the replacement bar and existing
+installed `omaconnect`, its KDE pairing data, the current bar and existing
 VPN profiles remain independent from this checkout.
 
 ## Prepare an offline candidate
@@ -32,9 +32,10 @@ The new directory uses mode 0700 and its JSON files use mode 0600:
 
 Unknown source settings, duplicate locations and an existing fork entry require
 review. Native and `ryan.bar` layouts use the same supported `bar.layout` schema,
-including tray. Tailscale and automatic setup UI remain disabled in the fork.
-Saved private-address controls are a separate feature and default to no automatic
-rediscovery.
+including tray. The legacy Tailscale discovery list and automatic setup remain
+disabled. Current network guidance and saved-address approval cover Tailscale,
+BTH and WireGuard. They do not reinstall or connect a provider. Saved-address
+controls default to no automatic rediscovery.
 
 ## Future activation gate
 

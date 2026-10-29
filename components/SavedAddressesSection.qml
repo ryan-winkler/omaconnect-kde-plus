@@ -17,7 +17,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: root.width
-        text: "Saved private addresses"
+        text: "Saved LAN and VPN addresses"
 
         color: root.foreground
         font.family: root.fontFamily
@@ -27,7 +27,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: root.width
-        text: "Approve one private IP for the selected KDE identity. An address does not prove device identity or pairing."
+        text: "Select LAN, Back to Home, WireGuard or Tailscale. Approve one IP for the selected KDE identity. An IP does not prove identity or pairing."
 
         wrapMode: Text.Wrap
         color: root.foreground
@@ -37,14 +37,21 @@ Column {
     Controls.TextField {
         id: address
         width: root.width
-        placeholderText: "Private IP address"
-        Accessible.name: "Private IP address to approve"
+        placeholderText: "Private or Tailscale IP address"
+        Accessible.name: "LAN or VPN IP address to approve"
         selectByMouse: true
     }
     Controls.ComboBox {
         id: source
         width: root.width
-        model: ["manual", "bth", "wireguard"]
+        model: [
+            {label: "LAN / manual", value: "manual"},
+            {label: "MikroTik Back to Home", value: "bth"},
+            {label: "WireGuard", value: "wireguard"},
+            {label: "Tailscale", value: "tailscale"}
+        ]
+        textRole: "label"
+        valueRole: "value"
         Accessible.name: "Address source"
     }
     Controls.CheckBox {
@@ -62,7 +69,7 @@ Column {
         focusable: true
         foreground: root.foreground
         Accessible.name: text
-        onClicked: if (root.discovery.addAddress(root.peerId, address.text.trim(), source.currentText, automatic.checked)) address.clear()
+        onClicked: if (root.discovery.addAddress(root.peerId, address.text.trim(), source.currentValue, automatic.checked)) address.clear()
     }
     Controls.CheckBox {
         width: root.width
@@ -102,7 +109,7 @@ Column {
                 checked: modelData.auto_discover
                 enabled: !root.discovery.busy
                 Accessible.name: "Automatic rediscovery for " + modelData.address
-                onToggled: root.discovery.setAutoDiscover(modelData.peer_id, modelData.address, checked)
+                onToggled: root.discovery.setAutoDiscover(modelData.peer_id, modelData.address, checked, modelData.source)
             }
             Kit.Button {
                 width: parent.width
@@ -111,7 +118,7 @@ Column {
                 focusable: true
                 foreground: root.foreground
                 Accessible.name: text + " for " + modelData.address
-                onClicked: root.discovery.removeAddress(modelData.peer_id, modelData.address, false)
+                onClicked: root.discovery.removeAddress(modelData.peer_id, modelData.address, false, modelData.source)
             }
             Kit.Button {
                 width: parent.width
@@ -124,7 +131,7 @@ Column {
                 onClicked: {
                     var key = modelData.peer_id + ":" + modelData.address
                     if (root.removalReview === key) {
-                        root.discovery.removeAddress(modelData.peer_id, modelData.address, true)
+                        root.discovery.removeAddress(modelData.peer_id, modelData.address, true, modelData.source)
                         root.removalReview = ""
                     } else root.removalReview = key
                 }

@@ -99,7 +99,7 @@ Column {
         textFormat: Text.PlainText
         width: parent.width
 
-        text: "Back To Home (bth-home)"
+        text: "MikroTik Back to Home · WireGuard"
         color: Commons.Color.popups.text
         font.family: Style.font.family
         font.pixelSize: Style.font.body

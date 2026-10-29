@@ -47,11 +47,11 @@ Item {
     function addAddress(peerId, address, source, autoDiscover) {
         return batch([{op: "add", peer_id: peerId, address: address, source: source || "manual", auto_discover: !!autoDiscover, approved: true}], false)
     }
-    function removeAddress(peerId, address, removeFromKde) {
-        return batch([{op: "remove", peer_id: peerId, address: address, remove_from_kde: !!removeFromKde, approved: !!removeFromKde}], false)
+    function removeAddress(peerId, address, removeFromKde, source) {
+        return batch([{op: "remove", peer_id: peerId, address: address, source: source || "manual", remove_from_kde: !!removeFromKde, approved: !!removeFromKde}], false)
     }
-    function setAutoDiscover(peerId, address, enabled) {
-        return batch([{op: "auto", peer_id: peerId, address: address, auto_discover: !!enabled, approved: true}], false)
+    function setAutoDiscover(peerId, address, enabled, source) {
+        return batch([{op: "auto", peer_id: peerId, address: address, source: source || "manual", auto_discover: !!enabled, approved: true}], false)
     }
     function refreshAddresses() {
         if (!busy) batch([], false)

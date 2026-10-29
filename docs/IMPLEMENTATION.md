@@ -44,3 +44,12 @@ Keep generic UI improvements separate from the local BTH policy adapter. Rebase
 against the pinned upstream only after reviewing changes. Use supported Omarchy
 commands and user plugin storage. Do not edit `/usr/share/omarchy`, force-reset a
 dirty tree, copy pairing data or run automatic dependency/firewall setup.
+
+## Later usability and capability implementation
+
+The current product/spec addendum extends the first-release snapshot with the
+native-control icon chooser, contributor map, complete safe native-plugin
+inventory, selected-device native handoff, corrected sender capabilities, and
+Tailscale/BTH/WireGuard address/owner paths. See the three scoped audits and the
+current VERIFICATION receipt. Inline provider capabilities and native delegation
+remain explicit. No mass domain-folder move or generic plugin loader was added.
