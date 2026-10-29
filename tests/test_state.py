@@ -2622,6 +2622,35 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
     self.assertIn("No devices found", device_section)
     self.assertNotIn("Allow in Firewall", device_section)
 
+  def test_missing_kde_connect_shows_the_documented_install_line_read_only(self):
+    device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
+    command = "omarchy pkg add kdeconnect python python-gobject"
+    self.assertIn('text: "' + command + '"', device_section)
+    # One install line: the panel copy must match the install guide.
+    self.assertIn(command, (ROOT / "docs" / "INSTALL.md").read_text())
+    field = device_section.split('objectName: "kdeconnect-install-command"', 1)[1].split("}", 1)[0]
+    self.assertIn('discoveryState === "not_installed"', field)
+    self.assertIn("readOnly: true", field)
+    self.assertNotIn("Process", device_section)
+
+  def test_settings_switches_state_on_or_off_in_words(self):
+    for name in ("PreferenceControls.qml", "NetworkOptions.qml"):
+      source = (ROOT / "components" / name).read_text()
+      self.assertIn('? ": On" : ": Off")', source, name)
+      # Screen readers get state from Accessible.checked; the name stays the bare label.
+      self.assertNotIn("Accessible.name: label", source, name)
+
+  def test_section_visibility_switches_live_on_their_settings_page(self):
+    settings = (ROOT / "components" / "SettingsPanel.qml").read_text()
+    def page(name):
+      return settings.split('visible: root.currentPage === "' + name + '"', 1)[1].split("visible: root.currentPage ===", 1)[0]
+    for key in ("showNetworkControls", "networkStartExpanded", "showSavedAddresses", "addressesStartExpanded"):
+      self.assertIn('key: "' + key + '"', page("Connections"), key)
+      self.assertNotIn('key: "' + key + '"', page("Appearance"), key)
+    for key in ("showMediaPlayer", "mediaStartExpanded", "showRemoteCommands", "commandsStartExpanded"):
+      self.assertIn('key: "' + key + '"', page("Device features"), key)
+      self.assertNotIn('key: "' + key + '"', page("Appearance"), key)
+
   def test_keyboard_navigation_no_double_movement_and_hotkey_safety(self):
     panel_source = (ROOT / "Panel.qml").read_text()
     # Double movement fix: onMoveRequested does not double-step with select(dy)

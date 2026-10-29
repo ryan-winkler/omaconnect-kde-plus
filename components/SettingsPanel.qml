@@ -144,8 +144,8 @@ Window {
                     Text {
                         width: parent.width
                         text: (root.currentPage === "Appearance" || root.currentPage === "Device features")
-                            ? "Selected device: " + root.selectedName + " · Display choices apply to Plus on this computer."
-                            : "These preferences apply to Plus on this computer."
+                            ? "Selected device: " + root.selectedName + ". These settings apply to this computer only."
+                            : "These settings apply to this computer only."
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
                         color: Commons.Color.popups.text
@@ -158,7 +158,7 @@ Window {
                         spacing: Style.space(8)
                         Text {
                             width: parent.width
-                            text: "Icons and local names change how devices look here. KDE Connect keeps their identity and pairing."
+                            text: "Icons and names change only how devices look in Plus. Pairing stays the same."
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text
@@ -190,7 +190,7 @@ Window {
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text
                             font.family: Style.font.family
-                            font.pixelSize: Style.font.caption
+                            font.pixelSize: Style.font.bodySmall
                         }
                         Kit.Button {
                             width: parent.width
@@ -204,15 +204,9 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
-                                {key: "showBarBattery", label: "Show battery beside the bar icon", defaultValue: false, description: "Show the selected device’s reported charge beside the icon. Devices without a battery report show no percentage."},
-                                {key: "showNetworkControls", label: "Show network controls in Devices", defaultValue: true, description: "Show the providers enabled in Connections. Hiding controls does not disconnect a VPN."},
-                                {key: "showSavedAddresses", label: "Show saved addresses", defaultValue: true, description: "Keep approved per-device addresses available for review. Hiding this section keeps saved records and rediscovery preferences."},
-                                {key: "showSyncthingLinks", label: "Show Syncthing identity notes", defaultValue: false, description: "Optional reminder that a KDE device and a Syncthing device are the same machine. Opens the existing Syncshell owner; does not show live sync status or share folders."},
-                                {key: "networkStartExpanded", label: "Start network controls expanded", defaultValue: true, description: "You can expand or collapse the section in Devices. This sets its state when you open the panel."},
-                                {key: "mediaStartExpanded", label: "Start media expanded", defaultValue: true, description: "Choose a compact summary or expanded player when the panel opens."},
-                                {key: "commandsStartExpanded", label: "Start remote commands expanded", defaultValue: false, description: "Keep configured remote commands collapsed until needed, or show them when the panel opens."},
-                                {key: "addressesStartExpanded", label: "Start saved addresses expanded", defaultValue: false, description: "Applies when saved addresses are shown. Changing this does not approve an address."},
-                                {key: "syncthingStartExpanded", label: "Start Syncthing notes expanded", defaultValue: false, description: "Applies when Syncthing identity notes are enabled. Association remains local metadata."}
+                                {key: "showBarBattery", label: "Show battery beside the bar icon", defaultValue: false, description: "Shows the selected device's charge next to the bar icon when the device reports it."},
+                                {key: "showSyncthingLinks", label: "Show Syncthing identity notes", defaultValue: false, description: "Adds a note in Devices that matches this device to its Syncthing ID. It does not sync files."},
+                                {key: "syncthingStartExpanded", label: "Start Syncthing notes expanded", defaultValue: false, description: "On shows Syncthing notes when the panel opens, if the notes are shown."}
                             ]
                         }
                     }
@@ -224,7 +218,13 @@ Window {
                         PreferenceControls {
                             width: parent.width
                             panel: root.panel
-                            preferences: [{key: "bthHelperPath", label: "BTH helper path", defaultValue: "", type: "string", description: "Optional absolute path to the reviewed controller. Leave empty to use ~/.local/bin/remote-access-mode."}]
+                            preferences: [
+                                {key: "showNetworkControls", label: "Show network controls in Devices", defaultValue: true, description: "Shows the buttons for the VPN tools you turned on above."},
+                                {key: "networkStartExpanded", label: "Start network controls expanded", defaultValue: true, description: "On shows the network buttons when the panel opens."},
+                                {key: "showSavedAddresses", label: "Show saved addresses", defaultValue: true, description: "Shows each device's saved IP addresses in Devices. Hiding them deletes nothing."},
+                                {key: "addressesStartExpanded", label: "Start saved addresses expanded", defaultValue: false, description: "On shows saved addresses when the panel opens."},
+                                {key: "bthHelperPath", label: "BTH helper path", defaultValue: "", type: "string", description: "Optional. The full path to your Back to Home script. Leave empty to use ~/.local/bin/remote-access-mode."}
+                            ]
                         }
                     }
                     Column {
@@ -235,7 +235,7 @@ Window {
                         PreferenceControls {
                             width: parent.width
                             panel: root.panel
-                            preferences: [{key: "defaultPingMessage", label: "Default ping message", defaultValue: "", type: "string", description: "Prefill the Ping draft. You can edit it before sending. Ping shows a notification; Ring requests a sound."}]
+                            preferences: [{key: "defaultPingMessage", label: "Default ping message", defaultValue: "", type: "string", description: "Fills in a new Ping message. You can edit it before you send."}]
                         }
                     }
                     Column {
@@ -244,7 +244,7 @@ Window {
                         spacing: Style.space(12)
                         Text {
                             width: parent.width
-                            text: "Native modules and permissions stay in KDE Connect. Plus preferences stay here."
+                            text: "Turn device features on or off in KDE Connect. Choose what Plus shows here."
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text
@@ -256,11 +256,13 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
-                                {key: "showNativeFeatures", label: "Show native feature entry in Devices", defaultValue: true, description: "The full searchable inventory stays here in Settings, even when the daily entry is hidden."},
-                                {key: "showBatteryStats", label: "Show battery details", defaultValue: true, description: "Show charge and charging state when the selected device reports them."},
-                                {key: "showNetworkStats", label: "Show cellular connection details", defaultValue: true, description: "Show the device’s reported cellular type and signal. This does not describe Wi-Fi or VPN reachability."},
-                                {key: "showMediaPlayer", label: "Show media controls", defaultValue: true, description: "Control a reported media player on the selected device. Open Media in Devices to choose a player."},
-                                {key: "showRemoteCommands", label: "Show remote commands", defaultValue: true, description: "Show commands configured on the selected device. Use that device’s KDE Connect Run commands settings to add or edit them."}
+                                {key: "showNativeFeatures", label: "Show native feature entry in Devices", defaultValue: true, description: "Adds an All KDE Connect features button in Devices. The full list stays here."},
+                                {key: "showBatteryStats", label: "Show battery details", defaultValue: true, description: "Shows charge and charging state when the device reports them."},
+                                {key: "showNetworkStats", label: "Show cellular connection details", defaultValue: true, description: "Shows the phone's mobile network type and signal, not Wi-Fi or VPN."},
+                                {key: "showMediaPlayer", label: "Show media controls", defaultValue: true, description: "Shows play, pause and skip for music or video on the device."},
+                                {key: "mediaStartExpanded", label: "Start media expanded", defaultValue: true, description: "On shows the full player when the panel opens. Off shows a short summary."},
+                                {key: "showRemoteCommands", label: "Show remote commands", defaultValue: true, description: "Shows the commands you set up in the device's KDE Connect Run commands settings."},
+                                {key: "commandsStartExpanded", label: "Start remote commands expanded", defaultValue: false, description: "On shows your remote commands when the panel opens."}
                             ]
                         }
                     }

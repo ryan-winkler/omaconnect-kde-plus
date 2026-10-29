@@ -164,7 +164,7 @@ Column {
             }
             color: ((root.service && (root.service.actionError || root.service.fileTransferError)) || (root.panel && root.panel.composerError)) ? Commons.Color.urgent : root.foreground
             font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.bodySmall
             elide: Text.ElideRight
         }
 
@@ -493,12 +493,25 @@ Column {
 
         Text {
             width: parent.width
-            text: "Use the setup guide for missing packages or connection requirements. Pair devices and manage native features in KDE Connect."
+            text: root.service && root.service.discoveryState === "not_installed"
+                ? "Run this command in a terminal to install KDE Connect, then select Refresh. To copy it, select the text and press Ctrl+C."
+                : "Pair devices in KDE Connect. The setup guide helps with connection problems."
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: root.foreground
             font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.bodySmall
+        }
+        TextField {
+            objectName: "kdeconnect-install-command"
+            visible: !!root.service && root.service.discoveryState === "not_installed"
+            width: parent.width
+            // Shown for copying only; Plus never runs it.
+            text: "omarchy pkg add kdeconnect python python-gobject"
+            readOnly: true
+            selectByMouse: true
+            foreground: root.foreground
+            Accessible.name: "KDE Connect install command; select to copy"
         }
         Button {
             text: "KDE Connect setup guide ↗"

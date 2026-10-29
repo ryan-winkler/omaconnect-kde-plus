@@ -141,12 +141,12 @@ Column {
 
             Text {
                 width: parent.width
-                text: "Control media on the selected device. Choose a reported player below; playback stays in its owner app. Artwork stays in the native app; Plus does not fetch device-supplied image URLs."
+                text: "Control music and video playing on the selected device. Choose a player below."
                 textFormat: Text.PlainText
                 wrapMode: Text.Wrap
                 color: root.foreground
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Style.font.bodySmall
             }
             Row {
                 width: parent.width

@@ -3,6 +3,7 @@
 Open **Settings** from the bar menu. Choose the domain that matches your task.
 Use **Back to devices** to return. Native KDE Connect opens in its own window;
 your Plus settings remain available. Select a device before changing its features.
+Each switch shows **On** or **Off** after its name.
 
 ## Appearance
 
@@ -119,7 +120,9 @@ Syncshell retains the synchronization engine and keys. Read the official
 ## Install, update or recover
 
 Use the supported commands in [install, update and recovery](INSTALL.md),
-including how to move settings from the original OmaConnect. Native plugin
+including how to move settings from the original OmaConnect. If KDE Connect is
+missing, Devices shows `omarchy pkg add kdeconnect python python-gobject`. Copy
+it into a terminal, run it, then select **Refresh**. Plus never runs it for you. Native plugin
 removal does not remove pairing, VPN profiles or private Plus metadata.
 
 ## Get help or contribute
@@ -161,9 +164,10 @@ searchable through the native owner route without inventing invocation semantics
 
 ## Choose visible sections and shortcuts
 
-In **Settings → Appearance**, choose saved addresses, optional Syncthing identity
-notes and network controls. Choose which sections start expanded. Media and remote
-command visibility lives in **Device features**. Each visible section can also
+In **Settings → Connections**, choose whether network controls and saved addresses
+show in Devices, and whether they start expanded. **Device features** does the same
+for media and remote commands. **Settings → Appearance** holds the optional
+Syncthing identity notes. Each visible section can also
 collapse in Devices. These display choices preserve saved metadata and provider
 settings. They do not disconnect a VPN or change native plugin permissions.
 

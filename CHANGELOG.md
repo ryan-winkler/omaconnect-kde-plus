@@ -10,6 +10,13 @@ All notable changes are listed here. The format follows
 
 - Trimmed the docs to user and contributor guides; install, update and
   migration now live in `docs/INSTALL.md`.
+- Settings and panel help use plain words, one sentence per control, at a
+  larger text size. Longer caveats moved to the help guide.
+- Each settings switch shows **On** or **Off** after its name.
+- Each section's show and start-expanded switches now sit on the settings page
+  for that section: network controls and saved addresses on Connections, media
+  and remote commands on Device features.
+- When KDE Connect is missing, Devices shows the install command to copy.
 
 ## [0.1.1] - 2026-10-29
 
