@@ -54,14 +54,18 @@ no apply command. Find the installed plugin folder under
 `${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/plugins/`, change into it, then run:
 
 ```bash
+review_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omaconnect-migration-review"
 python3 scripts/migrate_settings.py prepare \
   --source-id omaconnect \
   --source "${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json" \
-  --output "$HOME/.local/state/omaconnect-migration-review" \
+  --output "$review_dir" \
   --bindings "${XDG_CONFIG_HOME:-$HOME/.config}/hypr/bindings.lua"
 ```
 
-Use a new private directory outside the repository for each run. Omit
+Use a new private directory outside the repository for each run. Set `review_dir`
+to that exact `--output` path and use it for every artifact below. If you rerun
+`prepare`, update `review_dir` first; never combine artifacts from different runs.
+In a new terminal, set it to your chosen prepare directory again. Omit
 `--bindings` if that file does not exist, or repeat it for other binding files.
 Older configurations can use `bindings.conf`; pass the file your setup uses.
 `--source-id` selects the plugin you move from; read the exact `id` from its
@@ -89,16 +93,17 @@ To switch:
 
 1. Add Plus without `--enable`, or decline the enable prompt.
 2. Back up `${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json`, then replace it with the reviewed
-   `candidate-shell.json`. If you changed shell settings after `prepare`, run
+   `$review_dir/candidate-shell.json`. If you changed shell settings after `prepare`, run
    `prepare` again first so the candidate keeps those changes. The candidate
    disables `omaconnect` and gives `Omaconnect.plus` the state the original had.
    If `candidate-appearance.json` is present, create the destination with private
    permissions and copy it without replacing any existing appearance file:
 
    ```bash
+   : "${review_dir:?Set review_dir to the chosen prepare output directory}"
    appearance_dir="${XDG_CONFIG_HOME:-$HOME/.config}/Omaconnect.plus"
    install -d -m 700 "$appearance_dir"
-   cp -n --preserve=mode "$HOME/.local/state/omaconnect-migration-review/candidate-appearance.json" "$appearance_dir/appearance.json"
+   cp -n --preserve=mode "$review_dir/candidate-appearance.json" "$appearance_dir/appearance.json"
    ```
 
    An existing appearance file needs manual review; keep it until you have merged
@@ -114,20 +119,25 @@ To switch:
 
 ## Roll back
 
+Keep `review_dir` set to the prepare directory that was applied. Choose a fresh
+`rollback_dir` for each rollback candidate.
+
 ```bash
+: "${review_dir:?Set review_dir to the applied prepare output directory}"
+rollback_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omaconnect-rollback-review"
 python3 scripts/migrate_settings.py rollback \
   --source "${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json" \
-  --snapshot "$HOME/.local/state/omaconnect-migration-review/snapshot.json" \
-  --output "$HOME/.local/state/omaconnect-rollback-review"
+  --snapshot "$review_dir/snapshot.json" \
+  --output "$rollback_dir"
 ```
 
 This stages a rollback `candidate-shell.json` that restores managed settings only
 and keeps later unrelated edits. It refuses changed managed values or a moved
 entry; resolve those by review. Review the candidate and back up the current
 shell configuration. If shell settings changed after staging, rerun `rollback`
-into a new output directory before applying the candidate. The candidate already
-restores the original bar slot and enabled state. Replacing
-`${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json` with it restores that state.
+into a new output directory before applying the candidate. The new `$rollback_dir/candidate-shell.json` already restores the original bar
+slot and enabled state. Replacing
+`${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json` with that candidate restores the reviewed state.
 Then disable `Omaconnect.plus` if it remains enabled as an installed plugin; the
 original stays enabled only if it was enabled before the move.
 
