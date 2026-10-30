@@ -43,7 +43,7 @@ def rgba_pixels(path):
 class AppearanceRenderingTests(unittest.TestCase):
     def test_installed_shapes_follow_foreground_and_custom_colours_stay(self):
         """Prove theme tint preserves silhouettes and explicit image colours."""
-        if not Path('/usr/share/icons/Adwaita/symbolic/devices/computer-symbolic.svg').is_file():
+        if not Path('/usr/share/icons/Adwaita/symbolic/devices/computer-symbolic.svg').is_file() or not Path('/usr/share/icons/hicolor/scalable/apps/kdeconnect.svg').is_file():
             self.skipTest('installed Adwaita test assets absent')
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'appearance_rendering_ui.qml'
@@ -76,6 +76,10 @@ class AppearanceRenderingTests(unittest.TestCase):
             custom = [rgba_pixels(fixture / (label+'-2.png')) for label in ('dark', 'light')]
             self.assertEqual(custom[0], custom[1], 'explicit custom colours must survive a theme change')
             self.assertTrue(any(pixel[:3] == (224, 32, 48) and pixel[3] > 128 for pixel in custom[0]))
+            application = [rgba_pixels(fixture / (label+'-3.png')) for label in ('dark', 'light')]
+            self.assertEqual(application[0], application[1], 'a full-colour installed icon must not become a foreground-colour block')
+            colours = {pixel[:3] for pixel in application[0] if pixel[3] > 250}
+            self.assertGreater(len(colours), 20, 'native application artwork must keep its internal colours and detail')
 
         runner.configure_fixture = configure
         runner.assert_fixture = assert_pixels

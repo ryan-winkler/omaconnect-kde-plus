@@ -11,7 +11,10 @@
 | Automatic | Selected device's override/type, or device type for a device override | `mode: automatic` or device `inherit` |
 
 The preview follows the current Omarchy theme automatically. Symbolic icons use
-the theme foreground on both light and dark surfaces. **Keep image colours** is
+the theme foreground on both light and dark surfaces. Other installed icons keep
+the native artwork and colours, so an application icon does not collapse into a
+solid alpha-mask block. This applies to existing selections without rewriting
+metadata. **Keep image colours** is
 an explicit override for a custom image. Installed choices show thumbnails and
 names in a searchable, keyboard-accessible list. Selecting a choice changes the
 draft. Apply saves it; Cancel leaves the stored choice unchanged.

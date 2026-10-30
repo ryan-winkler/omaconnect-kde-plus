@@ -19,7 +19,8 @@ All notable changes are listed here. The format follows
   and occasional actions expand on demand. Native KDE Connect retains ownership
   of configuration forms and phone permissions.
 - Installed icons have searchable thumbnails. Symbolic icons render with the
-  software scene graph and follow the current theme; custom image colours remain
+  software scene graph and follow the current theme. Full-colour installed artwork
+  keeps its native colours and internal detail; custom image colours remain
   an explicit choice. Appearance uses one current-theme preview.
 - The string-sharing shortcut is labelled Text and uses less toolbar space.
 

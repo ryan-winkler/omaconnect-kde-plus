@@ -235,6 +235,7 @@ Controls.Dialog {
                     anchors.margins: Commons.Style.space(10)
                     spacing: Commons.Style.space(12)
                     AppearanceIcon {
+                        id: themePreview
                         Layout.preferredWidth: 32
                         Layout.preferredHeight: 32
                         icon: root.resolvedDraft
@@ -254,7 +255,7 @@ Controls.Dialog {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: root.resolvedDraft.render === "color" ? qsTr("Custom image colours") : qsTr("Icon colour follows your theme automatically")
+                            text: themePreview.sourceColours ? root.resolvedDraft.mode === "image" ? qsTr("Custom image colours") : qsTr("Installed icon colours") : qsTr("Icon colour follows your theme automatically")
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: root.foreground

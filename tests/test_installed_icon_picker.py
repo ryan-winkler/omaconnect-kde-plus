@@ -21,8 +21,8 @@ class InstalledIconPickerTests(unittest.TestCase):
             (fixture/'commands.jsonl').write_text('')
             assets = fixture/'icons'
             assets.mkdir()
-            (assets/'even.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M3 3h18v13H3zM8 21h8" fill="none" stroke="black" stroke-width="2"/></svg>')
-            (assets/'odd.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="8" fill="none" stroke="black" stroke-width="2"/></svg>')
+            (assets/'even.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M3 3h18v13H3zM8 21h8" fill="none" stroke="#eeeeee" stroke-width="2"/></svg>')
+            (assets/'odd.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="8" fill="none" stroke="#eeeeee" stroke-width="2"/></svg>')
             # Only the fixture's Qt theme lookup is substituted. The production
             # AppearanceIcon renderer and its pixel output stay under test.
             icon = plugin/'components/AppearanceIcon.qml'

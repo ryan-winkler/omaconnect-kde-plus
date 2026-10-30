@@ -22,6 +22,10 @@ Item {
     readonly property bool useGlyph: (normalized.mode === "glyph" && !fontMissing) || usePresetGlyph
     readonly property string renderedGlyph: usePresetGlyph ? Appearance.glyphFor(normalized) : useGlyph ? normalized.value : ""
     readonly property bool imageReady: image.status === Image.Ready
+    // Full-colour application artwork has opaque internal backgrounds. Tinting
+    // its alpha mask erases that detail; symbolic theme icons remain tintable.
+    readonly property bool sourceColours: normalized.render === "color"
+        || (normalized.mode === "theme" && !normalized.value.endsWith("-symbolic"))
     readonly property bool fallback: !useGlyph && imageUnavailable
     readonly property string warning: fontMissing ? qsTr("Font unavailable. Phone is shown.") : normalized.mode === "image" && fallback ? qsTr("Imported image is unavailable. Phone is shown.") : normalized.mode === "theme" && fallback ? qsTr("Theme icon is unavailable. Phone is shown.") : normalized.mode === "preset" && fallback ? qsTr("Icon fonts are unavailable. Phone is shown.") : ""
     implicitWidth: iconSize
@@ -39,14 +43,14 @@ Item {
         asynchronous: true
         cache: true
         onStatusChanged: symbolic.requestPaint()
-        visible: root.imageReady && root.normalized.render === "color"
+        visible: root.imageReady && root.sourceColours
     }
     // Raster composition also works with Qt's software scene graph. A shader
     // effect can report a loaded image while drawing no symbolic icon there.
     Canvas {
         id: symbolic
         anchors.fill: image
-        property url iconSource: root.normalized.mode === "glyph" || root.normalized.render === "color" ? "" : root.sourceUrl
+        property url iconSource: root.normalized.mode === "glyph" || root.sourceColours ? "" : root.sourceUrl
         property url loadedSource: ""
         function reload() {
             if (loadedSource.toString() !== "") unloadImage(loadedSource)
@@ -74,7 +78,7 @@ Item {
             context.fillStyle = root.foreground
             context.fillRect(0, 0, width, height)
         }
-        visible: root.imageReady && root.normalized.render !== "color"
+        visible: root.imageReady && !root.sourceColours
     }
     Kit.OpticalGlyph {
         objectName: "appearance-glyph"
