@@ -29,6 +29,7 @@ Offer reusable fixes and enhancements to the project that owns the behavior when
 | Behavior belongs to… | Contribution route |
 | --- | --- |
 | The original OmaConnect UI, launcher or helper | [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect). Reproduce against its current source before proposing the smallest reusable change. |
+| Shared Omarchy controls and shell accessibility | [Omarchy](https://github.com/omacom/omarchy). Check [accessibility issue #12009](https://github.com/omacom/omarchy/issues/12009) and [shared-control PR #13212](https://github.com/omacom/omarchy/pull/13212) before proposing a duplicate. |
 | The KDE Connect protocol, daemon or native desktop application | [KDE Connect desktop source](https://invent.kde.org/kde/kdeconnect-kde), following [KDE’s contribution and reporting guidance](https://kdeconnect.kde.org/get-involved.html). |
 | Android native modules, permissions or application behavior | [KDE Connect Android source](https://invent.kde.org/kde/kdeconnect-android), following the same KDE guidance. |
 | Plus-specific settings, appearance metadata or integration UI | This repository. Explain the Plus requirement and retain the existing provider boundary. |
