@@ -76,7 +76,7 @@ Preparation has a 120-second work deadline, cancellation checks between chunks,
 a 64 MiB free-space reserve, and source identity checks after copying. Blocking
 filesystem calls cannot be forcibly preempted by that deadline. Snapshots have
 0700 directories and 0600 files below the XDG cache path documented in [Help](HELP.md).
-They become eligible after 24 hours. `portal_files.py sweep` removes eligible
+They become eligible after 24 hours. `portal_files.py sweep` tries to remove eligible
 copies once when the plugin starts, and later preparation retries, when the cache
 is safe and available. The sweep never creates the cache. KDE opens the file later
 and reports no completion for the request, so Plus cannot delete a copy sooner. Protected-file preparation treats cache

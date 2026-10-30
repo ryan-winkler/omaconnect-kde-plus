@@ -131,7 +131,11 @@ def _expire(directory, cancelled, deadline):
         for entry in entries:
             _check(cancelled, deadline)
             if SNAPSHOT_NAME.fullmatch(entry.name):
-                value = entry.stat(follow_symlinks=False)
+                try:
+                    value = entry.stat(follow_symlinks=False)
+                except FileNotFoundError:
+                    # A concurrent sweep may have removed this expired entry.
+                    continue
                 if value.st_mtime <= cutoff:
                     _remove_snapshot(Path(entry.path))
 

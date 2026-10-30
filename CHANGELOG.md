@@ -8,8 +8,8 @@ All notable changes are listed here. The format follows
 
 ### Security
 
-- Private copies of shared files older than 24 hours are now deleted when the
-  plugin starts, not only before a later send.
+- Plus now also tries to remove private copies of shared files at plugin start,
+  not only before a later send. Copies become eligible after 24 hours.
 - File paths go to KDE Connect over D-Bus, no longer in `kdeconnect-cli`
   arguments that other local accounts can list.
 - The README now says that a saved default Ping message passes through process
