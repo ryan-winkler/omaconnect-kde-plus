@@ -1985,7 +1985,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("requestUnpairConfirm", ui_source)
     self.assertIn("cancelUnpairConfirm", ui_source)
     self.assertIn("confirmUnpair", ui_source)
-    self.assertIn("devicePendingState", ui_source)
+    self.assertIn("readonly property string pendingState:", (ROOT / "components" / "DeviceSection.qml").read_text())
     self.assertIn("isUnpairConfirming", ui_source)
 
   def test_tailscale_and_custom_address_contracts(self):
@@ -2046,7 +2046,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("function openKdeConnectApp(pluginId)", controller_source)
     self.assertIn("getAppScriptPath()", controller_source)
     self.assertNotIn("openKdeConnectApp()", device_ui)
-    self.assertIn("openDeviceSettings(modelData.id)", device_ui)
+    self.assertIn("panel.openDeviceSettings(root.device.id)", device_ui)
     native_ui = (ROOT / "components" / "NativeFeaturesSection.qml").read_text()
     self.assertIn("openKdeConnectApp()", native_ui)
     self.assertIn("Native KDE Connect settings", native_ui)
@@ -2100,11 +2100,14 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn('if (discoveryState !== "ready")', controller_source)
     self.assertIn('dbusDebounceTimer', controller_source)
 
-  def test_delegate_null_guards_prevent_typeerror(self):
+  def test_shared_picker_null_guards_preserve_optional_appearance(self):
     device_section_source = (ROOT / "components" / "DeviceSection.qml").read_text()
-    self.assertIn("selectedDeviceId === modelData.id", device_section_source)
-    self.assertIn("appearance.deviceIcon", device_section_source)
-    self.assertIn("modelData.paired", device_section_source)
+    picker = (ROOT / "components" / "DeviceSwitcher.qml").read_text()
+    self.assertIn('selectedId: device ? device.id : ""', picker)
+    self.assertIn('"appearance" in root.service', picker)
+    self.assertIn('typeof root.service.appearance.deviceIcon === "function"', picker)
+    self.assertIn("root.service.appearance.deviceIcon", picker)
+    self.assertIn("!!root.device && root.device.paired", device_section_source)
 
   def test_missing_dependency_state_retains_native_setup_guidance(self):
     discovery_source = (ROOT / "scripts" / "discover_devices.sh").read_text()
@@ -2407,9 +2410,11 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
     self.assertIn("triggerAction", ui_source)
     self.assertIn("actionSelectedIndex", ui_source)
     self.assertIn("focusSection", ui_source)
-    self.assertIn("DEVICES", ui_source)
-    self.assertIn("ACTIONS", ui_source)
-    self.assertIn("REMOTE COMMANDS", ui_source)
+    catalogue = {entry["id"]: entry["label"] for entry in json.loads((ROOT / "PanelSections.json").read_text())}
+    self.assertEqual({key: catalogue[key] for key in ("devices", "actions", "commands")},
+                     {"devices": "Devices", "actions": "Quick actions", "commands": "Remote commands"})
+    self.assertIn("title: root.sectionTitle(sectionId)", ui_source)
+    self.assertIn("text: root.title", (ROOT / "components" / "DailySection.qml").read_text())
     self.assertIn("deviceOverviewStatus", ui_source)
 
   def test_keyboard_navigation_state_flow(self):
@@ -2606,13 +2611,15 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
     self.assertEqual(nav.focus_section, "network")
     self.assertEqual(nav.network_index, 3)
 
-  def test_device_section_selects_on_click_not_hover(self):
+  def test_shared_device_picker_selects_on_activation_not_hover(self):
     device_section_source = (ROOT / "components" / "DeviceSection.qml").read_text()
-    self.assertNotIn("onEntered", device_section_source)
-    self.assertNotIn("hoverEnabled", device_section_source)
-    self.assertIn("panel.selectDevice(modelData.id)", device_section_source)
-    self.assertIn("panel.cursorActive = true", device_section_source)
-    self.assertIn('panel.focusSection = "devices"', device_section_source)
+    picker = (ROOT / "components" / "DeviceSwitcher.qml").read_text()
+    self.assertNotIn("onEntered", picker)
+    self.assertNotIn("onHoveredChanged", picker)
+    self.assertIn('objectName: "daily-device-selector"', device_section_source)
+    self.assertIn("onActivated: function(index)", picker)
+    self.assertIn("devices.some(function(entry) { return entry.id === id })", picker)
+    self.assertIn("panel.selectDevice(id)", picker)
 
   def test_panel_select_device_syncs_selected_index(self):
     class PanelState:
@@ -2667,12 +2674,21 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
     settings = (ROOT / "components" / "SettingsPanel.qml").read_text()
     def page(name):
       return settings.split('visible: root.currentPage === "' + name + '"', 1)[1].split("visible: root.currentPage ===", 1)[0]
-    for key in ("showNetworkControls", "networkStartExpanded", "showSavedAddresses", "addressesStartExpanded"):
-      self.assertIn('key: "' + key + '"', page("Connections"), key)
-      self.assertNotIn('key: "' + key + '"', page("Appearance"), key)
-    for key in ("showMediaPlayer", "mediaStartExpanded", "showRemoteCommands", "commandsStartExpanded"):
-      self.assertIn('key: "' + key + '"', page("Device features"), key)
-      self.assertNotIn('key: "' + key + '"', page("Appearance"), key)
+    entries = json.loads((ROOT / "PanelSections.json").read_text())
+    owners = {key: entry["settingsPage"] for entry in entries
+              for key in (entry.get("visibilityKey"), entry["expandedKey"]) if key}
+    expected = {
+      "Connections": ("showNetworkControls", "networkStartExpanded", "showSavedAddresses", "addressesStartExpanded"),
+      "Device features": ("showMediaPlayer", "mediaStartExpanded", "showRemoteCommands", "commandsStartExpanded"),
+    }
+    for name, keys in expected.items():
+      self.assertIn('SectionDisplaySettings { width: parent.width; panel: root.panel; page: "' + name + '" }', page(name))
+      for key in keys:
+        self.assertEqual(owners[key], name, key)
+        self.assertNotEqual(owners[key], "Appearance", key)
+    controls = (ROOT / "components" / "SectionDisplaySettings.qml").read_text()
+    self.assertIn("entry.settingsPage === root.page", controls)
+    self.assertIn("root.catalog.preferencesFor(root.page)", controls)
 
   def test_keyboard_navigation_no_double_movement_and_hotkey_safety(self):
     panel_source = (ROOT / "Panel.qml").read_text()

@@ -10,14 +10,25 @@
 | Local image | A validated copied PNG/SVG | `mode: image`, content-hash filename and rendering preference |
 | Automatic | Selected device's override/type, or device type for a device override | `mode: automatic` or device `inherit` |
 
-The light/dark samples are previews of the same draft. Selecting a choice changes
-the draft. Apply saves it; Cancel leaves the stored choice unchanged.
+The preview follows the current Omarchy theme automatically. Symbolic names,
+including their `-rtl`/`-ltr` variants, use
+the theme foreground on both light and dark surfaces. Other installed icons keep
+the native artwork and colours, so an application icon does not collapse into a
+solid alpha-mask block. This applies to existing selections without rewriting
+metadata. Clear **Keep installed icon colours** to use the foreground even for
+a monochrome icon without a symbolic name. This explicit choice saves the optional
+`tint: true` flag for that theme icon. **Keep image colours** is
+an explicit override for a custom image. Installed choices show thumbnails and
+names in a searchable, keyboard-accessible list. Selecting a choice changes the
+draft. Apply saves it; Cancel leaves the stored choice unchanged.
 
 ## Source and rendering path
 
 `IconChooser.qml` → `AppearanceStore.qml` → `scripts/appearance.py` writes local
 metadata. The bar and device rows call the same pure resolver in `Appearance.js`.
-`components/AppearanceIcon.qml` paints the resolved choice. Native Omarchy
+`components/AppearanceIcon.qml` paints the resolved choice. Symbolic images use
+raster alpha composition so the same source silhouette works with both the
+software and accelerated Qt scene graphs. Native Omarchy
 `qs.Ui` supplies the reusable chooser controls; the fork retains its own small
 appearance dialog and validation boundary.
 

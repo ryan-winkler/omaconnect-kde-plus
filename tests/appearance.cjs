@@ -29,4 +29,10 @@ assert.equal(api.symbolFont(['Liberation Sans','Symbols Nerd Font'],'Liberation 
 assert.equal(api.symbolFont(['JetBrainsMono Nerd Font','Symbols Nerd Font'],'JetBrainsMono Nerd Font'),'JetBrainsMono Nerd Font');
 assert.equal(api.symbolFont(['Liberation Sans'],'Liberation Sans'),'');
 assert.equal(api.library('laptop',[]).some(x => x.value === 'laptop'),true);
+assert.equal(api.normalizeIcon({mode:'theme',value:'fixture-line',tint:true}).tint,true);
+assert.equal(api.normalizeIcon({mode:'theme',value:'fixture-line',tint:true}).render,'symbolic');
+assert.equal(api.normalizeIcon({mode:'theme',value:'kdeconnect',render:'symbolic'}).tint,undefined);
+assert.equal(api.symbolicThemeName('go-next-symbolic-rtl'),true);
+assert.equal(api.symbolicThemeName('go-next-symbolic-ltr'),true);
+assert.equal(api.symbolicThemeName('kdeconnect'),false);
 console.log('Appearance resolver: passed');

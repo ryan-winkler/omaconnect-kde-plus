@@ -35,6 +35,23 @@ class AppearanceTests(unittest.TestCase):
         self.assertTrue(result.stdout, result.stderr)
         return json.loads(result.stdout)
 
+    def test_installed_tint_is_explicit_and_persistent(self):
+        """Keep the default automatic while persisting a typed custom tint."""
+        legacy = {'mode':'theme','value':'fixture-line','render':'symbolic'}
+        self.assertTrue(self.call('update',action='bar',icon=legacy)['ok'])
+        legacy_bytes = self.config.read_bytes()
+        self.assertNotIn('tint',self.call('read')['snapshot']['bar_icon'])
+        self.assertEqual(self.config.read_bytes(),legacy_bytes)
+        override = dict(legacy,tint=True)
+        self.assertTrue(self.call('update',action='bar',icon=override)['ok'])
+        self.assertTrue(self.call('read')['snapshot']['bar_icon']['tint'])
+        before = self.config.read_bytes()
+        for invalid in [dict(override,tint='true'),dict(override,render='color'),dict(override,mode='preset',value='phone')]:
+            self.assertFalse(self.call('update',action='bar',icon=invalid)['ok'])
+            self.assertEqual(self.config.read_bytes(),before)
+        self.assertTrue(self.call('update',action='bar',icon=dict(legacy,render='color'))['ok'])
+        self.assertNotIn('tint',self.call('read')['snapshot']['bar_icon'])
+
     def test_default_atomic_persistence_and_stable_identity(self):
         self.assertEqual(self.call('read')['snapshot']['bar_icon']['value'], 'phone')
         self.assertFalse(self.config.exists())
@@ -218,6 +235,7 @@ Window {
 
     @unittest.skipUnless(shutil.which('qs'), 'Quickshell is unavailable')
     def test_native_visible_choices_and_distinct_preset_fallbacks(self):
+        """Verify visible choices without saving a browsing or cancelled draft."""
         root = HELPER.parent.parent
         wrapper = self.home/'choices.qml'
         wrapper.write_text("""import QtQuick
@@ -266,7 +284,7 @@ Window {
    chooser.openForDevice(\"fixture\",\"<b>Advertised</b>\",\"phone\");
    for(var preset of Appearance.presets) {
     var button=test.find(chooser,\"preset-\"+preset.value,[]);
-    test.check(button && button.visible && button.text===preset.label,\"choice-\"+preset.value);
+    test.check(button && button.visible && button.Accessible.name===preset.label+\" icon\" && test.find(button,\"preset-label-\"+preset.value,[]).text===preset.label,\"choice-\"+preset.value);
    }
    var picker=test.find(chooser,\"installed-icon-picker\",[]);
    test.check(picker && picker.visible,\"library-in-automatic\");

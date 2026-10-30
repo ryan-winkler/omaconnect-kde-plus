@@ -57,7 +57,7 @@ For a bounded contributor task, use the [task form](https://github.com/ryan-wink
 5. Update the relevant contract and [help map](docs/HELP.md). Each feature needs nearby helper text or a direct documentation link.
 6. Open a pull request. State the problem, resulting behavior, checks and open device/UI checks.
 
-Small documentation and focused bug fixes can go directly to a PR. For a new provider, public schema, native-module installer or major navigation change, open a feature issue first. This avoids duplicate work and protects the existing boundaries. Native KDE Plugin Settings stays the one place to enable modules; do not add a second plugin manager.
+Small documentation and focused bug fixes can go directly to a PR. For a new provider, public schema, native-module installer or major navigation change, open a feature issue first. This avoids duplicate work and protects the existing boundaries. KDE Connect's daemon owns module state. Plus can expose its native enable and readback APIs for the selected paired device; native configuration forms remain in KDE Connect. Do not write native configuration files, add a separate permission store, or invent a module download catalogue.
 
 The stable plugin ID is `Omaconnect.plus`. Do not change it after release: Omarchy registers plugins by manifest ID, and `omarchy plugin update` cannot rename an installed plugin, so a new ID would drop users' bar placement, settings and private metadata. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
 
@@ -98,6 +98,7 @@ Reuse the owning domain before creating a new abstraction:
 | --- | --- | --- |
 | A reviewed shortcut | `ActionCatalog.js`, then the existing `Panel.qml` dispatcher | Add the ID to preference/migration validation; keep the catalogue parity check. Expose capability, loaded state and help. Never turn a plugin name into an arbitrary command. |
 | A Plus preference | `manifest.json` and `PreferenceControls` in the owning Settings domain | Add its typed key to `network_preferences.py` and migration validation. Verify saved readback and defaults. Visibility must not change native permissions or VPN policy. |
+| A daily section | `PanelSections.json`, its existing domain component, and the static `Panel.qml` ObjectModel | Add bounded metadata and manifest defaults. The shared catalogue supplies settings controls and preference validation. Test hidden/collapsed behavior, saved ordering, focus and draft identity. Do not add a dynamic component loader or a second section catalogue. |
 | File selection or drop | `FileDropArea.qml` and the existing controller/portal helper | Both the bar and Send target share Copy-only review. Do not add a second transfer engine or implicit Send. |
 | Native module support | Searchable `components/NativeFeaturesSection.qml` and selected-device native handoff | Preserve unknown reported IDs. Use a verified native API before offering a direct action. |
 | Syncthing | The optional local identity note, `Service.qml` pause/resume and the existing owner route | Pause/resume of the linked device goes through `syncthing cli` with readback. Keep keys and folder operations with Syncthing/Syncshell. |

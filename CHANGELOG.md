@@ -10,11 +10,25 @@ All notable changes are listed here. The format follows
 
 ### Added
 
+- A shared daily device picker, inline reviewed file drop, and settings to move
+  every daily section up or down. Sections can collapse and have saved display
+  defaults. Native features and saved addresses can be hidden without data loss.
 - An optional Quick Share shortcut opens an installed RQuickShare app.
 - Linked Syncthing devices show their last checked pause state, with explicit
   refresh and pause/resume controls. Changes wait for Syncthing readback.
 
 ### Changed
+
+- Device settings lists every installed KDE Connect module, with native On/Off
+  readback, offline support, search and exact-module Configure links. Information
+  and occasional actions expand on demand. Native KDE Connect retains ownership
+  of configuration forms and phone permissions.
+- Installed icons have searchable thumbnails. Symbolic icons render with the
+  software scene graph and follow the current theme. Full-colour installed artwork
+  keeps its native colours and internal detail; custom image colours remain
+  an explicit choice. Installed icons also support a custom foreground tint,
+  including names without a symbolic suffix. Appearance uses one current-theme preview.
+- The string-sharing shortcut is labelled Text and uses less toolbar space.
 
 - Settings has a persistent Device dropdown, with shared selection, text states
   for offline and unpaired devices, keyboard control and native launch feedback.
