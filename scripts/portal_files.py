@@ -154,6 +154,8 @@ def submit(payload):
             # Shared sources use a retained descriptor-backed snapshot; normal
             # private paths avoid a copy. KDE still owns its later native open.
             # The path goes over D-Bus, as kdeconnect-cli does, never into argv.
+            if cancelled:
+                raise ValueError('cancelled-before-submit')
             emit({'event': 'submitting'})
             attempted = True
             try:

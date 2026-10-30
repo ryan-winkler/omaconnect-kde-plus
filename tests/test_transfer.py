@@ -1,13 +1,16 @@
 """Isolated portal, filesystem boundary and submission regressions; never send files."""
+from contextlib import contextmanager
 import importlib.util
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 HELPER = ROOT / 'scripts/portal_files.py'
@@ -109,6 +112,31 @@ class Files(unittest.TestCase):
                                      [] if mode == 'unavailable' else [str(source)])
                     self.assertNotIn(str(source), report['stdout'] + report['stderr'])
                     self.assertNotIn(source.name, report['stdout'] + report['stderr'])
+
+    def test_stop_during_preparation_never_reaches_the_provider(self):
+        helper = module()
+        sys.path.insert(0, str(HELPER.parent))
+        self.addCleanup(sys.path.remove, str(HELPER.parent))
+        self.addCleanup(signal.signal, signal.SIGTERM, signal.getsignal(signal.SIGTERM))
+        import private_sources
+        import send_text
+        calls, events = [], []
+
+        @contextmanager
+        def stopped_while_preparing(expected, cancelled):
+            signal.getsignal(signal.SIGTERM)(signal.SIGTERM, None)
+            yield private_sources.PreparedSource(expected['path'], False)
+
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'reviewed.txt'
+            source.write_bytes(b'test')
+            chosen = helper.inspect_uris([source.as_uri()])[0]
+            with patch.object(private_sources, 'prepared_source', stopped_while_preparing), \
+                    patch.object(send_text, 'call', lambda *args: calls.append(args)), \
+                    patch.object(helper, 'emit', events.append):
+                helper.submit({'peerId': 'reviewed_peer', 'file': chosen})
+        self.assertEqual(calls, [])
+        self.assertEqual(events, [{'event': 'preparing'}, {'state': 'cancelled_before_submit', 'error': ''}])
 
     def test_actual_submit_keeps_reviewed_bytes_when_shared_path_is_replaced_before_native_open(self):
         helper = module()
