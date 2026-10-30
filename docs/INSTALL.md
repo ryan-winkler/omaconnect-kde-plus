@@ -46,8 +46,12 @@ omarchy plugin remove omaconnect.plus
 
 Removal uses Omarchy's confirmation flow. It does not remove KDE pairings,
 provider configuration or private Plus metadata under
-`~/.config/Omaconnect.plus/` and `~/.local/share/Omaconnect.plus/`. Shared-source
-cache copies become eligible for cleanup after 24 hours. See the
+`~/.config/Omaconnect.plus/` and `~/.local/share/Omaconnect.plus/`. While installed,
+Plus attempts cleanup of eligible shared-file copies in
+`$XDG_CACHE_HOME/Omaconnect.plus/` (default `~/.cache/Omaconnect.plus/`) at plugin
+start and during later preparation, when the cache is safe. Unexpected files stay. Copies become eligible after 24 hours.
+Permissions or the cleanup deadline can leave eligible copies, so 24 hours is not a
+maximum retention time. After removal, delete that folder yourself. See the
 [icon and storage guide](ICONS.md) for exact paths and backup scope.
 
 ## Former uppercase development ID

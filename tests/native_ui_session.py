@@ -30,6 +30,20 @@ def method(connection, sender, path, interface, name, parameters, invocation):
 
 
 bus.register_object('/org/freedesktop/portal/desktop', Gio.DBusNodeInfo.new_for_xml(xml).interfaces[0], method, None, None)
+
+
+def share(connection, sender, path, interface, name, parameters, invocation):
+    urls = parameters.unpack()[0]
+    with open(os.environ['NATIVE_COMMAND_LOG'], 'a') as out:
+        out.write(json.dumps({'tool': 'kdeconnect-share', 'args': [path.split('/')[-2], *urls]}) + '\n')
+    GLib.timeout_add(4000 if urls[-1].endswith('/slow') else 100, lambda: (invocation.return_value(None), False)[-1])
+
+
+# File shares go over D-Bus, as kdeconnect-cli --share does; the fake logs each call.
+bus.call_sync('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus', 'RequestName', GLib.Variant('(su)', ('org.kde.kdeconnect', 0)), None, Gio.DBusCallFlags.NONE, 1000, None)
+share_xml = '<node><interface name="org.kde.kdeconnect.device.share"><method name="shareUrls"><arg type="as" direction="in"/></method></interface></node>'
+for device in ('A', 'B'):
+    bus.register_object('/modules/kdeconnect/devices/' + device + '/share', Gio.DBusNodeInfo.new_for_xml(share_xml).interfaces[0], share, None, None)
 loop = GLib.MainLoop()
 process = subprocess.Popen(['/usr/bin/quickshell', '--no-color', '-p', str(fixture)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 

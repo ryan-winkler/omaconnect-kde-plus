@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Submit one text/ping request from a bounded JSON stdin line, never argv."""
+"""Submit one text/ping request from a bounded JSON stdin line, never argv.
+
+call() is also the D-Bus share client for portal_files.py file URLs.
+"""
 
 import json
 import os
@@ -7,6 +10,7 @@ import re
 import resource
 import sys
 import threading
+import time
 
 MAX_INPUT = 65536
 MAX_TEXT = 8192
@@ -17,6 +21,8 @@ OPERATIONS = {
     "text": ("share", "org.kde.kdeconnect.device.share", "shareText"),
     "ping": ("ping", "org.kde.kdeconnect.device.ping", "sendPing"),
 }
+# What kdeconnect-cli --share calls (KDE Connect 26.x cli/kdeconnect-cli.cpp).
+SHARE_URLS = ("share", "org.kde.kdeconnect.device.share", "shareUrls")
 
 
 class SubmissionError(Exception):
@@ -56,6 +62,11 @@ def read_request(stream):
 
 
 def submit(peer, operation, text):
+    call(peer, OPERATIONS[operation], text)
+
+
+def call(peer, target, value, timeout_ms=TIMEOUT_MS, cancelled=lambda: False):
+    """Call one device method with a str, or a list of str for shareUrls."""
     # Do not let a missing session address trigger session-bus autolaunch.
     if not os.environ.get("DBUS_SESSION_BUS_ADDRESS"):
         raise SubmissionError("provider-unavailable")
@@ -66,24 +77,40 @@ def submit(peer, operation, text):
         from gi.repository import Gio, GLib
     except (ImportError, ValueError):
         raise SubmissionError("provider-unavailable") from None
-    component, interface, method = OPERATIONS[operation]
+    component, interface, method = target
     path = "/modules/kdeconnect/devices/" + peer + "/" + component
     # The launcher grammar is broad; D-Bus path components have a narrower grammar.
     # Check before Gio can emit an invalid-path diagnostic containing input data.
     if not GLib.Variant.is_object_path(path):
         raise SubmissionError("invalid-input")
+    parameters = GLib.Variant("(as)" if isinstance(value, list) else "(s)", (value,))
     cancellable = Gio.Cancellable()
-    timer = threading.Timer(TIMEOUT_MS / 1000, cancellable.cancel)
-    timer.daemon = True
     attempted = False
-    timer.start()
-    try:
-        bus = Gio.bus_get_sync(Gio.BusType.SESSION, cancellable)
-        attempted = True
-        bus.call_sync(SERVICE, path, interface, method, GLib.Variant("(s)", (text,)),
-                      GLib.VariantType.new("()"), Gio.DBusCallFlags.NO_AUTO_START,
-                      TIMEOUT_MS, cancellable)
-    except GLib.Error as error:
+    errors = []
+
+    def run():
+        nonlocal attempted
+        try:
+            bus = Gio.bus_get_sync(Gio.BusType.SESSION, cancellable)
+            attempted = True
+            bus.call_sync(SERVICE, path, interface, method, parameters,
+                          GLib.VariantType.new("()"), Gio.DBusCallFlags.NO_AUTO_START,
+                          timeout_ms, cancellable)
+        except Exception as error:  # Reported below; never via the thread hook.
+            errors.append(error)
+
+    # The call runs in a worker so this thread can serve SIGTERM and the deadline.
+    worker = threading.Thread(target=run, daemon=True)
+    deadline = time.monotonic() + timeout_ms / 1000
+    worker.start()
+    while worker.is_alive():
+        worker.join(0.05)
+        if cancelled() or time.monotonic() >= deadline:
+            cancellable.cancel()
+    if errors:
+        error = errors[0]
+        if not isinstance(error, GLib.Error):
+            raise SubmissionError("submission-failed" if attempted else "provider-unavailable")
         remote = Gio.DBusError.get_remote_error(error)
         if remote in {"org.freedesktop.DBus.Error.ServiceUnknown", "org.freedesktop.DBus.Error.NameHasNoOwner"}:
             code = "provider-unavailable"
@@ -97,8 +124,6 @@ def submit(peer, operation, text):
         else:
             code = "submission-failed" if attempted else "provider-unavailable"
         raise SubmissionError(code) from None
-    finally:
-        timer.cancel()
 
 
 def emit(state, error):

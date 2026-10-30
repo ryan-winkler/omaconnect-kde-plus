@@ -18,7 +18,7 @@ class ActionToolbarAccessibility(unittest.TestCase):
         self.assertIn('ACTION_TOOLBAR_ACCESSIBILITY_PASS', output, output)
         self.assertNotIn('Accessible must be attached to an Item', output, output)
         self.assertFalse(any(row['tool'] in (
-            'kdeconnect-cli', 'nmcli', 'remote-access-mode', 'omarchy-shell'
+            'kdeconnect-cli', 'kdeconnect-share', 'nmcli', 'remote-access-mode', 'omarchy-shell'
         ) for row in calls), calls)
         self.assertEqual(json.loads((fixture / 'portal-receipt.json').read_text()), [])
 
