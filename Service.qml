@@ -33,45 +33,80 @@ Item {
     // Syncthing keeps its own API key; Plus only asks its CLI about one linked device.
     property string syncthingDeviceId: ""
     property string syncthingState: ""  // "paused", "active", "unknown", or "" before a read
-    property bool syncthingBusy: syncthingPause.running
+    property bool syncthingBusy: false
+    property string pendingSyncthingRead: ""
     Process {
         id: syncthingPause
         property string requested: ""
-        command: ["/usr/bin/timeout", "4", "/usr/bin/syncthing", "cli", "config", "devices", root.syncthingDeviceId, "paused"].concat(requested ? ["set", requested] : ["get"])
-        stdout: StdioCollector { id: syncthingReply; waitForEnd: true }
+        property bool oversized: false
+        command: ["/usr/bin/timeout", "--kill-after=1", "4", "/usr/bin/syncthing", "cli", "config", "devices", root.syncthingDeviceId, "paused"].concat(requested ? ["set", requested] : ["get"])
+        onStarted: oversized = false
+        stdout: StdioCollector {
+            id: syncthingReply
+            waitForEnd: false
+            onDataChanged: if (text.length > 2048) { syncthingPause.oversized = true; syncthingPause.running = false }
+        }
         onExited: function(code) {
             var reply = syncthingReply.text.trim(), changed = requested !== ""
             requested = ""
-            if (code !== 0) root.syncthingState = "unknown"
-            else if (changed) { root.syncthingState = ""; Qt.callLater(function() { syncthingPause.running = true }) }  // Read back after every change.
-            else root.syncthingState = reply === "true" ? "paused" : reply === "false" ? "active" : "unknown"
+            if (code === 0 && !oversized && changed) {
+                // Retain the changed target until readback, then serve the latest selection.
+                Qt.callLater(function() { root.startSyncthingRead(root.syncthingDeviceId) })
+                return
+            }
+            root.syncthingState = code !== 0 || oversized ? "unknown"
+                : reply === "true" ? "paused" : reply === "false" ? "active" : "unknown"
+            var next = root.pendingSyncthingRead
+            root.pendingSyncthingRead = ""
+            if (next) Qt.callLater(function() { root.startSyncthingRead(next) })
+            else root.syncthingBusy = false
         }
     }
-    function readSyncthingPause(id) {
-        if (syncthingPause.running || !/^[A-Z2-7]{7}(?:-[A-Z2-7]{7}){7}$/.test(id)) return false
+    function validSyncthingId(id) { return typeof id === "string" && /^[A-Z2-7]{7}(?:-[A-Z2-7]{7}){7}$/.test(id) }
+    function startSyncthingRead(id) {
+        syncthingBusy = true
         syncthingDeviceId = id
         syncthingState = ""
         syncthingPause.requested = ""
         syncthingPause.running = true
+    }
+    function readSyncthingPause(id) {
+        if (!validSyncthingId(id)) return false
+        if (syncthingBusy) { pendingSyncthingRead = id; return true }
+        startSyncthingRead(id)
         return true
     }
     function setSyncthingPaused(id, paused) {
-        if (syncthingPause.running || id !== syncthingDeviceId || syncthingState === "") return false
+        if (syncthingBusy || !validSyncthingId(id) || id !== syncthingDeviceId || typeof paused !== "boolean"
+                || (syncthingState !== "paused" && syncthingState !== "active")) return false
+        syncthingBusy = true
         syncthingPause.requested = paused ? "true" : "false"
         syncthingPause.running = true
         return true
     }
-    // shortcut: only the r-quick-share package path is detected; add others when users ask.
+    // Fixed app route; the helper rechecks presence and detaches all standard streams.
+    readonly property string quickShareHelper: decodeURIComponent(Qt.resolvedUrl("scripts/open_quick_share.py").toString().replace(/^file:\/\//, ""))
     property bool quickShareAvailable: false
     onPanelOpenedChanged: if (panelOpened && !quickShareCheck.running) quickShareCheck.running = true
     Process {
         id: quickShareCheck
-        command: ["/usr/bin/test", "-x", "/usr/bin/rquickshare"]
+        command: ["/usr/bin/timeout", "5", "/usr/bin/python3", root.quickShareHelper, "--check"]
         onExited: function(code) { root.quickShareAvailable = code === 0 }
     }
-    Process { id: quickShareLaunch; command: ["/usr/bin/setsid", "-f", "/usr/bin/rquickshare"] }
+    Process {
+        id: quickShareLaunch
+        command: ["/usr/bin/timeout", "5", "/usr/bin/python3", root.quickShareHelper, "--open"]
+        onExited: function(code) {
+            root.actionState = code === 0 ? "accepted" : "failed"
+            root.actionMessage = code === 0 ? "RQuickShare launch requested. Check its window or tray icon." : ""
+            root.actionError = code === 0 ? "" : "RQuickShare could not open. Check that r-quick-share is installed and try again."
+            if (code !== 0) root.quickShareAvailable = false
+        }
+    }
     function openQuickShare() {
-        if (quickShareAvailable && !quickShareLaunch.running) quickShareLaunch.running = true
+        if (!quickShareAvailable || quickShareLaunch.running) return false
+        quickShareLaunch.running = true
+        return true
     }
     function displayName(device) { return device ? appearanceStore.displayName(device.id, device.name) : "KDE Connect" }
     property alias selection: controller.selection
@@ -99,6 +134,7 @@ Item {
         // facade cannot resolve plugin services. See bridge/Bridge.qml;
         // the host facade stays the primary path.
         OmaconnectBridge.Bridge.service = root
+        quickShareCheck.running = true
     }
 
     // Unpublish so a widget falling back to the bridge never binds to a

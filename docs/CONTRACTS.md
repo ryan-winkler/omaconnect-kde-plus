@@ -207,3 +207,7 @@ current view without changing its saved preference.
 The bar and the Send card instantiate the same `FileDropArea.qml`. It locks the
 selected recipient through `stageDroppedFiles`, refuses busy/existing drafts,
 accepts Copy only, and emits a review-window signal after staging. It never sends.
+
+Quick Share uses only the fixed `/usr/bin/rquickshare` app path. The launcher
+rechecks the executable and detaches its standard streams. Success confirms
+process creation, not an open window, pairing or delivery.

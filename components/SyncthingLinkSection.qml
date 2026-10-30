@@ -64,6 +64,12 @@ Column {
     }
     readonly property string syncState: service && service.syncthingDeviceId === linkedId ? String(service.syncthingState || "") : ""
     function readSyncState() { if (service && linkedId && visible) service.readSyncthingPause(linkedId) }
+    Timer {
+        interval: 15000
+        repeat: true
+        running: root.visible && !!root.linkedId
+        onTriggered: root.readSyncState()
+    }
     onVisibleChanged: readSyncState()
     onPeerIdChanged: rebaseDraft()
     onStoreChanged: rebaseDraft()
@@ -100,7 +106,8 @@ Column {
         text: "Keep an optional local note to recognize the same device in both apps. Compare its name and full IDs in KDE Connect and Syncthing. This note does not verify ownership, pair devices or start synchronization."
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
-        font.pixelSize: Style.font.caption
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
     }
     Text {
         textFormat: Text.PlainText
@@ -108,7 +115,8 @@ Column {
         text: root.device ? "KDE device: " + (root.device.name || root.peerId) + "\nKDE ID: " + root.peerId : "Select a KDE device first."
         wrapMode: Text.WrapAnywhere
         color: Commons.Color.popups.text
-        font.pixelSize: Style.font.caption
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
     }
     Text {
         textFormat: Text.PlainText
@@ -131,13 +139,24 @@ Column {
         textFormat: Text.PlainText
         width: parent.width
         visible: !!root.linkedId
-        text: root.syncState === "paused" ? "Syncthing: paused for this device."
-            : root.syncState === "active" ? "Syncthing: not paused for this device."
-            : root.syncState === "unknown" ? "Syncthing state unknown. Syncthing may not run, or it does not know this device ID."
+        text: root.syncState === "paused" ? "Syncthing last check: paused for this device."
+            : root.syncState === "active" ? "Syncthing last check: not paused for this device."
+            : root.syncState === "unknown" ? "Syncthing state unknown. Plus could not confirm it. Check Syncthing and try Refresh state."
             : "Checking Syncthing…"
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
-        font.pixelSize: Style.font.caption
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
+    }
+    Kit.Button {
+        objectName: "syncthing-refresh"
+        width: parent.width
+        visible: !!root.linkedId
+        text: "Refresh Syncthing state"
+        foreground: Commons.Color.popups.text
+        focusable: true
+        enabled: !!root.service && !root.service.syncthingBusy
+        onClicked: root.readSyncState()
     }
     Kit.Button {
         objectName: "syncthing-pause"
@@ -157,7 +176,8 @@ Column {
         text: "Pause stops Syncthing from syncing with this device until you resume. Syncthing keeps its folders, keys and settings."
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
-        font.pixelSize: Style.font.caption
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
     }
     Text {
         width: parent.width
@@ -184,7 +204,8 @@ Column {
         text: "Paste all eight groups from Syncthing's Show ID view. Save applies only to the KDE device named above."
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
-        font.pixelSize: Style.font.caption
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
     }
     Kit.Button {
         objectName: "syncthing-save"
@@ -214,7 +235,8 @@ Column {
         text: root.feedback || (root.store ? root.store.error : "")
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
-        font.pixelSize: Style.font.caption
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
     }
     Kit.Button {
         objectName: "syncthing-owner"
@@ -232,7 +254,8 @@ Column {
         text: "Opens the existing Syncshell panel. It is a general panel, not a link to this particular device."
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
-        font.pixelSize: Style.font.caption
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
     }
     Text {
         objectName: "syncthing-owner-feedback"
@@ -242,7 +265,8 @@ Column {
         text: root.service ? root.service.ownerPanelMessage : ""
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
-        font.pixelSize: Style.font.caption
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
     }
     Kit.Button {
         width: parent.width

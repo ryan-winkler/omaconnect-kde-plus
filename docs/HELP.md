@@ -116,7 +116,10 @@ association. Select the saved ID to copy it with the normal keyboard command.
 When a note is saved, the section shows whether Syncthing has paused that device.
 Select **Pause in Syncthing** or **Resume in Syncthing** to change it. Syncthing's
 own `syncthing cli` makes the change and a readback confirms it. "State unknown"
-means Syncthing does not run or does not know that device ID.
+means Plus could not confirm the state. Possible causes include a stopped
+Syncthing, a different configuration folder, an unknown ID, a CLI timeout or an
+unexpected reply. Select **Refresh Syncthing state** to retry. The last checked
+state refreshes every 15 seconds while this section is visible.
 
 The note does not pair devices, start sync or verify ownership.
 **Open existing Syncthing panel** opens the general Syncshell panel, where you
@@ -198,3 +201,6 @@ On 29 October 2026, both comparison hosts had KDE Connect `26.08.2-1`. Fresh
 `checkupdates` runs used temporary repository databases and found no KDE Connect
 update on either architecture. No packages were installed or upgraded in that
 check. The [upstream watcher](UPSTREAM-WATCH.md) monitors provider changes separately.
+
+If the Quick Share window does not appear after launch, check its tray icon.
+See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare#installation).
