@@ -11,16 +11,22 @@ Column {
     required property var panel
     property var preferences: []
     property string message: ""
-    readonly property bool busy: saver.running
+    property bool submissionPending: false
+    readonly property bool busy: submissionPending || saver.running
     readonly property string helperPath: decodeURIComponent(Qt.resolvedUrl("../scripts/network_preferences.py").toString().replace(/^file:\/\//, ""))
     spacing: Style.space(8)
 
     function valueFor(row) { return panel ? panel.getSetting(row.key, row.defaultValue) : row.defaultValue }
     function save(request) {
-        if (busy) return
+        if (submissionPending || saver.running) {
+            message = "A setting is already saving. This change was not submitted. Wait for its result, then try again."
+            return false
+        }
+        submissionPending = true
         message = "Saving setting…"
         saver.payload = JSON.stringify(request)
         saver.running = true
+        return true
     }
     Repeater {
         model: root.preferences
@@ -36,6 +42,7 @@ Column {
             spacing: Style.space(4)
             Kit.Toggle {
                 id: preferenceToggle
+                objectName: "preference-" + row.modelData.key
                 width: parent.width
                 visible: !row.stringType
                 // State in words, from the saved value, not only the knob.
@@ -43,12 +50,11 @@ Column {
                 description: root.valueFor(row.modelData) === true ? "On" : "Off"
                 descriptionSize: Style.font.bodySmall
                 checked: root.valueFor(row.modelData) === true
-                enabled: !root.busy
                 foreground: Commons.Color.popups.text
                 Accessible.role: Accessible.CheckBox
                 Accessible.onToggleAction: if (preferenceToggle.enabled) preferenceToggle.clicked()
                 Accessible.onPressAction: if (preferenceToggle.enabled) preferenceToggle.clicked()
-                Accessible.name: row.modelData.label
+                Accessible.name: row.modelData.accessibleName || row.modelData.label
                 Accessible.checkable: true
                 Accessible.checked: checked
                 onClicked: root.save({key: row.modelData.key, enabled: !checked})
@@ -81,7 +87,7 @@ Column {
                 enabled: !root.busy
                 maximumLength: 4096
                 foreground: Commons.Color.popups.text
-                Accessible.name: row.modelData.label
+                Accessible.name: row.modelData.accessibleName || row.modelData.label
                 onTextEdited: { row.edited = true; row.draft = text }
             }
             Text {
@@ -121,6 +127,11 @@ Column {
         property string payload: ""
         property bool oversized: false
         command: ["/usr/bin/timeout", "5", "/usr/bin/python3", root.helperPath]
+        onRunningChanged: if (!running && root.submissionPending) {
+            root.message = "Setting could not start. Reopen Plus settings and try again."
+            stdinEnabled = true
+            root.submissionPending = false
+        }
         stdinEnabled: true
         onStarted: { oversized = false; write(payload); stdinEnabled = false }
         stdout: StdioCollector {
@@ -134,6 +145,7 @@ Column {
             root.message = result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length < 512
                 && (code === 0) === result.ok ? result.message : "Setting was not confirmed. Check the saved value and try again."
             stdinEnabled = true
+            root.submissionPending = false
         }
     }
 }

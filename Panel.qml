@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
+import QtQml.Models as Models
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -28,6 +29,101 @@ Panel {
     readonly property var device: service ? service.selectedDevice : null
     readonly property string deviceName: service ? service.displayName(device) : "KDE Connect"
     readonly property var incomingRequest: service ? service.incomingPairRequest : null
+    readonly property var sectionCatalog: sectionCatalogModel
+    property bool deviceDetailsExpanded: getSetting("devicesStartExpanded", true)
+    property bool actionsExpanded: getSetting("actionsStartExpanded", true)
+    property bool inlineSendExpanded: getSetting("inlineSendStartExpanded", true)
+    property bool nativeFeaturesExpanded: getSetting("nativeFeaturesStartExpanded", false)
+    property bool informationExpanded: getSetting("informationStartExpanded", false)
+    property bool dropActionRevealed: false
+    PanelSectionCatalog {
+        id: sectionCatalogModel
+        storedOrder: root.getSetting("sectionOrder", "")
+        expectedIds: {
+            var ids = []
+            for (var i = 0; i < sectionItems.count; i++) ids.push(sectionItems.get(i).sectionId)
+            return ids
+        }
+        onOrderChanged: Qt.callLater(root.reorderSections)
+        onReadyChanged: if (ready) { root.restoreSectionExpansion(); Qt.callLater(root.reorderSections) }
+    }
+    readonly property var sectionExpansionFields: ({devices:"deviceDetailsExpanded", actions:"actionsExpanded", drop:"inlineSendExpanded", native:"nativeFeaturesExpanded", information:"informationExpanded", media:"mediaExpanded", commands:"commandsExpanded", connections:"networkControlsExpanded", addresses:"addressesExpanded", syncthing:"syncthingExpanded"})
+    function sectionExpanded(id) {
+        var fields = sectionExpansionFields
+        return fields[id] ? root[fields[id]] : false
+    }
+    function setSectionExpanded(id, value) {
+        var fields = sectionExpansionFields
+        if (fields[id] && typeof value === "boolean") root[fields[id]] = value
+    }
+    function toggleSection(id) { setSectionExpanded(id, !sectionExpanded(id)) }
+    function restoreSectionExpansion() {
+        if (!sectionCatalogModel.ready) return
+        sectionCatalogModel.entries.forEach(function(entry) {
+            var value = root.getSetting(entry.expandedKey, entry.defaultExpanded)
+            root.setSectionExpanded(entry.id, typeof value === "boolean" ? value : entry.defaultExpanded)
+        })
+    }
+    function sectionFlag(id) {
+        var entry = sectionCatalogModel.entry(id)
+        // Missing metadata must not reveal optional controls or start providers.
+        if (!entry) return id === "devices"
+        if (!entry.visibilityKey) return true
+        var value = getSetting(entry.visibilityKey, entry.defaultVisible)
+        return typeof value === "boolean" ? value : entry.defaultVisible
+    }
+    function sectionVisible(id) {
+        if (!sectionFlag(id) && !(id === "drop" && dropActionRevealed) && !(id === "actions" && activeComposer !== "none") && !(id === "media" && mediaActionRevealed) && !(id === "commands" && commandsActionRevealed)) return false
+        if (id === "actions") return availableActions.length > 0 || activeComposer !== "none"
+        if (id === "information") return !!device
+        if (id === "media") return mediaPlayerVisible
+        if (id === "commands") return remoteCommandsVisible
+        if (id === "connections") return networkControlsVisible
+        return true
+    }
+    function sectionBodyVisible(id) { return sectionVisible(id) && (sectionExpanded(id) || (id === "actions" && activeComposer !== "none")) }
+    function sectionTitle(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.label : id }
+    function sectionHelp(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.description : "" }
+    function reorderSections() {
+        if (!sectionCatalogModel.ready) return
+        var wanted = sectionCatalogModel.order
+        for (var i = 0; i < wanted.length; i++) {
+            for (var from = i; from < sectionItems.count; from++) {
+                if (sectionItems.get(from).sectionId === wanted[i]) {
+                    if (from !== i) sectionItems.move(from, i, 1)
+                    break
+                }
+            }
+        }
+        if (dropActionRevealed && opened) Qt.callLater(function() { root.scrollSectionIntoView("drop") })
+    }
+    function scrollSectionIntoView(id) {
+        // Reveal and ObjectModel moves can arrive before the positioners' next
+        // polish. Settle their geometry before using the viewport's limits.
+        for (var layoutIndex = 0; layoutIndex < sectionItems.count; layoutIndex++) {
+            var section = sectionItems.get(layoutIndex)
+            if (typeof section.forceLayout === "function") section.forceLayout()
+        }
+        deviceGroups.forceLayout()
+        contentColumn.forceLayout()
+        var viewport = scrollView.contentItem
+        if (!viewport || !("contentY" in viewport)) return
+        for (var i = 0; i < sectionItems.count; i++) {
+            var item = sectionItems.get(i)
+            if (item.sectionId !== id || !item.visible) continue
+            var position = item.mapToItem(scrollView, 0, 0)
+            viewport.contentY = Math.max(0, Math.min(viewport.contentY + position.y, Math.max(0, scrollView.contentHeight - scrollView.availableHeight)))
+            return
+        }
+    }
+    function openDropTarget() {
+        currentView = "Devices"
+        root.open()
+        dropActionRevealed = true
+        setSectionExpanded("drop", true)
+        Qt.callLater(function() { root.scrollSectionIntoView("drop") })
+    }
+
     property bool commandsActionRevealed: false
     property bool mediaActionRevealed: false
     readonly property bool remoteCommandsVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.commands && (commandsActionRevealed || getSetting("showRemoteCommands", true)))
@@ -54,8 +150,9 @@ Panel {
     function openSendWindow() { root.close(); sendWindow.openSend() }
     onOpenedChanged: {
         if (service) service.panelOpened = opened
-        if (!opened) dailyNavigation.closeMenu()
+        if (!opened) { dailyNavigation.closeMenu(); dropActionRevealed = false }
         if (opened) {
+            root.restoreSectionExpansion()
             mediaActionRevealed = false
             commandsActionRevealed = false
             mediaExpanded = getSetting("mediaStartExpanded", true)
@@ -88,12 +185,14 @@ Panel {
 
 
     readonly property var visibleSections: {
-        var list = ["devices"]
-        if (availableActions.length > 0) list.push("actions")
-        if (mediaPlayerVisible) list.push("media")
-        if (remoteCommandsVisible) list.push("commands")
-        if (networkVisible) list.push("network")
-        return list
+        var order = sectionCatalogModel.order
+        var list = []
+        for (var i = 0; i < order.length; i++) {
+            var id = order[i]
+            if (!root.sectionVisible(id)) continue
+            if (id === "devices" || id === "media" || id === "commands" || (id === "actions" && actionsExpanded)) list.push(id)
+        }
+        return list.length ? list : ["devices"]
     }
 
     onAvailableActionsChanged: {
@@ -732,108 +831,184 @@ Panel {
                     SendSection { width: parent.width; service: root.service; foreground: Commons.Color.popups.text; fontFamily: Style.font.family }
                 }
                 ActivitySection { width: parent.width; visible: root.currentView === "Activity"; service: root.service }
-                DeviceSection {
-                    id: deviceSection
-                    visible: root.currentView === "Devices"
-                    panel: root
-                }
-
-                ActionToolbar {
-                    id: actionToolbar
-                    visible: root.currentView === "Devices"
-                    panel: root
-                }
-
-                NativeFeaturesSection {
+                Text {
+                    objectName: "daily-section-error"
                     width: parent.width
-                    visible: root.currentView === "Devices" && root.getSetting("showNativeFeatures", true)
-                    service: root.service
-                }
-                DeviceInformationSection {
-                    width: parent.width
-                    visible: root.currentView === "Devices" && !!root.device
-                    service: root.service
-                    showBattery: root.getSetting("showBatteryStats", true)
-                    showCellular: root.getSetting("showNetworkStats", true)
-                }
-
-                ComposerSection {
-                    id: composerSection
-                    visible: root.currentView === "Devices"
-                    panel: root
-                }
-
-                MediaPlayerSection {
-                    id: mediaPlayerSection
-                    visible: root.currentView === "Devices" && root.mediaPlayerVisible
-                    panel: root
-                }
-
-                RemoteCommandsSection {
-                    id: remoteCommandsSection
-                    visible: root.currentView === "Devices" && root.remoteCommandsVisible
-                    panel: root
-                }
-
-                Button {
-                    focusable: true
-                    width: parent.width
-                    visible: root.currentView === "Devices" && root.networkControlsVisible
-                    text: root.networkControlsExpanded ? "Collapse network controls" : "Expand network controls"
+                    visible: root.currentView === "Devices" && root.sectionCatalog.error !== ""
+                    text: root.sectionCatalog.error
+                    textFormat: Text.PlainText
+                    wrapMode: Text.Wrap
+                    color: Commons.Color.popups.text
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.bodySmall
+                    Accessible.role: Accessible.StaticText
                     Accessible.name: text
-                    onClicked: root.networkControlsExpanded = !root.networkControlsExpanded
                 }
-                NetworkOptions {
-                    id: networkOptions
+                Column {
+                    id: deviceGroups
+                    objectName: "device-sections"
                     width: parent.width
-                    visible: root.currentView === "Devices" && root.networkControlsVisible && root.networkControlsExpanded
-                    panel: root
-                }
-                BthControlCard {
-                    width: parent.width
-                    visible: root.currentView === "Devices" && root.networkControlsVisible && root.networkControlsExpanded && networkOptions.bthEnabled
-                    panelOpened: root.opened && root.currentView === "Devices" && root.networkControlsVisible && root.networkControlsExpanded && networkOptions.bthEnabled
-                    helperPath: root.getSetting("bthHelperPath", "") || (Quickshell.env("HOME") + "/.local/bin/remote-access-mode")
-                    property string lastRouteStatus: ""
-                    onStatusChanged: {
-                        var current = JSON.stringify(status)
-                        if (current !== lastRouteStatus && root.service) root.service.discovery.routeChanged()
-                        lastRouteStatus = current
+                    spacing: Style.space(8)
+                    visible: root.currentView === "Devices"
+                    Repeater { model: sectionItems }
+                    Models.ObjectModel {
+                        id: sectionItems
+                        DeviceSection {
+                            id: deviceSection
+                            property string sectionId: "devices"
+                            visible: root.sectionVisible(sectionId)
+                            panel: root
+                            detailsExpanded: root.deviceDetailsExpanded
+                            onDetailsToggleRequested: root.toggleSection("devices")
+                        }
+                        DailySection {
+                            sectionId: "actions"
+                            title: root.sectionTitle(sectionId)
+                            description: root.sectionHelp(sectionId)
+                            visible: root.sectionVisible(sectionId)
+                            expanded: root.actionsExpanded || root.activeComposer !== "none"
+                            onToggleRequested: {
+                                var wasExpanded = expanded
+                                if (root.activeComposer !== "none") root.closeComposer()
+                                root.setSectionExpanded(sectionId, !wasExpanded)
+                            }
+                            ActionToolbar { id: actionToolbar; panel: root; showSectionHeader: false }
+                            ComposerSection { id: composerSection; panel: root }
+                        }
+                        DailySection {
+                            sectionId: "drop"
+                            title: root.sectionTitle(sectionId)
+                            description: root.sectionHelp(sectionId)
+                            visible: root.sectionVisible(sectionId)
+                            expanded: root.inlineSendExpanded
+                            onToggleRequested: root.toggleSection(sectionId)
+                            InlineSendSection {
+                                id: inlineSendSection
+                                panel: root
+                                onFilesStaged: {
+                                    root.dropActionRevealed = true
+                                    root.setSectionExpanded("drop", true)
+                                    Qt.callLater(function() { root.scrollSectionIntoView("drop") })
+                                }
+                            }
+                        }
+                        DailySection {
+                            sectionId: "native"
+                            title: root.sectionTitle(sectionId)
+                            description: root.sectionHelp(sectionId)
+                            visible: root.sectionVisible(sectionId)
+                            expanded: root.nativeFeaturesExpanded
+                            onToggleRequested: root.toggleSection(sectionId)
+                            SettingsButton {
+                                width: Math.min(implicitWidth, parent.width)
+                                height: Math.max(44, implicitHeight)
+                                text: "Device features in Plus"
+                                Accessible.name: text
+                                tooltipText: "Open local native module controls and their configuration links in Plus settings."
+                                foreground: Commons.Color.popups.text
+                                focusable: true
+                                onClicked: root.openSettings("Device features")
+                            }
+                            NativeFeaturesSection { width: parent.width; service: root.service }
+                        }
+                        DailySection {
+                            sectionId: "information"
+                            title: root.sectionTitle(sectionId)
+                            description: root.sectionHelp(sectionId)
+                            visible: root.sectionVisible(sectionId)
+                            expanded: root.informationExpanded
+                            onToggleRequested: root.toggleSection(sectionId)
+                            DeviceInformationSection {
+                                width: parent.width
+                                service: root.service
+                                showTitle: false
+                                showBattery: root.getSetting("showBatteryStats", true)
+                                showCellular: root.getSetting("showNetworkStats", true)
+                            }
+                        }
+                        MediaPlayerSection {
+                            id: mediaPlayerSection
+                            property string sectionId: "media"
+                            visible: root.sectionVisible(sectionId)
+                            panel: root
+                        }
+                        RemoteCommandsSection {
+                            id: remoteCommandsSection
+                            property string sectionId: "commands"
+                            visible: root.sectionVisible(sectionId)
+                            panel: root
+                        }
+                        DailySection {
+                            sectionId: "connections"
+                            title: root.sectionTitle(sectionId)
+                            description: root.sectionHelp(sectionId)
+                            visible: root.sectionVisible(sectionId)
+                            expanded: root.networkControlsExpanded
+                            onToggleRequested: root.toggleSection(sectionId)
+                            NetworkOptions { id: networkOptions; width: parent.width; panel: root }
+                            BthControlCard {
+                                width: parent.width
+                                visible: networkOptions.bthEnabled
+                                panelOpened: root.opened && root.currentView === "Devices" && root.sectionBodyVisible("connections") && networkOptions.bthEnabled
+                                helperPath: root.getSetting("bthHelperPath", "") || (Quickshell.env("HOME") + "/.local/bin/remote-access-mode")
+                                property string lastRouteStatus: ""
+                                onStatusChanged: {
+                                    var current = JSON.stringify(status)
+                                    if (current !== lastRouteStatus && root.service) root.service.discovery.routeChanged()
+                                    lastRouteStatus = current
+                                }
+                            }
+                        }
+                        DailySection {
+                            sectionId: "addresses"
+                            title: root.sectionTitle(sectionId)
+                            description: root.sectionHelp(sectionId)
+                            visible: root.sectionVisible(sectionId)
+                            expanded: root.addressesExpanded
+                            onToggleRequested: root.toggleSection(sectionId)
+                            SavedAddressesSection {
+                                width: parent.width
+                                showTitle: false
+                                discovery: root.service ? root.service.discovery : null
+                                peerId: root.device ? root.device.id : ""
+                            }
+                        }
+                        DailySection {
+                            sectionId: "syncthing"
+                            title: root.sectionTitle(sectionId)
+                            description: root.sectionHelp(sectionId)
+                            visible: root.sectionVisible(sectionId)
+                            expanded: root.syncthingExpanded
+                            onToggleRequested: root.toggleSection(sectionId)
+                            SyncthingLinkSection {
+                                panelOpened: root.opened && root.currentView === "Devices" && root.sectionBodyVisible("syncthing")
+                                width: parent.width
+                                service: root.service
+                            }
+                        }
+                    }
+                    Repeater {
+                        model: root.service ? [
+                            {id:"quick-share", message:root.service.quickShareMessage || "", shown:!(root.sectionBodyVisible("actions") && root.availableActions.length > 0)},
+                            {id:"native", message:root.service.nativeAppMessage || "", shown:!root.sectionBodyVisible("native") && !(root.sectionBodyVisible("actions") && root.availableActions.length > 0 && !root.getSetting("showNativeFeatures", true))}
+                        ] : []
+                        delegate: Text {
+                            required property var modelData
+                            objectName: "collapsed-launch-status-" + modelData.id
+                            width: deviceGroups.width
+                            visible: modelData.shown && modelData.message !== ""
+                            text: modelData.message
+                            textFormat: Text.PlainText
+                            wrapMode: Text.Wrap
+                            color: Commons.Color.popups.text
+                            font.family: Style.font.family
+                            font.pixelSize: Style.font.bodySmall
+                            Accessible.role: Accessible.StaticText
+                            Accessible.name: text
+                        }
                     }
                 }
-                Button {
-                    focusable: true
-                    width: parent.width
-                    visible: root.currentView === "Devices" && root.savedAddressesVisible
-                    text: root.addressesExpanded ? "Hide saved addresses" : "Manage saved addresses"
-                    Accessible.name: text
-                    onClicked: root.addressesExpanded = !root.addressesExpanded
-                }
-                SavedAddressesSection {
-                    width: parent.width
-                    visible: root.currentView === "Devices" && root.savedAddressesVisible && root.addressesExpanded
-                    discovery: root.service ? root.service.discovery : null
-                    peerId: root.device ? root.device.id : ""
-                }
-                Button {
-                    focusable: true
-                    width: parent.width
-                    visible: root.currentView === "Devices" && root.syncthingVisible
-                    text: root.syncthingExpanded ? "Collapse Syncthing identity note" : "Syncthing identity note"
-                    Accessible.name: text
-                    onClicked: root.syncthingExpanded = !root.syncthingExpanded
-                }
-                SyncthingLinkSection {
-                    panelOpened: root.opened
-                    width: parent.width
-                    visible: root.currentView === "Devices" && root.syncthingVisible && root.syncthingExpanded
-                    service: root.service
-                }
-                NetworkSection {
-                    id: networkSection
-                    visible: false
-                    panel: root
-                }
+                NetworkSection { id: networkSection; visible: false; panel: root }
             }
         }
     }

@@ -24,9 +24,10 @@ If discovery changes the list, open it again to choose from the current devices.
 Launch requested means the command was accepted; it does not confirm a visible
 window. Older KDE Connect settings frontends can open the device list instead.
 
-In Devices, the **Plus settings** button opens general Plus preferences. The gear
-beside the selected device and each paired device opens **Device features** for
-that exact device in Plus. Paired offline devices keep their gear. Use **Native
+In Devices, use the **Device** dropdown to switch devices. It is the only device
+list in the daily view. The gear beside it opens **Device features** for that
+exact device in Plus. Collapse **Device details** to keep the switcher compact.
+Pairing warnings and an active unpair confirmation remain visible. Use **Native
 KDE Connect settings** inside Plus for KDE Connect's full settings and permissions.
 
 ## Daily popup
@@ -43,6 +44,24 @@ A ready draft keeps its recipient and files when you change views. Outside Send,
 a draft reminder names its recipient. Activity shows pending or uncertain
 submission state even when its shortcut is hidden. Accepted requests do not
 confirm delivery.
+
+Each daily section has an Expand or Collapse control. In **Plus settings →
+Appearance → Daily section order**, use **Up** and **Down** to move any complete
+section. Hidden sections keep their position. **Use default section order** resets
+only the order. These display choices apply to all devices on this computer.
+
+Choose **Show in Devices** and **Start expanded** in the section's settings domain:
+
+| Settings domain | Daily sections |
+| --- | --- |
+| Quick actions | Quick actions; File sharing |
+| Device features | Device details; Native KDE Connect; Device information; Media controls; Remote commands |
+| Connections | Connection controls; Saved addresses; Syncthing identity note |
+
+The device switcher stays available when its details collapse. Native features,
+device information and saved addresses start collapsed. Hiding a section keeps
+its data and provider settings. A temporary collapse lasts until you reopen the
+popup. Use **Start expanded** to set the next opening.
 
 ## Appearance
 
@@ -73,7 +92,7 @@ Use an absolute path to your existing reviewed controller. Plus does not create
 that controller or import keys. A missing provider shows an unavailable result.
 See [provider contracts](CONTRACTS.md) before connecting a different controller.
 
-**Saved addresses:** Select a device. Open **Manage saved addresses**. Enter one IP,
+**Saved addresses:** Select a device. Expand **Saved addresses**. Enter one IP,
 choose its source and approve it. An address is a route hint; the KDE identity
 still owns trust. Automatic rediscovery requires both the address opt-in and the
 panel-session switch. It runs while the panel is open, with a 60-second interval.
@@ -185,9 +204,13 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
 
 ## Send files and read activity
 
-1. Select a paired, reachable device. Open **Send**.
-2. Select **Choose files** for the graphical desktop chooser. For file-manager
-   drag and drop, select **Open Send window** so the target stays open.
+1. Select a paired, reachable device. Expand **File sharing** in Devices, or open **Send**.
+2. Drop files on the inline target or select **Choose files** for the graphical
+   desktop chooser. The popup can close when you focus a file manager. Select
+   **Keep Send window open** in Devices, or **Open Send window** in Send, for a
+   persistent target. Dragging local file URLs over the bar icon also opens and
+   reveals the inline target, even if its section is hidden. This reveal lasts
+   for that popup session and does not change its saved visibility.
 3. Choose or drop up to 100 local regular files, at most 1 TiB combined.
    Directories and remote URLs are not accepted. Drops use Copy and preserve originals.
 4. Check the recipient, files, count and size. Select **Send files**. A changed
@@ -212,7 +235,7 @@ Text, Ping, Clipboard and remote-command success messages also report request ac
 
 ## Syncthing identity note
 
-Enable **Show Syncthing identity notes** in **Settings → Appearance**. Select a
+Enable **Show in Devices** for **Syncthing identity note** in **Settings → Connections**. Select a
 device, expand its note and compare the names and full identities in both owner
 apps. Paste the full Syncthing ID and select **Save local identity note**. This
 helps when a machine has different names in the two apps. Changing the selected

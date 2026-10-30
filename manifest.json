@@ -183,6 +183,51 @@
       "type": "boolean",
       "default": false,
       "description": "Show a direct Activity shortcut beside the view menu; Activity remains in the menu."
+    },
+    "devicesStartExpanded": {
+      "type": "boolean",
+      "default": true,
+      "description": "Start devices expanded. This changes the daily layout only."
+    },
+    "showQuickActions": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show quick actions. This changes the daily layout only."
+    },
+    "actionsStartExpanded": {
+      "type": "boolean",
+      "default": true,
+      "description": "Start quick actions expanded. This changes the daily layout only."
+    },
+    "showInlineSend": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show file sharing. This changes the daily layout only."
+    },
+    "inlineSendStartExpanded": {
+      "type": "boolean",
+      "default": true,
+      "description": "Start file sharing expanded. This changes the daily layout only."
+    },
+    "nativeFeaturesStartExpanded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Start native kde connect expanded. This changes the daily layout only."
+    },
+    "showDeviceInformation": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show device information. This changes the daily layout only."
+    },
+    "informationStartExpanded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Start device information expanded. This changes the daily layout only."
+    },
+    "sectionOrder": {
+      "type": "string",
+      "default": "",
+      "description": "Ordered daily section IDs. Empty uses the default order. Hidden sections keep their position."
     }
   }
 }

@@ -268,6 +268,33 @@ section is session UI state; opening the panel restores the selected defaults.
 Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
 
+`PanelSections.json` is the fixed catalogue for the ten daily sections. It owns
+their IDs, labels, help, visibility keys, expansion defaults and settings domain.
+`PanelSectionCatalog.qml` reads this trusted local file. `SectionOrder.js` and
+`scripts/section_order.py` validate the same catalogue and bounded `sectionOrder`
+CSV. Unknown or repeated IDs are rejected on save. Missing known IDs append in
+catalogue order; an empty value restores that order. Malformed stored values use
+the default order. The catalogue contains no component paths or commands.
+An unavailable catalogue or missing section entry keeps that optional section
+hidden, so it cannot start owner-status polls. The device picker and fixed View
+routes stay available; a load failure shows recovery text in the daily panel.
+
+`Panel.qml` moves existing `QtQml.Models.ObjectModel` objects. It preserves draft
+and control identity while changing visual and Tab order. Settings uses stable
+rows and native Up/Down buttons. Saves wait for host readback; pending requests
+keep focus and refuse repeats without a queue. Every section can move, including
+hidden sections. The device switcher stays visible when its details collapse.
+Pairing warnings, pending unpair confirmation and launch feedback remain reachable.
+
+The inline Devices target reuses `FileDropZone.qml` and `SendSection.qml`; it has
+no transfer engine. Accepted local-URL hover over the bar opens and reveals it,
+then settles layout before scrolling it into view. Hover never stages or sends.
+That temporary reveal does not save visibility. An actual drop locks the current
+recipient through the existing inspector. Switching devices does not redirect a
+review draft. An unsaved address/removal review clears when its device changes.
+Moving, hiding or collapsing sections alone does not clear saved records or drafts.
+Collapsed or hidden Syncthing controls do not begin new owner-status polls.
+
 `ActionCatalog.js` owns the 19 reviewed shortcut IDs, groups, help, supported and
 locally-active readiness. The preference/migration boundary accepts only those
 IDs, no duplicates, with a 512-character CSV limit. Native handoffs remain explicit

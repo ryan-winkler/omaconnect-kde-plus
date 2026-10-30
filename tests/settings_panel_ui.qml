@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import QtTest
 import Quickshell
+import "plugin" as Plugin
 import "plugin/components" as Components
 
 ShellRoot {
@@ -17,6 +18,8 @@ ShellRoot {
     property int deviceSelections: 0
     property int monitorRequests: 0
     property string commandEditorTarget: ""
+    readonly property var catalogueForPanel: sectionCatalogModel
+    Plugin.PanelSectionCatalog { id: sectionCatalogModel; storedOrder: panel.getSetting("sectionOrder", "") }
     property var initialDevices: [
         {id:"fixture-phone",name:"Fixture phone",type:"phone",paired:true,reachable:true,reachableAddresses:["192.0.2.10:1716"],activeProviderNames:["LAN"],virtualMonitor:{known:true,active:false,available:true},pluginIds:["kdeconnect_share","kdeconnect_sftp","thirdparty.custom-addon","kdeconnect_remotecommands","kdeconnect_virtualmonitor"],loadedKnown:true,loadedPluginIds:["kdeconnect_share","kdeconnect_virtualmonitor"]},
         {id:"fixture-offline",name:"Fixture phone",type:"laptop",paired:true,reachable:false,pluginIds:["kdeconnect_battery"],loadedKnown:true,loadedPluginIds:["kdeconnect_battery"]},
@@ -53,6 +56,12 @@ ShellRoot {
         return null
     }
     function named(label) { return find(settings.contentItem,function(o) { return typeof o.clicked==="function" && o.Accessible && o.Accessible.name===label },[]) }
+    function preference(key) { return find(settings.contentItem,function(o) { return o.objectName === "preference-" + key },[]) }
+    function checkSectionPreference(key, name, label) {
+        var item = preference(key)
+        return check(item && item.visible && item.label === label && item.Accessible.role === Accessible.CheckBox
+            && item.Accessible.name === name, key + " has compact visible copy and the full semantic AT name in its domain")
+    }
     QtObject {
         id: service
         property var appearance: null
@@ -79,6 +88,7 @@ ShellRoot {
         property var service: service
         property var device: service.selectedDevice
         property var settings: ({networkBthEnabled:true})
+        readonly property var sectionCatalog: test.catalogueForPanel
         function getSetting(key,fallback) { return key in panel.settings ? panel.settings[key] : fallback }
         function selectDevice(id) { test.deviceSelections++;service.selectedDeviceId=id }
     }
@@ -88,18 +98,20 @@ ShellRoot {
         interval:100; running:true; repeat:true
         onTriggered: {
             if (++test.ticks>100) { test.check(false,"scenario completed before deadline");return }
-            if (test.phase===0) { settings.openSettings("Appearance");test.phase=1 }
+            if (test.phase===0 && sectionCatalogModel.ready) { settings.openSettings("Appearance");test.phase=1 }
             else if(test.phase===1) {
                 if(!test.check(settings.visible && settings.width===720 && settings.height===640,"dedicated native settings window opens"))return
                 if(!test.check(settings.transientParent===null,"settings remains independent of the bar popup"))return
                 if(!test.check(test.named("Settings: Appearance").activeFocus,"opening settings focuses domain navigation"))return
                 if(!test.check(test.named("Change selected device icon and alias").Accessible.role===Accessible.Button,"settings actions expose a native button role"))return
-                if(!test.check(test.named("Show Syncthing identity notes")!==null && test.named("Show saved addresses")!==null,"optional sections have explicit saved visibility controls"))return
-                if(!test.check(test.named("Start media expanded")!==null && test.named("Start network controls expanded")!==null,"collapse defaults are configurable"))return
+                if(!test.check(sectionCatalogModel.entries.length===10 && test.named("Use default section order").visible,"Appearance exposes order controls from the real ten-section catalogue"))return
                 test.named("Settings: Connections").clicked();test.phase=2
             } else if(test.phase===2) {
                 if(!test.check(settings.currentPage==="Connections" && test.named("Show MikroTik Back to Home")!==null,"domain navigation exposes connection preferences"))return
                 if(!test.check(panel.getSetting("networkBthEnabled",false) === true && test.named("Show MikroTik Back to Home").checked,"saved BTH preference reaches the real native toggle"))return
+                if(!test.checkSectionPreference("showSyncthingLinks", "Show Syncthing identity note", "Show in Devices"))return
+                if(!test.checkSectionPreference("showSavedAddresses", "Show Saved addresses", "Show in Devices"))return
+                if(!test.checkSectionPreference("networkStartExpanded", "Start Connection controls expanded", "Start expanded"))return
                 var scroll=test.find(settings.contentItem,function(o){return o.objectName === "settings-page-scroll"},[])
                 if(!test.check(scroll && scroll.contentHeight > scroll.availableHeight,"long domain content uses a bounded scrolling region"))return
                 events.mouseWheel(scroll,scroll.width/2,scroll.height/2,0,-2400,Qt.NoButton,Qt.NoModifier,1)
@@ -110,8 +122,12 @@ ShellRoot {
                 test.named("Settings: Quick actions").clicked();test.phase=3
             } else if(test.phase===3) {
                 if(!test.check(test.named("Settings: Quick actions")!==null,"quick actions have an explicit domain"))return
+                if(!test.checkSectionPreference("showQuickActions", "Show Quick actions", "Show in Devices"))return
+                if(!test.checkSectionPreference("showInlineSend", "Show File sharing", "Show in Devices"))return
                 test.named("Settings: Device features").clicked();test.phase=4
             } else if(test.phase===4) {
+                if(!test.checkSectionPreference("mediaStartExpanded", "Start Media controls expanded", "Start expanded"))return
+                if(!test.checkSectionPreference("showRemoteCommands", "Show Remote commands", "Show in Devices"))return
                 var features=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])
                 if(!test.check(features && features.pluginIds.length===5,"complete reported inventory is present in settings"))return
                 if(!test.check(features.nativeConfigurations.some(function(entry) { return entry.id === "kdeconnect_runcommand" }),"native local command configuration is discovered without requiring remote feature support"))return

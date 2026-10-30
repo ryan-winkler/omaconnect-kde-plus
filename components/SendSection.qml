@@ -16,12 +16,14 @@ Column {
     readonly property var files: service ? service.selection : []
     readonly property var activity: service ? service.operations : []
     property bool showAllActivity: false
+    property bool showHeading: true
 
     width: parent ? parent.width : 0
     spacing: Style.space(8)
     visible: !!target || (service && service.selectionError !== "") || activity.length > 0
 
     Text {
+        visible: root.showHeading
         textFormat: Text.PlainText
         width: parent.width
         text: "SEND FILES"
