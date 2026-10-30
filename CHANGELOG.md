@@ -21,7 +21,8 @@ All notable changes are listed here. The format follows
 - Installed icons have searchable thumbnails. Symbolic icons render with the
   software scene graph and follow the current theme. Full-colour installed artwork
   keeps its native colours and internal detail; custom image colours remain
-  an explicit choice. Appearance uses one current-theme preview.
+  an explicit choice. Installed icons also support a custom foreground tint,
+  including names without a symbolic suffix. Appearance uses one current-theme preview.
 - The string-sharing shortcut is labelled Text and uses less toolbar space.
 
 - Settings has a persistent Device dropdown, with shared selection, text states

@@ -35,6 +35,12 @@ The installed-icon inventory includes a `library_truncated` boolean and at most
 1,024 candidate names. The UI resolves them through the active Qt theme; presence
 in the inventory alone is not an availability claim. See [icon sources](ICONS.md).
 
+Theme-icon metadata can include `tint: true` with `render: "symbolic"` for an
+explicit foreground override. The field is a boolean and valid only for theme
+icons. Other types, other modes and a conflicting colour-render value are
+rejected. Legacy theme entries without the flag retain automatic rendering;
+reading does not rewrite their stored metadata.
+
 ## File chooser and submission
 
 `scripts/pick_file.sh` runs `portal_files.py choose`. A normal FileChooser portal

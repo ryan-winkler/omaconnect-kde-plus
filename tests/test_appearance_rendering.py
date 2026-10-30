@@ -60,7 +60,7 @@ class AppearanceRenderingTests(unittest.TestCase):
             self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()), [])
             self.assertTrue(all(call['tool'] == 'fc-match' or (call['tool'] == 'hyprctl' and call['args'][:2] == ['-j', 'getoption']) for call in calls), calls)
             masks = []
-            for index in (0, 1):
+            for index in (0, 1, 4):
                 dark, light = [rgba_pixels(fixture / (label+'-'+str(index)+'.png')) for label in ('dark', 'light')]
                 mask = [pixel[3] for pixel in dark]
                 self.assertGreater(sum(alpha > 0 for alpha in mask), 100, 'loaded symbolic icon must draw pixels')

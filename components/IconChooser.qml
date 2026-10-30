@@ -275,6 +275,30 @@ Controls.Dialog {
                 wrapMode: Text.Wrap
                 Accessible.role: Accessible.AlertMessage
             }
+            Controls.CheckBox {
+                objectName: "appearance-source-colours"
+                font.family: root.fontFamily
+                font.pixelSize: Commons.Style.font.body
+                Layout.fillWidth: true
+                Layout.minimumHeight: 44
+                visible: root.draft.mode === "image" || root.draft.mode === "theme"
+                enabled: !root.pendingApply
+                text: root.draft.mode === "theme" ? qsTr("Keep installed icon colours") : qsTr("Keep image colours")
+                checked: themePreview.sourceColours
+                Accessible.name: text
+                Accessible.description: qsTr("Clear this option to use the theme foreground. Apply saves the choice.")
+                function chooseColours(keep) {
+                    if (!enabled) return
+                    var next = Object.assign({},root.draft)
+                    next.render = keep ? "color" : "symbolic"
+                    if (next.mode === "theme" && !keep) next.tint = true
+                    else delete next.tint
+                    root.draft = Appearance.normalizeIcon(next,root.deviceMode)
+                }
+                onClicked: chooseColours(checked)
+                Accessible.onToggleAction: chooseColours(!checked)
+                Accessible.onPressAction: chooseColours(!checked)
+            }
             SettingsButton {
                 Layout.minimumHeight: 32
                 text: root.moreOptions ? qsTr("Hide more options") : qsTr("More options")
@@ -362,12 +386,6 @@ Controls.Dialog {
                     textFormat: Text.PlainText
                     color: root.foreground
                     wrapMode: Text.Wrap
-                }
-                Controls.CheckBox {
-                    visible: root.draft.mode === "image"
-                    text: qsTr("Keep image colours")
-                    checked: root.draft.render === "color"
-                    onToggled: { var next = Object.assign({},root.draft); next.render = checked ? "color" : "symbolic"; root.draft = next; }
                 }
                 SettingsButton {
                     Layout.minimumHeight: 32

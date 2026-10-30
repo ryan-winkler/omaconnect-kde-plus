@@ -48,6 +48,9 @@ confirm delivery.
 
 - **Bar icon:** Select **Change bar icon**. Choose a labelled preset, search the
   installed icon theme, or use a custom symbol or local PNG/SVG. Preview, then Apply.
+  Installed artwork keeps its native colours automatically. Clear **Keep installed
+  icon colours** to use the theme foreground for any monochrome icon name.
+  Custom image colours have their own choice. Browsing does not save.
 - **Device icon and name:** Select a device, then **Change selected device icon and
   alias**. A local alias changes its display here. It does not change pairing.
 - **Battery beside the icon:** Enable this to show a reported charge. Missing

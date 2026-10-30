@@ -57,13 +57,18 @@ def device_key(value):
 
 
 def icon(value, device=False):
+    """Keep legacy automatic rendering distinct from an explicit tint request."""
     reject(not isinstance(value, dict), 'Icon is invalid.')
-    reject(bool(set(value) - {'mode','value','render','font'}), 'Icon contains unsupported fields.')
+    reject(bool(set(value) - {'mode','value','render','font','tint'}), 'Icon contains unsupported fields.')
     mode = value.get('mode')
     reject(mode not in ({'automatic', 'preset', 'theme', 'glyph', 'image', 'inherit'} if device else {'automatic', 'preset', 'theme', 'glyph', 'image'}), 'Icon mode is invalid.')
     render = value.get('render', 'symbolic')
     reject(render not in {'symbolic', 'color'}, 'Icon rendering is invalid.')
+    reject('tint' in value and (mode != 'theme' or type(value['tint']) is not bool), 'Theme tint override is invalid.')
+    reject(value.get('tint') is True and render != 'symbolic', 'Theme tint requires symbolic rendering.')
     result = {'mode': mode, 'render': render}
+    if value.get('tint') is True:
+        result['tint'] = True
     if mode not in {'automatic', 'inherit'}:
         text = bounded_text(value.get('value'), 128, 'Icon value')
         reject(not text, 'Icon value is empty.')

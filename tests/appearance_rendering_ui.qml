@@ -6,7 +6,7 @@ import "plugin/components" as Components
 
 Window {
     id: test
-    width:600; height:160; visible:true
+    width:760; height:160; visible:true
     property string iconForeground: "#f0f0f0"
     property int phase: 0
     property int pending: 0
@@ -36,7 +36,8 @@ Window {
                 {name:"Installed desktop",value:"computer-symbolic"},
                 {name:"Installed phone",value:"phone-symbolic"},
                 {name:"Custom colours",source:"",custom:true},
-                {name:"Installed application",value:"kdeconnect",application:true}
+                {name:"Installed application",value:"kdeconnect",application:true},
+                {name:"Custom foreground",value:"fixture-line",monochrome:true}
             ]
             Column {
                 required property var modelData
@@ -46,9 +47,9 @@ Window {
                 Components.AppearanceIcon {
                     id: preview
                     width:64;height:64
-                    icon:modelData.custom ? ({mode:"image",value:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.svg",render:"color"}) : ({mode:"theme",value:test.swapped && index===0 ? "phone-symbolic" : modelData.value,render:"symbolic"})
+                    icon:modelData.monochrome ? ({mode:"theme",value:modelData.value,render:"symbolic",tint:true}) : modelData.custom ? ({mode:"image",value:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.svg",render:"color"}) : ({mode:"theme",value:test.swapped && index===0 ? "phone-symbolic" : modelData.value,render:"symbolic"})
                     // Native provider path fallback keeps this offscreen fixture independent of a desktop theme.
-                    themedSource: modelData.custom ? "" : modelData.application ? "image://icon/kdeconnect.svg?path=usr/share/icons/hicolor/scalable/apps" : "image://icon/" + (test.swapped && index===0 ? "phone-symbolic" : modelData.value) + ".svg?path=usr/share/icons/Adwaita/symbolic/devices"
+                    themedSource: modelData.custom ? "" : modelData.monochrome ? "image://icon/phone-symbolic.svg?path=usr/share/icons/Adwaita/symbolic/devices" : modelData.application ? "image://icon/kdeconnect.svg?path=usr/share/icons/hicolor/scalable/apps" : "image://icon/" + (test.swapped && index===0 ? "phone-symbolic" : modelData.value) + ".svg?path=usr/share/icons/Adwaita/symbolic/devices"
                     assetBaseUrl:Qt.resolvedUrl("assets/").toString()
                     foreground:test.iconForeground
                 }

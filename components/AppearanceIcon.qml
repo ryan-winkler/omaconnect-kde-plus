@@ -25,7 +25,7 @@ Item {
     // Full-colour application artwork has opaque internal backgrounds. Tinting
     // its alpha mask erases that detail; symbolic theme icons remain tintable.
     readonly property bool sourceColours: normalized.render === "color"
-        || (normalized.mode === "theme" && !normalized.value.endsWith("-symbolic"))
+        || (normalized.mode === "theme" && normalized.tint !== true && !Appearance.symbolicThemeName(normalized.value))
     readonly property bool fallback: !useGlyph && imageUnavailable
     readonly property string warning: fontMissing ? qsTr("Font unavailable. Phone is shown.") : normalized.mode === "image" && fallback ? qsTr("Imported image is unavailable. Phone is shown.") : normalized.mode === "theme" && fallback ? qsTr("Theme icon is unavailable. Phone is shown.") : normalized.mode === "preset" && fallback ? qsTr("Icon fonts are unavailable. Phone is shown.") : ""
     implicitWidth: iconSize
