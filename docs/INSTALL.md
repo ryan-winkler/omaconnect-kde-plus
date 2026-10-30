@@ -78,6 +78,12 @@ Unknown settings, duplicate entries or an existing `Omaconnect.plus` entry need
 your review. Legacy Tailscale auto-discovery stays disabled; use the saved-address
 controls instead.
 
+`prepare` records binding locations and line hashes; it does not edit bindings.
+Before switching, back up each file listed in `snapshot.json` under `bindings`.
+Check that each referenced line still has its recorded SHA-256 hash, calculated
+from the line text without its newline. If a line moved or changed, run `prepare`
+again in a new output directory and review the new candidate before switching.
+
 To switch:
 
 1. Add Plus without `--enable`, or decline the enable prompt.
@@ -96,7 +102,13 @@ To switch:
 
    An existing appearance file needs manual review; keep it until you have merged
    the intended display choices. Do not replace it with an older candidate.
-3. Check the bar, keyboard focus and your devices. Keep the original installed
+3. Update each reviewed binding line from its recorded `old_id` command target
+   to `Omaconnect.plus`. For example, change `omarchy-shell omaconnect toggle`
+   to `omarchy-shell Omaconnect.plus toggle`. Keep the key, action and other
+   arguments unchanged. Do not replace IDs across the whole file. If the line
+   changed since review, stop and reconcile that line first. Keep a private
+   record of each original and edited line, its file and its hash for rollback.
+4. Check the bar, keyboard focus and your devices. Keep the original installed
    until you are satisfied.
 
 ## Roll back
@@ -117,3 +129,10 @@ restores the original bar slot and enabled state. Replacing
 `${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json` with it restores that state.
 Then disable `Omaconnect.plus` if it remains enabled as an installed plugin; the
 original stays enabled only if it was enabled before the move.
+
+The rollback helper does not restore bindings. Use your private before/after
+record to reverse only the command-target edits you made, such as
+`omarchy-shell Omaconnect.plus toggle` back to `omarchy-shell omaconnect toggle`.
+First verify that the current line and hash still match your edited version.
+If they differ, reconcile that line by review. Preserve all unrelated later
+changes; do not restore a whole binding file or replace IDs globally.
