@@ -46,7 +46,7 @@ Column {
     Text {
         objectName: "native-launch-status"
         width: parent.width
-        visible: root.configuration && text !== ""
+        visible: text !== ""
         text: root.service ? root.service.nativeAppMessage : ""
         textFormat: Text.PlainText
         wrapMode: Text.Wrap

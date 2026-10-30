@@ -51,9 +51,20 @@ ShellRoot {
             } else if (test.phase === 5 && !service.nativeAppOpening) {
                 if (!test.check(service.nativeAppFailed && service.nativeAppMessage.indexOf("Direct configuration unavailable") === 0, "unsupported direct configuration gives a native fallback step")) return
                 if (!test.check(service.editRemoteCommands("A"), "native editor request accepts the paired capable peer")) return
+                service.openKdeConnectApp()
                 test.phase = 6
-            } else if (test.phase === 6 && service.actionState !== "running") {
+            } else if (test.phase === 6 && !service.nativeAppOpening) {
+                if (!test.check(service.actionState === "running" && service.actionMessage === "Requesting remote command editor", "native launch completion preserves the running device action")) return
+                if (!test.check(!service.editRemoteCommands("A"), "running editor still blocks repeat device requests")) return
+                // The rejected second request has its own honest busy feedback.
+                test.phase = 7
+            } else if (test.phase === 7 && service.actionState === "accepted") {
                 if (!test.check(service.actionState === "accepted" && service.actionMessage.indexOf("Command editor request accepted") === 0, "editor acceptance does not claim execution or opened remote UI")) return
+                service.editRemoteCommands("A")
+                service.openKdeConnectApp()
+                test.phase = 8
+            } else if (test.phase === 8 && !service.nativeAppOpening && service.actionState !== "running") {
+                if (!test.check(service.actionState === "unknown" && service.actionError.indexOf("Submission unknown") === 0, "later native launch completion preserves uncertain device submission")) return
                 console.log("NATIVE_PASS native launch")
                 Qt.quit()
             }

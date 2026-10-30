@@ -220,7 +220,9 @@ selected ID closes an old icon editor. Device switching keeps the current domain
 and scroll position, with the existing panel draft/action resets.
 Native launch progress, request acceptance and errors use the controller's
 `nativeAppMessage` and `nativeAppFailed`; unrelated actions cannot appear as launch
-feedback. `nativeAppOpening` exposes its existing process-running state to prevent
+feedback. Native launches never write shared device action state, so completion
+cannot overwrite a running, failed or uncertain device submission.
+`nativeAppOpening` exposes its existing process-running state to prevent
 repeat requests. A late launch result for another selected ID is ignored.
 Offline feature reports never claim a current loaded status.
 The panel's device gears use `Panel.openDeviceSettings(id)`, which validates the

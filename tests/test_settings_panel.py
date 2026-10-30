@@ -20,10 +20,15 @@ class SettingsPanelTests(unittest.TestCase):
             discovery = plugin / 'scripts/discover_devices.sh'
             discovery.write_text(discovery.read_text().replace('kdeconnect_share,kdeconnect_battery', 'kdeconnect_share,kdeconnect_battery,kdeconnect_remotecommands'))
             (plugin / 'scripts/edit_remote_commands.py').write_text(
-                'import json,sys\nfrom pathlib import Path\n'
+                'import json,sys,time\nfrom pathlib import Path\n'
                 'request=json.loads(sys.stdin.readline())\n'
                 'Path.home().joinpath("editor-request.json").write_text(json.dumps(request))\n'
-                'print(json.dumps({"state":"request_accepted","error":""}))\n'
+                'count=Path.home()/"editor-count"\n'
+                'number=int(count.read_text())+1 if count.exists() else 1\n'
+                'count.write_text(str(number))\n'
+                'time.sleep(0.6 if number==1 else 0.1)\n'
+                'print(json.dumps({"state":"request_accepted","error":""} if number==1 else {"state":"failed","error":"submission-unknown"}))\n'
+                'sys.exit(0 if number==1 else 1)\n'
             )
             (plugin / 'scripts/open_app.sh').write_text(
                 '#!/bin/bash\n'
@@ -36,7 +41,7 @@ class SettingsPanelTests(unittest.TestCase):
 
         def assert_launch(fixture, home, output, calls):
             self.assertIn('NATIVE_PASS native launch', output)
-            self.assertEqual((home / 'native-targets').read_text().splitlines(), ['A', 'B', 'A', 'A', 'A'])
+            self.assertEqual((home / 'native-targets').read_text().splitlines(), ['A', 'B', 'A', 'A', 'A', 'A', 'A'])
             self.assertEqual((home / 'native-config-targets').read_text().splitlines(), ['kdeconnect_runcommand', 'kdeconnect_clipboard'])
             self.assertEqual(json.loads((home / 'editor-request.json').read_text()), {'peerId': 'A'})
             self.assertTrue(all(row['tool'] in ('fc-match', 'hyprctl', 'dbus-monitor') for row in calls), calls)

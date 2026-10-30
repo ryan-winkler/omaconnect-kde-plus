@@ -960,9 +960,6 @@ Item {
         appProcess.configurationRequested = pluginId !== ""
         nativeAppMessage = pluginId ? "Opening native feature configuration" : "Opening KDE Connect"
         nativeAppFailed = false
-        actionState = "running"
-        actionMessage = nativeAppMessage
-        actionError = ""
         appProcess.command = ["bash", getAppScriptPath()]
         if (selectedDeviceId) appProcess.command = appProcess.command.concat([selectedDeviceId])
         if (pluginId) appProcess.command = appProcess.command.concat([pluginId])
@@ -1276,15 +1273,6 @@ Item {
             root.nativeAppMessage = code === 0 ? (configurationRequested ? "Native configuration launch requested" : "KDE Connect launch requested")
                 : configurationRequested && code === 69 ? "Direct configuration unavailable. Open Native KDE Connect settings, then Plugin Settings."
                 : root.safeError(code, "KDE Connect app")
-            if (code === 0) {
-                root.actionState = "accepted"
-                root.actionMessage = root.nativeAppMessage
-                root.actionError = ""
-            } else {
-                root.actionState = "failed"
-                root.actionMessage = ""
-                root.actionError = root.nativeAppMessage
-            }
         }
     }
 
