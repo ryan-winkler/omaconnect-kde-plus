@@ -15,7 +15,7 @@ which callers map to skip-device / exit-70):
     addresses  stdin: customDevices get-property reply     -> addresses, one per line
     truthy     stdin: single-boolean call reply            -> exit 0 iff data == [true]
     device     argv: <id> <device_json> <battery_json> <connectivity_json> [<loaded_json>]
-              -> one 16-field DEVICE tab-separated line for the QML contract
+              -> DEVICE line: 16 legacy fields plus optional bounded information JSON
 
 Dependencies: busctl (systemd) for the callers, python3.
 """
@@ -110,7 +110,7 @@ def bounded_strings(value):
 
 
 def format_device(device_id, device_props, battery_props=None, conn_props=None, loaded=None, monitor=None):
-    """Flattened GetAll properties -> the 16-field DEVICE TSV line.
+    """Flattened GetAll properties -> DEVICE TSV, with optional information JSON.
 
     Fields: DEVICE, id, name, type, paired, reachable, charge (-1 n/a),
     charging, plugins (comma list), netType, netStrength (-1 n/a),

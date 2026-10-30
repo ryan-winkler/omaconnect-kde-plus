@@ -20,7 +20,7 @@ virtual environment or AUR package.
    ```
 
 3. Review the trust and bar placement prompts. Open the new bar icon, select
-   **All KDE Connect features** and pair your device in KDE Connect if necessary.
+   **Native KDE Connect settings** and pair your device in KDE Connect if necessary.
 
 The add command clones the repository and validates its manifest. It does not
 run a repository install script. Optional integrations start hidden. Existing

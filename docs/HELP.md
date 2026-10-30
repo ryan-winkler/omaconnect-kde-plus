@@ -72,7 +72,7 @@ Each action shows its description and selected-device availability.
 - **SMS:** Open native KDE Connect conversations, where the platform permits it.
 - **Ping:** Compose a notification. The optional default message fills the draft;
   you can edit up to 8192 characters before sending. Private Ping content also uses the session bus. Ping and Ring use different native modules.
-- **KDE Connect features:** Open the selected peer in native KDE Connect.
+- **Native KDE Connect settings:** Open the selected device in native KDE Connect.
 
 ## Device features
 
