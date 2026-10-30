@@ -16,7 +16,7 @@ KEYS |= frozenset(('showSavedAddresses', 'showSyncthingLinks', 'showNetworkContr
 KEYS |= frozenset(("showNativeFeatures",))
 KEYS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
 STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath", "quickActionsOrder"))
-ACTION_IDS = frozenset(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock'))
+ACTION_IDS = frozenset(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock'))
 MAX_REQUEST = 32768
 
 

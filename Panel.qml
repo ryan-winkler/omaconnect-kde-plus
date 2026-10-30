@@ -282,6 +282,7 @@ Panel {
     function triggerAction(actionId) {
         if (!(actionId === "file" && service && service.fileBusy) && !Actions.ready(actionId, device, service)) return
         if (actionId === "plus-settings") { openSettings(); return }
+        if (actionId === "quick-share") { service.openQuickShare(); return }
         var entry = Actions.entry(actionId)
         if (entry && entry.handoff && actionId !== "sms") {
             if (service) service.openKdeConnectApp()
@@ -809,6 +810,7 @@ Panel {
                     onClicked: root.syncthingExpanded = !root.syncthingExpanded
                 }
                 SyncthingLinkSection {
+                    panelOpened: root.opened
                     width: parent.width
                     visible: root.currentView === "Devices" && root.syncthingVisible && root.syncthingExpanded
                     service: root.service

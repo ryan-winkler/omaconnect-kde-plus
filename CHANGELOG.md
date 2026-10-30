@@ -6,6 +6,12 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- An optional Quick Share shortcut opens an installed RQuickShare app.
+- Linked Syncthing devices show their last checked pause state, with explicit
+  refresh and pause/resume controls. Changes wait for Syncthing readback.
+
 ### Changed
 
 - Daily navigation uses a compact View menu and settings icon. Place it at Top
