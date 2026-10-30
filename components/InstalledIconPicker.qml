@@ -20,6 +20,7 @@ Item {
     property string fontFamily: Style.font.family
     property int rowHeight: Math.max(44, Style.spacing.controlHeight)
     property int popupRowHeight: Math.max(44, Style.spacing.popupRowHeight)
+    readonly property Item overlayItem: Controls.Overlay.overlay
     readonly property bool popupOpen: popup.opened
     readonly property string optionsKey: JSON.stringify((Array.isArray(options) ? options.slice(0, 1024) : []).filter(function(name) {
         return typeof name === "string" && /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(name)
@@ -110,28 +111,36 @@ Item {
     Controls.Popup {
         id: popup
         objectName: "installed-icon-popup"
-        parent: Controls.Overlay.overlay
+        parent: root
         readonly property int margin: Style.space(8)
-        width: Math.max(0, Math.min(root.width, parent ? parent.width - margin * 2 : root.width))
+        width: Math.max(0, Math.min(root.width, root.overlayItem ? root.overlayItem.width - margin * 2 : root.width))
         height: Math.min(search.implicitHeight + padding * 2 + Style.space(8)
             + Math.max(1, Math.min(6, root.matchingOptions.length)) * root.popupRowHeight,
-            parent ? Math.max(0, parent.height - margin * 2) : 340)
+            root.overlayItem ? Math.max(0, root.overlayItem.height - margin * 2) : 340)
         function place() {
-            if (!parent) return
-            x = Math.max(margin, Math.min(root.mapToItem(parent, 0, 0).x, parent.width - width - margin))
-            y = Math.max(margin, Math.min(root.mapToItem(parent, 0, root.height).y, parent.height - height - margin))
+            if (!root.overlayItem) return
+            var below = root.mapToItem(root.overlayItem, 0, root.height)
+            var above = root.mapToItem(root.overlayItem, 0, 0)
+            var preferredY = below.y
+            if (below.y + height > root.overlayItem.height - margin && above.y - height >= margin)
+                preferredY = above.y - height
+            var overlayX = Math.max(margin, Math.min(below.x, root.overlayItem.width - width - margin))
+            var overlayY = Math.max(margin, Math.min(preferredY, root.overlayItem.height - height - margin))
+            var position = root.overlayItem.mapToItem(root, overlayX, overlayY)
+            x = position.x
+            y = position.y
         }
         onAboutToShow: place()
         onWidthChanged: if (opened) place()
         onHeightChanged: if (opened) place()
         Connections {
-            target: popup.parent
+            target: root.overlayItem
             function onWidthChanged() { if (popup.opened) popup.place() }
             function onHeightChanged() { if (popup.opened) popup.place() }
         }
         padding: Style.space(8)
         focus: true
-        closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutside
+        closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutsideParent
         onOpened: {
             place()
             search.text = ""

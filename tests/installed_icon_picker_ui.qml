@@ -8,6 +8,7 @@ Window {
     id: test
     width:520;height:440;visible:true
     property int phase:0
+    property bool dispatching:false
     property int changes:0
     property int captures:0
     property string draft:""
@@ -22,6 +23,7 @@ Window {
         onChanged:function(value){test.draft=value;test.changes++}
     }
     TestCase {id:events;when:false}
+    Item { TestEvent {id:pointerEvents} }
     function all(item, predicate, seen) {
         var found=[]
         seen=seen || []
@@ -46,14 +48,38 @@ Window {
     Timer {
         interval:100;running:true;repeat:true
         onTriggered: {
+            if(test.dispatching)return
+            test.dispatching=true
+            try {
             var trigger=test.named("installed-icon-trigger")
             var popup=test.named("installed-icon-popup")
             var search=test.named("installed-icon-search")
             var results=test.named("installed-icon-results")
-            if(test.phase===0){trigger.forceActiveFocus();events.keyClick(Qt.Key_Space);test.phase++;return}
+            if(test.phase===0){
+                picker.y=25
+                if(!test.check(pointerEvents.mouseClick(trigger,trigger.width/2,trigger.height/2,Qt.LeftButton,Qt.NoModifier,1),"first real trigger click is delivered"))return
+                test.phase=-1;return
+            }
+            if(test.phase===-1){
+                if(!test.check(picker.popupOpen,"first real trigger click opens picker"))return
+                pointerEvents.mouseClick(trigger,trigger.width/2,trigger.height/2,Qt.LeftButton,Qt.NoModifier,1)
+                test.phase=-2;return
+            }
+            if(test.phase===-2){
+                if(!test.check(!picker.popupOpen && test.changes===0,"second real trigger click closes without selecting or reopening"))return
+                picker.open();test.phase=-3;return
+            }
+            if(test.phase===-3){
+                pointerEvents.mouseClick(test.contentItem,4,4,Qt.LeftButton,Qt.NoModifier,1)
+                test.phase=-4;return
+            }
+            if(test.phase===-4){
+                if(!test.check(!picker.popupOpen && test.changes===0,"click outside popup and trigger closes without choosing"))return
+                picker.y=330;trigger.forceActiveFocus();events.keyClick(Qt.Key_Space);test.phase=1;return
+            }
             if(test.phase===1){
                 if(!test.check(picker.popupOpen && search.activeFocus,"Space opens a focused search"))return
-                if(!test.check(popup.x>=0 && popup.y>=0 && popup.x+popup.width<=test.width && popup.y+popup.height<=test.height,"popup fits the minimum-height window"))return
+                if(!test.check(popup.parent.mapToItem(picker.overlayItem,popup.x,popup.y).x>=0 && popup.parent.mapToItem(picker.overlayItem,popup.x,popup.y).y>=0 && popup.parent.mapToItem(picker.overlayItem,popup.x,popup.y).x+popup.width<=test.width && popup.parent.mapToItem(picker.overlayItem,popup.x,popup.y).y+popup.height<=test.height,"popup fits the minimum-height window"))return
                 if(!test.check(results.count===1024,"inventory is bounded"))return
                 var thumbs=test.all(results,function(item){return item.objectName==="installed-icon-thumbnail"})
                 if(!test.check(thumbs.length>=2 && thumbs.length<=12,"only visible rows allocate thumbnails: "+thumbs.length))return
@@ -124,16 +150,25 @@ Window {
             }
             if(test.phase===25){picker.open();test.phase=26;return}
             if(test.phase===26){
-                var position=picker.mapToItem(popup.parent,0,picker.height)
-                var expectedY=Math.max(popup.margin,Math.min(position.y,popup.parent.height-popup.height-popup.margin))
-                var expectedX=Math.max(popup.margin,Math.min(position.x,popup.parent.width-popup.width-popup.margin))
-                if(!test.check(Math.abs(popup.y-expectedY)<1 && Math.abs(popup.x-expectedX)<1,"reopened popup follows moved trigger"))return
+                var position=picker.mapToItem(picker.overlayItem,0,picker.height)
+                var actual=popup.parent.mapToItem(picker.overlayItem,popup.x,popup.y)
+                var expectedY=Math.max(popup.margin,Math.min(position.y,picker.overlayItem.height-popup.height-popup.margin))
+                var expectedX=Math.max(popup.margin,Math.min(position.x,picker.overlayItem.width-popup.width-popup.margin))
+                if(!test.check(Math.abs(actual.y-expectedY)<1 && Math.abs(actual.x-expectedX)<1,"reopened popup follows moved trigger"))return
                 test.width=400;test.height=300;test.phase=27;return
             }
             if(test.phase===27){
-                if(!test.check(popup.x>=popup.margin && popup.y>=popup.margin && popup.x+popup.width<=popup.parent.width-popup.margin+1 && popup.y+popup.height<=popup.parent.height-popup.margin+1,"open popup stays within resized overlay"))return
+                var actual=popup.parent.mapToItem(picker.overlayItem,popup.x,popup.y)
+                if(!test.check(actual.x>=popup.margin && actual.y>=popup.margin && actual.x+popup.width<=picker.overlayItem.width-popup.margin+1 && actual.y+popup.height<=picker.overlayItem.height-popup.margin+1,"open popup stays within resized overlay"))return
+                var option=test.named("installed-icon-option-0")
+                if(!test.check(option && pointerEvents.mouseClick(option,option.width/2,option.height/2,Qt.LeftButton,Qt.NoModifier,1),"real pointer click reaches a popup option"))return
+                test.phase=28;return
+            }
+            if(test.phase===28){
+                if(!test.check(!picker.popupOpen && test.draft==="icon-0100" && test.changes===3 && test.persisted==="original","real pointer selection changes only the draft and closes the popup"))return
                 console.log("NATIVE_PASS installed icon picker");Qt.quit()
             }
+            } finally { test.dispatching=false }
         }
     }
     Timer {interval:5000;running:true;onTriggered:{test.check(false,"scenario deadline");Qt.quit()}}
