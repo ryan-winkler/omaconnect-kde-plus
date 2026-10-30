@@ -24,7 +24,7 @@ assert.equal(new Set(api.entries.map(row=>row.id)).size,api.entries.length);
 assert.equal(api.parse('').length,0);assert.equal(api.parse('ring,file').join(','),'ring,file');
 for(const value of [null,{},['ring'],'ring,ring','file,unknown',' ring','file,','ring;id','x'.repeat(513)])assert.equal(api.parse(value),null);
 assert.equal(api.order('invalid').join(','),api.DEFAULT_ORDER);
-const every=api.entries.map(row=>row.id).join(',');assert.ok(every.length>128 && every.length<=512);assert.equal(api.parse(every).length,18);
+const every=api.entries.map(row=>row.id).join(',');assert.ok(every.length>128 && every.length<=512);assert.equal(api.parse(every).length,api.entries.length);
 for(const row of api.entries){assert.ok(row.label && row.description && row.group);assert.ok(row.description.length<200)}
 const phone={paired:true,reachable:true,capabilities:{file:true,ring:true},loadedKnown:true,loadedPluginIds:[]};
 assert.equal(api.available('ring,text,file,native-features',phone).join(','),'ring,file,native-features');
@@ -47,6 +47,10 @@ service.mediaState={player:'Owned player'};assert.equal(api.ready('media-next',m
 service.actionState='running';assert.equal(api.ready('media-next',media,service),false);assert.equal(api.ready('media',media,service),true);assert.equal(api.ready('native-features',null,service),true);
 assert.match(api.availabilityText('native-volume',media,service),/native KDE Connect/);
 assert.equal(api.entry('unfamiliar_native_plugin'),null,'unknown module IDs are native inventory, never generated commands');
+const monitor={paired:true,reachable:true,pluginIds:['kdeconnect_virtualmonitor'],loadedKnown:true,loadedPluginIds:['kdeconnect_virtualmonitor'],virtualMonitor:{known:true,active:false,available:true}};
+service.actionState='idle';assert.equal(api.ready('external-monitor',monitor,service),true);
+monitor.virtualMonitor.active=true;monitor.virtualMonitor.available=false;assert.equal(api.ready('external-monitor',monitor,service),true);assert.equal(api.actionLabel('external-monitor',monitor),'Stop virtual monitor session');
+monitor.virtualMonitor.known=false;assert.equal(api.ready('external-monitor',monitor,service),false);assert.match(api.availabilityText('external-monitor',monitor,service),/state is unavailable/);
 '''
         result=subprocess.run([shutil.which('node'),'-e',code,str(ROOT/'ActionCatalog.js')],text=True,capture_output=True,timeout=5)
         self.assertEqual(result.returncode,0,result.stderr)

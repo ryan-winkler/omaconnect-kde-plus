@@ -12,6 +12,9 @@ All notable changes are listed here. The format follows
   for offline and unpaired devices, keyboard control and native launch feedback.
 - Device gears open the selected device's Plus settings. The explicit Native
   KDE Connect settings link opens the full native settings application.
+- Device Information now includes native addresses and connection providers.
+  Feature names come from installed KDE metadata, with unknown IDs preserved.
+  A native external-monitor action exposes observed availability and Start/Stop.
 - Trimmed the docs to user and contributor guides; install, update and
   migration now live in `docs/INSTALL.md`.
 

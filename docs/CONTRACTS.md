@@ -156,6 +156,35 @@ receipt.
 
 ## Settings window and typed preferences
 
+### Native information, metadata and virtual monitor
+
+Discovery preserves the original first 16 DEVICE fields. An optional trailing JSON
+field carries up to 16 addresses and 16 provider names of at most 256 characters each,
+plus native virtual-monitor known/active/available booleans. QML revalidates these
+bounds. Legacy 16-field records remain valid. Unknown reads never mean false or
+available. Virtual-monitor properties are read only for reported support, with a
+two-second native-call timeout.
+
+Feature display names use the installed `PluginModel.pluginDisplayName` API in an
+optional loader. The metadata model has no device target and is never bound as a
+view model or used to read/write plugin check state. Missing metadata falls back
+to the reported ID. This replaces the private name map, not the safe action
+catalog. Native actions still need a reviewed dispatcher.
+
+`virtual_monitor.py` accepts one bounded 512-byte JSON line containing `peerId` and
+`operation` (`start` or `stop`). It validates the D-Bus path ID, rechecks native
+paired/reachable and monitor state, then uses only `requestVirtualMonitor` or
+`stop` on `org.kde.kdeconnect.device.virtualmonitor`. Calls prohibit daemon
+auto-start, have 1.5-second timeouts and a five-second overall cancellation limit.
+Starting an already-active session is a no-op. Native KDE Connect owns KRDP,
+credentials and remote permission. Unknown mutation replies stay unknown; there
+is no automatic retry. Request acceptance is not remote display confirmation.
+
+These APIs and Information fields were checked against
+[KDE Connect 26.08.2's device page](https://github.com/KDE/kdeconnect-kde/blob/v26.08.2/app/qml/DevicePage.qml),
+[metadata model](https://github.com/KDE/kdeconnect-kde/blob/v26.08.2/models/pluginmodel.cpp)
+and [virtual-monitor interface](https://github.com/KDE/kdeconnect-kde/blob/v26.08.2/plugins/virtualmonitor/virtualmonitorplugin.h).
+
 `SettingsPanel.qml` is an independent nonmodal native Window. Its four domains
 share the current device context and retain a Back to devices route. Native KDE
 module settings open in KDE Connect with the selected ID; peer pairing/reachability
@@ -169,9 +198,11 @@ and `currentValue`, so replacing or reordering discovery rows preserves identity
 A changed inventory closes the popup before it can submit a stale row. A changed
 selected ID closes an old icon editor. Device switching keeps the current domain
 and scroll position, with the existing panel draft/action resets.
-Native launch progress, request acceptance and errors use the controller's action
-state; `nativeAppOpening` exposes its existing process-running state to prevent
-repeat requests. Offline feature reports never claim a current loaded status.
+Native launch progress, request acceptance and errors use the controller's
+`nativeAppMessage` and `nativeAppFailed`; unrelated actions cannot appear as launch
+feedback. `nativeAppOpening` exposes its existing process-running state to prevent
+repeat requests. A late launch result for another selected ID is ignored.
+Offline feature reports never claim a current loaded status.
 The panel's device gears use `Panel.openDeviceSettings(id)`, which validates the
 current inventory, selects through the same panel path, then opens Device features.
 Neither the header gear nor paired-device gears launch KDE Connect implicitly.

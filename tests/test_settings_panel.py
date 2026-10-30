@@ -1,7 +1,6 @@
 """Independent native settings window, domain navigation and feature search."""
 import json
 from pathlib import Path
-import shutil
 import unittest
 
 if __package__:
@@ -11,16 +10,36 @@ else:
 
 
 class SettingsPanelTests(unittest.TestCase):
+    def test_native_launch_feedback_uses_the_requested_device(self):
+        runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
+        runner.qml_fixture = 'native_launch_ui.qml'
+        runner.force_offscreen = True
+
+        def configure(fixture, plugin, home, fake_bin):
+            # Only a private stub runs; no native app or real session is reachable.
+            (plugin / 'scripts/open_app.sh').write_text(
+                '#!/bin/bash\n'
+                'printf "%s\\n" "$1" >> "$HOME/native-targets"\n'
+                '/usr/bin/sleep 0.2\n'
+                '[[ "$1" != B ]] || exit 127\n'
+            )
+
+        def assert_launch(fixture, home, output, calls):
+            self.assertIn('NATIVE_PASS native launch', output)
+            self.assertEqual((home / 'native-targets').read_text().splitlines(), ['A', 'B', 'A'])
+            self.assertTrue(all(row['tool'] in ('fc-match', 'hyprctl', 'dbus-monitor') for row in calls), calls)
+            self.assertEqual(json.loads((fixture / 'portal-receipt.json').read_text()), [])
+
+        runner.configure_fixture = configure
+        runner.assert_fixture = assert_launch
+        runner.test_actual_service_bar_panel_and_controls()
+
     def assert_fixture(self, fixture, home, output, calls):
         self.assertIn('SETTINGS_PASS', output, output)
         self.assertTrue(all(row["tool"] == "fc-match" or (row["tool"] == "hyprctl" and row["args"][:2] == ["-j", "getoption"]) for row in calls), calls)
         self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()), [])
-        destination=Path(__file__).resolve().parents[2]/'settings-design-review'
-        destination.mkdir(exist_ok=True)
         images=list(fixture.glob('settings-*.png'))
-        self.assertEqual(len(images),9)
-        for image in images:
-            shutil.copyfile(image,destination/image.name)
+        self.assertEqual(len(images),10)
 
     def test_native_window_domains_search_and_return_flow(self):
         if not Path('/usr/lib/qt6/qml/QtTest/qmldir').is_file():

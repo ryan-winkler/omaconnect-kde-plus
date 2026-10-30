@@ -179,7 +179,7 @@ class DeviceTsvFormatterTests(unittest.TestCase):
         "kdeconnect_mpriscontrol", "kdeconnect_notifications", "kdeconnect_sftp",
     ])
 
-    def test_clean_fixture_exact_16_field_line(self):
+    def test_clean_fixture_preserves_legacy_fields_and_native_information(self):
         line = discover_report.format_device(
             "dev-1",
             props("busctl-device-getall.json"),
@@ -187,19 +187,33 @@ class DeviceTsvFormatterTests(unittest.TestCase):
             props("busctl-connectivity-getall.json"),
             ["kdeconnect_battery", "kdeconnect_sftp"],
         )
-        self.assertEqual(line, "\t".join([
+        self.assertEqual(line.split("\t")[:16], [
             "DEVICE", "dev-1", "My Phone", "phone", "true", "true",
             "85", "true", self.EXPECTED_PLUGINS, "LTE", "3",
             "false", "false", "82C4DD3C", "kdeconnect_battery,kdeconnect_sftp", "true",
-        ]))
-        self.assertEqual(len(line.split("\t")), 16)
+        ])
+        self.assertEqual(len(line.split("\t")), 17)
+        info = json.loads(line.split("\t")[16])
+        self.assertEqual(info['addresses'], ['192.168.1.42:1716'])
+        self.assertEqual(info['providers'], ['LanLinkProvider'])
+        self.assertEqual(info['monitor'], {'known': False, 'active': False, 'available': False})
 
     def test_unknown_loaded_state_is_distinct_from_none_loaded(self):
         device = props("busctl-device-getall.json")
         unknown = discover_report.format_device("dev-1", device).split("\t")
-        self.assertEqual(unknown[14:], ["", "false"])
+        self.assertEqual(unknown[14:16], ["", "false"])
         none_loaded = discover_report.format_device("dev-1", device, loaded=[]).split("\t")
-        self.assertEqual(none_loaded[14:], ["", "true"])
+        self.assertEqual(none_loaded[14:16], ["", "true"])
+
+    def test_native_information_is_bounded_and_monitor_state_is_observed(self):
+        device = {'reachableAddresses': ['x' * 257], 'activeProviderNames': ['LAN'] * 17}
+        line = discover_report.format_device('peer', device, monitor={'active': True, 'isVirtualMonitorAvailable': False})
+        info = json.loads(line.split('\t')[16])
+        self.assertEqual(info['addresses'], [])
+        self.assertEqual(info['providers'], [])
+        self.assertEqual(info['monitor'], {'known': True, 'active': True, 'available': False})
+        unknown = discover_report.format_device('peer', {}, monitor={'active': 'false', 'isVirtualMonitorAvailable': True})
+        self.assertFalse(json.loads(unknown.split('\t')[16])['monitor']['known'])
 
     def test_loaded_plugins_reply_parsing(self):
         parse = discover_report.loaded_plugin_ids

@@ -121,11 +121,12 @@ else: raise SystemExit(99)
                 destination.mkdir(exist_ok=True)
                 (destination/'native-ui.log').write_text(output)
                 for shot in fixture.glob('desktop-*.png'): shutil.copyfile(shot,destination/shot.name)
-            else:
-                destination = ROOT.parent/'panel-design-review'
-                for shot in fixture.glob('desktop-*.png'):
-                    destination.mkdir(exist_ok=True)
-                    shutil.copyfile(shot,destination/shot.name)
+            export_directory = os.environ.get('OMACONNECT_CAPTURE_DIR')
+            if export_directory:
+                destination = Path(export_directory)
+                destination.mkdir(parents=True, exist_ok=True)
+                for shot in fixture.glob('*.png'):
+                    shutil.copyfile(shot, destination / shot.name)
             self.assertEqual(result.returncode, 0, output)
             self.assertIn('NATIVE_PASS', output, output)
             self.assertNotIn('NATIVE_FAIL', output, output)

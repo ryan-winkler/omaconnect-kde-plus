@@ -76,6 +76,25 @@ Each action shows its description and selected-device availability.
 
 ## Device features
 
+**Information** shows the selected device's ID, battery, cellular state, reported
+addresses and connection providers. Missing values say **Not reported**. Offline
+addresses are not presented as current. The daily Information section respects
+the battery and cellular visibility preferences.
+
+**Use device as an external monitor** uses KDE Connect's native Virtual Monitor
+module. It appears in Devices when reported and is also available in Device
+features. You can add it to Quick actions. The control shows **Stop virtual monitor
+session** only when native state reports an active session. The computer needs
+KRDP; the other device needs a compatible RDP client. Plus does not install these
+or manage display-session credentials. An accepted request does not prove that
+the other device displays an image. If state is unknown or prerequisites are
+unavailable, check **Native KDE Connect settings**.
+
+Feature names come from the installed KDE Connect metadata. The list still uses
+the selected device's reported plugin IDs. New and third-party IDs remain visible
+even when local metadata has no name. Quick actions are reviewed entry points;
+Plus does not turn arbitrary plugin names into commands.
+
 Open **Native KDE Connect settings**, then use native **Plugin settings** to enable
 or configure installed modules and permissions. Search in Plus by task or plugin
 ID to find reported features, including unfamiliar third-party IDs. Supported

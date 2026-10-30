@@ -45,7 +45,7 @@ Column {
                 required property int index
                 readonly property var catalogEntry: Actions.entry(modelData)
                 readonly property string actionName: modelData === "file" && root.service && root.service.fileBusy
-                    ? "Stop submitting" : catalogEntry ? catalogEntry.label : modelData
+                    ? "Stop submitting" : Actions.actionLabel(modelData, root.device)
                 readonly property string actionTooltip: modelData === "file" && root.service && root.service.fileBusy
                     ? "Cancel the current file submission" : catalogEntry ? catalogEntry.description + (root.actionReady(modelData) ? "" : "\n" + Actions.availabilityText(modelData,root.device,root.service)) : modelData
                 readonly property string actionIcon: modelData === "file" && root.service && root.service.fileBusy

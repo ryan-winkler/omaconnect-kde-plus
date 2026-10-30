@@ -14,8 +14,9 @@ ShellRoot {
     property int returned: 0
     property string nativeTarget: ""
     property int deviceSelections: 0
+    property int monitorRequests: 0
     property var initialDevices: [
-        {id:"fixture-phone",name:"Fixture phone",type:"phone",paired:true,reachable:true,pluginIds:["kdeconnect_share","kdeconnect_sftp","thirdparty.custom-addon","kdeconnect_remotecommands"],loadedKnown:true,loadedPluginIds:["kdeconnect_share"]},
+        {id:"fixture-phone",name:"Fixture phone",type:"phone",paired:true,reachable:true,reachableAddresses:["192.0.2.10:1716"],activeProviderNames:["LAN"],virtualMonitor:{known:true,active:false,available:true},pluginIds:["kdeconnect_share","kdeconnect_sftp","thirdparty.custom-addon","kdeconnect_remotecommands","kdeconnect_virtualmonitor"],loadedKnown:true,loadedPluginIds:["kdeconnect_share","kdeconnect_virtualmonitor"]},
         {id:"fixture-offline",name:"Fixture phone",type:"laptop",paired:true,reachable:false,pluginIds:["kdeconnect_battery"],loadedKnown:true,loadedPluginIds:["kdeconnect_battery"]},
         {id:"fixture-new",name:"<b>Living room tablet with a very long device name that must stay plain and fit the settings window</b>",type:"tablet",paired:false,reachable:true,pluginIds:[],loadedKnown:false}
     ]
@@ -28,7 +29,8 @@ ShellRoot {
         {page:"Device features", width:520, name:"settings-520-features.png"},
         {page:"Device features", width:520, popup:true, name:"settings-520-dropdown.png"},
         {page:"Appearance", width:520, device:"fixture-new", name:"settings-520-long-name.png"},
-        {page:"Device features", width:520, height:440, name:"settings-520-minimum-height.png"}
+        {page:"Device features", width:520, height:440, name:"settings-520-minimum-height.png"},
+        {page:"Device features", width:720, scroll:500, name:"settings-720-feature-inventory.png"}
     ]
     function check(value, message) {
         if (!value) { console.error("NATIVE_FAIL settings: " + message); Qt.quit(); return false }
@@ -58,10 +60,14 @@ ShellRoot {
         property string discoveryState: "ready"
         property string discoveryMessage: ""
         property bool nativeAppOpening: false
+        property string nativeAppMessage: ""
+        property bool nativeAppFailed: false
         property string actionMessage: ""
         property string actionError: ""
+        property string actionState: "idle"
         function displayName(device) { return device.name }
         function openKdeConnectApp() { test.nativeOpens++;test.nativeTarget=selectedDeviceId }
+        function toggleVirtualMonitor(id) { if(id===selectedDeviceId)test.monitorRequests++;return true }
     }
     QtObject {
         id: panel
@@ -100,7 +106,13 @@ ShellRoot {
                 test.named("Settings: Device features").clicked();test.phase=4
             } else if(test.phase===4) {
                 var features=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])
-                if(!test.check(features && features.pluginIds.length===4,"complete reported inventory is present in settings"))return
+                if(!test.check(features && features.pluginIds.length===5,"complete reported inventory is present in settings"))return
+                var addressInfo=test.find(settings.contentItem,function(o){return o.objectName==="device-information-Addresses"},[])
+                if(!test.check(addressInfo && addressInfo.text.indexOf("192.0.2.10:1716")!==-1,"Information shows reported native addresses"))return
+                var monitor=test.named("Use device as an external monitor")
+                if(!test.check(monitor && monitor.enabled,"known native monitor state enables the explicit action"))return
+                monitor.clicked()
+                if(!test.check(test.monitorRequests===1,"monitor control dispatches to the selected native device"))return
                 features.searchText="browse";test.phase=5
             } else if(test.phase===5) {
                 var featureList=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])
@@ -136,14 +148,18 @@ ShellRoot {
                 if(!test.check(switched.pluginIds.length===1 && switched.pluginIds[0]==="kdeconnect_battery","feature inventory follows the selected device"))return
                 test.named("Native KDE Connect settings").clicked()
                 if(!test.check(test.nativeTarget==="fixture-offline","native handoff follows the new selected ID"))return
-                service.nativeAppOpening=true;service.actionMessage="Opening KDE Connect";test.phase=32
+                service.nativeAppOpening=true;service.nativeAppMessage="Opening KDE Connect";test.phase=32
             } else if(test.phase===32) {
                 var status=test.find(settings.contentItem,function(o){return o.objectName==="native-launch-status"},[])
                 if(!test.check(!test.named("Native KDE Connect settings").enabled && status.text==="Opening KDE Connect","native launch has visible busy feedback and prevents repeat requests"))return
-                service.nativeAppOpening=false;service.actionMessage="";service.actionError="KDE Connect app unavailable";test.phase=33
+                service.nativeAppOpening=false;service.nativeAppFailed=true;service.nativeAppMessage="KDE Connect app unavailable";test.phase=33
             } else if(test.phase===33) {
                 var failed=test.find(settings.contentItem,function(o){return o.objectName==="native-launch-status"},[])
                 if(!test.check(failed.visible && failed.text==="KDE Connect app unavailable" && test.named("Native KDE Connect settings").enabled,"native launch failure is visible and retry is available"))return
+                service.nativeAppMessage="";service.nativeAppFailed=false;service.actionError="Unrelated action failed";test.phase=331
+            } else if(test.phase===331) {
+                var scoped=test.find(settings.contentItem,function(o){return o.objectName==="native-launch-status"},[])
+                if(!test.check(!scoped.visible,"unrelated action feedback is not shown as native launch status"))return
                 service.actionError="";service.selectedDeviceId="fixture-phone";test.phase=34
             } else if(test.phase===34) {
                 var keys=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
@@ -185,22 +201,23 @@ ShellRoot {
                 service.daemonAvailable=false;service.discoveryMessage="KDE Connect service is unavailable";test.phase=44
             } else if(test.phase===44) {
                 if(!test.check(settings.deviceStatus==="KDE Connect service is unavailable","provider failure stays distinct from an empty device list"))return
-                service.daemonAvailable=true;service.devices=test.initialDevices;service.selectedDeviceId="fixture-phone";test.phase=20
-            } else if(test.phase>=20 && test.phase<20+test.captures.length && !test.capturing) {
-                var capture=test.captures[test.phase-20]
+                service.daemonAvailable=true;service.devices=test.initialDevices;service.selectedDeviceId="fixture-phone";test.phase=2000
+            } else if(test.phase>=2000 && test.phase<2000+test.captures.length && !test.capturing) {
+                var capture=test.captures[test.phase-2000]
                 settings.width=capture.width;settings.height=capture.height || 640
                 service.selectedDeviceId=capture.device || "fixture-phone"
                 settings.openSettings(capture.page)
+                if(capture.scroll) test.find(settings.contentItem,function(o){return o.objectName==="settings-page-scroll"},[]).contentItem.contentY=capture.scroll
                 if(capture.popup) test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[]).popup.open()
-                test.capturing=true;test.phase+=100
-            } else if(test.phase>=120 && test.phase<120+test.captures.length) {
-                var shot=test.captures[test.phase-120]
-                test.phase+=100
+                test.capturing=true;test.phase+=1000
+            } else if(test.phase>=3000 && test.phase<3000+test.captures.length) {
+                var shot=test.captures[test.phase-3000]
+                test.phase+=1000
                 settings.contentItem.grabToImage(function(result) {
                     if(!test.check(result.saveToFile(Qt.resolvedUrl(shot.name).toString().replace("file://","")),"filled screenshot saved: "+shot.name))return
-                    test.capturing=false;test.phase-=199
+                    test.capturing=false;test.phase-=1999
                 })
-            } else if(test.phase===20+test.captures.length) {
+            } else if(test.phase===2000+test.captures.length) {
                 console.log("SETTINGS_PASS "+JSON.stringify(test.checks));console.log("NATIVE_PASS settings");Qt.quit()
             }
         }

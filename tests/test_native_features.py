@@ -76,6 +76,12 @@ row=api.parseScanLine(prefix+'kdeconnect_remotecommands,kdeconnect_mprisremote,k
 assert.equal(row.capabilities.commands,true);assert.equal(row.capabilities.media,true);
 assert.equal(row.pluginIds.includes('kdeconnect_future_feature'),true);assert.equal(row.pluginIds.includes('thirdparty.custom-addon'),true);
 assert.equal(row.loadedKnown,true);assert.equal(row.loadedPluginIds.join(','),'kdeconnect_mprisremote');
+const info={addresses:['192.0.2.10:1716'],providers:['LAN'],monitor:{known:true,active:false,available:true}};
+row=api.parseScanLine(prefix+'kdeconnect_virtualmonitor\\t\\t-1\\tfalse\\tfalse\\tkey\\tkdeconnect_virtualmonitor\\ttrue\\t'+JSON.stringify(info));
+assert.equal(row.reachableAddresses[0],'192.0.2.10:1716');assert.equal(row.activeProviderNames[0],'LAN');assert.equal(row.virtualMonitor.available,true);
+info.addresses=['x'.repeat(257)];info.monitor.known='true';
+row=api.parseScanLine(prefix+'kdeconnect_virtualmonitor\\t\\t-1\\tfalse\\tfalse\\tkey\\t\\tfalse\\t'+JSON.stringify(info));
+assert.equal(row.reachableAddresses.length,0);assert.equal(row.virtualMonitor.known,false);
 '''
         result = subprocess.run([shutil.which('node'), '-e', script], input=json.dumps({'fn': function}), text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)

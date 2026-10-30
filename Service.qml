@@ -79,6 +79,8 @@ Item {
     property alias actionMessage: controller.actionMessage
     property alias actionError: controller.actionError
     property alias nativeAppOpening: controller.nativeAppOpening
+    property alias nativeAppMessage: controller.nativeAppMessage
+    property alias nativeAppFailed: controller.nativeAppFailed
     property alias devices: controller.devices
     property alias reachableDevices: controller.reachableDevices
     property alias selectedDeviceId: controller.selectedDeviceId
@@ -182,6 +184,7 @@ Item {
     function openKdeConnectApp() {
         return controller.openKdeConnectApp()
     }
+    function toggleVirtualMonitor(id) { return controller.toggleVirtualMonitor(id) }
 
     function refreshTailscale() {
         controller.refreshTailscale()

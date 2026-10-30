@@ -43,6 +43,11 @@ configuration changes. The sample window closes when the test exits.
 
 ## What these tests do not cover
 
+Offscreen screenshots stay in the private temporary fixture by default. To keep
+the synthetic captures, set `OMACONNECT_CAPTURE_DIR` to an explicit output folder
+when running the tests. This exports images only; no personal configuration is
+read or copied.
+
 Pointer hit testing, compositor focus, scale and RTL layout, screen readers, real
 KDE delivery and physical devices need manual checks. Hyprland-unset and Qt
 Wayland text-input warnings are expected.

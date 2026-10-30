@@ -24,6 +24,8 @@ Item {
     property string actionMessage: ""
     property string actionError: ""
     readonly property bool nativeAppOpening: appProcess.running
+    property string nativeAppMessage: ""
+    property bool nativeAppFailed: false
     property int actionGeneration: 0
 
     property alias fileTransferState: fileController.fileTransferState
@@ -208,6 +210,8 @@ Item {
         actionState = "idle"
         actionMessage = ""
         actionError = ""
+        nativeAppMessage = ""
+        nativeAppFailed = false
     }
 
     function selectDevice(id) {
@@ -215,9 +219,7 @@ Item {
         if (!next) return
         if (selectedDeviceId === next.id) return
         selectedDeviceId = next.id
-        actionState = "idle"
-        actionMessage = ""
-        actionError = ""
+        clearActionState()
         mediaState = emptyMediaState()
         mediaLoading = false
         mediaRefreshPending = false
@@ -300,6 +302,15 @@ Item {
         var netType = parts.length > 9 ? String(parts[9] || "").trim() : ""
         var netStrengthRaw = parts.length > 10 ? String(parts[10] || "").trim() : ""
         var netStrength = /^\d+$/.test(netStrengthRaw) ? Number(netStrengthRaw) : -1
+        var info = {}
+        if (parts.length > 16 && parts[16].length <= 16384) {
+            try { var parsed = JSON.parse(parts[16]); if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) info = parsed } catch (error) {}
+        }
+        function infoList(value) {
+            return Array.isArray(value) && value.length <= 16 && value.every(function(item) { return typeof item === "string" && item.length <= 256 }) ? value : []
+        }
+        var monitor = info.monitor || {}
+        var monitorKnown = monitor.known === true && typeof monitor.active === "boolean" && typeof monitor.available === "boolean"
         return {
             id: parts[1],
             name: parts[2] || parts[1],
@@ -317,6 +328,9 @@ Item {
             pluginIds: plugins,
             loadedPluginIds: loadedPlugins,
             loadedKnown: loadedKnown,
+            reachableAddresses: infoList(info.addresses),
+            activeProviderNames: infoList(info.providers),
+            virtualMonitor: {known: monitorKnown, active: monitorKnown && monitor.active, available: monitorKnown && monitor.available},
             capabilities: {
                 battery: hasPlugin("kdeconnect_battery"),
                 ping: hasPlugin("kdeconnect_ping"),
@@ -534,6 +548,15 @@ Item {
             return false
         }
         return startAction(id, ["kdeconnect-cli", "-d", String(id), "--ring"], "Ring request accepted. Audible ringing is not confirmed.", "ring")
+    }
+
+    function toggleVirtualMonitor(id) {
+        var device = deviceById(id)
+        if (!device || !device.paired || !device.reachable || device.pluginIds.indexOf("kdeconnect_virtualmonitor") < 0 || !device.virtualMonitor || !device.virtualMonitor.known) return false
+        var operation = device.virtualMonitor.active ? "stop" : "start"
+        return startAction(id, ["python3", scriptPath("scripts/virtual_monitor.py")],
+            "Virtual monitor " + operation + " request accepted. Check the device for display confirmation.", "virtual monitor",
+            JSON.stringify({peerId: id, operation: operation}) + "\n")
     }
 
     function sendClipboard(id) {
@@ -922,6 +945,9 @@ Item {
 
     function openKdeConnectApp() {
         if (appProcess.running) return false
+        appProcess.targetDeviceId = selectedDeviceId
+        nativeAppMessage = "Opening KDE Connect"
+        nativeAppFailed = false
         actionState = "running"
         actionMessage = "Opening KDE Connect"
         actionError = ""
@@ -1057,6 +1083,7 @@ Item {
             root.actionState = unknown ? "unknown" : accepted ? "accepted" : "failed"
             root.actionMessage = accepted ? acceptedMessage : ""
             root.actionError = unknown ? "Submission unknown. Check the recipient before retrying." : accepted ? "" : resultError === "capability-unavailable" ? "The native feature is unavailable. Check KDE Connect Plugin Settings." : root.safeError(code, operation)
+            if (operation === "virtual monitor") root.refresh()
         }
     }
 
@@ -1228,15 +1255,19 @@ Item {
 
     Process {
         id: appProcess
+        property string targetDeviceId: ""
         onExited: function(code) {
+            if (targetDeviceId !== root.selectedDeviceId) return
+            root.nativeAppFailed = code !== 0
+            root.nativeAppMessage = code === 0 ? "KDE Connect launch requested" : root.safeError(code, "KDE Connect app")
             if (code === 0) {
                 root.actionState = "accepted"
-                root.actionMessage = "KDE Connect launch requested"
+                root.actionMessage = root.nativeAppMessage
                 root.actionError = ""
             } else {
                 root.actionState = "failed"
                 root.actionMessage = ""
-                root.actionError = root.safeError(code, "KDE Connect app")
+                root.actionError = root.nativeAppMessage
             }
         }
     }
