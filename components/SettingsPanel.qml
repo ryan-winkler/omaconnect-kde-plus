@@ -156,9 +156,16 @@ Window {
             Controls.ScrollView {
                 id: navigationScroll
                 objectName: "settings-navigation-scroll"
-                width: Math.max(root.width >= 620 ? 160 : 128, Math.ceil(root.pages.reduce(function(widest, label) {
-                    return Math.max(widest, navigationMetrics.advanceWidth(label))
-                }, 0) + Style.space(8) * 2 + Style.normalBorderWidth * 2)) + rightPadding
+                width: {
+                    // Invokable metrics do not establish a font dependency.
+                    // Read the font so startup/theme changes remeasure labels.
+                    var font = navigationMetrics.font
+                    var minimum = root.width >= 620 ? 160 : 128
+                    if (!font.family || font.pixelSize <= 0) return minimum + rightPadding
+                    return Math.max(minimum, Math.ceil(root.pages.reduce(function(widest, label) {
+                        return Math.max(widest, navigationMetrics.advanceWidth(label))
+                    }, 0) + Style.space(8) * 2 + Style.normalBorderWidth * 2)) + rightPadding
+                }
                 height: parent.height
                 rightPadding: Style.space(12)
                 contentWidth: availableWidth
