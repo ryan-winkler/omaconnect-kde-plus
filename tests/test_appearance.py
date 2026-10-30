@@ -218,6 +218,7 @@ Window {
 
     @unittest.skipUnless(shutil.which('qs'), 'Quickshell is unavailable')
     def test_native_visible_choices_and_distinct_preset_fallbacks(self):
+        """Verify visible choices without saving a browsing or cancelled draft."""
         root = HELPER.parent.parent
         wrapper = self.home/'choices.qml'
         wrapper.write_text("""import QtQuick

@@ -149,7 +149,8 @@ on this computer. Paired offline devices remain configurable. A change stays
 pending until native readback confirms the value. **Unknown** means no reliable
 value was read; use **Refresh** before changing it. An uncertain write is not
 retried automatically. An unpaired device must be paired first. These switches
-do not grant phone permissions or enable modules on the other device.
+do not grant phone permissions or enable modules on the other device. A second
+change during a request is not submitted; the status explains when to try again.
 
 **Configure ↗** opens that exact module's native configuration page. Only modules
 with an installed configuration form have this link. If direct configuration is

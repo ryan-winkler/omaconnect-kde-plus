@@ -33,6 +33,7 @@ class InstalledIconPickerTests(unittest.TestCase):
             icon.write_text(source.replace(original, replacement))
 
         def assert_picker(fixture, home, output, calls):
+            """Keep thumbnail allocation bounded and provider state untouched."""
             self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()), [])
             self.assertTrue(all(call['tool']=='fc-match' or (call['tool']=='hyprctl' and call['args'][:2]==['-j','getoption']) for call in calls), calls)
             masks = []

@@ -42,6 +42,7 @@ def rgba_pixels(path):
 
 class AppearanceRenderingTests(unittest.TestCase):
     def test_installed_shapes_follow_foreground_and_custom_colours_stay(self):
+        """Prove theme tint preserves silhouettes and explicit image colours."""
         if not Path('/usr/share/icons/Adwaita/symbolic/devices/computer-symbolic.svg').is_file():
             self.skipTest('installed Adwaita test assets absent')
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
@@ -55,6 +56,7 @@ class AppearanceRenderingTests(unittest.TestCase):
             (assets / ('a'*64 + '.svg')).write_text('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="24" fill="#e02030"/></svg>')
 
         def assert_pixels(fixture, home, output, calls):
+            """Reject blank masks, placeholder blocks and unwanted colour changes."""
             self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()), [])
             self.assertTrue(all(call['tool'] == 'fc-match' or (call['tool'] == 'hyprctl' and call['args'][:2] == ['-j', 'getoption']) for call in calls), calls)
             masks = []

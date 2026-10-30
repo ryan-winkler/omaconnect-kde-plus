@@ -11,6 +11,7 @@ else:
 
 class NativeModuleSettingsTests(unittest.TestCase):
     def test_native_state_rows_and_exact_target_lifecycle(self):
+        """Drive observed values, rejection feedback and captured-target races."""
         if not Path('/usr/lib/qt6/qml/QtTest/qmldir').is_file():
             self.skipTest('QtTest QML module absent')
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
@@ -27,6 +28,13 @@ with (home/'module-requests.jsonl').open('a') as log:log.write(json.dumps(reques
 peer=request['peerId']
 path=home/('native-state-'+peer+'.json')
 values=json.loads(path.read_text()) if path.exists() else {'kdeconnect_share':peer=='A','kdeconnect_clipboard':False,'native_mismatch':False,'native_unknown':False}
+# Hold focus-sensitive requests until QML completes its pending-state check.
+gate=home/'focus-gate'
+deadline=time.monotonic()+4
+if gate.exists() and gate.read_text()=='hold':print('fixture request pending',file=sys.stderr,flush=True)
+while gate.exists() and gate.read_text()=='hold':
+ if time.monotonic()>deadline:raise RuntimeError('focus gate was not released')
+ time.sleep(.005)
 time.sleep(.25 if request['operation']=='set' else .08)
 error='';state='observed'
 if request['operation']=='read':enabled={key:values.get(key,False) for key in request['pluginIds']}
@@ -40,6 +48,7 @@ sys.exit(0 if not error else 1)
 ''')
 
         def assert_modules(fixture, home, output, calls):
+            """Verify exact fake writes without creating native configuration."""
             self.assertIn('NATIVE_PASS native module settings', output)
             self.assertTrue(all(row['tool'] == 'fc-match' or (row['tool'] == 'hyprctl' and row['args'][:2] == ['-j', 'getoption']) for row in calls), calls)
             self.assertEqual(json.loads((fixture / 'portal-receipt.json').read_text()), [])

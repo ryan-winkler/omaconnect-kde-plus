@@ -53,8 +53,12 @@ QtObject {
         return true
     }
     function setEnabled(id, enabled) {
-        if (!ready || inFlight || pluginIds.indexOf(id) < 0 || !known(id) || typeof enabled !== "boolean") return false
+        if (!ready || pluginIds.indexOf(id) < 0 || !known(id) || typeof enabled !== "boolean") return false
         if (enabledStates[id] === enabled) return false
+        if (inFlight) {
+            message = "Native settings are busy. This change was not submitted. Try again after the current request finishes."
+            return false
+        }
         queuedRead = false
         start({operation:"set", peerId:peerId, pluginId:id, enabled:enabled})
         return true

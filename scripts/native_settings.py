@@ -27,6 +27,7 @@ class RequestError(Exception):
 
 
 def unique_fields(pairs):
+    """Reject duplicate keys before a request can choose its native target."""
     result = {}
     for key, value in pairs:
         if key in result:
@@ -36,10 +37,12 @@ def unique_fields(pairs):
 
 
 def valid_plugin(value):
+    """Accept bounded module IDs that are safe as native string arguments."""
     return isinstance(value, str) and PLUGIN_ID.fullmatch(value) is not None
 
 
 def read_request(stream):
+    """Validate one complete bounded request without accepting extra fields."""
     raw = stream.read(MAX_INPUT + 1)
     if not raw or len(raw) > MAX_INPUT:
         raise RequestError("invalid-input")
@@ -66,12 +69,14 @@ def read_request(stream):
 
 
 def operate(bus, Gio, GLib, cancellable, request, deadline=None):
+    """Keep pairing, deadlines and observed state inside one native request."""
     deadline = time.monotonic() + TIME_BUDGET if deadline is None else deadline
     path = "/modules/kdeconnect/devices/" + request["peerId"]
     result = {"state": "failed", "peerId": request["peerId"], "enabled": {}, "error": ""}
     mutation_started = False
 
     def call(method, args, interface=INTERFACE, mutation=False):
+        """Bound each call and mark mutation ambiguity before entering D-Bus."""
         nonlocal mutation_started
         remaining = deadline - time.monotonic()
         if remaining <= 0:
@@ -86,6 +91,7 @@ def operate(bus, Gio, GLib, cancellable, request, deadline=None):
             raise RequestError("submission-unknown" if mutation else "provider-unavailable") from None
 
     def enabled(plugin):
+        """Accept native state only when the reply contains one boolean."""
         reply = call("isPluginEnabled", GLib.Variant("(s)", (plugin,)))
         if not isinstance(reply, tuple) or len(reply) != 1 or type(reply[0]) is not bool:
             raise RequestError("provider-unavailable")
@@ -135,6 +141,7 @@ def operate(bus, Gio, GLib, cancellable, request, deadline=None):
 
 
 def main():
+    """Read stdin, bound native calls and emit the public result contract."""
     result = {"state": "failed", "peerId": "", "enabled": {}, "error": "invalid-input"}
     try:
         request = read_request(sys.stdin.buffer)

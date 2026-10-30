@@ -32,6 +32,7 @@ class Bus:
         self.active = self.maximum = 0
 
     def call_sync(self, service, path, interface, method, args, result_type, flags, timeout, cancellable):
+        """Model native readback and injected failures without a live daemon."""
         with self.lock:
             self.calls.append((service, path, interface, method, args, flags, timeout))
         if method == 'GetAll':
@@ -55,6 +56,7 @@ class Bus:
 
 
 def read_request(ids=None):
+    """Apply production request validation to test-owned byte streams."""
     return {'operation': 'read', 'peerId': 'peer_123', 'pluginIds': ids or ['kdeconnect_share', 'kdeconnect_clipboard']}
 
 
@@ -64,11 +66,13 @@ def set_request(enabled=True):
 
 class NativeSettingsTests(unittest.TestCase):
     def operate(self, bus, request, **options):
+        """Run the production driver against a cancellable fake native provider."""
         result = settings.operate(bus, GIO, GLIB, None, request, **options)
         self.assertTrue(all(call[0] == 'org.kde.kdeconnect' and call[1] == '/modules/kdeconnect/devices/peer_123' and call[5] == 2 and 1 <= call[6] <= 1500 for call in bus.calls))
         return result
 
     def test_reads_native_values_for_paired_offline_peer(self):
+        """Allow offline preferences without inventing observed values."""
         bus = Bus(reachable=False)
         result = self.operate(bus, read_request())
         self.assertEqual(result, {'state': 'observed', 'peerId': 'peer_123', 'enabled': bus.values, 'error': ''})
@@ -76,12 +80,14 @@ class NativeSettingsTests(unittest.TestCase):
         self.assertTrue(all(call[3] in ('GetAll', 'isPluginEnabled') for call in bus.calls))
 
     def test_unpaired_peer_never_reads_or_writes_modules(self):
+        """Stop an unpaired target before any module operation."""
         for request in (read_request(), set_request()):
             bus = Bus(paired=False)
             self.assertEqual(self.operate(bus, request)['error'], 'capability-unavailable')
             self.assertEqual(len(bus.calls), 1)
 
     def test_read_batch_is_parallel_and_at_most_eight_workers(self):
+        """Bound provider concurrency while avoiding serial batch latency."""
         bus = Bus(delay=.01)
         result = self.operate(bus, read_request(['native_' + str(i) for i in range(24)]))
         self.assertEqual(result['state'], 'observed')
@@ -101,6 +107,7 @@ class NativeSettingsTests(unittest.TestCase):
         self.assertEqual(result['enabled'], {})
 
     def test_set_uses_fixed_native_method_then_actual_readback(self):
+        """Require native readback after the one fixed mutation call."""
         bus = Bus()
         result = self.operate(bus, set_request())
         self.assertEqual(result, {'state': 'observed', 'peerId': 'peer_123', 'enabled': {'kdeconnect_clipboard': True}, 'error': ''})
@@ -108,6 +115,7 @@ class NativeSettingsTests(unittest.TestCase):
         self.assertEqual(bus.calls[1][4], ('(sb)', ('kdeconnect_clipboard', True)))
 
     def test_readback_mismatch_reports_actual_state_without_retry(self):
+        """Keep the observed value when it differs from the requested value."""
         bus = Bus(ignore_write=True)
         result = self.operate(bus, set_request())
         self.assertEqual(result['state'], 'observed')
@@ -116,6 +124,7 @@ class NativeSettingsTests(unittest.TestCase):
         self.assertEqual(sum(call[3] == 'setPluginEnabled' for call in bus.calls), 1)
 
     def test_mutation_or_readback_timeout_is_unknown_without_retry(self):
+        """Preserve ambiguity after a possible write without replaying it."""
         for fail in ('setPluginEnabled', 'isPluginEnabled'):
             bus = Bus(fail=fail)
             result = self.operate(bus, set_request())
@@ -125,6 +134,7 @@ class NativeSettingsTests(unittest.TestCase):
             self.assertEqual(sum(call[3] == 'setPluginEnabled' for call in bus.calls), 1)
 
     def test_expired_deadline_never_calls_provider(self):
+        """Refuse provider work after the shared request deadline."""
         for request in (read_request(), set_request()):
             bus = Bus()
             result = self.operate(bus, request, deadline=time.monotonic() - 1)
@@ -132,6 +142,7 @@ class NativeSettingsTests(unittest.TestCase):
             self.assertEqual(bus.calls, [])
 
     def test_strict_json_and_request_bounds(self):
+        """Reject malformed or oversized input before selecting a provider target."""
         for request in (read_request(), set_request(), read_request(['native_' + str(i) for i in range(256)])):
             self.assertEqual(settings.read_request(io.BytesIO(json.dumps(request).encode())), request)
         invalid = [None, [], {}, {**read_request(), 'extra': True}, {**read_request(), 'pluginIds': []},

@@ -19,6 +19,7 @@ class NativeUi(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which('quickshell') and shutil.which('bwrap') and shutil.which('dbus-run-session'), 'native isolated runtime absent')
     def test_actual_service_bar_panel_and_controls(self):
+        """Load product QML with private state and fake executable and bus boundaries."""
         with tempfile.TemporaryDirectory(prefix='omaconnect-native-') as temporary:
             fixture = Path(temporary)
             desktop = not self.force_offscreen and os.environ.get('OMACONNECT_DESKTOP_VALIDATION') == '1'

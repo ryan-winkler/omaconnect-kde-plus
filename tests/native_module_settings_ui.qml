@@ -2,13 +2,14 @@ import QtQuick
 import QtQuick.Window
 import QtTest
 import Quickshell
+import Quickshell.Io
 import "plugin/components" as Components
 
 ShellRoot {
     id: test
     property int phase: 0
     property int ticks: 0
-    property int waitTicks: 0
+    property bool dispatching: false
     property int configured: 0
     property var checks: []
     function check(value, message) {
@@ -44,9 +45,18 @@ ShellRoot {
         }
     }
     TestCase { id: events; when:false }
+    FileView {
+        id: focusGate
+        path: Quickshell.env("HOME") + "/focus-gate"
+        blockWrites: true
+        printErrors: false
+    }
     Timer {
         interval:25; running:true; repeat:true
         onTriggered: {
+            if(test.dispatching)return
+            test.dispatching=true
+            try {
             if (++test.ticks > 500) { test.check(false,"bounded module scenario finishes at phase " + test.phase); return }
             var backend = view.backend
             if (test.phase === 0) {
@@ -73,12 +83,16 @@ ShellRoot {
                 configure.Accessible.pressAction()
                 configure.forceActiveFocus();events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
                 if (!test.check(test.configured === 2,"keyboard and AT Configure use exact module signal")) return
+                focusGate.setText("hold")
                 share.forceActiveFocus(); events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
                 if (!test.check(share.checked && backend.busy,"keyboard request never toggles optimistically")) return
                 events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
+                test.toggle("kdeconnect_clipboard").Accessible.toggleAction()
+                if (!test.check(backend.message.indexOf("not submitted")>=0 && !test.toggle("kdeconnect_clipboard").checked,"busy rejection reports that the other module change was not submitted")) return
                 test.phase=102
             } else if(test.phase===102 && backend.busy) {
                 if (!test.check(test.toggle("kdeconnect_share").activeFocus,"checkbox keeps active keyboard focus while native request is pending")) return
+                focusGate.setText("release")
                 test.phase=2
             } else if (test.phase === 2 && !backend.busy) {
                 if (!test.check(test.toggle("kdeconnect_share").activeFocus,"checkbox retains keyboard focus through native readback")) return
@@ -89,10 +103,12 @@ ShellRoot {
             } else if (test.phase === 3 && !backend.busy) {
                 if (!test.check(test.toggle("kdeconnect_share").checked,"AT action confirms native On")) return
                 var refresh=test.find(view,"native-module-refresh")
+                focusGate.setText("hold")
                 refresh.forceActiveFocus();events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
                 test.phase=302
             } else if(test.phase===302 && backend.busy) {
                 if (!test.check(test.find(view,"native-module-refresh").activeFocus,"Refresh keeps active keyboard focus while native read is pending")) return
+                focusGate.setText("release")
                 test.phase=301
             } else if(test.phase===301 && !backend.busy) {
                 if (!test.check(test.find(view,"native-module-refresh").activeFocus,"Refresh retains keyboard focus through native read")) return
@@ -115,19 +131,19 @@ ShellRoot {
                 if (!test.check(!backend.setEnabled("kdeconnect_share",false),"unavailable daemon cannot dispatch")) return
                 service.daemonAvailable=true;test.phase=9
             } else if (test.phase === 9 && !backend.busy && backend.known("kdeconnect_share")) {
-                backend.refresh();test.phase=10
-            } else if (test.phase === 10 && backend.busy) {
-                service.selectedDevice=({id:"B",paired:true,reachable:false});test.phase=11
+                focusGate.setText("hold");backend.refresh();test.phase=10
+            } else if (test.phase === 10 && backend.busy && backend.process.stderr.text.indexOf("fixture request pending")>=0) {
+                service.selectedDevice=({id:"B",paired:true,reachable:false});focusGate.setText("release");test.phase=11
             } else if (test.phase === 11 && !backend.busy && backend.known("kdeconnect_share")) {
                 if (!test.check(backend.peerId === "B" && backend.enabledStates.kdeconnect_share === false,"stale A read cannot overwrite selected B")) return
                 service.selectedDevice=({id:"A",paired:true,reachable:false});test.phase=12
             } else if (test.phase === 12 && !backend.busy && backend.known("kdeconnect_share")) {
-                backend.setEnabled("kdeconnect_share",false);test.waitTicks=0;test.phase=13
-            } else if (test.phase === 13 && ++test.waitTicks >= 3) {
+                focusGate.setText("hold");backend.setEnabled("kdeconnect_share",false);test.phase=13
+            } else if (test.phase === 13 && backend.busy && backend.process.stderr.text.indexOf("fixture request pending")>=0) {
                 service.selectedDevice=({id:"B",paired:true,reachable:false})
                 service.selectedDevice=({id:"C",paired:true,reachable:false})
                 if (!test.check(backend.busy && !backend.known("kdeconnect_share"),"initiated A write finishes without retargeting")) return
-                test.phase=14
+                focusGate.setText("release");test.phase=14
             } else if (test.phase === 14 && !backend.busy && backend.known("kdeconnect_share")) {
                 if (!test.check(backend.peerId === "C" && backend.enabledStates.kdeconnect_share === false,"only latest selected target receives queued read")) return
                 view.searchText="clipboard"
@@ -139,6 +155,7 @@ ShellRoot {
                 if (!test.check(!backend.busy && !backend.refresh() && !backend.setEnabled("kdeconnect_share",true),"closed page cannot read or write")) return
                 console.log("MODULE_CHECKS " + JSON.stringify(test.checks));console.log("NATIVE_PASS native module settings");Qt.quit()
             }
+            } finally { test.dispatching=false }
         }
     }
 }
