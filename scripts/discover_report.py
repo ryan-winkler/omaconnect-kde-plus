@@ -162,12 +162,20 @@ def format_device(device_id, device_props, battery_props=None, conn_props=None, 
     ]
     if "reachableAddresses" in props or "activeProviderNames" in props or monitor is not None:
         known = isinstance(monitor, dict) and type(monitor.get("active")) is bool and type(monitor.get("isVirtualMonitorAvailable")) is bool
-        fields.append(json.dumps({
+        information = {
             "addresses": bounded_strings(props.get("reachableAddresses")),
             "providers": bounded_strings(props.get("activeProviderNames")),
             "monitor": {"known": known, "active": bool(known and monitor["active"]),
                         "available": bool(known and monitor["isVirtualMonitorAvailable"])},
-        }, separators=(",", ":")))
+        }
+        encoded = json.dumps(information, separators=(",", ":"))
+        # Match the QML field bound after JSON escaping, keeping native state.
+        for key in sorted(("addresses", "providers"), key=lambda key: len(json.dumps(information[key])), reverse=True):
+            if len(encoded) <= 16384:
+                break
+            information[key] = []
+            encoded = json.dumps(information, separators=(",", ":"))
+        fields.append(encoded)
     return "\t".join(fields)
 
 

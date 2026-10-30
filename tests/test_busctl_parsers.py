@@ -215,6 +215,16 @@ class DeviceTsvFormatterTests(unittest.TestCase):
         unknown = discover_report.format_device('peer', {}, monitor={'active': 'false', 'isVirtualMonitorAvailable': True})
         self.assertFalse(json.loads(unknown.split('\t')[16])['monitor']['known'])
 
+    def test_escaped_information_cannot_discard_monitor_state(self):
+        device = {'reachableAddresses': ['界' * 256] * 16, 'activeProviderNames': ['😀' * 256] * 16}
+        line = discover_report.format_device('peer', device, monitor={'active': True, 'isVirtualMonitorAvailable': True})
+        encoded = line.split('\t')[16]
+        self.assertLessEqual(len(encoded), 16384)
+        info = json.loads(encoded)
+        self.assertEqual(info['monitor'], {'known': True, 'active': True, 'available': True})
+        self.assertEqual(info['addresses'], [])
+        self.assertEqual(info['providers'], [])
+
     def test_loaded_plugins_reply_parsing(self):
         parse = discover_report.loaded_plugin_ids
         self.assertEqual(parse('{"type":"as","data":[["kdeconnect_sftp","kdeconnect_sftp"]]}'), ["kdeconnect_sftp"])
