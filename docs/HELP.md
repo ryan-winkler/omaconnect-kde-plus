@@ -24,9 +24,10 @@ If discovery changes the list, open it again to choose from the current devices.
 Launch requested means the command was accepted; it does not confirm a visible
 window. Older KDE Connect settings frontends can open the device list instead.
 
-In Devices, the **Plus settings** button opens general Plus preferences. The gear
-beside the selected device and each paired device opens **Device features** for
-that exact device in Plus. Paired offline devices keep their gear. Use **Native
+In Devices, use the **Device** dropdown to switch devices. It is the only device
+list in the daily view. The gear beside it opens **Device features** for that
+exact device in Plus. Collapse **Device details** to keep the switcher compact.
+Pairing warnings and an active unpair confirmation remain visible. Use **Native
 KDE Connect settings** inside Plus for KDE Connect's full settings and permissions.
 
 ## Daily popup
@@ -44,10 +45,31 @@ a draft reminder names its recipient. Activity shows pending or uncertain
 submission state even when its shortcut is hidden. Accepted requests do not
 confirm delivery.
 
+Each daily section has an Expand or Collapse control. In **Plus settings →
+Appearance → Daily section order**, use **Up** and **Down** to move any complete
+section. Hidden sections keep their position. **Use default section order** resets
+only the order. These display choices apply to all devices on this computer.
+
+Choose **Show in Devices** and **Start expanded** in the section's settings domain:
+
+| Settings domain | Daily sections |
+| --- | --- |
+| Quick actions | Quick actions; File sharing |
+| Device features | Device details; Native KDE Connect; Device information; Media controls; Remote commands |
+| Connections | Connection controls; Saved addresses; Syncthing identity note |
+
+The device switcher stays available when its details collapse. Native features,
+device information and saved addresses start collapsed. Hiding a section keeps
+its data and provider settings. A temporary collapse lasts until you reopen the
+popup. Use **Start expanded** to set the next opening.
+
 ## Appearance
 
 - **Bar icon:** Select **Change bar icon**. Choose a labelled preset, search the
   installed icon theme, or use a custom symbol or local PNG/SVG. Preview, then Apply.
+  Installed artwork keeps its native colours automatically. Clear **Keep installed
+  icon colours** to use the theme foreground for any monochrome icon name.
+  Custom image colours have their own choice. Browsing does not save.
 - **Device icon and name:** Select a device, then **Change selected device icon and
   alias**. A local alias changes its display here. It does not change pairing.
 - **Battery beside the icon:** Enable this to show a reported charge. Missing
@@ -64,7 +86,7 @@ section keeps its saved data.
 
 | Integration | Use it | Official setup guide |
 | --- | --- | --- |
-| Tailscale | Open the existing Tailscale panel. Connect in its owner app. Approve the peer’s Tailscale IP under **Manage saved addresses**. | [Tailscale quickstart](https://tailscale.com/docs/how-to/quickstart) |
+| Tailscale | Open the existing Tailscale panel. Connect in its owner app. Approve the peer’s Tailscale IP under **Saved addresses**. | [Tailscale quickstart](https://tailscale.com/docs/how-to/quickstart) |
 | MikroTik Back to Home | Use the existing reviewed helper. **Automatic** uses its policy; **On** requests activation; **Off** requests that it stay stopped. Read actual connection state separately. | [MikroTik Back to Home](https://manual.mikrotik.com/docs/network-management/cloud/back-to-home/) |
 | Other WireGuard profiles | Open the existing NetworkManager profiles. The manager owns profiles and keys. Approve the peer’s private VPN IP for rediscovery. | [WireGuard quickstart](https://www.wireguard.com/quickstart/) |
 
@@ -73,7 +95,7 @@ Use an absolute path to your existing reviewed controller. Plus does not create
 that controller or import keys. A missing provider shows an unavailable result.
 See [provider contracts](CONTRACTS.md) before connecting a different controller.
 
-**Saved addresses:** Select a device. Open **Manage saved addresses**. Enter one IP,
+**Saved addresses:** Select a device. Expand **Saved addresses**. Enter one IP,
 choose its source and approve it. An address is a route hint; the KDE identity
 still owns trust. Automatic rediscovery requires both the address opt-in and the
 panel-session switch. It runs while the panel is open, with a 60-second interval.
@@ -95,12 +117,11 @@ and returns focus to its trigger. Choosing Devices returns to device navigation.
 ## Quick actions
 
 Choose a shortcut, then select **Add selected action**. Use **Up**, **Down** or
-**Remove** to change the toolbar. **Use default actions** restores Files, Text or
-link, and Clipboard. These choices do not enable a native module or execute it.
+**Remove** to change the toolbar. **Use default actions** restores Files, Text, and Clipboard. These choices do not enable a native module or execute it.
 Each action shows its description and selected-device availability.
 
 - **Files:** Open the normal desktop file chooser, then review before Send.
-- **Text or link:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
+- **Text:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
 - **Clipboard:** Send the current clipboard to the selected device.
 - **Quick Share:** Open [RQuickShare](https://github.com/Martichou/rquickshare)
   to share with Android Quick Share. Install the `r-quick-share` package first.
@@ -139,22 +160,27 @@ or manage display-session credentials. An accepted request does not prove that
 the other device displays an image. If state is unknown or prerequisites are
 unavailable, check **Native KDE Connect settings**.
 
-Feature names come from the installed KDE Connect metadata. The list still uses
-the selected device's reported plugin IDs. New and third-party IDs remain visible
-even when local metadata has no name. Quick actions are reviewed entry points;
-Plus does not turn arbitrary plugin names into commands.
+**KDE Connect modules** lists all modules from the installed KDE Connect package.
+Search by name, description or plugin ID. The catalogue updates with native
+package metadata; it is independent of the selected device's currently reported
+features. Unknown reported IDs remain visible below it. Quick actions are reviewed
+entry points; Plus does not turn arbitrary plugin names into commands.
 
-**Configure this computer for the selected device** lists configuration pages
-from the installed native metadata, including Run commands, clipboard, sharing,
-notifications, media pause, presenter and input sharing when installed. Choose
-**Configure…** to open that exact module in native KDE Connect. A paired device can
-be configured while offline. An unpaired device must be paired first. If direct
-configuration is unavailable on an older frontend, open **Native KDE Connect
-settings**, then **Plugin Settings**. Plus does not write native module settings.
-New configuration pages are discovered after a native package upgrade. Plus
-lists only pages that the installed package provides.
+For a paired device, **On/Off** reads and changes KDE Connect's native module state
+on this computer. Paired offline devices remain configurable. A change stays
+pending until native readback confirms the value. **Unknown** means no reliable
+value was read; use **Refresh** before changing it. An uncertain write is not
+retried automatically. An unpaired device must be paired first. These switches
+do not grant phone permissions or enable modules on the other device. A second
+change during a request is not submitted; the status explains when to try again.
 
-**Configure Run commands** defines commands on **this computer** that the selected
+**Configure ↗** opens that exact module's native configuration page. Only modules
+with an installed configuration form have this link. If direct configuration is
+unavailable on an older frontend, use **Native settings ↗**, then **Plugin Settings**.
+Plus does not write native configuration files or load native configuration QML.
+The native daemon owns module state and the native app owns configuration forms.
+
+**Commands on this computer → Configure** defines commands on **this computer** that the selected
 device can run. It does not edit commands on the other device. To add or edit
 commands that run on the selected device, use that device's KDE Connect settings.
 **Request command editor on selected device** can ask a connected compatible peer
@@ -167,11 +193,10 @@ assistive-technology activation. The current player starts with **Current:**,
 so its state remains clear without color or hover. Unavailable controls do not
 submit an action.
 
-Open **Native KDE Connect settings**, then use native **Plugin settings** to enable
-or configure installed modules and permissions. Search in Plus by task or plugin
-ID to find reported features and installed configuration pages. Supported
-means compatible; Loaded describes the local daemon. Neither confirms permission.
-The native page manages installed modules; it is not a plugin download store.
+Use **Info** and **Actions** to expand device details and occasional actions.
+Use **Native settings ↗** for the full KDE Connect application. Modules ship with
+KDE Connect; there is no separate module download store. Install or update the
+native package to receive its modules. Phone permissions stay on the phone.
 Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
 
 - **Battery details:** Show charge and charging state when reported.
@@ -185,9 +210,13 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
 
 ## Send files and read activity
 
-1. Select a paired, reachable device. Open **Send**.
-2. Select **Choose files** for the graphical desktop chooser. For file-manager
-   drag and drop, select **Open Send window** so the target stays open.
+1. Select a paired, reachable device. Expand **File sharing** in Devices, or open **Send**.
+2. Drop files on the inline target or select **Choose files** for the graphical
+   desktop chooser. The popup can close when you focus a file manager. Select
+   **Keep Send window open** in Devices, or **Open Send window** in Send, for a
+   persistent target. Dragging local file URLs over the bar icon also opens and
+   reveals the inline target, even if its section is hidden. This reveal lasts
+   for that popup session and does not change its saved visibility.
 3. Choose or drop up to 100 local regular files, at most 1 TiB combined.
    Directories and remote URLs are not accepted. Drops use Copy and preserve originals.
 4. Check the recipient, files, count and size. Select **Send files**. A changed
@@ -212,7 +241,7 @@ Text, Ping, Clipboard and remote-command success messages also report request ac
 
 ## Syncthing identity note
 
-Enable **Show Syncthing identity notes** in **Settings → Appearance**. Select a
+Enable **Show in Devices** for **Syncthing identity note** in **Settings → Connections**. Select a
 device, expand its note and compare the names and full identities in both owner
 apps. Paste the full Syncthing ID and select **Save local identity note**. This
 helps when a machine has different names in the two apps. Changing the selected
@@ -257,7 +286,7 @@ Do not publish private IDs, addresses, configurations or credentials.
 
 ## Update KDE Connect itself
 
-`omarchy plugin update Omaconnect.plus` updates this UI fork. KDE Connect's native
+`omarchy plugin update omaconnect.plus` updates this UI fork. KDE Connect's native
 package follows the supported Omarchy system update route, `omarchy update`.
 That can update other packages, so review its normal system update scope first.
 Plus does not compile KDE's development branch or run a package update for you.

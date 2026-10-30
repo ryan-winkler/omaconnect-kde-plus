@@ -13,6 +13,8 @@ ShellRoot {
         running: true
         onTriggered: {
             if (!check(metadata.configurations.length > 0, "installed configuration pages are discovered without a device target")) return
+            if (!check(metadata.modules.length > metadata.configurations.length, "all installed modules include those without a configuration form")) return
+            if (!check(metadata.modules.every(function(entry) { return typeof entry.hasConfiguration === "boolean" && metadata.validId(entry.id) }), "catalogue entries have validated IDs and explicit configuration availability")) return
             var commands = metadata.configurations.find(function(entry) { return entry.id === "kdeconnect_runcommand" })
             if (!check(commands && commands.name.length > 0 && commands.description.length > 0, "local command configuration has native metadata")) return
             if (!check(!metadata.configurations.some(function(entry) { return entry.id === "kdeconnect_remotecommands" }), "remote command execution is not confused with local configuration")) return

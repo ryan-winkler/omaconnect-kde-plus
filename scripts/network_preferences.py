@@ -8,14 +8,13 @@ import sys
 import time
 
 from manage_addresses import AddressError, bounded_command
+from section_order import BOOL_DEFAULTS, normalized_value
 
 KEYS = frozenset(("networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled",
-                  "showBatteryStats", "showBarBattery", "showNetworkStats", "showMediaPlayer",
-                  "showRemoteCommands"))
-KEYS |= frozenset(('showSavedAddresses', 'showSyncthingLinks', 'showNetworkControls', 'networkStartExpanded', 'mediaStartExpanded', 'commandsStartExpanded', 'addressesStartExpanded', 'syncthingStartExpanded'))
-KEYS |= frozenset(("showNativeFeatures",))
+                  "showBatteryStats", "showBarBattery", "showNetworkStats"))
 KEYS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
-STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath", "quickActionsOrder"))
+KEYS |= frozenset(BOOL_DEFAULTS)
+STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder"))
 ACTION_IDS = frozenset(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock', 'external-monitor'))
 MAX_REQUEST = 32768
 
@@ -31,6 +30,8 @@ def setting_value(request):
     value = request["value"]
     if not isinstance(value, str) or len(value) > 4096:
         raise ValueError()
+    if key == "sectionOrder":
+        return normalized_value(value)
     if key == "quickActionsOrder":
         values = value.split(",") if value else []
         if len(value) > 512 or len(values) > len(ACTION_IDS) or len(set(values)) != len(values) or any(item not in ACTION_IDS for item in values):
@@ -50,7 +51,7 @@ def save(request):
     except (ValueError, KeyError, TypeError):
         return {"ok": False, "message": "Invalid setting. Check its value and try again."}
     try:
-        reply = bounded_command(["/usr/bin/omarchy-shell", "shell", "setBarWidget", "Omaconnect.plus",
+        reply = bounded_command(["/usr/bin/omarchy-shell", "shell", "setBarWidget", "omaconnect.plus",
                                  request["key"], json.dumps(value, ensure_ascii=True), "{}"],
                                 time.monotonic() + 4)
         if reply.strip() == b"ok":

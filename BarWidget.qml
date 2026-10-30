@@ -11,7 +11,7 @@ import "bridge" as OmaconnectBridge
 
 BarWidget {
     id: root
-    moduleName: "Omaconnect.plus"
+    moduleName: "omaconnect.plus"
 
     // Primary path: the bar host's scoped facade (service-capable under the
     // first-party bar). Fallback: the engine-wide bridge singleton -- under
@@ -21,7 +21,7 @@ BarWidget {
     // torn down). See bridge/Bridge.qml.
     readonly property var service: {
         var viaHost = bar && bar.shell && typeof bar.shell.serviceFor === "function"
-            ? bar.shell.serviceFor("Omaconnect.plus") : null
+            ? bar.shell.serviceFor("omaconnect.plus") : null
         return viaHost || OmaconnectBridge.Bridge.service
     }
     readonly property var device: service ? service.selectedDevice : null
@@ -115,12 +115,17 @@ BarWidget {
             anchors.fill: parent
             service: root.service
             device: root.device
+            onDragReadyEntered: {
+                var target = panelLoader.item
+                if (target && typeof target.openDropTarget === "function") target.openDropTarget()
+                else root.open()
+            }
             onFilesStaged: root.openSendWindow()
         }
     }
 
     IpcHandler {
-        target: "Omaconnect.plus"
+        target: "omaconnect.plus"
 
         function open(): void { root.open() }
         function close(): void { root.close() }

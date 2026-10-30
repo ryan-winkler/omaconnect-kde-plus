@@ -65,7 +65,7 @@ ShellRoot {
             var trigger = find(panel,function(object) { return object.objectName === "daily-view-menu" },[])
             if (trigger) trigger.clicked()
         }
-        var button = find(panel,function(object) { return viewIndex >= 0 ? object.objectName === "daily-route-" + viewIndex : "text" in object && object.text === label && typeof object.clicked === "function" },[])
+        var button = find(panel,function(object) { return viewIndex >= 0 ? object.objectName === "daily-route-" + viewIndex : "text" in object && object.visible && object.text === label && typeof object.clicked === "function" },[])
         check(!!button,"control exists: "+label)
         if (button) button.clicked()
     }
@@ -122,8 +122,9 @@ ShellRoot {
             test.ticks++
             if(test.ticks > 600) { test.check(false,"timeout phase="+test.phase); return }
             if(test.phase === 0 && (!test.desktopMode || panel.opened) && service.appearance.ready && !service.appearance.busy && service.devices.length === 2) {
-                // ListView delegates are created on the next layout pass.
-                if (!test.find(panel,function(object) { return object.objectName === "device-settings-B" },[])) { panel.open();return }
+                // Wait for the shared device picker in the composed daily view.
+                var devicePicker = test.find(panel,function(object) { return object.objectName === "daily-device-selector" },[])
+                if (!devicePicker) { panel.open();return }
                 test.check(Bridge.Bridge.service === service, "own-service bridge")
                 test.check(widget.service === service && panel.service === service, "bar and panel bridge fallback")
                 test.check(!!test.find(widget,function(object) { return object.objectName === "bar-file-drop-area" },[]), "actual bar icon installs the shared file-drop target")
@@ -134,15 +135,14 @@ ShellRoot {
                 panel.settings = {showTailscale:false}
                 test.capture("devices")
 
-                var deviceGear = test.find(panel,function(object) { return object.objectName === "device-settings-B" },[])
-                test.check(deviceGear && deviceGear.focusable && deviceGear.width>=44 && deviceGear.Accessible.name.indexOf("Other phone")!==-1,"paired device gear has a named keyboard target")
-                if (deviceGear) deviceGear.clicked()
-                test.check(panel.settingsWindow.visible && panel.settingsWindow.currentPage==="Device features" && service.selectedDeviceId==="B","device gear opens Plus features for that exact device")
-                test.check(!service.nativeAppOpening,"device gear does not launch native settings implicitly")
-                panel.settingsWindow.closeSettings()
+                test.check(devicePicker.count===2,"shared picker contains both known devices")
+                devicePicker.selectDevice("B")
+                test.check(devicePicker.currentValue==="B" && service.selectedDeviceId==="B","shared picker selects the exact paired device")
                 var headerGear = test.find(panel,function(object) { return object.objectName === "selected-device-settings" },[])
+                test.check(headerGear && headerGear.focusable && headerGear.width>=44 && headerGear.Accessible.name==="Plus device settings","selected device gear has a named keyboard target")
                 if (headerGear) headerGear.clicked()
-                test.check(headerGear && panel.settingsWindow.currentPage==="Device features" && service.selectedDeviceId==="B","header gear follows the same Plus device-settings route")
+                test.check(headerGear && panel.settingsWindow.visible && panel.settingsWindow.currentPage==="Device features" && service.selectedDeviceId==="B","selected device gear opens Plus features for that exact device")
+                test.check(!service.nativeAppOpening,"device gear does not launch native settings implicitly")
                 panel.settingsWindow.closeSettings()
                 var settingsControl = test.find(panel, function(object) { return object.objectName === "daily-plus-settings" }, [])
                 test.check(!!settingsControl, "compact settings control exists")
@@ -154,6 +154,19 @@ ShellRoot {
                 test.phase=1
             } else if(test.phase === 1 && !service.appearance.busy) {
                 if(!test.check(test.activeChooser.visible,"settings action opens the actual icon chooser"))return
+                var preview=test.find(test.activeChooser,function(object){return object.objectName==="active-theme-icon-preview"},[])
+                var picker=test.find(test.activeChooser,function(object){return object.objectName==="installed-icon-picker"},[])
+                if(!test.check(preview && preview.visible && picker,"actual chooser exposes one current-theme preview and installed thumbnail picker"))return
+                test.activeChooser.contentItem.grabToImage(function(result) { result.saveToFile(Quickshell.env("NATIVE_COMMAND_LOG").replace("commands.jsonl","appearance-current-theme.png")) })
+                test.phase=101
+            } else if(test.phase === 101) {
+                test.activeChooser.choose({mode:"theme",value:"fixture-line",render:"symbolic"})
+                var colours=test.find(test.activeChooser,function(object){return object.objectName==="appearance-source-colours"},[])
+                if(!test.check(colours && colours.visible && colours.checked && !test.activeChooser.draft.tint,"legacy installed selection keeps automatic native colours"))return
+                colours.Accessible.toggleAction()
+                if(!test.check(test.activeChooser.draft.tint===true && !colours.checked && service.appearance.snapshot.bar_icon.value==="phone","installed monochrome override is an explicit accessible draft choice"))return
+                colours.Accessible.pressAction()
+                if(!test.check(!test.activeChooser.draft.tint && colours.checked,"native-colour choice clears the explicit tint override"))return
                 test.activeChooser.choose({mode:"preset",value:"laptop",render:"symbolic"})
                 var apply=test.find(test.activeChooser,function(object){return object.objectName==="appearance-apply"},[])
                 if(!test.check(apply && apply.Accessible.role===Accessible.Button,"icon chooser exposes an accessible Apply button"))return

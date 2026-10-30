@@ -6,7 +6,7 @@ import QtQuick
 //
 // Under the first-party Omarchy bar, each widget's `bar.shell` facade is
 // scoped to the widget's own plugin, so
-// `bar.shell.serviceFor("Omaconnect.plus")` reaches the live service. Omarchy
+// `bar.shell.serviceFor("omaconnect.plus")` reaches the live service. Omarchy
 // never exposes service resolution to replacement bars: a third-party bar
 // is handed a facade whose serviceFor() is a deliberate null stub (only
 // the trusted built-in bar can mint service-capable facades). A widget

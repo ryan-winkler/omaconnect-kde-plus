@@ -61,7 +61,7 @@ ShellRoot {
     }
     function named(label) {
         return find(panel, function(object) {
-            return "text" in object && object.text === label && typeof object.clicked === "function"
+            return "text" in object && object.visible && object.text === label && typeof object.clicked === "function"
         }, [])
     }
     function focusLabel() {
@@ -178,7 +178,9 @@ ShellRoot {
                 if (!test.check(panel.cursorActive && panel.selectedIndex === 1, "device arrow navigation remains available")) return
                 test.key(Qt.Key_Tab)
                 test.phase = 141
-            } else if (test.phase === 141 && test.seek(test.find(panel,function(object) { return object.objectName === "device-settings-B" },[]))) {
+            } else if (test.phase === 141 && test.seek(test.find(panel,function(object) { return object.objectName === "selected-device-settings" },[]))) {
+                var selectedPicker = test.find(panel,function(object) { return object.objectName === "daily-device-selector" },[])
+                if (!test.check(selectedPicker && selectedPicker.currentValue === "B", "shared picker follows keyboard-selected device before settings handoff")) return
                 test.key(Qt.Key_Return)
                 test.phase = 142
             } else if (test.phase === 142) {
@@ -189,7 +191,10 @@ ShellRoot {
                 preview.requestActivate()
                 panel.focusTarget.forceActiveFocus()
                 test.phase = 15
-            } else if (test.phase === 15 && test.seek(test.named("Native KDE Connect settings"))) {
+            } else if (test.phase === 15 && test.seek(test.find(panel,function(object) { return object.objectName === "section-toggle-native" },[]))) {
+                test.key(Qt.Key_Return)
+                test.phase = 151
+            } else if (test.phase === 151 && test.seek(test.named("Native KDE Connect settings"))) {
                 test.check(true, "Tab reaches all native KDE features")
                 test.phase = 153
             } else if (test.phase === 153 && test.seek(test.named("Open Tailscale panel"))) {
@@ -210,7 +215,7 @@ ShellRoot {
             } else if (test.phase === 17) {
                 if (!test.check(test.isWithin(preview.activeFocusItem, test.named("Off")), "Tab reaches BTH Off")) return
                 test.phase = 18
-            } else if (test.phase === 18 && test.seek(test.named("Manage saved addresses"))) {
+            } else if (test.phase === 18 && test.seek(test.find(panel,function(object) { return object.objectName === "section-toggle-addresses" },[]))) {
                 test.key(Qt.Key_Return)
                 test.phase = 19
             } else if (test.phase === 19) {
@@ -224,9 +229,9 @@ ShellRoot {
                 test.key(Qt.Key_Backtab, Qt.ShiftModifier)
                 test.phase = 22
             } else if (test.phase === 22) {
-                test.check(test.isWithin(preview.activeFocusItem, test.named("Hide saved addresses")), "Shift+Tab returns to address disclosure")
+                test.check(test.isWithin(preview.activeFocusItem, test.find(panel,function(object) { return object.objectName === "section-toggle-addresses" },[])), "Shift+Tab returns to address disclosure")
                 test.phase = 23
-            } else if (test.phase === 23 && test.seek(test.named("Syncthing identity note"))) {
+            } else if (test.phase === 23 && test.seek(test.find(panel,function(object) { return object.objectName === "section-toggle-syncthing" },[]))) {
                 test.key(Qt.Key_Return)
                 test.phase = 24
             } else if (test.phase === 24) {

@@ -5,7 +5,9 @@ QtObject {
     id: root
     // No device target or view uses this model. Only installed metadata is read.
     readonly property Native.PluginModel metadata: Native.PluginModel {}
-    property var configurations: []
+    property var modules: []
+    readonly property var configurations: modules.filter(function(entry) { return entry.hasConfiguration })
+    readonly property bool truncated: configurationEntries.count > 256
     readonly property Instantiator configurationEntries: Instantiator {
         model: root.metadata
         // Do not request isChecked: it requires a device configuration target.
@@ -22,13 +24,14 @@ QtObject {
         interval: 0
         onTriggered: {
             var entries = []
-            for (var i = 0; i < root.configurationEntries.count; ++i) {
+            for (var i = 0; i < Math.min(256, root.configurationEntries.count); ++i) {
                 var entry = root.configurationEntries.objectAt(i)
-                if (entry && root.validId(entry.pluginId) && entry.configSource.toString().indexOf("file:") === 0)
-                    entries.push({id: entry.pluginId, name: entry.name.slice(0, 256), description: entry.description.slice(0, 1024)})
+                if (entry && root.validId(entry.pluginId))
+                    entries.push({id: entry.pluginId, name: entry.pluginId === "kdeconnect_runcommand" ? "Commands on this computer" : entry.name.slice(0, 256) || entry.pluginId, description: entry.pluginId === "kdeconnect_runcommand" ? "Choose commands on this computer that the selected device can run." : entry.description.slice(0, 1024),
+                        hasConfiguration: entry.configSource.toString().indexOf("file:") === 0})
             }
             entries.sort(function(a, b) { return a.name.localeCompare(b.name) })
-            root.configurations = entries
+            root.modules = entries
         }
     }
 

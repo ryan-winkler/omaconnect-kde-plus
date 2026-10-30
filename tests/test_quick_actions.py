@@ -73,7 +73,7 @@ monitor.virtualMonitor.known=false;assert.equal(api.ready('external-monitor',mon
         manifest=json.loads((ROOT/'manifest.json').read_text())
         self.assertEqual(set(catalog['ids']),helper.ACTION_IDS)
         self.assertEqual(catalog['defaultOrder'],manifest['settings']['quickActionsOrder']['default'])
-        self.assertEqual(manifest['id'],'Omaconnect.plus')
+        self.assertEqual(manifest['id'],'omaconnect.plus')
         self.assertNotEqual(manifest['id'],'omaconnect')
 
     def configure_fixture(self,fixture,plugin,home,fake_bin):
@@ -87,7 +87,7 @@ monitor.virtualMonitor.known=false;assert.equal(api.ready('external-monitor',mon
         self.assertIn('QUICK_ACTIONS_PASS',output,output)
         writes=[row['args'] for row in calls if row['tool']=='omarchy-shell']
         self.assertEqual([json.loads(row[-2]) for row in writes],['file,text,clipboard,ring','file,text,ring,clipboard','file,text,clipboard','file,clipboard'])
-        self.assertTrue(all(row[:4]==['shell','setBarWidget','Omaconnect.plus','quickActionsOrder'] and row[-1]=='{}' for row in writes))
+        self.assertTrue(all(row[:4]==['shell','setBarWidget','omaconnect.plus','quickActionsOrder'] and row[-1]=='{}' for row in writes))
         self.assertFalse(any(row['tool'] in ('kdeconnect-cli','nmcli','remote-access-mode') for row in calls),calls)
         self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()),[])
 

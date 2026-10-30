@@ -8,6 +8,7 @@ import qs.Ui as Kit
 Column {
     id: root
     required property var discovery
+    property bool showTitle: true
     property string peerId: ""
     property color foreground: Commons.Color.popups.text
     property string fontFamily: Style.font.family
@@ -28,6 +29,7 @@ Column {
     }
 
     Text {
+        visible: root.showTitle
         textFormat: Text.PlainText
         width: root.width
         text: "Saved LAN and VPN addresses"
@@ -90,7 +92,7 @@ Column {
         checked: false
         Accessible.name: text
     }
-    Kit.Button {
+    SettingsButton {
         width: root.width
         height: Math.max(32, implicitHeight)
         text: "Approve and save address"
@@ -107,7 +109,7 @@ Column {
         onToggled: if (root.discovery) root.discovery.autoDiscoveryEnabled = checked
         Accessible.name: text
     }
-    Kit.Button {
+    SettingsButton {
         width: root.width
         text: "Refresh devices and addresses"
         enabled: !!root.discovery && !root.discovery.busy
@@ -115,6 +117,15 @@ Column {
         foreground: root.foreground
         Accessible.name: text
         onClicked: root.discovery.requestDiscovery(true)
+    }
+    Connections {
+        target: root
+        function onPeerIdChanged() {
+            address.clear()
+            source.currentIndex = 0
+            automatic.checked = false
+            root.removalReview = ""
+        }
     }
     Repeater {
         model: root.discovery ? root.discovery.addresses : []
@@ -140,7 +151,7 @@ Column {
                 Accessible.name: "Automatic rediscovery for " + modelData.address
                 onToggled: root.discovery.setAutoDiscover(modelData.peer_id, modelData.address, checked, modelData.source)
             }
-            Kit.Button {
+            SettingsButton {
                 width: parent.width
                 text: "Forget local address record"
                 enabled: !root.discovery.busy
@@ -149,7 +160,7 @@ Column {
                 Accessible.name: text + " for " + modelData.address
                 onClicked: root.discovery.removeAddress(modelData.peer_id, modelData.address, false, modelData.source)
             }
-            Kit.Button {
+            SettingsButton {
                 width: parent.width
                 text: root.removalReview === modelData.peer_id + ":" + modelData.address ? "Confirm removal from KDE and local record" : "Review removal from KDE"
                 visible: !modelData.manual_baseline

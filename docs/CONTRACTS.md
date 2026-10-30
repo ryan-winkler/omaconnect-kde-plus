@@ -4,6 +4,20 @@ All new helpers use fixed argv plus bounded JSON stdin/stdout. Raw provider stde
 is not shown in the UI. These are local process contracts; the fork adds no HTTP
 server, arbitrary REST proxy, protocol daemon or cross-plugin service API.
 
+## Runtime identity and retained storage
+
+The Community machine ID and IPC target are `omaconnect.plus`. The display name
+remains Omaconnect KDE Plus. The private config, data and cache directories keep
+the existing `Omaconnect.plus` spelling. This preserves aliases, icons, address
+records and cache ownership without copying or resetting them. Plugin ID and
+storage path are separate contracts; do not derive one from the other.
+
+A former uppercase-ID installation needs an explicit bar/service reference and
+source-directory migration; native update alone does not do this. The stage-only
+migration helper accepts `--source-id Omaconnect.plus`, preserves understood
+settings and enablement, and emits no appearance candidate for that source.
+See [install and recovery](INSTALL.md). Native pairings remain with KDE Connect.
+
 ## Appearance helper
 
 `python3 scripts/appearance.py read|update|import|library` reads one JSON line.
@@ -34,6 +48,12 @@ assets are checked on load. Missing/rejected assets show Phone with a warning.
 The installed-icon inventory includes a `library_truncated` boolean and at most
 1,024 candidate names. The UI resolves them through the active Qt theme; presence
 in the inventory alone is not an availability claim. See [icon sources](ICONS.md).
+
+Theme-icon metadata can include `tint: true` with `render: "symbolic"` for an
+explicit foreground override. The field is a boolean and valid only for theme
+icons. Other types, other modes and a conflicting colour-render value are
+rejected. Legacy theme entries without the flag retain automatic rendering;
+reading does not rewrite their stored metadata.
 
 ## File chooser and submission
 
@@ -181,13 +201,32 @@ Oversized information lists are omitted as needed; valid monitor state is retain
 Feature display names use the installed `PluginModel.pluginDisplayName` API in an
 optional loader. The metadata model has no device target. Its Instantiator requests
 only pluginId, name, description and configSource; it never requests isChecked or
-reads/writes plugin check state. Installed configuration sources produce a native
-Configure list independent of the peer's reported feature list. Plus passes IDs
+reads/writes plugin check state. All installed rows form the module catalogue,
+independent of the peer's reported feature list. Installed configuration sources
+identify the rows with a native Configure link. Plus passes IDs
 to the native app and does not load those configuration QML files itself. Missing
 metadata falls back to the reported ID and the native settings route. Local Run
 commands configuration controls what the peer can run on this computer; it does
 not edit the peer's command definitions. Native actions still need a reviewed
 dispatcher.
+
+`native_settings.py` accepts complete JSON on stdin, at most 64 KiB. A read has
+exact keys `{operation:"read", peerId, pluginIds}` with at most 256 unique safe
+module IDs. A set has `{operation:"set", peerId, pluginId, enabled}` with a boolean
+value. It validates the device D-Bus path and rechecks native pairing. Offline
+paired devices are allowed. Fixed Device `isPluginEnabled` / `setPluginEnabled`
+calls use NO_AUTO_START, 1.5-second call timeouts and a shared five-second deadline.
+Reads use at most eight workers. No configuration file is read or written.
+
+Replies contain exactly `state`, `peerId`, `enabled` and `error`. The enabled map
+contains only observed boolean values. A set succeeds only after native readback;
+a mismatch retains the actual value. An uncertain submission has state `unknown`
+and no observed value. The UI does not retry it. A read-only Refresh can recover
+state. QML revalidates the reply and bounds each output stream to 64 KiB.
+`NativeModuleController` serializes requests, rejects duplicate writes and captures
+the original peer for an initiated write. Selection changes invalidate stale
+responses and queue only the latest visible target's read. Hidden pages do not
+start requests. This state is separate from shared device-action feedback.
 
 `edit_remote_commands.py` accepts only JSON stdin `{peerId}` of at most 512 bytes.
 It validates the D-Bus path ID and rechecks paired/reachable and native
@@ -213,9 +252,10 @@ and [virtual-monitor interface](https://github.com/KDE/kdeconnect-kde/blob/v26.0
 
 `SettingsPanel.qml` is an independent nonmodal native Window. Its four domains
 share the current device context and retain a Back to devices route. Native KDE
-module settings open in KDE Connect with the selected ID; peer pairing/reachability
-conditions are explained. The searchable inventory is reported support, not an
-installation catalog or enabled-state writer.
+configuration forms open in KDE Connect with the selected ID; peer pairing and
+reachability conditions are explained. The searchable inventory is the installed
+module catalogue, independent of peer-reported features. It is not a module download catalogue. Its On/Off rows
+read and change native state only through the `native_settings.py` contract above.
 
 The persistent Settings Device selector uses the existing `Panel.selectDevice`
 path. It does not store another selected ID. Options include offline and unpaired
@@ -237,7 +277,7 @@ Neither the header gear nor paired-device gears launch KDE Connect implicitly.
 The explicit Native KDE Connect settings link retains the native launch boundary.
 
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
-keys, three bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
+keys, four bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`, `sectionOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
 arguments and JSON-typed values. Exact `ok` confirms the native API accepted the
 write and controls success feedback. The controls display host-provided settings;
 the helper does not independently read back or verify persistence. A visibility
@@ -268,7 +308,34 @@ section is session UI state; opening the panel restores the selected defaults.
 Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
 
-`ActionCatalog.js` owns the 19 reviewed shortcut IDs, groups, help, supported and
+`PanelSections.json` is the fixed catalogue for the ten daily sections. It owns
+their IDs, labels, help, visibility keys, expansion defaults and settings domain.
+`PanelSectionCatalog.qml` reads this trusted local file. `SectionOrder.js` and
+`scripts/section_order.py` validate the same catalogue and bounded `sectionOrder`
+CSV. Unknown or repeated IDs are rejected on save. Missing known IDs append in
+catalogue order; an empty value restores that order. Malformed stored values use
+the default order. The catalogue contains no component paths or commands.
+An unavailable catalogue or missing section entry keeps that optional section
+hidden, so it cannot start owner-status polls. The device picker and fixed View
+routes stay available; a load failure shows recovery text in the daily panel.
+
+`Panel.qml` moves existing `QtQml.Models.ObjectModel` objects. It preserves draft
+and control identity while changing visual and Tab order. Settings uses stable
+rows and native Up/Down buttons. Saves wait for host readback; pending requests
+keep focus and refuse repeats without a queue. Every section can move, including
+hidden sections. The device switcher stays visible when its details collapse.
+Pairing warnings, pending unpair confirmation and launch feedback remain reachable.
+
+The inline Devices target reuses `FileDropZone.qml` and `SendSection.qml`; it has
+no transfer engine. Accepted local-URL hover over the bar opens and reveals it,
+then settles layout before scrolling it into view. Hover never stages or sends.
+That temporary reveal does not save visibility. An actual drop locks the current
+recipient through the existing inspector. Switching devices does not redirect a
+review draft. An unsaved address/removal review clears when its device changes.
+Moving, hiding or collapsing sections alone does not clear saved records or drafts.
+Collapsed or hidden Syncthing controls do not begin new owner-status polls.
+
+`ActionCatalog.js` owns the reviewed shortcut IDs, groups, help, supported and
 locally-active readiness. The preference/migration boundary accepts only those
 IDs, no duplicates, with a 512-character CSV limit. Native handoffs remain explicit
 and keep the selected KDE peer. They do not directly invoke a guessed plugin

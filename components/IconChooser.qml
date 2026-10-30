@@ -18,6 +18,14 @@ Controls.Dialog {
     property string deviceType: "phone"
     property string fontFamily: Commons.Style.font.family
     property color foreground: Commons.Color.popups.text
+    palette.window: Commons.Color.popups.background
+    palette.base: Commons.Color.popups.background
+    palette.button: Commons.Color.popups.background
+    palette.windowText: root.foreground
+    palette.text: root.foreground
+    palette.buttonText: root.foreground
+    palette.highlight: Commons.Color.accent
+    palette.highlightedText: Commons.Color.popups.background
     property var draft: Appearance.phone()
     property bool pendingApply: false
     property bool pendingImport: false
@@ -142,9 +150,30 @@ Controls.Dialog {
                     SettingsButton {
                         required property var modelData
                         objectName: "preset-" + modelData.value
-                        text: modelData.label
-                        iconText: root.presetFont ? Appearance.glyphFor(modelData) : ""
-                        fontFamily: root.presetFont || root.fontFamily
+                        text: ""
+                        implicitWidth: presetContents.implicitWidth + leftPadding + rightPadding
+                        fontFamily: root.fontFamily
+                        Row {
+                            id: presetContents
+                            anchors.centerIn: parent
+                            spacing: Commons.Style.space(6)
+                            AppearanceIcon {
+                                width: 20; height: 20
+                                anchors.verticalCenter: parent.verticalCenter
+                                icon: modelData
+                                foreground: root.foreground
+                                fontFamily: root.fontFamily
+                            }
+                            Text {
+                                objectName: "preset-label-" + modelData.value
+                                text: modelData.label
+                                textFormat: Text.PlainText
+                                color: root.foreground
+                                font.family: root.fontFamily
+                                font.pixelSize: Commons.Style.font.body
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
                         foreground: root.foreground
                         selected: root.draft.mode === "preset" && root.draft.value === modelData.value
                         focusable: true
@@ -166,7 +195,7 @@ Controls.Dialog {
                 color: root.foreground
                 wrapMode: Text.Wrap
             }
-            Kit.SearchableDropdown {
+            InstalledIconPicker {
                 id: installedIcons
                 objectName: "installed-icon-picker"
                 Layout.fillWidth: true
@@ -194,36 +223,44 @@ Controls.Dialog {
                 color: root.foreground
                 wrapMode: Text.Wrap
             }
-            RowLayout {
+            Rectangle {
+                objectName: "active-theme-icon-preview"
                 Layout.fillWidth: true
-                spacing: 12
-                Repeater {
-                    model: ["#ffffff","#171717"]
-                    Rectangle {
-                        required property string modelData
+                implicitHeight: 72
+                color: Commons.Color.popups.background
+                border.color: Commons.Color.popups.border
+                radius: Commons.Style.cornerRadius
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: Commons.Style.space(10)
+                    spacing: Commons.Style.space(12)
+                    AppearanceIcon {
+                        id: themePreview
+                        Layout.preferredWidth: 32
+                        Layout.preferredHeight: 32
+                        icon: root.resolvedDraft
+                        foreground: root.foreground
+                        fontFamily: root.fontFamily
+                        assetBaseUrl: root.store ? root.store.assetBaseUrl : ""
+                    }
+                    ColumnLayout {
                         Layout.fillWidth: true
-                        implicitHeight: 60
-                        color: modelData
-                        border.color: "#888888"
-                        radius: 4
-                        AppearanceIcon {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.top: parent.top
-                            anchors.topMargin: 8
-                            width: 20; height: 20
-                            icon: root.resolvedDraft
-                            foreground: parent.modelData === "#ffffff" ? "#171717" : "#ffffff"
-                            fontFamily: root.fontFamily
-                            assetBaseUrl: root.store ? root.store.assetBaseUrl : ""
+                        Text {
+                            text: qsTr("Current theme")
+                            textFormat: Text.PlainText
+                            color: root.foreground
+                            font.family: root.fontFamily
+                            font.pixelSize: Commons.Style.font.body
+                            font.bold: true
                         }
                         Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 6
-                            text: parent.modelData === "#ffffff" ? qsTr("Light bar · 20 px") : qsTr("Dark bar · 20 px")
+                            Layout.fillWidth: true
+                            text: themePreview.sourceColours ? root.resolvedDraft.mode === "image" ? qsTr("Custom image colours") : qsTr("Installed icon colours") : qsTr("Icon colour follows your theme automatically")
                             textFormat: Text.PlainText
-                            color: parent.modelData === "#ffffff" ? "#171717" : "#ffffff"
-                            font.pixelSize: 12
+                            wrapMode: Text.Wrap
+                            color: root.foreground
+                            font.family: root.fontFamily
+                            font.pixelSize: Commons.Style.font.bodySmall
                         }
                     }
                 }
@@ -237,6 +274,30 @@ Controls.Dialog {
                 color: root.foreground
                 wrapMode: Text.Wrap
                 Accessible.role: Accessible.AlertMessage
+            }
+            Controls.CheckBox {
+                objectName: "appearance-source-colours"
+                font.family: root.fontFamily
+                font.pixelSize: Commons.Style.font.body
+                Layout.fillWidth: true
+                Layout.minimumHeight: 44
+                visible: root.draft.mode === "image" || root.draft.mode === "theme"
+                enabled: !root.pendingApply
+                text: root.draft.mode === "theme" ? qsTr("Keep installed icon colours") : qsTr("Keep image colours")
+                checked: themePreview.sourceColours
+                Accessible.name: text
+                Accessible.description: qsTr("Clear this option to use the theme foreground. Apply saves the choice.")
+                function chooseColours(keep) {
+                    if (!enabled) return
+                    var next = Object.assign({},root.draft)
+                    next.render = keep ? "color" : "symbolic"
+                    if (next.mode === "theme" && !keep) next.tint = true
+                    else delete next.tint
+                    root.draft = Appearance.normalizeIcon(next,root.deviceMode)
+                }
+                onClicked: chooseColours(checked)
+                Accessible.onToggleAction: chooseColours(!checked)
+                Accessible.onPressAction: chooseColours(!checked)
             }
             SettingsButton {
                 Layout.minimumHeight: 32
@@ -325,12 +386,6 @@ Controls.Dialog {
                     textFormat: Text.PlainText
                     color: root.foreground
                     wrapMode: Text.Wrap
-                }
-                Controls.CheckBox {
-                    visible: root.draft.mode === "image"
-                    text: qsTr("Keep image colours")
-                    checked: root.draft.render === "color"
-                    onToggled: { var next = Object.assign({},root.draft); next.render = checked ? "color" : "symbolic"; root.draft = next; }
                 }
                 SettingsButton {
                     Layout.minimumHeight: 32

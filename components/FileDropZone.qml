@@ -8,6 +8,7 @@ Kit.BorderSurface {
     id: root
     required property var service
     property var device: null
+    signal filesStaged()
     readonly property bool ready: dropArea.ready
     readonly property string instructions: dropArea.instructions
     width: parent ? parent.width : 0
@@ -38,5 +39,6 @@ Kit.BorderSurface {
         anchors.fill: parent
         service: root.service
         device: root.device
+        onFilesStaged: root.filesStaged()
     }
 }
