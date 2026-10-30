@@ -18,8 +18,8 @@ omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --ena
 ```
 
 Open the new bar icon, select **Native KDE Connect settings** and pair your device.
-See [install, update and recovery](docs/INSTALL.md), including how to move from
-the original OmaConnect. The plugin ID is `Omaconnect.plus`.
+Moving from the original OmaConnect? Read [install, update and recovery](docs/INSTALL.md)
+first and add Plus without `--enable`. The plugin ID is `Omaconnect.plus`.
 
 ## Features
 
@@ -29,7 +29,7 @@ the original OmaConnect. The plugin ID is `Omaconnect.plus`.
 - **Honest activity:** “Request accepted” means KDE accepted the transfer;
   delivery stays unknown. A batch keeps its reviewed recipient.
 - **Quick actions:** add, remove and reorder reviewed shortcuts, including media
-  transport and native KDE Connect routes.
+  transport, native KDE Connect routes and an optional Quick Share shortcut.
 - **Appearance:** choose a phone, computer, theme icon, symbol or local PNG/SVG,
   and an alias per device. Preview before Apply.
 - **Settings:** Appearance, Connections, Quick actions and Device features, with
@@ -44,7 +44,8 @@ the original OmaConnect. The plugin ID is `Omaconnect.plus`.
 - **Private addresses:** approve LAN or VPN addresses per device, with opt-in
   rediscovery. Existing KDE addresses are preserved.
 - **Syncthing notes:** optionally record that a KDE device and a Syncthing ID are
-  the same machine, and open the existing Syncshell panel.
+  the same machine, pause or resume syncing with it, and open the existing Syncshell
+  panel.
 
 Read the [task guide](docs/HELP.md) for every control.
 
@@ -66,6 +67,8 @@ commands. Keep it if its workflow suits you. Plus adds:
 Omarchy, KDE Connect, Python 3 with PyGObject and a desktop file portal. The
 optional home-access card needs the existing `remote-access-mode` helper (path
 configurable). Opening Syncthing needs the `io.github.ilyazar.syncthing` plugin.
+The Quick Share shortcut opens RQuickShare (`r-quick-share` package); Plus does
+not speak Quick Share itself.
 Missing optional providers stay unavailable; Plus never installs them.
 
 ## Privacy

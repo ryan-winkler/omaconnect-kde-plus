@@ -26,7 +26,7 @@ reviews:
     - path: "tests/**"
       instructions: "Require owned temporary state and fake providers. Do not pair devices, change network modes, restart the shell or send real files in automated tests. Separate native fixture evidence from real-device acceptance."
     - path: "**/*.md"
-      instructions: "Use concise plain English and helpful task links. Preserve source/license attribution. Report actual evidence and open checks. Do not expose personal configurations or credentials."
+      instructions: "Use concise plain English and helpful task links. Preserve source/license attribution. Docs are for users and contributors only: test results, receipts, open checks and review notes belong in the PR description, not in Markdown files. Do not expose personal configurations or credentials."
     - path: ".github/workflows/**"
       instructions: "Use minimum token permissions, verified full action SHAs, timeouts and untrusted-PR-safe triggers. Do not use pull_request_target to execute pull-request code. Do not claim skipped native checks passed."
   tools:

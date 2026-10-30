@@ -3,6 +3,7 @@
 Open **Plus settings** in Devices or **Settings** from the bar menu. Choose the domain that matches your task.
 Use **Back to devices** to return. Native KDE Connect opens in its own window;
 your Plus settings remain available. Select a device before changing its features.
+Settings switches show **On** or **Off** below their names.
 
 Use the **Device** dropdown below the Settings title to change devices without
 leaving the page. It also changes the selected device in Devices and clears the
@@ -37,7 +38,9 @@ KDE Connect settings** inside Plus for KDE Connect's full settings and permissio
 ## Connections
 
 Enable only the integrations you use. Each display switch shows or hides its
-controls. It does not install, connect or disconnect a VPN.
+controls. It does not install, connect or disconnect a VPN. In this page, choose
+whether network controls and saved addresses show or start expanded. Hiding a
+section keeps its saved data.
 
 | Integration | Use it | Official setup guide |
 | --- | --- | --- |
@@ -57,6 +60,16 @@ panel-session switch. It runs while the panel is open, with a 60-second interval
 **Forget local address record** removes Plus metadata. **Review removal from KDE**
 needs a second selection and preserves pre-existing native addresses.
 
+Addresses must be private IP literals, not hostnames. Tailscale's `100.64.0.0/10`
+range is accepted only with the Tailscale source, and the BTH source accepts IPv4 only.
+
+## Keyboard
+
+In the Devices view, use the arrow keys or `h` `j` `k` `l` to move, and `Enter`
+or `Space` to activate. Press `r` to refresh, `p` to pair the selected device,
+`u` to unpair it and `y` to confirm, `c` to cancel, and `Esc` to close. `Tab`
+moves into the normal control order.
+
 ## Quick actions
 
 Choose a shortcut, then select **Add selected action**. Use **Up**, **Down** or
@@ -67,12 +80,18 @@ Each action shows its description and selected-device availability.
 - **Files:** Open the normal desktop file chooser, then review before Send.
 - **Text or link:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
 - **Clipboard:** Send the current clipboard to the selected device.
+- **Quick Share:** Open [RQuickShare](https://github.com/Martichou/rquickshare)
+  to share with Android Quick Share. Install the `r-quick-share` package first.
+  It is a separate app with its own pairing; KDE Connect does not use it.
 - **Ring:** Request a sound. If unavailable, open native **Plugin settings** and
   check Find my phone. A successful command does not confirm an audible sound.
 - **SMS:** Open native KDE Connect conversations, where the platform permits it.
 - **Ping:** Compose a notification. The optional default message fills the draft;
   you can edit up to 8192 characters before sending. Private Ping content also uses the session bus. Ping and Ring use different native modules.
 - **Native KDE Connect settings:** Open the selected device in native KDE Connect.
+
+If the Quick Share window does not appear after launch, check its tray icon.
+See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare#installation).
 
 ## Device features
 
@@ -119,6 +138,11 @@ commands that run on the selected device, use that device's KDE Connect settings
 to open its setup page. It rechecks whether the peer accepts that request. Check
 the other device for the editor. Request acceptance does not confirm that it
 opened, and no command runs. If unavailable, open Run commands settings there.
+
+Media player choices and transport buttons support Tab, Enter, Space and
+assistive-technology activation. The current player starts with **Current:**,
+so its state remains clear without color or hover. Unavailable controls do not
+submit an action.
 
 Open **Native KDE Connect settings**, then use native **Plugin settings** to enable
 or configure installed modules and permissions. Search in Plus by task or plugin
@@ -173,7 +197,15 @@ KDE device resets the draft; a pending save stays attached to its reviewed devic
 Saved readback confirms a save or removal. **Remove local note** removes only this
 association. Select the saved ID to copy it with the normal keyboard command.
 
-The note does not pair devices, start sync, check live state or verify ownership.
+When a note is saved, the section shows whether Syncthing has paused that device.
+Select **Pause in Syncthing** or **Resume in Syncthing** to change it. Syncthing's
+own `syncthing cli` makes the change and a readback confirms it. "State unknown"
+means Plus could not confirm the state. Possible causes include a stopped
+Syncthing, a different configuration folder, an unknown ID, a CLI timeout or an
+unexpected reply. Select **Refresh Syncthing state** to retry. The last checked
+state refreshes every 15 seconds while this section is visible.
+
+The note does not pair devices, start sync or verify ownership.
 **Open existing Syncthing panel** opens the general Syncshell panel, where you
 configure folders and check synchronization. It is not a per-device deep link.
 Syncshell retains the synchronization engine and keys. Read the official
@@ -182,8 +214,15 @@ Syncshell retains the synchronization engine and keys. Read the official
 ## Install, update or recover
 
 Use the supported commands in [install, update and recovery](INSTALL.md),
-including how to move settings from the original OmaConnect. Native plugin
+including how to move settings from the original OmaConnect. If KDE Connect is
+missing, Devices shows `omarchy pkg add kdeconnect python python-gobject`. Copy
+it into a terminal, run it, then select **Refresh**. Plus never runs it for you. Native plugin
 removal does not remove pairing, VPN profiles or private Plus metadata.
+
+If discovery reports missing **busctl and Python 3**, check those system tools,
+then select **Refresh**. This is a discovery dependency problem, not proof that
+KDE Connect is missing. On Omarchy, `busctl` comes from systemd and `python3`
+comes from Python. Plus does not install or change these packages.
 
 ## Get help or contribute
 
@@ -192,55 +231,6 @@ Use [support](../SUPPORT.md) for task help and safe issue evidence,
 [security reporting](../SECURITY.md) for private vulnerability reports.
 Do not publish private IDs, addresses, configurations or credentials.
 
----
-
-# Contextual help coverage
-
-Each feature has short task guidance beside its controls, a direct documentation
-link, or both. External links open only when the user selects them. Help stays in
-the owning domain; there is no extra daily help dashboard to search first.
-
-| Feature | In-app help and documentation |
-| --- | --- |
-| Bar/device icons and local aliases | Appearance explains identity versus display; chooser explains preview/Apply, advanced choices and validation. Appearance opens the installed ICONS.md contribution guide. |
-| Quick actions | Add/Up/Down/Remove instructions; each catalog item has a description and selected-device availability. Adding a shortcut does not enable or execute a native plugin. |
-| Native features and permissions | Search scope/state legend, offline next step, selected-device native route, and official KDE user guide. |
-| Tailscale | Independent display switch, existing-owner/address instructions and official quickstart. |
-| MikroTik BTH | Independent display switch, Automatic/On/Off intent-versus-state help, trusted helper-path help and official BTH manual. |
-| Other WireGuard profiles | Independent display switch, native manager/address instructions and official quickstart. |
-| File chooser and drop | Choose files or persistent Send window; local-file/count/size limits; review before explicit Send; Copy protects originals; existing draft/busy reasons remain visible. |
-| File activity and cancellation | Accepted-versus-delivered explanation, session-only retention and unconfirmed cancellation state. |
-| Saved addresses | Source labels, explicit approval, identity warning, opt-in rediscovery and separate removal review. Provider setup documentation is in Connections. |
-| Syncthing identity link | Full identity check, explicit local-only association explanation, existing owner button and official device setup guide. |
-| Ring unavailable | Known-unloaded module message and native Plugin Settings next step; command acceptance does not claim sound. |
-
-The official links were checked against provider documentation. Do not put API
-keys, addresses, private IDs or configuration contents into help URLs. Do not
-add a shell command or arbitrary URL field as a shortcut for documented features.
-
-A future native action needs a verified dispatch contract and catalog entry before
-it is offered as an executable shortcut. Safe unknown native modules remain
-searchable through the native owner route without inventing invocation semantics.
-
-## Choose visible sections and shortcuts
-
-In **Settings → Appearance**, choose saved addresses, optional Syncthing identity
-notes and network controls. Choose which sections start expanded. Media and remote
-command visibility lives in **Device features**. Each visible section can also
-collapse in Devices. These display choices preserve saved metadata and provider
-settings. They do not disconnect a VPN or change native plugin permissions.
-
-In **Quick actions**, add, remove and reorder the reviewed shortcuts. Media
-transport needs a reported player. Locally inactive modules show a reason. Native
-navigation shortcuts open KDE Connect for browsing, notifications, volume,
-input/presentation or locking; choose the action there. The complete native
-inventory remains searchable, including unknown future plugin IDs. Plus does not
-guess a command from a plugin name or install arbitrary plugin code.
-
-You can also drop local files onto the Plus bar icon. The same Copy-only boundary
-opens the persistent Send window for the selected device. Check the recipient and
-files; nothing is sent until **Send files**. Busy or existing drafts refuse a new
-drop so that the target cannot silently change.
 
 ## Update KDE Connect itself
 
@@ -249,7 +239,4 @@ package follows the supported Omarchy system update route, `omarchy update`.
 That can update other packages, so review its normal system update scope first.
 Plus does not compile KDE's development branch or run a package update for you.
 
-On 29 October 2026, both comparison hosts had KDE Connect `26.08.2-1`. Fresh
-`checkupdates` runs used temporary repository databases and found no KDE Connect
-update on either architecture. No packages were installed or upgraded in that
-check. The [upstream watcher](UPSTREAM-WATCH.md) monitors provider changes separately.
+The [upstream watcher](UPSTREAM-WATCH.md) monitors provider changes separately.

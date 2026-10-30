@@ -135,7 +135,13 @@ local desktop stays on native LAN; no local WireGuard interface is required.
 The fixed `omarchy-shell shell summon io.github.ilyazar.syncthing {}` call must
 return `ok` before the UI reports it opened. A missing plugin, unknown response or
 failed call remains unavailable. No API key, CoreProcess or raw owner object is
-loaded. Inline status and device actions remain deferred.
+loaded.
+
+Pause/resume runs only for the saved, validated Syncthing ID:
+`timeout 4 syncthing cli config devices <ID> paused get|set true|false`. Syncthing's
+CLI reads its own API key; Plus never reads its configuration. Each change is
+followed by a `get` readback. A failed call or other output shows "unknown" and
+disables the action. Folder operations stay with Syncthing/Syncshell.
 
 ## Native feature visibility and network owners
 
@@ -232,8 +238,10 @@ The explicit Native KDE Connect settings link retains the native launch boundary
 
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
 keys, three bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
-arguments and JSON-typed values. Exact `ok` plus native config readback controls
-feedback. A visibility setting never changes a VPN. Hidden BTH does not poll.
+arguments and JSON-typed values. Exact `ok` confirms the native API accepted the
+write and controls success feedback. The controls display host-provided settings;
+the helper does not independently read back or verify persistence. A visibility
+setting never changes a VPN. Hidden BTH does not poll.
 
 ## Drop selection and persistent Send window
 
@@ -254,12 +262,13 @@ not that a person heard a phone.
 ## Optional section and action contract
 
 Section visibility and start-expanded flags are typed boolean preferences. The
-native helper allowlists their keys and requires saved readback. Expanding a
+native helper allowlists their keys and requires the native API's `ok` reply.
+The controls display host-provided settings. Expanding a
 section is session UI state; opening the panel restores the selected defaults.
 Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
 
-`ActionCatalog.js` owns the 18 reviewed shortcut IDs, groups, help, supported and
+`ActionCatalog.js` owns the 19 reviewed shortcut IDs, groups, help, supported and
 locally-active readiness. The preference/migration boundary accepts only those
 IDs, no duplicates, with a 512-character CSV limit. Native handoffs remain explicit
 and keep the selected KDE peer. They do not directly invoke a guessed plugin
@@ -269,3 +278,18 @@ current view without changing its saved preference.
 The bar and the Send card instantiate the same `FileDropArea.qml`. It locks the
 selected recipient through `stageDroppedFiles`, refuses busy/existing drafts,
 accepts Copy only, and emits a review-window signal after staging. It never sends.
+
+Discovery keeps missing helper tools distinct from confirmed KDE absence.
+The discovery helper returns `78` when `busctl` or `python3` is missing, before
+any D-Bus call or parser run. The controller maps `78` to `unavailable`, marks
+the session bus unverified and shows fixed dependency and recovery text. Exit
+`127` is reserved for confirmed KDE absence. A failed or
+malformed session-bus reply is unavailable. A valid stopped-daemon reply with
+an installed KDE command or activatable KDE service is also unavailable. Only
+confirmed absence of both command and activation evidence reports missing KDE
+tools. A running daemon can be discovered without `kdeconnect-cli`.
+
+
+Quick Share uses only the fixed `/usr/bin/rquickshare` app path. The launcher
+rechecks the executable and detaches its standard streams. Success confirms
+process creation, not an open window, pairing or delivery.

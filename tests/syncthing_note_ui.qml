@@ -59,12 +59,19 @@ ShellRoot {
         property string ownerPanelMessage: ""
         property int ownerCalls: 0
         property int ownerArguments: -1
+        property string syncthingDeviceId: ""
+        property string syncthingState: ""
+        property bool syncthingBusy: false
+        property var pauseCalls: []
+        property int readCalls: 0
+        function readSyncthingPause(id) { readCalls++;syncthingDeviceId=id;syncthingState="active";return true }
+        function setSyncthingPaused(id,paused) { pauseCalls=pauseCalls.concat([{id:id,paused:paused}]);syncthingState=paused?"paused":"active";return true }
         function openSyncthingPanel() { ownerCalls++;ownerArguments=arguments.length;ownerPanelMessage="Owned panel unavailable" }
     }
     Window {
         id:preview
         width:550;height:900;visible:true
-        Components.SyncthingLinkSection {id:section;service:service;width:520}
+        Components.SyncthingLinkSection {id:section;service:service;panelOpened:true;width:520}
     }
     Timer {
         interval:35;repeat:true;running:true
@@ -119,6 +126,17 @@ ShellRoot {
                 if(!test.check(!!message && message.visible,"unavailable owner feedback stays visible"))return
                 var before=JSON.stringify(store.records),count=store.calls.length;section.visible=false;section.visible=true
                 if(!test.check(JSON.stringify(store.records)===before && store.calls.length===count,"hiding the section never removes metadata"))return
+                var pause=test.button("syncthing-pause","Pause in Syncthing"),state=test.find(section,function(item){return item.objectName==="syncthing-pause-state"})
+                if(!test.check(service.syncthingDeviceId===test.idA && !!pause && pause.visible && pause.enabled && state.text.indexOf("not paused")>=0,"linked device reads its Syncthing pause state in words"))return
+                test.click(pause)
+                if(!test.check(service.pauseCalls.length===1 && service.pauseCalls[0].id===test.idA && service.pauseCalls[0].paused && pause.text==="Resume in Syncthing","pause targets only the linked ID and offers resume"))return
+                service.syncthingState="unknown"
+                if(!test.check(!pause.enabled && state.text.indexOf("unknown")>=0,"unknown Syncthing state disables pause"))return
+                var reads=service.readCalls
+                section.panelOpened=false;section.readSyncState()
+                if(!test.check(service.readCalls===reads,"closed panel never starts a state read"))return
+                section.panelOpened=true
+                if(!test.check(service.readCalls===reads+1,"reopening the panel refreshes linked state"))return
                 console.log("SYNCTHING_NOTE_PASS",JSON.stringify(test.checks));Qt.quit();test.phase++
             }
         }

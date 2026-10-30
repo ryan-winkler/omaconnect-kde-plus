@@ -86,7 +86,7 @@ Column {
         wrapMode: Text.Wrap
         color: root.foreground
         font.family: root.fontFamily
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
     }
     Text {
         objectName: "native-toolbar-launch-status"

@@ -37,12 +37,15 @@ Column {
             Kit.Toggle {
                 width: parent.width
                 visible: !row.stringType
+                // State in words, from the saved value, not only the knob.
                 label: row.modelData.label
+                description: root.valueFor(row.modelData) === true ? "On" : "Off"
+                descriptionSize: Style.font.bodySmall
                 checked: root.valueFor(row.modelData) === true
                 enabled: !root.busy
                 foreground: Commons.Color.popups.text
                 Accessible.role: Accessible.CheckBox
-                Accessible.name: label
+                Accessible.name: row.modelData.label
                 Accessible.checkable: true
                 Accessible.checked: checked
                 onClicked: root.save({key: row.modelData.key, enabled: !checked})
@@ -64,7 +67,7 @@ Column {
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Style.font.bodySmall
                 wrapMode: Text.Wrap
             }
             Kit.TextField {
@@ -85,7 +88,7 @@ Column {
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Style.font.bodySmall
                 wrapMode: Text.Wrap
             }
             Kit.Button {
@@ -107,7 +110,7 @@ Column {
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
     Process {

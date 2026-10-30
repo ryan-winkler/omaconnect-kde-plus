@@ -35,6 +35,8 @@ assert.equal(api.available('plus-settings,native-features,file',null).join(','),
 assert.equal(api.ready('plus-settings',null,null),true);assert.equal(api.ready('native-features',null,null),false);
 const service={actionState:'idle',mediaLoading:false,mediaState:{}};
 assert.equal(api.ready('native-features',null,service),true);
+assert.equal(api.ready('quick-share',null,service),false,'Quick Share needs the installed app');assert.match(api.availabilityText('quick-share',null,service),/Install the r-quick-share/);
+service.quickShareAvailable=true;assert.equal(api.ready('quick-share',null,service),true);assert.match(api.availabilityText('quick-share',null,service),/separate app/);
 phone.reachable=true;assert.equal(api.compatible('ring',phone),true);assert.equal(api.ready('ring',phone,service),false,'inactive module stays visible but cannot dispatch');
 phone.loadedPluginIds=['kdeconnect_findmyphone'];assert.equal(api.ready('ring',phone,service),true);
 const media={paired:true,reachable:true,capabilities:{media:true,commands:true},pluginIds:['kdeconnect_mprisremote','kdeconnect_sftp','kdeconnect_systemvolume'],loadedKnown:true,loadedPluginIds:['kdeconnect_mprisremote']};

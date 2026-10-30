@@ -98,7 +98,7 @@ ShellRoot {
                 test.named("Settings: Connections").clicked();test.phase=2
             } else if(test.phase===2) {
                 if(!test.check(settings.currentPage==="Connections" && test.named("Show MikroTik Back to Home")!==null,"domain navigation exposes connection preferences"))return
-                if(!test.check(test.named("Show MikroTik Back to Home").checked,"connection preference reflects the fixture's saved value"))return
+                if(!test.check(panel.getSetting("networkBthEnabled",false) === true && test.named("Show MikroTik Back to Home").checked,"saved BTH preference reaches the real native toggle"))return
                 var scroll=test.find(settings.contentItem,function(o){return o.objectName === "settings-page-scroll"},[])
                 if(!test.check(scroll && scroll.contentHeight > scroll.availableHeight,"long domain content uses a bounded scrolling region"))return
                 events.mouseWheel(scroll,scroll.width/2,scroll.height/2,0,-2400,Qt.NoButton,Qt.NoModifier,1)
@@ -201,6 +201,7 @@ ShellRoot {
             } else if(test.phase===40) {
                 var reordered=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
                 if(!test.check(reordered.currentValue==="fixture-offline","device list reorder preserves selected identity"))return
+                if(!test.check(reordered.displayText.indexOf("[fixture-offline]")!==-1 && reordered.displayText.indexOf("Offline")!==-1,"displayed device label follows the stable ID after reorder"))return
                 reordered.activated(0);test.phase=41
             } else if(test.phase===41) {
                 if(!test.check(service.selectedDeviceId==="fixture-new" && settings.selectedName.indexOf("<b>")===0,"long markup-shaped names remain selectable as plain data"))return
@@ -208,6 +209,7 @@ ShellRoot {
             } else if(test.phase===42) {
                 var empty=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
                 if(!test.check(!empty.enabled && settings.deviceStatus.indexOf("Checking")===0 && settings.device===null,"removed selection and loading state do not keep a stale device"))return
+                if(!test.check(empty.displayText==="Choose a device","removed device does not leave an invalid label index"))return
                 settings.selectSettingsDevice("fixture-phone")
                 if(!test.check(service.selectedDeviceId==="","removed ID cannot be selected from a stale option"))return
                 service.scanning=false;test.phase=43

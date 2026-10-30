@@ -14,6 +14,7 @@ which callers map to skip-device / exit-70):
     ids        stdin: daemon.devices() call reply          -> ids, one per line
     addresses  stdin: customDevices get-property reply     -> addresses, one per line
     truthy     stdin: single-boolean call reply            -> exit 0 iff data == [true]
+    registered stdin: ListActivatableNames call reply      -> exit 0 iff KDE is registered
     device     argv: <id> <device_json> <battery_json> <connectivity_json> [<loaded_json>]
               -> DEVICE line: 16 legacy fields plus optional bounded information JSON
 
@@ -186,7 +187,7 @@ def _fail(message):
 
 def main(argv):
     if len(argv) < 2:
-        print("usage: discover_report.py ids|addresses|truthy|device ...", file=sys.stderr)
+        print("usage: discover_report.py ids|addresses|truthy|registered|device ...", file=sys.stderr)
         return 64
     command = argv[1]
 
@@ -203,8 +204,17 @@ def main(argv):
         return 0
 
     if command == "truthy":
-        data = parse_call_result(sys.stdin.read())
+        data = parse_call_result(sys.stdin.read(), "b")
+        if data not in ([True], [False]) or type(data[0]) is not bool:
+            return _fail("malformed boolean reply")
         return 0 if data == [True] else 1
+
+    if command == "registered":
+        data = parse_call_result(sys.stdin.read(), "as")
+        if (not isinstance(data, list) or len(data) != 1 or not isinstance(data[0], list)
+                or any(not isinstance(name, str) for name in data[0])):
+            return _fail("malformed activatable services reply")
+        return 0 if "org.kde.kdeconnect" in data[0] else 1
 
     if command == "device":
         if len(argv) not in (6, 7, 8):

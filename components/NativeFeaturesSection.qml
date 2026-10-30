@@ -59,12 +59,12 @@ Column {
     Text {
         width: parent.width
         visible: !root.configuration
-        text: "Open the selected device for native tasks and Plugin settings."
+        text: "Opens the device in KDE Connect, where you turn its features on or off."
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
     }
     VirtualMonitorSection { width: parent.width; service: root.service; configuration: root.configuration }
     DeviceInformationSection { width: parent.width; visible: root.configuration; service: root.service }
@@ -73,12 +73,12 @@ Column {
         visible: root.configuration && (!root.device || !root.device.paired || !root.device.reachable)
         text: !root.device ? "Choose a device above. KDE Connect can still open its device list."
             : !root.device.paired ? "Not paired. Open KDE Connect to pair this device and choose its native features."
-            : "Offline. Connect this device to use its native features. You can still change its local icon and name."
+            : "Offline. Live tasks need a connection. Local icon, name and native configuration are still available."
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
     }
     Column {
         width: parent.width
@@ -86,7 +86,7 @@ Column {
         spacing: Style.space(8)
         Text {
             width: parent.width
-            text: "Native plugins and permissions"
+            text: "Features this device reports"
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font.family: Style.font.family
@@ -95,12 +95,12 @@ Column {
         }
         Text {
             width: parent.width
-            text: "Use native Plugin settings to enable bundled modules. These are separate from Omarchy bar plugins."
+            text: "Turn features on in KDE Connect Plugin settings. They are not Omarchy bar plugins."
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
             font.family: Style.font.family
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.bodySmall
         }
         Text {
             width: parent.width
@@ -124,7 +124,7 @@ Column {
             width: parent.width
             text: root.pluginIds.length === 0 ? "No device feature list was reported. Installed configuration pages may still be available below."
                 : root.filteredPluginIds.length === 0 ? "No matching reported device features. Check the configuration pages below or clear the search."
-                : "Matching reported features: " + root.filteredPluginIds.length + " / " + root.pluginIds.length
+                : "Showing " + root.filteredPluginIds.length + " of " + root.pluginIds.length + " reported device features"
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
@@ -133,12 +133,12 @@ Column {
         }
         Text {
             width: parent.width
-            text: "Supported describes compatibility. Loaded describes the local daemon now. Neither proves that a feature is enabled or permitted."
+            text: "Supported: the device can use it. Loaded: KDE Connect runs it now. This does not confirm settings or phone permissions."
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
             font.family: Style.font.family
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.bodySmall
         }
         Column {
             width: parent.width
