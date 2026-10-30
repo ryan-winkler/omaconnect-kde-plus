@@ -88,6 +88,9 @@ Item {
     // Fixed app route; the helper rechecks presence and detaches all standard streams.
     readonly property string quickShareHelper: decodeURIComponent(Qt.resolvedUrl("scripts/open_quick_share.py").toString().replace(/^file:\/\//, ""))
     property bool quickShareAvailable: false
+    readonly property bool quickShareOpening: quickShareLaunch.running
+    property string quickShareMessage: ""
+    property bool quickShareFailed: false
     onPanelOpenedChanged: if (panelOpened && !quickShareCheck.running) quickShareCheck.running = true
     Process {
         id: quickShareCheck
@@ -98,14 +101,16 @@ Item {
         id: quickShareLaunch
         command: ["/usr/bin/timeout", "5", "/usr/bin/python3", root.quickShareHelper, "--open"]
         onExited: function(code) {
-            root.actionState = code === 0 ? "accepted" : "failed"
-            root.actionMessage = code === 0 ? "RQuickShare launch requested. Check its window or tray icon." : ""
-            root.actionError = code === 0 ? "" : "RQuickShare could not open. Check that r-quick-share is installed and try again."
+            root.quickShareFailed = code !== 0
+            root.quickShareMessage = code === 0 ? "RQuickShare launch requested. Check its window or tray icon."
+                : "RQuickShare could not open. Check that r-quick-share is installed and try again."
             if (code !== 0) root.quickShareAvailable = false
         }
     }
     function openQuickShare() {
         if (!quickShareAvailable || quickShareLaunch.running) return false
+        quickShareMessage = "Opening RQuickShare…"
+        quickShareFailed = false
         quickShareLaunch.running = true
         return true
     }
