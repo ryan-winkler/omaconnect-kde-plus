@@ -21,6 +21,8 @@ def reviewed(path):
 
 class PrivateSources(unittest.TestCase):
     def setUp(self):
+        # Fixtures assume umask 022; a group-writable source rightly loses the private fast path.
+        self.addCleanup(os.umask, os.umask(0o022))
         self.assertTrue(HELPER.is_file(), 'private source handoff helper is missing')
         spec = importlib.util.spec_from_file_location('private_sources', HELPER)
         self.m = importlib.util.module_from_spec(spec)

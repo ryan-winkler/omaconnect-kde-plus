@@ -164,8 +164,10 @@ installation catalog or enabled-state writer.
 
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
 keys, three bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
-arguments and JSON-typed values. Exact `ok` plus native config readback controls
-feedback. A visibility setting never changes a VPN. Hidden BTH does not poll.
+arguments and JSON-typed values. Exact `ok` confirms the native API accepted the
+write and controls success feedback. The controls display host-provided settings;
+the helper does not independently read back or verify persistence. A visibility
+setting never changes a VPN. Hidden BTH does not poll.
 
 ## Drop selection and persistent Send window
 
@@ -186,7 +188,8 @@ not that a person heard a phone.
 ## Optional section and action contract
 
 Section visibility and start-expanded flags are typed boolean preferences. The
-native helper allowlists their keys and requires saved readback. Expanding a
+native helper allowlists their keys and requires the native API's `ok` reply.
+The controls display host-provided settings. Expanding a
 section is session UI state; opening the panel restores the selected defaults.
 Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
