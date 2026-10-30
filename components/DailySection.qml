@@ -17,11 +17,13 @@ Column {
         objectName: "section-toggle-" + root.sectionId
         width: parent.width
         height: Math.max(44, implicitHeight)
-        text: root.title
+        // Section headings match the original OmaConnect: muted capitals, no frame.
+        bordered: false
+        text: root.title.toUpperCase()
         iconText: root.expanded ? "󰅀" : "󰅂"
         leftAlign: true
-        fontSize: Style.font.bodySmall
-        foreground: Commons.Color.popups.text
+        fontSize: Style.font.caption
+        foreground: Qt.darker(Commons.Color.popups.text, 1.4)
         focusable: true
         tooltipText: root.description
         Accessible.name: (root.expanded ? "Collapse " : "Expand ") + root.title
