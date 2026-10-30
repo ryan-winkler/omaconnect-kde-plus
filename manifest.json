@@ -168,6 +168,21 @@
       "type": "boolean",
       "default": true,
       "description": "Show the native KDE feature entry in Devices; inventory remains available in Settings"
+    },
+    "navigationAtTop": {
+      "type": "boolean",
+      "default": false,
+      "description": "Place daily navigation at Top; false keeps it at Bottom, with devices first."
+    },
+    "showSendShortcut": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show a direct Send shortcut beside the view menu; Send remains in the menu."
+    },
+    "showActivityShortcut": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show a direct Activity shortcut beside the view menu; Activity remains in the menu."
     }
   }
 }

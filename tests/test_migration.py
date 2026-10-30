@@ -17,6 +17,15 @@ class Migration(unittest.TestCase):
     def source(self, bar="omarchy.bar"):
         return {"bar": {"id":bar,"layout":{"left":["clock"],"right":["tray", {"id":"omaconnect","settings":{"showDeviceTypeIcons":True,"showTailscale":True,"showBatteryStats":False,"defaultPingMessage":"Hello"}}, "power"]}}, "plugins":[{"id":"other","settings":{"private":"DO_NOT_SNAPSHOT"}}], "disabledPlugins":["unrelated"]}
 
+    def test_daily_navigation_preferences_remain_typed_booleans(self):
+        keys = ("navigationAtTop", "showSendShortcut", "showActivityShortcut")
+        for key in keys:
+            for value in (True, False):
+                self.assertEqual(M.settings({"id": "omaconnect", "settings": {key: value}}), {key: value})
+            for value in (1, 0, "true", None, []):
+                with self.subTest(key=key, value=value), self.assertRaises(M.MigrationError):
+                    M.settings({"id": "omaconnect", "settings": {key: value}})
+
     def test_native_and_replacement_bar_keep_the_exact_slot(self):
         for bar in ("omarchy.bar", "custom.bar"):
             original = self.source(bar)

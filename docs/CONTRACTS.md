@@ -204,3 +204,18 @@ current view without changing its saved preference.
 The bar and the Send card instantiate the same `FileDropArea.qml`. It locks the
 selected recipient through `stageDroppedFiles`, refuses busy/existing drafts,
 accepts Copy only, and emits a review-window signal after staging. It never sends.
+
+
+## Daily navigation
+
+`CompactNavigation.qml` owns the fixed Devices, Send, Activity and Plus settings
+routes. It accepts no command or provider IDs. `navigationAtTop`,
+`showSendShortcut` and `showActivityShortcut` are typed boolean preferences with
+false defaults. Native settings save and migration validate the same keys.
+Placement changes only the fixed navigation row; content keeps a bounded scroll
+region. Hidden direct shortcuts do not remove routes from the menu.
+
+Navigation preserves service-owned file review and activity. A pending draft
+remains visible outside Send. Submission activity uses words, with no delivery
+claim. Menu Escape restores trigger focus without closing the daily panel.
+Choosing Devices returns to its existing keyboard navigation.

@@ -1,8 +1,22 @@
 # Help with Omaconnect KDE Plus
 
-Open **Settings** from the bar menu. Choose the domain that matches your task.
+Open **Plus settings** from the **View** menu or the settings icon beside it.
+Choose the domain that matches your task.
 Use **Back to devices** to return. Native KDE Connect opens in its own window;
 your Plus settings remain available. Select a device before changing its features.
+
+## Daily popup
+
+The **View: Devices** menu also opens **Send**, **Activity** and **Plus settings**.
+Navigation stays at **Bottom** by default, so devices come first. In
+**Plus settings → Appearance**, enable **Place navigation at Top** to move the
+whole row. Add optional direct Send or Activity shortcuts there. Hiding a
+shortcut keeps its route in the menu. The row stays visible while content scrolls.
+
+A ready draft keeps its recipient and files when you change views. Outside Send,
+a draft reminder names its recipient. Activity shows pending or uncertain
+submission state even when its shortcut is hidden. Accepted requests do not
+confirm delivery.
 
 ## Appearance
 
@@ -46,7 +60,9 @@ range is accepted only with the Tailscale source, and the BTH source accepts IPv
 In the Devices view, use the arrow keys or `h` `j` `k` `l` to move, and `Enter`
 or `Space` to activate. Press `r` to refresh, `p` to pair the selected device,
 `u` to unpair it and `y` to confirm, `c` to cancel, and `Esc` to close. `Tab`
-moves into the normal control order.
+moves into the normal control order. The View menu supports Enter or Space to
+open, Up or Down to choose, and Enter or Space to select. Escape closes the menu
+and returns focus to its trigger. Choosing Devices returns to device navigation.
 
 ## Quick actions
 

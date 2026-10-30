@@ -16,6 +16,7 @@ KDE Connect owns pairing, its native modules and the device protocol. Existing n
 | Change native device features | `components/NativeFeaturesSection.qml`, `scripts/discover_devices.sh`, `scripts/open_app.sh` | Native ownership, exact device, readback and handoff failures. |
 | Change connection guidance or address discovery | `components/NetworkOptions.qml`, `DiscoveryController.qml`, `DiscoveryModel.js`, `scripts/manage_addresses.py` | Opt-in sources, approval, input bounds and baseline preservation. |
 | Change home access | `BthControlCard.qml`, `BthControlModel.js` | Existing helper contract; requested mode and observed state stay distinct. |
+| Change daily popup navigation | `components/CompactNavigation.qml`, `components/NavigationSettings.qml`, `Panel.qml` | Fixed routes, typed preferences, saved readback, keyboard focus and draft preservation. |
 | Change settings navigation | `components/SettingsPanel.qml`, `scripts/network_preferences.py` | One home per domain, clear links to native settings, focus and narrow layouts. |
 | Add a provider or change a contract | [Contracts](docs/CONTRACTS.md) | Discuss ownership and failure modes before implementation. |
 

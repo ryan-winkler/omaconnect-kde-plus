@@ -21,6 +21,7 @@ BOOL_SETTINGS = {"showBatteryStats", "showBarBattery", "showNetworkStats", "show
 BOOL_SETTINGS |= {"networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled"}
 BOOL_SETTINGS |= frozenset(('showSavedAddresses', 'showSyncthingLinks', 'showNetworkControls', 'networkStartExpanded', 'mediaStartExpanded', 'commandsStartExpanded', 'addressesStartExpanded', 'syncthingStartExpanded'))
 BOOL_SETTINGS |= frozenset(("showNativeFeatures",))
+BOOL_SETTINGS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
 STRING_SETTINGS = {"defaultPingMessage", "bthHelperPath", "quickActionsOrder"}
 ALLOWED = BOOL_SETTINGS | STRING_SETTINGS
 ACTION_IDS = set(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock'))
