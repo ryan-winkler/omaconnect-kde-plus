@@ -6,6 +6,13 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Discovery, the command list and media status read at most 64 KiB per reply.
+  Each read stops at a deadline, and a provider that ignores the stop request is
+  killed, so a stuck provider cannot hang the panel. The command list keeps at
+  most 100 commands.
+
 ### Security
 
 - Plus now also tries to remove private copies of shared files at plugin start,

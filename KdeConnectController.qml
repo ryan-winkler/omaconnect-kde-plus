@@ -75,6 +75,14 @@ Item {
 
     property int monitorRestartCount: 0
 
+    // Provider deadlines (seconds) and remote-command caps, generous for real phones.
+    readonly property int scanDeadlineSeconds: 30
+    readonly property int commandsDeadlineSeconds: 10
+    readonly property int mediaStatusDeadlineSeconds: 10
+    readonly property int maxRemoteCommands: 100
+    readonly property int maxRemoteCommandText: 256
+    readonly property int maxRemoteCommandOutput: 65536
+
     readonly property var reachableDevices: devices.filter(function(device) { return device.reachable })
     readonly property var selectedDevice: deviceById(selectedDeviceId)
     readonly property var incomingPairRequest: {
@@ -286,7 +294,7 @@ Item {
         scanProcess.targetGeneration = nextGeneration
         var cmd = ["bash", getScriptPath()]
         if (forceNetwork) cmd.push("--refresh")
-        scanProcess.command = cmd
+        scanProcess.command = withDeadline(scanDeadlineSeconds, cmd)
         scanProcess.running = true
     }
 
@@ -596,7 +604,10 @@ Item {
         }
         commandsLoading = true
         commandsProcess.targetDeviceId = String(id)
-        commandsProcess.command = ["kdeconnect-cli", "-d", String(id), "--list-commands"]
+        // head keeps one byte over the cap, so parseRemoteCommands rejects a larger list; stderr is discarded.
+        commandsProcess.command = withDeadline(commandsDeadlineSeconds, ["bash", "-c",
+            "set -o pipefail; kdeconnect-cli -d \"$1\" --list-commands 2>/dev/null | head -c " + (maxRemoteCommandOutput + 1),
+            "list-commands", String(id)])
         commandsProcess.running = true
         return true
     }
@@ -609,10 +620,26 @@ Item {
             JSON.stringify({peerId: String(id)}) + "\n")
     }
 
+    // coreutils timeout signals the provider's whole process group, then sends SIGKILL
+    // 2 s later, so onExited always runs with a nonzero code. timeout stops supervising
+    // once its direct child exits, so this shell outlives SIGTERM and a surviving
+    // descendant still gets SIGKILL.
+    function withDeadline(seconds, argv) {
+        return ["timeout", "-k", "2", String(seconds), "bash", "-c", "trap 'sleep 10' TERM; \"$@\"; exit", "deadline"].concat(argv)
+    }
+
     function parseRemoteCommands(text) {
-        var source = String(text || "").trim()
+        var raw = String(text || "")
+        // Count UTF-8 bytes before trimming, so the read's one byte over the cap always rejects.
+        if (encodeURIComponent(raw).replace(/%[0-9A-F]{2}/g, "x").length > maxRemoteCommandOutput) return []
+        var source = raw.trim()
         if (!source) return []
         var result = []
+        // A cut key would run another command, so drop it; only the label is cut.
+        function add(key, name) {
+            if (result.length >= maxRemoteCommands || key.length > maxRemoteCommandText) return
+            result.push({ key: key, name: name.slice(0, maxRemoteCommandText) })
+        }
         try {
             var json = JSON.parse(source)
             if (json === null || typeof json !== "object") return []
@@ -621,14 +648,14 @@ Item {
             })
             values.forEach(function(item) {
                 if (typeof item === "string" && item.trim()) {
-                    result.push({ key: item.trim(), name: item.trim() })
+                    add(item.trim(), item.trim())
                 } else if (item && typeof item === "object") {
                     var k = item.key || item.id || item.command
                     if (k !== undefined && k !== null) {
                         var kStr = String(k).trim()
                         if (kStr) {
                             var n = item.name || item.label || item.title || kStr
-                            result.push({ key: kStr, name: String(n).trim() || kStr })
+                            add(kStr, String(n).trim() || kStr)
                         }
                     }
                 }
@@ -643,9 +670,9 @@ Item {
                 if (split > 0) {
                     var k = value.slice(0, split).trim()
                     var n = value.slice(split + 1).trim()
-                    if (k) result.push({ key: k, name: n || k })
+                    if (k) add(k, n || k)
                 } else if (value) {
-                    result.push({ key: value, name: value })
+                    add(value, value)
                 }
             })
             return result
@@ -749,7 +776,7 @@ Item {
         mediaLoading = true
         mediaRefreshPending = false
         mediaStatusProcess.targetDeviceId = String(devId)
-        mediaStatusProcess.command = ["bash", getMediaScriptPath(), "status", String(devId)]
+        mediaStatusProcess.command = withDeadline(mediaStatusDeadlineSeconds, ["bash", getMediaScriptPath(), "status", String(devId)])
         mediaStatusProcess.running = true
         return true
     }
@@ -1050,7 +1077,8 @@ Item {
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
             exitCode = code
-            root.applyScan(stdout.text, targetGeneration)
+            // Only a complete scan is applied; a failed or stopped scan shows no devices.
+            root.applyScan(code === 0 ? stdout.text : "", targetGeneration)
         }
     }
 

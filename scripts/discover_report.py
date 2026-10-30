@@ -9,7 +9,8 @@ syntax (a name containing a tab cannot forge extra TSV fields).
 
 Importable as a module for unit tests; every parse function returns None on
 malformed input instead of raising. Subcommands (exit 3 on malformed input,
-which callers map to skip-device / exit-70):
+including a stdin reply over MAX_REPLY_BYTES; callers map it to skip-device /
+exit-70):
 
     ids        stdin: daemon.devices() call reply          -> ids, one per line
     addresses  stdin: customDevices get-property reply     -> addresses, one per line
@@ -32,6 +33,8 @@ from media_status import parse_call_result, parse_properties
 PLUGIN_ID = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}")
 MAX_PLUGIN_IDS = 256
 MAX_PLUGIN_BYTES = 32768
+# One busctl reply; twice the largest valid plugin list. discover_devices.sh uses the same cap.
+MAX_REPLY_BYTES = 65536
 
 
 def parse_string_list(raw):
@@ -180,6 +183,12 @@ def format_device(device_id, device_props, battery_props=None, conn_props=None, 
     return "\t".join(fields)
 
 
+def read_reply(stream):
+    """Bounded stdin read: the reply, or None when it is over the cap."""
+    raw = stream.read(MAX_REPLY_BYTES + 1)
+    return None if len(raw) > MAX_REPLY_BYTES else raw
+
+
 def _fail(message):
     print("discover_report: %s" % (message,), file=sys.stderr)
     return 3
@@ -196,7 +205,7 @@ def main(argv):
         return 0 if argv[3] in (plugin_ids(props.get("supportedPlugins")) or []) else 1
 
     if command in ("ids", "addresses"):
-        items = parse_string_list(sys.stdin.read())
+        items = parse_string_list(read_reply(sys.stdin.buffer))
         if items is None:
             return _fail("malformed %s reply" % (command,))
         for item in items:
@@ -204,13 +213,13 @@ def main(argv):
         return 0
 
     if command == "truthy":
-        data = parse_call_result(sys.stdin.read(), "b")
+        data = parse_call_result(read_reply(sys.stdin.buffer), "b")
         if data not in ([True], [False]) or type(data[0]) is not bool:
             return _fail("malformed boolean reply")
         return 0 if data == [True] else 1
 
     if command == "registered":
-        data = parse_call_result(sys.stdin.read(), "as")
+        data = parse_call_result(read_reply(sys.stdin.buffer), "as")
         if (not isinstance(data, list) or len(data) != 1 or not isinstance(data[0], list)
                 or any(not isinstance(name, str) for name in data[0])):
             return _fail("malformed activatable services reply")

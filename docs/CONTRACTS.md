@@ -182,6 +182,15 @@ route; direct configuration returns unavailable with a manual Plugin Settings ne
 step instead of claiming a module opened. Launch acceptance does not prove a
 window rendered or settings were saved.
 
+Discovery and media helpers give each busctl call a deadline of 5 seconds or
+less and read at most 64 KiB of each reply; a larger reply is refused. The panel
+runs a scan, a command list read and a media status read under coreutils
+`timeout` (30, 10 and 10 seconds). It signals the provider's process group, then
+sends SIGKILL 2 seconds later, also to a descendant that outlives the provider. The panel applies output only after exit 0, so a
+stopped or failed read shows the usual unavailable or empty state. The command
+list read stops one byte over 64 KiB and is then refused. The list keeps at most
+100 entries. It drops a command key over 256 characters and cuts a longer label.
+
 Network options delegate Tailscale to its existing Omarchy panel and generic
 WireGuard profiles to the installed NetworkManager editor. Launch requests use
 fixed arguments and bounded feedback. They do not install, connect, copy keys,

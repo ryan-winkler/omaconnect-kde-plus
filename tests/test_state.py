@@ -1695,7 +1695,7 @@ class ScriptIntegrationTests(unittest.TestCase):
     # Only fake D-Bus and an owned PATH; never inspect the host daemon.
     with tempfile.TemporaryDirectory() as tmp:
       folder = Path(tmp)
-      for name in ("bash", "python3", "dirname", "cat"):
+      for name in ("bash", "python3", "dirname", "cat", "head"):
         (folder/name).symlink_to(shutil.which(name))
       write_busctl_stub(folder, [("*NameHasOwner*", FIXTURES / "busctl-namehasowner-false.json"), ("*ListActivatableNames*", '{"type":"as","data":[[]]}')])
       command = [BASH, str(ROOT / "scripts/discover_devices.sh")]
@@ -1794,12 +1794,38 @@ class ScriptIntegrationTests(unittest.TestCase):
       calls = read_busctl_calls(log_path)
       assert_busctl_argv_clean(self, calls)
       self.assertIn([
-          "--user", "--json=short", "call", "org.kde.kdeconnect",
+          "--user", "--json=short", "--timeout=5", "call", "org.kde.kdeconnect",
           "/modules/kdeconnect/devices/dev-1",
           "org.freedesktop.DBus.Properties", "GetAll", "s",
           "org.kde.kdeconnect.device",
       ], calls)
       self.assertEqual(len([c for c in calls if "GetAll" in c]), 3)
+
+  def test_discover_devices_drops_replies_over_the_cap(self):
+    script = ROOT / "scripts" / "discover_devices.sh"
+    source = script.read_text()
+    report = (ROOT / "scripts" / "discover_report.py").read_text()
+    cap = int(source.split("MAX_REPLY_BYTES=", 1)[1].split()[0])
+    self.assertIn("MAX_REPLY_BYTES = %d" % cap, report)
+    huge = {"type": "a{sv}", "data": [{"name": {"type": "s", "data": "x" * cap}, "type": {"type": "s", "data": "phone"},
+                                       "isPaired": {"type": "b", "data": True}, "isReachable": {"type": "b", "data": True}}]}
+    with tempfile.TemporaryDirectory() as tmp:
+      env = {**os.environ, "PATH": f"{tmp}:{os.environ['PATH']}"}
+      write_busctl_stub(tmp, [
+          ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+          ("*get-property*customDevices*", FIXTURES / "busctl-custom-devices-empty.json"),
+          ("*GetAll*s*org.kde.kdeconnect.device", json.dumps(huge)),
+          ("*daemon devices*", FIXTURES / "busctl-devices.json"),
+      ])
+      result = subprocess.run([BASH, str(script)], capture_output=True, text=True, env=env, timeout=10)
+      self.assertEqual(result.returncode, 0, result.stderr)
+      self.assertEqual(result.stdout, "CUSTOM_ADDRESSES_READY\n")
+
+      ids = json.dumps({"type": "as", "data": [["dev_%05d" % i for i in range(cap // 8)]]})
+      write_busctl_stub(tmp, [("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"), ("*daemon devices*", ids)])
+      result = subprocess.run([BASH, str(script)], capture_output=True, text=True, env=env, timeout=10)
+      self.assertEqual(result.returncode, 69)
+      self.assertEqual(result.stdout, "")
 
   def test_discover_devices_hostile_name_cannot_forge_records(self):
     script = ROOT / "scripts" / "discover_devices.sh"
@@ -1870,12 +1896,12 @@ class ScriptIntegrationTests(unittest.TestCase):
       calls = read_busctl_calls(log_path)
       assert_busctl_argv_clean(self, calls)
       self.assertIn([
-          "--user", "call", "org.kde.kdeconnect",
+          "--user", "--timeout=5", "call", "org.kde.kdeconnect",
           "/modules/kdeconnect/devices/dev-1/mprisremote",
           "org.kde.kdeconnect.device.mprisremote", "sendAction", "s", "PlayPause",
       ], calls)
       self.assertIn([
-          "--user", "set-property", "org.kde.kdeconnect",
+          "--user", "--timeout=5", "set-property", "org.kde.kdeconnect",
           "/modules/kdeconnect/devices/dev-1/mprisremote",
           "org.kde.kdeconnect.device.mprisremote", "player", "s", "Don't Stop",
       ], calls)
