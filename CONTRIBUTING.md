@@ -55,7 +55,7 @@ For a bounded contributor task, use the [task form](https://github.com/ryan-wink
 5. Update the relevant contract and [help map](docs/HELP.md). Each feature needs nearby helper text or a direct documentation link.
 6. Open a pull request. State the problem, resulting behavior, checks and open device/UI checks.
 
-Small documentation and focused bug fixes can go directly to a PR. For a new provider, public schema, native-module installer or major navigation change, open a feature issue first. This avoids duplicate work and protects the existing boundaries. Native KDE Plugin Settings stays the one place to enable modules; do not add a second plugin manager.
+Small documentation and focused bug fixes can go directly to a PR. For a new provider, public schema, native-module installer or major navigation change, open a feature issue first. This avoids duplicate work and protects the existing boundaries. KDE Connect's daemon owns module state. Plus can expose its native enable and readback APIs for the selected paired device; native configuration forms remain in KDE Connect. Do not write native configuration files, add a separate permission store, or invent a module download catalogue.
 
 The stable plugin ID is `Omaconnect.plus`. Do not change it after release: Omarchy registers plugins by manifest ID, and `omarchy plugin update` cannot rename an installed plugin, so a new ID would drop users' bar placement, settings and private metadata. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
 

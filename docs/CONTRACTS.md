@@ -181,13 +181,32 @@ Oversized information lists are omitted as needed; valid monitor state is retain
 Feature display names use the installed `PluginModel.pluginDisplayName` API in an
 optional loader. The metadata model has no device target. Its Instantiator requests
 only pluginId, name, description and configSource; it never requests isChecked or
-reads/writes plugin check state. Installed configuration sources produce a native
-Configure list independent of the peer's reported feature list. Plus passes IDs
+reads/writes plugin check state. All installed rows form the module catalogue,
+independent of the peer's reported feature list. Installed configuration sources
+identify the rows with a native Configure link. Plus passes IDs
 to the native app and does not load those configuration QML files itself. Missing
 metadata falls back to the reported ID and the native settings route. Local Run
 commands configuration controls what the peer can run on this computer; it does
 not edit the peer's command definitions. Native actions still need a reviewed
 dispatcher.
+
+`native_settings.py` accepts complete JSON on stdin, at most 64 KiB. A read has
+exact keys `{operation:"read", peerId, pluginIds}` with at most 256 unique safe
+module IDs. A set has `{operation:"set", peerId, pluginId, enabled}` with a boolean
+value. It validates the device D-Bus path and rechecks native pairing. Offline
+paired devices are allowed. Fixed Device `isPluginEnabled` / `setPluginEnabled`
+calls use NO_AUTO_START, 1.5-second call timeouts and a shared five-second deadline.
+Reads use at most eight workers. No configuration file is read or written.
+
+Replies contain exactly `state`, `peerId`, `enabled` and `error`. The enabled map
+contains only observed boolean values. A set succeeds only after native readback;
+a mismatch retains the actual value. An uncertain submission has state `unknown`
+and no observed value. The UI does not retry it. A read-only Refresh can recover
+state. QML revalidates the reply and bounds each output stream to 64 KiB.
+`NativeModuleController` serializes requests, rejects duplicate writes and captures
+the original peer for an initiated write. Selection changes invalidate stale
+responses and queue only the latest visible target's read. Hidden pages do not
+start requests. This state is separate from shared device-action feedback.
 
 `edit_remote_commands.py` accepts only JSON stdin `{peerId}` of at most 512 bytes.
 It validates the D-Bus path ID and rechecks paired/reachable and native

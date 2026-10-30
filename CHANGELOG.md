@@ -14,6 +14,15 @@ All notable changes are listed here. The format follows
 
 ### Changed
 
+- Device settings lists every installed KDE Connect module, with native On/Off
+  readback, offline support, search and exact-module Configure links. Information
+  and occasional actions expand on demand. Native KDE Connect retains ownership
+  of configuration forms and phone permissions.
+- Installed icons have searchable thumbnails. Symbolic icons render with the
+  software scene graph and follow the current theme; custom image colours remain
+  an explicit choice. Appearance uses one current-theme preview.
+- The string-sharing shortcut is labelled Text and uses less toolbar space.
+
 - Settings has a persistent Device dropdown, with shared selection, text states
   for offline and unpaired devices, keyboard control and native launch feedback.
 - Device gears open the selected device's Plus settings. The explicit Native

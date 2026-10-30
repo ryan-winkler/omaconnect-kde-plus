@@ -33,8 +33,8 @@ Window {
         Repeater {
             id: icons
             model:[
-                {name:"Installed desktop",source:"file:///usr/share/icons/Adwaita/symbolic/devices/computer-symbolic.svg"},
-                {name:"Installed phone",source:"file:///usr/share/icons/Adwaita/symbolic/devices/phone-symbolic.svg"},
+                {name:"Installed desktop",value:"computer-symbolic"},
+                {name:"Installed phone",value:"phone-symbolic"},
                 {name:"Custom colours",source:"",custom:true}
             ]
             Column {
@@ -45,8 +45,9 @@ Window {
                 Components.AppearanceIcon {
                     id: preview
                     width:64;height:64
-                    icon:modelData.custom ? ({mode:"image",value:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.svg",render:"color"}) : ({mode:"theme",value:"computer-symbolic",render:"symbolic"})
-                    themedSource:test.swapped && index===0 ? "file:///usr/share/icons/Adwaita/symbolic/devices/phone-symbolic.svg" : modelData.source
+                    icon:modelData.custom ? ({mode:"image",value:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.svg",render:"color"}) : ({mode:"theme",value:test.swapped && index===0 ? "phone-symbolic" : modelData.value,render:"symbolic"})
+                    // Native provider path fallback keeps this offscreen fixture independent of a desktop theme.
+                    themedSource: modelData.custom ? "" : "image://icon/" + (test.swapped && index===0 ? "phone-symbolic" : modelData.value) + ".svg?path=usr/share/icons/Adwaita/symbolic/devices"
                     assetBaseUrl:Qt.resolvedUrl("assets/").toString()
                     foreground:test.iconForeground
                 }

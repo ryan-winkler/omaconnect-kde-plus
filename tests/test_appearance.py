@@ -266,7 +266,7 @@ Window {
    chooser.openForDevice(\"fixture\",\"<b>Advertised</b>\",\"phone\");
    for(var preset of Appearance.presets) {
     var button=test.find(chooser,\"preset-\"+preset.value,[]);
-    test.check(button && button.visible && button.text===preset.label,\"choice-\"+preset.value);
+    test.check(button && button.visible && button.Accessible.name===preset.label+\" icon\" && test.find(button,\"preset-label-\"+preset.value,[]).text===preset.label,\"choice-\"+preset.value);
    }
    var picker=test.find(chooser,\"installed-icon-picker\",[]);
    test.check(picker && picker.visible,\"library-in-automatic\");

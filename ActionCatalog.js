@@ -6,7 +6,7 @@ var DEFAULT_ORDER = "file,text,clipboard";
 var MAX_ORDER_LENGTH = 512;
 var entries = [
     {id:"file", group:"Sharing", pluginId:"kdeconnect_share", label:"Files", description:"Choose files and review before sending", icon:"󰈔", capability:"file", legacyKey:"showActionFile"},
-    {id:"text", group:"Sharing", pluginId:"kdeconnect_share", label:"Text or link", description:"Write text or a link to share", icon:"󰌹", capability:"text", legacyKey:"showActionText"},
+    {id:"text", group:"Sharing", pluginId:"kdeconnect_share", label:"Text", description:"Write and send text", icon:"󰌹", capability:"text", legacyKey:"showActionText"},
     {id:"clipboard", group:"Sharing", pluginId:"kdeconnect_clipboard", label:"Clipboard", description:"Send the current clipboard", icon:"󰅌", capability:"clipboard", legacyKey:"showActionClipboard"},
     {id:"quick-share", group:"Sharing", pluginId:"", label:"Quick Share", description:"Open the installed RQuickShare app to share with Android Quick Share. It is a separate app, not KDE Connect", icon:"󰒗", scope:"global", navigation:true},
     {id:"ring", group:"Device", pluginId:"kdeconnect_findmyphone", label:"Ring", description:"Request a ring on the selected device", icon:"󰂚", capability:"ring", legacyKey:"showActionRing"},

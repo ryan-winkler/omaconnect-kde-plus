@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls as Controls
+import QtQuick.Layouts
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
@@ -23,28 +24,36 @@ Column {
     width: parent ? parent.width : 0
     spacing: Style.space(8)
     NativeModuleController { id: controller; service: root.service; modules: root.modules; active: root.active }
-    Text {
+    Row {
         width: parent.width
-        text: "Features on this computer for the selected device"
-        textFormat: Text.PlainText
-        wrapMode: Text.Wrap
-        color: Commons.Color.popups.text
-        font.family: Style.font.family
-        font.pixelSize: Style.font.body
-        font.bold: true
+        spacing: Style.space(8)
+        Text {
+            width: Math.max(1, parent.width - refreshButton.width - parent.spacing)
+            anchors.verticalCenter: parent.verticalCenter
+            text: "KDE Connect modules · " + root.modules.length
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: Commons.Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.body
+            font.bold: true
+        }
+        SettingsButton {
+            id: refreshButton
+            objectName: "native-module-refresh"
+            text: "Refresh"
+            Accessible.name: "Refresh native settings"
+            foreground: Commons.Color.popups.text
+            focusable: true
+            enabled: controller.ready && !controller.busy
+            onClicked: controller.refresh()
+        }
     }
     Text {
         width: parent.width
-        text: "On and Off are native KDE Connect settings. A feature can be On while this device is offline. Configure opens its native settings. Phone permissions stay on the phone."
+        text: "On/Off changes KDE Connect on this computer. Phone permissions stay on the phone."
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
-        color: Commons.Color.popups.text
-        font.family: Style.font.family
-        font.pixelSize: Style.font.bodySmall
-    }
-    Text {
-        text: "Search native features"
-        textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
@@ -54,19 +63,10 @@ Column {
         objectName: "native-module-search"
         width: parent.width
         foreground: Commons.Color.popups.text
-        placeholderText: "Feature name or plugin ID"
+        placeholderText: "Search device features"
         Accessible.name: "Search native features"
         maximumLength: 128
         selectByMouse: true
-    }
-    SettingsButton {
-        objectName: "native-module-refresh"
-        width: parent.width
-        text: "Refresh native settings"
-        foreground: Commons.Color.popups.text
-        focusable: true
-        enabled: controller.ready && !controller.busy
-        onClicked: controller.refresh()
     }
     Text {
         objectName: "native-module-status"
@@ -76,7 +76,7 @@ Column {
             : !controller.device ? "Choose a device above."
             : !controller.device.paired ? "Pair this device in KDE Connect to change its native features."
             : controller.message
-        visible: text !== ""
+        visible: text !== "" && text !== "Native settings are current."
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -88,36 +88,31 @@ Column {
     Repeater {
         model: root.filteredModules
         delegate: Column {
+            id: featureRow
             required property var modelData
+            readonly property real switchWidth: Math.max(88, switchMetrics.advanceWidth("Unknown") + Style.space(40))
+            readonly property bool configureBelow: modelData.hasConfiguration === true
+                && root.width < switchWidth + configureButton.implicitWidth + Style.font.body * 12 + Style.space(16)
             width: root.width
-            spacing: Style.space(2)
-            Text {
+            spacing: Style.space(4)
+            FontMetrics { id: switchMetrics; font: nativeSwitch.font }
+            GridLayout {
                 width: parent.width
-                text: modelData.name || modelData.id
-                textFormat: Text.PlainText
-                wrapMode: Text.Wrap
-                color: Commons.Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.body
-                font.bold: true
-            }
-            Text {
-                width: parent.width
-                text: modelData.description || modelData.id
-                textFormat: Text.PlainText
-                wrapMode: Text.Wrap
-                color: Commons.Color.popups.text
-                font.family: Style.font.family
-                font.pixelSize: Style.font.bodySmall
-            }
-            Row {
-                width: parent.width
-                spacing: Style.space(8)
+                columns: 3
+                columnSpacing: Style.space(8)
+                rowSpacing: Style.space(2)
                 Controls.CheckBox {
                     id: nativeSwitch
                     objectName: "native-module-toggle-" + modelData.id
-                    width: Math.max(100, parent.width - configureButton.width - parent.spacing)
-                    height: Math.max(44, implicitHeight)
+                    Layout.row: 0
+                    Layout.column: 0
+                    Layout.preferredWidth: featureRow.switchWidth
+                    Layout.minimumWidth: featureRow.switchWidth
+                    Layout.maximumWidth: featureRow.switchWidth
+                    Layout.preferredHeight: Math.max(44, implicitHeight)
+                    Layout.alignment: Qt.AlignVCenter
+                    font.family: Style.font.family
+                    font.pixelSize: Style.font.bodySmall
                     text: controller.known(modelData.id) ? controller.enabledStates[modelData.id] ? "On" : "Off" : "Unknown"
                     checked: controller.known(modelData.id) && controller.enabledStates[modelData.id] === true
                     nextCheckState: function() { return checkState }
@@ -126,6 +121,10 @@ Column {
                     palette.windowText: Commons.Color.popups.text
                     palette.text: Commons.Color.popups.text
                     palette.buttonText: Commons.Color.popups.text
+                    palette.button: Commons.Color.popups.background
+                    palette.base: Commons.Color.popups.background
+                    palette.highlight: Commons.Color.accent
+                    palette.highlightedText: Commons.Color.popups.background
                     Accessible.role: Accessible.CheckBox
                     Accessible.checkable: true
                     Accessible.checked: checked
@@ -136,16 +135,57 @@ Column {
                     Accessible.onToggleAction: requestChange()
                     Accessible.onPressAction: requestChange()
                 }
+                Column {
+                    id: details
+                    Layout.row: 0
+                    Layout.column: 1
+                    Layout.columnSpan: configureButton.visible && !featureRow.configureBelow ? 1 : 2
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 1
+                    Layout.preferredWidth: Style.font.body * 12
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: Style.space(2)
+                    Text {
+                        width: parent.width
+                        text: modelData.name || modelData.id
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                        color: Commons.Color.popups.text
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.body
+                        font.bold: true
+                    }
+                    Text {
+                        id: description
+                        width: parent.width
+                        text: modelData.description || modelData.id
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                        color: Commons.Color.popups.text
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.bodySmall
+                        HoverHandler { id: descriptionHover }
+                        Controls.ToolTip.visible: description.truncated && descriptionHover.hovered
+                        Controls.ToolTip.text: description.text
+                    }
+                }
                 SettingsButton {
                     id: configureButton
                     objectName: "native-module-configure-" + modelData.id
                     visible: modelData.hasConfiguration === true
-                    width: visible ? implicitWidth : 0
-                    height: Math.max(44, implicitHeight)
+                    Layout.row: featureRow.configureBelow ? 1 : 0
+                    Layout.column: featureRow.configureBelow ? 1 : 2
+                    Layout.columnSpan: featureRow.configureBelow ? 2 : 1
+                    Layout.preferredHeight: Math.max(44, implicitHeight)
+                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                     text: "Configure ↗"
                     foreground: Commons.Color.popups.text
                     focusable: true
-                    enabled: controller.ready
+                    enabled: root.active && !!root.service && !!root.service.selectedDevice && root.service.selectedDevice.paired === true && !root.service.nativeAppOpening
                     Accessible.name: "Configure " + (modelData.name || modelData.id) + " in KDE Connect"
                     Accessible.description: "Open native configuration on this computer for the selected device."
                     onClicked: if (enabled) root.configureRequested(modelData.id)

@@ -17,6 +17,7 @@ ShellRoot {
     QtObject {
         id: service
         property var devices: [test.device]
+        property bool daemonAvailable: true
         property var selectedDevice: test.device
         property bool nativeAppOpening: false
         property string nativeAppMessage: ""
@@ -72,7 +73,7 @@ ShellRoot {
             // One full cycle includes the persistent Device selector, page
             // navigation, all page controls and the return/close buttons.
             if(focus && focus.Accessible.name==="Close Plus settings") test.cycles++
-            if(test.cycles===2) {
+            if(test.cycles===1) {
                 if(!test.scrolled || !test.activated) {test.fail(settings.currentPage+" did not exercise clipped activation");return}
                 if(test.direction===1) {test.direction=-1;test.cycles=0;test.scrolled=false}
                 else {

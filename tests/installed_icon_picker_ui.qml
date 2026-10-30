@@ -108,7 +108,11 @@ Window {
             }
             if(test.phase===22 && test.captures===3){
                 if(!test.check(test.draft==="icon-1000" && test.changes===2 && !picker.popupOpen,"named option AT action chooses draft"))return
-                picker.open();picker.options=["icon-0100"];test.phase=23;return
+                picker.open();picker.options=picker.options.slice();test.phase=220;return
+            }
+            if(test.phase===220){
+                if(!test.check(picker.popupOpen,"identical icon inventory keeps the picker open"))return
+                picker.options=["icon-0100"];test.phase=23;return
             }
             if(test.phase===23){
                 if(!test.check(!picker.popupOpen && test.changes===2 && test.draft==="icon-1000","changed inventory closes stale choices without selecting"))return

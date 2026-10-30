@@ -21,12 +21,12 @@ Item {
     property int rowHeight: Math.max(44, Style.spacing.controlHeight)
     property int popupRowHeight: Math.max(44, Style.spacing.popupRowHeight)
     readonly property bool popupOpen: popup.opened
+    readonly property string optionsKey: JSON.stringify((Array.isArray(options) ? options.slice(0, 1024) : []).filter(function(name) {
+        return typeof name === "string" && /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(name)
+    }))
     readonly property var matchingOptions: {
         var query = search.text.trim().toLowerCase()
-        return (Array.isArray(options) ? options.slice(0, 1024) : []).filter(function(name) {
-            return typeof name === "string" && /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(name)
-                && (!query || name.toLowerCase().indexOf(query) !== -1)
-        })
+        return JSON.parse(optionsKey).filter(function(name) { return !query || name.toLowerCase().indexOf(query) !== -1 })
     }
     signal changed(string value)
     implicitWidth: Style.spacing.searchableDropdownWidth
@@ -41,7 +41,7 @@ Item {
         close()
     }
     onMatchingOptionsChanged: if (results) results.currentIndex = matchingOptions.length ? 0 : -1
-    onOptionsChanged: if (popup) popup.close()
+    onOptionsKeyChanged: if (popup) popup.close()
     onEnabledChanged: if (!enabled) close()
     onVisibleChanged: if (!visible) close()
 

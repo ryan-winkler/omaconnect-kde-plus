@@ -31,13 +31,25 @@ The panel contents and other controls stay real.
 The Settings fixtures also check exact-device native configuration launch,
 unsupported-frontend feedback, the separate peer command-editor request, and
 Tab/Shift+Tab visibility in all four pages at the minimum 520 × 440 window size.
-The metadata fixture enumerates installed configuration pages using explicit
+The metadata fixture enumerates all installed modules and their configuration pages using explicit
 read-only roles, without a device target or native configuration directory.
 These checks do not prove that a real native or remote editor opened or saved.
 Settings buttons expose a native button role and a guarded accessibility press
 action. Checkbox accessibility actions use the existing save path and retain
 saved-value readback. Private fixtures exercise these actions, icon Apply/Cancel
 and disabled launch guards. Full screen-reader acceptance remains a manual check.
+
+Native module tests substitute the state helper and check observed On/Off values,
+readback mismatch, uncertain writes, offline configuration, stale responses and
+captured-device writes. Separate fake-provider tests exercise the production
+helper. No test changes real native module state.
+
+Icon pixel tests use the real Quickshell icon provider with a fixed installed
+asset path fallback, independent of desktop-theme lookup. They compare source silhouettes,
+light/dark foreground colours, source replacement and explicit custom colours.
+The installed picker checks thumbnails, keyboard selection and bounded delegate
+allocation. Actual theme inventories and physical screen-reader use still need
+host acceptance.
 
 ## Desktop session mode
 
