@@ -20,6 +20,10 @@ def module():
 
 
 class Files(unittest.TestCase):
+    def setUp(self):
+        # Fixtures assume umask 022; a group-writable source rightly loses the private fast path.
+        self.addCleanup(os.umask, os.umask(0o022))
+
     def test_regular_files_and_limits_are_inspected(self):
         helper = module()
         with tempfile.TemporaryDirectory() as directory:
