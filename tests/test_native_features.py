@@ -152,7 +152,11 @@ assert.equal(rows.length,max);
 rows=api.parseRemoteCommands('k'.repeat(text+1)+': too long\nlock: '+'n'.repeat(text+40));
 assert.equal(rows.length,1,'a key over the cap is dropped, never cut');
 assert.equal(rows[0].key,'lock');assert.equal(rows[0].name.length,text);
-assert.equal(api.parseRemoteCommands('lock: Lock\n'+' '.repeat(input.limits.maxRemoteCommandOutput)+'x').length,0);
+const cap=input.limits.maxRemoteCommandOutput, head='lock: Lock\n';
+assert.equal(api.parseRemoteCommands(head+' '.repeat(cap)+'x').length,0);
+assert.equal(api.parseRemoteCommands(head+' '.repeat(cap-head.length)).length,1,'a reply at the cap is read');
+assert.equal(api.parseRemoteCommands(head+' '.repeat(cap+1-head.length)).length,0,'trailing space over the cap is not trimmed away');
+assert.equal(api.parseRemoteCommands(head+'\u00e9'.repeat((cap+1-head.length)/2)).length,0,'the cap counts UTF-8 bytes');
 """
         result = subprocess.run([shutil.which('node'), '-e', script], input=json.dumps({'fn': function, 'limits': limits}), text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -217,6 +221,10 @@ assert.equal(api.parseRemoteCommands('lock: Lock\n'+' '.repeat(input.limits.maxR
                                  capture_output=True, env=env, timeout=15)
             self.assertEqual(len(run.stdout), cap + 1)
             self.assertNotEqual(run.returncode, 0, 'an over-cap list is a failed read')
+            cli.write_text('#!/bin/bash\nprintf "lock: Lock\\n"\nhead -c %d /dev/zero >&2\n' % (cap * 4))
+            run = subprocess.run(self.deadline_argv(5, ['bash', '-c', snippet, 'list-commands', 'dev_1']),
+                                 capture_output=True, env=env, timeout=15)
+            self.assertEqual((run.returncode, run.stdout, run.stderr), (0, b'lock: Lock\n', b''), 'provider stderr is discarded')
             cli.write_text('#!/bin/bash\n[ "$1 $2 $3" = "-d dev_1 --list-commands" ] && printf "lock: Lock\\n"\n')
             run = subprocess.run(self.deadline_argv(5, ['bash', '-c', snippet, 'list-commands', 'dev_1']),
                                  capture_output=True, env=env, timeout=15)

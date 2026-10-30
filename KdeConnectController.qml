@@ -604,7 +604,7 @@ Item {
         }
         commandsLoading = true
         commandsProcess.targetDeviceId = String(id)
-        // head keeps one byte over the cap, so parseRemoteCommands rejects a larger list; stderr is unused.
+        // head keeps one byte over the cap, so parseRemoteCommands rejects a larger list; stderr is discarded.
         commandsProcess.command = withDeadline(commandsDeadlineSeconds, ["bash", "-c",
             "set -o pipefail; kdeconnect-cli -d \"$1\" --list-commands 2>/dev/null | head -c " + (maxRemoteCommandOutput + 1),
             "list-commands", String(id)])
@@ -627,8 +627,11 @@ Item {
     }
 
     function parseRemoteCommands(text) {
-        var source = String(text || "").trim()
-        if (!source || source.length > maxRemoteCommandOutput) return []
+        var raw = String(text || "")
+        // Count UTF-8 bytes before trimming, so the read's one byte over the cap always rejects.
+        if (encodeURIComponent(raw).replace(/%[0-9A-F]{2}/g, "x").length > maxRemoteCommandOutput) return []
+        var source = raw.trim()
+        if (!source) return []
         var result = []
         // A cut key would run another command, so drop it; only the label is cut.
         function add(key, name) {
