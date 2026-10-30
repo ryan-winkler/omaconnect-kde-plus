@@ -58,6 +58,10 @@ Each action shows its description and selected-device availability.
 
 ## Device features
 
+Media player choices and transport buttons support Tab, Enter, Space and
+assistive-technology activation. The current player stays marked; unavailable
+controls do not submit an action.
+
 Open **All KDE Connect features**, then use native **Plugin settings** to enable
 or configure installed modules and permissions. Search in Plus by task or plugin
 ID to find reported features, including unfamiliar third-party IDs. Supported

@@ -17,6 +17,7 @@ All notable changes are listed here. The format follows
   for that section: network controls and saved addresses on Connections, media
   and remote commands on Device features.
 - When KDE Connect is missing, Devices shows the install command to copy.
+- Media player choices and transport controls support keyboard and accessible activation.
 
 ## [0.1.1] - 2026-10-29
 
