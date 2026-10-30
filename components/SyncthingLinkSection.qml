@@ -7,6 +7,7 @@ import qs.Ui as Kit
 Column {
     id: root
     required property var service
+    property bool panelOpened: false
     property var device: service ? service.selectedDevice : null
     readonly property var store: service ? service.appearance : null
     readonly property string peerId: device ? String(device.id || "") : ""
@@ -63,14 +64,15 @@ Column {
         feedback = actual ? "Local identity note saved." : "Local identity note removed."
     }
     readonly property string syncState: service && service.syncthingDeviceId === linkedId ? String(service.syncthingState || "") : ""
-    function readSyncState() { if (service && linkedId && visible) service.readSyncthingPause(linkedId) }
+    function readSyncState() { if (service && linkedId && visible && panelOpened) service.readSyncthingPause(linkedId) }
     Timer {
         interval: 15000
         repeat: true
-        running: root.visible && !!root.linkedId
+        running: root.panelOpened && root.visible && !!root.linkedId
         onTriggered: root.readSyncState()
     }
     onVisibleChanged: readSyncState()
+    onPanelOpenedChanged: readSyncState()
     onPeerIdChanged: rebaseDraft()
     onStoreChanged: rebaseDraft()
     onLinkedIdChanged: {

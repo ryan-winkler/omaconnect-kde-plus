@@ -821,6 +821,7 @@ Panel {
                     onClicked: root.syncthingExpanded = !root.syncthingExpanded
                 }
                 SyncthingLinkSection {
+                    panelOpened: root.opened
                     width: parent.width
                     visible: root.currentView === "Devices" && root.syncthingVisible && root.syncthingExpanded
                     service: root.service
