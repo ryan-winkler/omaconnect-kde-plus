@@ -22,6 +22,7 @@ dbus-run-session -- python3 -m unittest discover -s tests -p 'test_*.py' -q
 node tests/appearance.cjs
 node tests/test-bth-control.cjs
 node tests/transfer_model_test.js
+python3 .github/check_doc_links.py
 for script in scripts/*.sh; do
     bash -n "$script"
 done
