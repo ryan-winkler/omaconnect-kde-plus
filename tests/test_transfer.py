@@ -6,10 +6,12 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 HELPER = ROOT / 'scripts/portal_files.py'
+FAKE_SHARE = ROOT / 'tests/fake_share_provider.py'
 
 
 def module():
@@ -64,42 +66,49 @@ class Files(unittest.TestCase):
             with self.assertRaises(ValueError):
                 helper.validate_file(chosen)
 
+    def share(self, mode, env, payload, command=None):
+        """Run one submit against the owned fake KDE share service on a private bus."""
+        command = command or [sys.executable, str(HELPER), 'submit']
+        run = subprocess.run(['dbus-run-session', '--', sys.executable, str(FAKE_SHARE), mode, *command],
+                             env=env, input=payload, capture_output=True, text=True, timeout=20)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        report = json.loads(run.stdout)
+        self.assertEqual(report['returncode'], 0, report['stderr'])
+        report['results'] = [json.loads(line) for line in report['stdout'].splitlines()]
+        for call in report['calls']:
+            self.assertEqual((call['path'], call['interface'], call['method']),
+                             ('/modules/kdeconnect/devices/reviewed_peer/share',
+                              'org.kde.kdeconnect.device.share', 'shareUrls'))
+            self.assertGreater(len(call['argv']), 1, 'process argv probe is empty')
+            self.assertNotIn(call['local'], '\0'.join(call['argv']), 'file path reached process argv')
+        return report
+
     def test_submission_accept_failure_timeout_and_cancel_are_truthful(self):
         helper = module()
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
-            source = base / 'sensitive-file'
+            source = base / 'sensitive file #1?%.txt'
             source.write_bytes(b'test')
             chosen = helper.inspect_uris([source.as_uri()])[0]
-            backend = base / 'kdeconnect-cli'
-            backend.write_text("#!/usr/bin/python3\nimport json,os,sys,time\nwith open(os.environ['FAKE_RECEIPT'],'a') as out: out.write(json.dumps(sys.argv[1:])+'\\n')\nif os.environ['FAKE_MODE']=='hang': time.sleep(5)\nraise SystemExit(0 if os.environ['FAKE_MODE']=='accept' else 1)\n")
-            backend.chmod(0o700)
-            receipt = base / 'receipt'
-            env = dict(os.environ, PATH=str(base), HOME=str(base),
-                       XDG_CACHE_HOME=str(base / 'cache'), FAKE_RECEIPT=str(receipt))
-            loader = "import importlib.util,sys; sys.path.insert(0," + repr(str(HELPER.parent)) + "); s=importlib.util.spec_from_file_location('picker'," + repr(str(HELPER)) + "); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.SUBMISSION_TIMEOUT=.15; raise SystemExit(m.main())"
-            payload = json.dumps({'peerId': 'reviewed-peer', 'file': chosen}) + '\n'
-            for mode, state in [('accept', 'request_accepted'), ('fail', 'submission_failed'), ('hang', 'submission_unknown')]:
-                run = subprocess.run([sys.executable, '-c', loader, 'submit'], env=dict(env, FAKE_MODE=mode), input=payload, capture_output=True, text=True, timeout=5)
-                self.assertEqual(run.returncode, 0, run.stderr)
-                result = [json.loads(line) for line in run.stdout.splitlines()]
-                self.assertEqual(result[0], {'event': 'preparing'})
-                self.assertIn({'event': 'submitting'},result)
-                self.assertEqual(result[-1]['state'], state)
-                self.assertNotIn(str(source), run.stdout + run.stderr)
-            process = subprocess.Popen([sys.executable, str(HELPER), 'submit'], env=dict(env, FAKE_MODE='hang'), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            process.stdin.write(payload)
-            process.stdin.flush()
-            self.assertEqual(json.loads(process.stdout.readline()), {'event': 'preparing'})
-            self.assertEqual(json.loads(process.stdout.readline()), {'event': 'submitting'})
-            process.terminate()
-            output, error = process.communicate(timeout=5)
-            self.assertEqual(json.loads(output)['state'], 'cancellation_unconfirmed')
-            self.assertNotIn(str(source), output + error)
-            calls = [json.loads(line) for line in receipt.read_text().splitlines()]
-            # Exactly one invocation per attempted source, including timeout.
-            self.assertTrue(3 <= len(calls) <= 4)
-            self.assertTrue(all(call == ['-d', 'reviewed-peer', '--share', str(source)] for call in calls))
+            env = dict(os.environ, HOME=str(base), XDG_CACHE_HOME=str(base / 'cache'))
+            loader = "import importlib.util,sys; sys.path.insert(0," + repr(str(HELPER.parent)) + "); s=importlib.util.spec_from_file_location('picker'," + repr(str(HELPER)) + "); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.SUBMISSION_TIMEOUT=.3; raise SystemExit(m.main())"
+            payload = json.dumps({'peerId': 'reviewed_peer', 'file': chosen}) + '\n'
+            for mode, state, error in [('accept', 'request_accepted', ''), ('fail', 'submission_failed', 'submission-failed'),
+                                       ('hang', 'submission_unknown', 'submission-unknown'),
+                                       ('cancel', 'cancellation_unconfirmed', 'cancellation-unconfirmed'),
+                                       ('unavailable', 'submission_failed', 'provider-missing')]:
+                with self.subTest(mode=mode):
+                    command = [sys.executable, '-c', loader, 'submit'] if mode == 'hang' else None
+                    report = self.share(mode, env, payload, command)
+                    self.assertEqual(report['results'], [{'event': 'preparing'}, {'event': 'submitting'},
+                                                         {'state': state, 'error': error}])
+                    # Exactly one share request per attempted source, as one percent-encoded file URL.
+                    self.assertEqual([call['urls'] for call in report['calls']],
+                                     [] if mode == 'unavailable' else [[source.as_uri()]])
+                    self.assertEqual([call['local'] for call in report['calls']],
+                                     [] if mode == 'unavailable' else [str(source)])
+                    self.assertNotIn(str(source), report['stdout'] + report['stderr'])
+                    self.assertNotIn(source.name, report['stdout'] + report['stderr'])
 
     def test_actual_submit_keeps_reviewed_bytes_when_shared_path_is_replaced_before_native_open(self):
         helper = module()
@@ -115,27 +124,12 @@ class Files(unittest.TestCase):
             secret = base / 'owned-secret'
             secret.write_bytes(b'OWNED-SECRET-MUST-NOT-REACH-RECIPIENT')
             secret.chmod(0o600)
-            receipt = base / 'native-receipt.json'
-            backend = base / 'kdeconnect-cli'
-            backend.write_text('''#!/usr/bin/python3
-import json, os, sys
-from pathlib import Path
-assert sys.argv[1:4] == ['-d', 'reviewed-peer', '--share']
-assert len(sys.argv) == 5
-original = Path(os.environ['OWNED_ORIGINAL'])
-original.unlink()
-original.symlink_to(os.environ['OWNED_SECRET'])
-passed = Path(sys.argv[4])
-Path(os.environ['OWNED_RECEIPT']).write_text(json.dumps({
-    'path': str(passed), 'bytes': passed.read_bytes().hex()}))
-''')
-            backend.chmod(0o700)
             cache = base / 'cache'
-            env = {'PATH': str(base), 'HOME': str(base), 'XDG_CACHE_HOME': str(cache),
-                   'OWNED_ORIGINAL': str(source), 'OWNED_SECRET': str(secret),
-                   'OWNED_RECEIPT': str(receipt)}
+            env = dict(os.environ, HOME=str(base), XDG_CACHE_HOME=str(cache),
+                       OWNED_ORIGINAL=str(source), OWNED_SECRET=str(secret))
+            payload = json.dumps({'peerId': 'reviewed_peer', 'file': chosen}) + '\n'
             # Negative control substitutes only the former raw-path handoff in
-            # this child. Actual submit/backend code and the replacement attack
+            # this child. Actual submit/provider code and the replacement attack
             # remain identical. No production source is changed.
             control = ("import contextlib,runpy,sys\nsys.path.insert(0," + repr(str(HELPER.parent)) + ")\n"
                        "import private_sources as boundary\n"
@@ -143,37 +137,58 @@ Path(os.environ['OWNED_RECEIPT']).write_text(json.dumps({
                        " yield boundary.PreparedSource(expected['path'],False)\n"
                        "boundary.prepared_source=raw_path\n"
                        "runpy.run_path(" + repr(str(HELPER)) + ",run_name='__main__')\n")
-            red = subprocess.run([sys.executable, '-c', control, 'submit'], env=env,
-                input=json.dumps({'peerId': 'reviewed-peer', 'file': chosen}) + '\n',
-                capture_output=True, text=True, timeout=5)
-            self.assertEqual(red.returncode, 0, red.stderr)
-            redirected = json.loads(receipt.read_text())
-            self.assertEqual(redirected['path'], str(source))
+            red = self.share('replace', env, payload, [sys.executable, '-c', control, 'submit'])
+            redirected = red['calls'][0]
+            self.assertEqual(redirected['local'], str(source))
             self.assertEqual(bytes.fromhex(redirected['bytes']), secret.read_bytes(),
                              'raw-path negative control must demonstrate redirection')
             source.unlink()
             source.write_bytes(intended)
             chosen = helper.inspect_uris([source.as_uri()])[0]
-            receipt.unlink()
-            run = subprocess.run([sys.executable, str(HELPER), 'submit'], env=env,
-                input=json.dumps({'peerId': 'reviewed-peer', 'file': chosen}) + '\n',
-                capture_output=True, text=True, timeout=5)
-            self.assertEqual(run.returncode, 0, run.stderr)
-            results = [json.loads(line) for line in run.stdout.splitlines()]
-            self.assertEqual(results, [{'event': 'preparing'}, {'event': 'submitting'},
-                                      {'state': 'request_accepted', 'error': ''}])
-            actual = json.loads(receipt.read_text())
+            payload = json.dumps({'peerId': 'reviewed_peer', 'file': chosen}) + '\n'
+            run = self.share('replace', env, payload)
+            self.assertEqual(run['results'], [{'event': 'preparing'}, {'event': 'submitting'},
+                                              {'state': 'request_accepted', 'error': ''}])
+            actual = run['calls'][0]
             self.assertEqual(bytes.fromhex(actual['bytes']), intended)
-            self.assertNotEqual(bytes.fromhex(actual['bytes']), secret.read_bytes())
-            snapshot = Path(actual['path'])
+            snapshot = Path(actual['local'])
             self.assertTrue(snapshot.is_relative_to(cache / 'Omaconnect.plus/share-snapshots'))
             self.assertEqual(snapshot.name, source.name)
             self.assertEqual(snapshot.stat().st_mode & 0o777, 0o600)
             self.assertEqual(snapshot.parent.stat().st_mode & 0o777, 0o700)
             self.assertTrue(source.is_symlink(), 'fixture replaced the original before opening the passed path')
-            self.assertEqual(snapshot.read_bytes(), intended, 'snapshot survives CLI exit for later KDE reopen')
+            self.assertEqual(snapshot.read_bytes(), intended, 'snapshot survives the share call for later KDE open')
             for private in (str(source), str(secret), str(snapshot), 'OWNED-REVIEWED-BYTES', 'OWNED-SECRET'):
-                self.assertNotIn(private, run.stdout + run.stderr)
+                self.assertNotIn(private, run['stdout'] + run['stderr'])
+
+    def test_start_sweep_removes_only_expired_copies_and_never_creates_the_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            env = {'PATH': '/usr/bin:/bin', 'HOME': str(base), 'XDG_CACHE_HOME': str(base / 'cache')}
+            sweep = lambda: subprocess.run([sys.executable, str(HELPER), 'sweep'], env=env,
+                                           capture_output=True, text=True, timeout=5)
+            run = sweep()
+            self.assertEqual((run.returncode, run.stdout, run.stderr), (0, '', ''))
+            self.assertFalse((base / 'cache').exists(), 'sweep must not create the cache')
+            snapshots = base / 'cache/Omaconnect.plus/share-snapshots'
+            snapshots.mkdir(parents=True, mode=0o700)
+            snapshots.parent.chmod(0o700)
+            expired, recent = snapshots / ('source-' + 'a' * 32), snapshots / ('source-' + 'b' * 32)
+            for folder in (expired, recent):
+                folder.mkdir(mode=0o700)
+                (folder / 'copy.bin').write_bytes(b'copy')
+                (folder / 'copy.bin').chmod(0o600)
+            old = time.time() - 24 * 60 * 60 - 10
+            os.utime(expired, (old, old))
+            run = sweep()
+            self.assertEqual((run.returncode, run.stdout, run.stderr), (0, '', ''))
+            self.assertFalse(expired.exists())
+            self.assertTrue((recent / 'copy.bin').is_file())
+            os.utime(recent, (old, old))
+            snapshots.parent.chmod(0o755)
+            run = sweep()
+            self.assertEqual((run.returncode, run.stdout, run.stderr), (0, '', ''))
+            self.assertTrue((recent / 'copy.bin').is_file(), 'an unsafe cache is left alone')
 
     def test_invalid_peer_returns_fixed_identity_mismatch_before_file_preparation(self):
         with tempfile.TemporaryDirectory() as directory:

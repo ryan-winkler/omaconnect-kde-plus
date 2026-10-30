@@ -367,6 +367,14 @@ Item {
         onExited: function(code) { root.applySelection(stdout.text, code, targetGeneration) }
     }
 
+    // One best-effort pass per plugin start removes share copies older than 24 hours.
+    Process {
+        id: snapshotSweepProcess
+        command: ["python3", controller.scriptPath("scripts/portal_files.py"), "sweep"]
+    }
+
+    Component.onCompleted: snapshotSweepProcess.running = true
+
     Component.onDestruction: {
         fileTransferDismissTimer.stop()
         fileTransferProcess.running = false

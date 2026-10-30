@@ -3,8 +3,9 @@
 prepared_source(reviewed_metadata, cancelled) yields PreparedSource(path,
 snapshot_used). Protected canonical files need no copy. Other sources are copied
 from their validated open descriptor into private cache storage. Once yielded,
-snapshots survive context exit: KDE can reopen after CLI acceptance. They become
-eligible after 24 hours. Cleanup is attempted on later preparation when the cache is safe and available.
+snapshots survive context exit: KDE can reopen after its share request returns.
+They become eligible after 24 hours. sweep_expired() removes them when the plugin
+starts, and later preparation retries, when the cache is safe and available.
 
 No daemon or provider runs here. Same-UID code and root remain trusted. Deadlines
 and cancellation are checked between bounded chunks, not inside blocked kernel
@@ -133,6 +134,18 @@ def _expire(directory, cancelled, deadline):
                 value = entry.stat(follow_symlinks=False)
                 if value.st_mtime <= cutoff:
                     _remove_snapshot(Path(entry.path))
+
+
+def sweep_expired():
+    """Best-effort start-up cleanup. Never creates the cache or broadens deletion."""
+    # KDE opens the file later in its own upload job and reports no completion
+    # for this request, so a copy cannot be deleted "after KDE read it". Keep 24 h.
+    try:
+        directory = _cache_directory(create=False)
+        if directory is not None:
+            _expire(directory, lambda: False, time.monotonic() + PREPARATION_SECONDS)
+    except (OSError, ValueError):
+        pass
 
 
 def _space(directory, needed=0):
