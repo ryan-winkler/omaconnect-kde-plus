@@ -6,8 +6,15 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-30
+
 ### Fixed
 
+- Refresh and automatic rediscovery ask KDE Connect to search the network.
+- Remote command rows support keyboard and assistive-technology activation.
+- Saved-address input clears only after readback confirms the save.
+- Network guidance separates Tailscale/WireGuard provider links from requests to
+  the existing Back to Home helper. Plus does not ship that helper.
 - Discovery, the command list and media status read at most 64 KiB per reply.
   Each read stops at a deadline, and a provider that ignores the stop request is
   killed, so a stuck provider cannot hang the panel. The command list keeps at
@@ -122,7 +129,8 @@ All notable changes are listed here. The format follows
   drop review, honest transfer activity, optional network sections and help
   next to each control.
 
-[Unreleased]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.3...main
+[Unreleased]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.4...main
+[0.1.4]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.0...v0.1.1
