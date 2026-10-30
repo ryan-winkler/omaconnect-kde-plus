@@ -84,9 +84,9 @@ Column {
         visible: text !== ""
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
-        color: root.service && root.service.quickShareFailed ? Commons.Color.urgent : root.foreground
+        color: root.foreground
         font.family: root.fontFamily
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         Accessible.role: Accessible.StaticText
         Accessible.name: text
     }
