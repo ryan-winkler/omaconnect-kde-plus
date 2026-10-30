@@ -150,8 +150,13 @@ whitelist. `pluginIds` is supported metadata. Optional `loadedPluginIds` plus
 `loadedKnown` report the daemon's runtime list. Neither means an enabled setting
 or granted phone permission. Failed metadata reads remain unknown. Quick actions
 must use the matching sender interface, not a receiver plugin with a similar name.
-The selected-peer native route passes only a validated device ID to
-`kdeconnect-app --device`; older settings frontends open the device list.
+The selected-peer native route passes a validated device ID to
+`kdeconnect-app --device`. An optional validated module ID adds `--plugin-config`
+only after a two-second offscreen help probe confirms that option. Configuration
+requires a paired selected device. Older frontends retain the ordinary device-list
+route; direct configuration returns unavailable with a manual Plugin Settings next
+step instead of claiming a module opened. Launch acceptance does not prove a
+window rendered or settings were saved.
 
 Network options delegate Tailscale to its existing Omarchy panel and generic
 WireGuard profiles to the installed NetworkManager editor. Launch requests use
@@ -162,11 +167,74 @@ receipt.
 
 ## Settings window and typed preferences
 
+### Native information, metadata and virtual monitor
+
+Discovery preserves the original first 16 DEVICE fields. An optional trailing JSON
+field carries up to 16 addresses and 16 provider names of at most 256 characters each,
+plus native virtual-monitor known/active/available booleans. QML revalidates these
+bounds. Legacy 16-field records remain valid. Unknown reads never mean false or
+available. Virtual-monitor properties are read only for reported support, with a
+two-second native-call timeout.
+The serialized information field is at most 16,384 characters after JSON escaping.
+Oversized information lists are omitted as needed; valid monitor state is retained.
+
+Feature display names use the installed `PluginModel.pluginDisplayName` API in an
+optional loader. The metadata model has no device target. Its Instantiator requests
+only pluginId, name, description and configSource; it never requests isChecked or
+reads/writes plugin check state. Installed configuration sources produce a native
+Configure list independent of the peer's reported feature list. Plus passes IDs
+to the native app and does not load those configuration QML files itself. Missing
+metadata falls back to the reported ID and the native settings route. Local Run
+commands configuration controls what the peer can run on this computer; it does
+not edit the peer's command definitions. Native actions still need a reviewed
+dispatcher.
+
+`edit_remote_commands.py` accepts only JSON stdin `{peerId}` of at most 512 bytes.
+It validates the D-Bus path ID and rechecks paired/reachable and native
+`canAddCommand` before the fixed `remotecommands.editCommands` call. Reads and
+mutation use NO_AUTO_START, a 1.5 second call timeout and a 5 second total cancellation
+deadline. It reports request acceptance only; a lost mutation reply stays
+submission-unknown. It does not add, edit or execute command definitions. Plus
+does not retry automatically or manage the remote editor.
+
+`virtual_monitor.py` accepts one bounded 512-byte JSON line containing `peerId` and
+`operation` (`start` or `stop`). It validates the D-Bus path ID, rechecks native
+paired/reachable and monitor state, then uses only `requestVirtualMonitor` or
+`stop` on `org.kde.kdeconnect.device.virtualmonitor`. Calls prohibit daemon
+auto-start, have 1.5-second timeouts and a five-second overall cancellation limit.
+Starting an already-active session is a no-op. Native KDE Connect owns KRDP,
+credentials and remote permission. Unknown mutation replies stay unknown; there
+is no automatic retry. Request acceptance is not remote display confirmation.
+
+These APIs and Information fields were checked against
+[KDE Connect 26.08.2's device page](https://github.com/KDE/kdeconnect-kde/blob/v26.08.2/app/qml/DevicePage.qml),
+[metadata model](https://github.com/KDE/kdeconnect-kde/blob/v26.08.2/models/pluginmodel.cpp)
+and [virtual-monitor interface](https://github.com/KDE/kdeconnect-kde/blob/v26.08.2/plugins/virtualmonitor/virtualmonitorplugin.h).
+
 `SettingsPanel.qml` is an independent nonmodal native Window. Its four domains
 share the current device context and retain a Back to devices route. Native KDE
 module settings open in KDE Connect with the selected ID; peer pairing/reachability
 conditions are explained. The searchable inventory is reported support, not an
 installation catalog or enabled-state writer.
+
+The persistent Settings Device selector uses the existing `Panel.selectDevice`
+path. It does not store another selected ID. Options include offline and unpaired
+devices, and equal display names include stable IDs. Selection uses `valueRole`
+and `currentValue`, so replacing or reordering discovery rows preserves identity.
+A changed inventory closes the popup before it can submit a stale row. A changed
+selected ID closes an old icon editor. Device switching keeps the current domain
+and scroll position, with the existing panel draft/action resets.
+Native launch progress, request acceptance and errors use the controller's
+`nativeAppMessage` and `nativeAppFailed`; unrelated actions cannot appear as launch
+feedback. Native launches never write shared device action state, so completion
+cannot overwrite a running, failed or uncertain device submission.
+`nativeAppOpening` exposes its existing process-running state to prevent
+repeat requests. A late launch result for another selected ID is ignored.
+Offline feature reports never claim a current loaded status.
+The panel's device gears use `Panel.openDeviceSettings(id)`, which validates the
+current inventory, selects through the same panel path, then opens Device features.
+Neither the header gear nor paired-device gears launch KDE Connect implicitly.
+The explicit Native KDE Connect settings link retains the native launch boundary.
 
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
 keys, three bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed

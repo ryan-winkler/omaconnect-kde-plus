@@ -17,7 +17,7 @@ omarchy pkg add kdeconnect python python-gobject
 omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --enable
 ```
 
-Open the new bar icon, select **All KDE Connect features** and pair your device.
+Open the new bar icon, select **Native KDE Connect settings** and pair your device.
 Moving from the original OmaConnect? Read [install, update and recovery](docs/INSTALL.md)
 first and add Plus without `--enable`. The plugin ID is `Omaconnect.plus`.
 
@@ -28,13 +28,13 @@ first and add Plus without `--enable`. The plugin ID is `Omaconnect.plus`.
   Drops copy and never move originals.
 - **Honest activity:** “Request accepted” means KDE accepted the transfer;
   delivery stays unknown. A batch keeps its reviewed recipient.
-- **Quick actions:** add, remove and reorder 19 shortcuts, including media
+- **Quick actions:** add, remove and reorder reviewed shortcuts, including media
   transport, native KDE Connect routes and an optional Quick Share shortcut.
 - **Appearance:** choose a phone, computer, theme icon, symbol or local PNG/SVG,
   and an alias per device. Preview before Apply.
 - **Settings:** Appearance, Connections, Quick actions and Device features, with
   short help next to each control. Sections can be hidden or collapsed.
-- **All KDE Connect features:** search the native plugin list and open the
+- **Device features:** inspect Information, search reported native modules and open the
   selected device in KDE Connect, which keeps pairing, battery, notifications,
   file browsing, media playback and player switching, remote commands, clipboard,
   text, SMS and remote input.

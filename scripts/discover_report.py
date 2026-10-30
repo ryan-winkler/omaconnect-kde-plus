@@ -16,11 +16,12 @@ which callers map to skip-device / exit-70):
     truthy     stdin: single-boolean call reply            -> exit 0 iff data == [true]
     registered stdin: ListActivatableNames call reply      -> exit 0 iff KDE is registered
     device     argv: <id> <device_json> <battery_json> <connectivity_json> [<loaded_json>]
-              -> one 16-field DEVICE tab-separated line for the QML contract
+              -> DEVICE line: 16 legacy fields plus optional bounded information JSON
 
 Dependencies: busctl (systemd) for the callers, python3.
 """
 
+import json
 import re
 import sys
 
@@ -101,8 +102,16 @@ def _nonneg_int(value):
     return None
 
 
-def format_device(device_id, device_props, battery_props=None, conn_props=None, loaded=None):
-    """Flattened GetAll properties -> the 16-field DEVICE TSV line.
+def bounded_strings(value):
+    if not isinstance(value, list) or len(value) > 16:
+        return []
+    if any(not isinstance(item, str) or len(item) > 256 for item in value):
+        return []
+    return [sanitize(item).replace("\r", " ").replace("\0", "") for item in value]
+
+
+def format_device(device_id, device_props, battery_props=None, conn_props=None, loaded=None, monitor=None):
+    """Flattened GetAll properties -> DEVICE TSV, with optional information JSON.
 
     Fields: DEVICE, id, name, type, paired, reachable, charge (-1 n/a),
     charging, plugins (comma list), netType, netStrength (-1 n/a),
@@ -152,6 +161,22 @@ def format_device(device_id, device_props, battery_props=None, conn_props=None, 
         ",".join(loaded or []),
         _flag(loaded is not None),
     ]
+    if "reachableAddresses" in props or "activeProviderNames" in props or monitor is not None:
+        known = isinstance(monitor, dict) and type(monitor.get("active")) is bool and type(monitor.get("isVirtualMonitorAvailable")) is bool
+        information = {
+            "addresses": bounded_strings(props.get("reachableAddresses")),
+            "providers": bounded_strings(props.get("activeProviderNames")),
+            "monitor": {"known": known, "active": bool(known and monitor["active"]),
+                        "available": bool(known and monitor["isVirtualMonitorAvailable"])},
+        }
+        encoded = json.dumps(information, separators=(",", ":"))
+        # Match the QML field bound after JSON escaping, keeping native state.
+        for key in sorted(("addresses", "providers"), key=lambda key: len(json.dumps(information[key])), reverse=True):
+            if len(encoded) <= 16384:
+                break
+            information[key] = []
+            encoded = json.dumps(information, separators=(",", ":"))
+        fields.append(encoded)
     return "\t".join(fields)
 
 
@@ -165,6 +190,10 @@ def main(argv):
         print("usage: discover_report.py ids|addresses|truthy|registered|device ...", file=sys.stderr)
         return 64
     command = argv[1]
+
+    if command == "supports" and len(argv) == 4:
+        props = parse_properties(argv[2]) or {}
+        return 0 if argv[3] in (plugin_ids(props.get("supportedPlugins")) or []) else 1
 
     if command in ("ids", "addresses"):
         items = parse_string_list(sys.stdin.read())
@@ -188,16 +217,17 @@ def main(argv):
         return 0 if "org.kde.kdeconnect" in data[0] else 1
 
     if command == "device":
-        if len(argv) not in (6, 7):
-            print("usage: discover_report.py device <id> <device_json> <battery_json> <conn_json> [<loaded_json>]", file=sys.stderr)
+        if len(argv) not in (6, 7, 8):
+            print("usage: discover_report.py device <id> <device_json> <battery_json> <conn_json> [<loaded_json> [<monitor_json>]]", file=sys.stderr)
             return 64
         device_props = parse_properties(argv[3]) if argv[3].strip() else None
         battery_props = parse_properties(argv[4]) if argv[4].strip() else None
         conn_props = parse_properties(argv[5]) if argv[5].strip() else None
         if device_props is None:
             return _fail("malformed device GetAll reply")
-        loaded = loaded_plugin_ids(argv[6]) if len(argv) == 7 else None
-        print(format_device(argv[2], device_props, battery_props, conn_props, loaded))
+        loaded = loaded_plugin_ids(argv[6]) if len(argv) >= 7 else None
+        monitor = parse_properties(argv[7]) if len(argv) == 8 and argv[7].strip() else None
+        print(format_device(argv[2], device_props, battery_props, conn_props, loaded, monitor))
         return 0
 
     print("discover_report: unknown command %r" % (command,), file=sys.stderr)

@@ -1,9 +1,32 @@
 # Help with Omaconnect KDE Plus
 
-Open **Settings** from the bar menu. Choose the domain that matches your task.
+Open **Plus settings** in Devices or **Settings** from the bar menu. Choose the domain that matches your task.
 Use **Back to devices** to return. Native KDE Connect opens in its own window;
 your Plus settings remain available. Select a device before changing its features.
 Settings switches show **On** or **Off** below their names.
+Tab and Shift+Tab move between controls and scroll the focused control into view.
+Settings buttons and switches also support assistive-technology activation.
+Disabled controls do not submit a request. A switch follows the saved value;
+requesting a save does not change its displayed state before readback.
+
+Use the **Device** dropdown below the Settings title to change devices without
+leaving the page. It also changes the selected device in Devices and clears the
+old device's unsent text draft. Connected, offline and unpaired devices stay in
+the list. Devices with the same local name also show their IDs. Offline devices
+can still have a local icon or alias. Pairing and native permissions stay in KDE
+Connect. Display preferences apply to Plus on this computer.
+
+Tab to **Device**, then press Space or Enter to open the list. Use the arrow keys
+and Enter to choose. Escape closes the list first; another Escape closes Settings.
+If discovery changes the list, open it again to choose from the current devices.
+**Native KDE Connect settings** shows launch progress or an error beside the button.
+Launch requested means the command was accepted; it does not confirm a visible
+window. Older KDE Connect settings frontends can open the device list instead.
+
+In Devices, the **Plus settings** button opens general Plus preferences. The gear
+beside the selected device and each paired device opens **Device features** for
+that exact device in Plus. Paired offline devices keep their gear. Use **Native
+KDE Connect settings** inside Plus for KDE Connect's full settings and permissions.
 
 ## Appearance
 
@@ -72,21 +95,63 @@ Each action shows its description and selected-device availability.
 - **SMS:** Open native KDE Connect conversations, where the platform permits it.
 - **Ping:** Compose a notification. The optional default message fills the draft;
   you can edit up to 8192 characters before sending. Private Ping content also uses the session bus. Ping and Ring use different native modules.
-- **KDE Connect features:** Open the selected peer in native KDE Connect.
+- **Native KDE Connect settings:** Open the selected device in native KDE Connect.
 
 If the Quick Share window does not appear after launch, check its tray icon.
 See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare#installation).
 
 ## Device features
 
+**Information** shows the selected device's ID, battery, cellular state, reported
+addresses and connection providers. Missing values say **Not reported**. Offline
+addresses are not presented as current. The daily Information section respects
+the battery and cellular visibility preferences.
+For native certificate fingerprints and protocol details, use
+`kdeconnect-cli --device DEVICE_ID --encryption-info` with the ID shown in
+Information. This is a read-only native route. The pairing verification code is
+different from the complete certificate information; a saved address does not
+establish identity or trust.
+
+**Use device as an external monitor** uses KDE Connect's native Virtual Monitor
+module. It appears in Devices when reported and is also available in Device
+features. You can add it to Quick actions. The control shows **Stop virtual monitor
+session** only when native state reports an active session. The computer needs
+KRDP; the other device needs a compatible RDP client. Plus does not install these
+or manage display-session credentials. An accepted request does not prove that
+the other device displays an image. If state is unknown or prerequisites are
+unavailable, check **Native KDE Connect settings**.
+
+Feature names come from the installed KDE Connect metadata. The list still uses
+the selected device's reported plugin IDs. New and third-party IDs remain visible
+even when local metadata has no name. Quick actions are reviewed entry points;
+Plus does not turn arbitrary plugin names into commands.
+
+**Configure this computer for the selected device** lists configuration pages
+from the installed native metadata, including Run commands, clipboard, sharing,
+notifications, media pause, presenter and input sharing when installed. Choose
+**Configure…** to open that exact module in native KDE Connect. A paired device can
+be configured while offline. An unpaired device must be paired first. If direct
+configuration is unavailable on an older frontend, open **Native KDE Connect
+settings**, then **Plugin Settings**. Plus does not write native module settings.
+New configuration pages are discovered after a native package upgrade. Plus
+lists only pages that the installed package provides.
+
+**Configure Run commands** defines commands on **this computer** that the selected
+device can run. It does not edit commands on the other device. To add or edit
+commands that run on the selected device, use that device's KDE Connect settings.
+**Request command editor on selected device** can ask a connected compatible peer
+to open its setup page. It rechecks whether the peer accepts that request. Check
+the other device for the editor. Request acceptance does not confirm that it
+opened, and no command runs. If unavailable, open Run commands settings there.
+
 Media player choices and transport buttons support Tab, Enter, Space and
 assistive-technology activation. The current player starts with **Current:**,
 so its state remains clear without color or hover. Unavailable controls do not
 submit an action.
 
-Open **All KDE Connect features**, then use native **Plugin settings** to enable
+Open **Native KDE Connect settings**, then use native **Plugin settings** to enable
 or configure installed modules and permissions. Search in Plus by task or plugin
-ID to find reported features, including unfamiliar third-party IDs. Supported
+ID to find reported features and installed configuration pages. Supported
 means compatible; Loaded describes the local daemon. Neither confirms permission.
 The native page manages installed modules; it is not a plugin download store.
 Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).

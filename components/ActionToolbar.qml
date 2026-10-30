@@ -45,7 +45,7 @@ Column {
                 required property int index
                 readonly property var catalogEntry: Actions.entry(modelData)
                 readonly property string actionName: modelData === "file" && root.service && root.service.fileBusy
-                    ? "Stop submitting" : catalogEntry ? catalogEntry.label : modelData
+                    ? "Stop submitting" : Actions.actionLabel(modelData, root.device)
                 readonly property string actionTooltip: modelData === "file" && root.service && root.service.fileBusy
                     ? "Cancel the current file submission" : catalogEntry ? catalogEntry.description + (root.actionReady(modelData) ? "" : "\n" + Actions.availabilityText(modelData,root.device,root.service)) : modelData
                 readonly property string actionIcon: modelData === "file" && root.service && root.service.fileBusy
@@ -100,5 +100,18 @@ Column {
         color: root.foreground
         font.family: root.fontFamily
         font.pixelSize: Style.font.bodySmall
+    }
+    Text {
+        objectName: "native-toolbar-launch-status"
+        width: parent.width
+        visible: text !== "" && !root.panel.getSetting("showNativeFeatures", true)
+        text: root.service ? root.service.nativeAppMessage || "" : ""
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.bodySmall
+        Accessible.role: Accessible.StaticText
+        Accessible.name: text
     }
 }

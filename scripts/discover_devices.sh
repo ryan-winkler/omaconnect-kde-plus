@@ -18,6 +18,7 @@ set -Eeuo pipefail
 #       id name type paired reachable charge charging plugins netType
 #       netStrength pairRequested pairRequestedByPeer verificationKey
 #       loadedPlugins loadedKnown
+#   An optional final JSON field carries bounded addresses, providers and monitor state.
 # Each device is read with ONE org.freedesktop.DBus.Properties GetAll call
 # on interface org.kde.kdeconnect.device (name, type, isPaired, isReachable,
 # isPairRequested, isPairRequestedByPeer, supportedPlugins, verificationKey)
@@ -132,5 +133,10 @@ while IFS= read -r entry; do
     # Loading is distinct from support and from a user's enabled setting.
     loaded_json=$(busctl_json call org.kde.kdeconnect "$path" \
         org.kde.kdeconnect.device loadedPlugins) || loaded_json=""
-    python3 "$report" device "$id" "$device_json" "$battery_json" "$conn_json" "$loaded_json" || continue
+    monitor_json=""
+    if python3 "$report" supports "$device_json" kdeconnect_virtualmonitor; then
+        monitor_json=$(busctl --user --json=short --timeout=2s call org.kde.kdeconnect "$path/virtualmonitor" \
+            org.freedesktop.DBus.Properties GetAll s org.kde.kdeconnect.device.virtualmonitor 2>/dev/null) || monitor_json=""
+    fi
+    python3 "$report" device "$id" "$device_json" "$battery_json" "$conn_json" "$loaded_json" "$monitor_json" || continue
 done <<< "$entries"

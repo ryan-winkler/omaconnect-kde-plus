@@ -23,7 +23,7 @@ BOOL_SETTINGS |= frozenset(('showSavedAddresses', 'showSyncthingLinks', 'showNet
 BOOL_SETTINGS |= frozenset(("showNativeFeatures",))
 STRING_SETTINGS = {"defaultPingMessage", "bthHelperPath", "quickActionsOrder"}
 ALLOWED = BOOL_SETTINGS | STRING_SETTINGS
-ACTION_IDS = set(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock'))
+ACTION_IDS = set(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock', 'external-monitor'))
 SECTIONS = ("left", "centerBegin", "center", "centerEnd", "right", "tray")
 
 
