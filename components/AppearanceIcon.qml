@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
-import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import qs.Commons as Commons
 import qs.Ui as Kit
 import "../Appearance.js" as Appearance
@@ -30,6 +30,7 @@ Item {
     readonly property bool sourceColours: normalized.render === "color"
         || (normalized.mode === "theme" && normalized.tint !== true && !Appearance.symbolicThemeName(normalized.value))
     readonly property bool softwareScene: GraphicsInfo.api === GraphicsInfo.Software
+    readonly property bool tintOnGpu: !softwareScene && !sourceColours && !useGlyph
     readonly property bool fallback: !useGlyph && imageUnavailable
     readonly property string warning: fontMissing ? qsTr("Font unavailable. Phone is shown.") : normalized.mode === "image" && fallback ? qsTr("Imported image is unavailable. Phone is shown.") : normalized.mode === "theme" && fallback ? qsTr("Theme icon is unavailable. Phone is shown.") : normalized.mode === "preset" && fallback ? qsTr("Icon fonts are unavailable. Phone is shown.") : ""
     implicitWidth: iconSize
@@ -47,13 +48,26 @@ Item {
         asynchronous: true
         cache: true
         onStatusChanged: symbolic.requestPaint()
+        onSourceSizeChanged: symbolic.reload()
+        // The tint below uses the icon's alpha as its mask.
+        layer.enabled: root.tintOnGpu
         visible: root.imageReady && root.sourceColours
     }
-    ColorOverlay {
+    Rectangle {
+        id: tintFill
         anchors.fill: image
-        source: image
         color: root.foreground
-        visible: root.imageReady && !root.sourceColours && !root.softwareScene
+        visible: false
+    }
+    MultiEffect {
+        anchors.fill: image
+        source: tintFill
+        maskEnabled: true
+        maskSource: image
+        // Follow the icon's alpha so antialiased edges stay smooth.
+        maskThresholdMin: 0.5
+        maskSpreadAtMin: 1.0
+        visible: root.imageReady && root.tintOnGpu
     }
     // The software scene graph draws no shader effect, so it tints with a Canvas.
     // Canvas is not used on the GPU: at scale 2 it paints a quarter-size icon.

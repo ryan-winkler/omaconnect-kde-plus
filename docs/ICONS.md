@@ -27,7 +27,7 @@ draft. Apply saves it; Cancel leaves the stored choice unchanged.
 `IconChooser.qml` → `AppearanceStore.qml` → `scripts/appearance.py` writes local
 metadata. The bar and device rows call the same pure resolver in `Appearance.js`.
 `components/AppearanceIcon.qml` paints the resolved choice. Symbolic images are
-decoded at the screen's pixel ratio and tinted with a colour overlay. The software
+decoded at the screen's pixel ratio and tinted through an alpha mask. The software
 Qt scene graph, which draws no shader effects, uses raster alpha composition. Native Omarchy
 `qs.Ui` supplies the reusable chooser controls; the fork retains its own small
 appearance dialog and validation boundary.
