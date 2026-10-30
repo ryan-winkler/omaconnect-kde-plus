@@ -6,6 +6,8 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-30
+
 ### Fixed
 
 - Discovery, the command list and media status read at most 64 KiB per reply.
