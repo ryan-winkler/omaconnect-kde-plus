@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import "plugin" as Plugin
+import "plugin/components" as Components
 
 ShellRoot {
     id: test
@@ -11,6 +12,23 @@ ShellRoot {
         return true
     }
     Plugin.Service { id: service }
+    readonly property var serviceForToolbar: service
+    QtObject {
+        id: toolbarPanel
+        property var service: test.serviceForToolbar
+        property var device: service.selectedDevice
+        property var bar: null
+        property var availableActions: ["native-features"]
+        property bool cursorActive: false
+        property string focusSection: ""
+        property int actionSelectedIndex: 0
+        function getSetting(key, fallback) { return key === "showNativeFeatures" ? false : fallback }
+    }
+    Item {
+        width: 400
+        height: 300
+        Components.ActionToolbar { id: nativeToolbar; panel: toolbarPanel }
+    }
     Timer {
         interval: 25
         running: true
@@ -65,6 +83,8 @@ ShellRoot {
                 test.phase = 8
             } else if (test.phase === 8 && !service.nativeAppOpening && service.actionState !== "running") {
                 if (!test.check(service.actionState === "unknown" && service.actionError.indexOf("Submission unknown") === 0, "later native launch completion preserves uncertain device submission")) return
+                var status = nativeToolbar.children.find(function(item) { return item.objectName === "native-toolbar-launch-status" })
+                if (!test.check(status && status.visible && status.text === "KDE Connect launch requested", "native toolbar shortcut keeps dedicated feedback when the daily native section is hidden")) return
                 console.log("NATIVE_PASS native launch")
                 Qt.quit()
             }

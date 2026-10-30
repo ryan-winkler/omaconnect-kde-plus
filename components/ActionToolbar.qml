@@ -88,4 +88,17 @@ Column {
         font.family: root.fontFamily
         font.pixelSize: Style.font.caption
     }
+    Text {
+        objectName: "native-toolbar-launch-status"
+        width: parent.width
+        visible: text !== "" && !root.panel.getSetting("showNativeFeatures", true)
+        text: root.service ? root.service.nativeAppMessage || "" : ""
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: root.service && root.service.nativeAppFailed ? Commons.Color.urgent : root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        Accessible.role: Accessible.StaticText
+        Accessible.name: text
+    }
 }
