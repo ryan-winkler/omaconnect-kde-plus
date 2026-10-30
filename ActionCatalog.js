@@ -8,6 +8,7 @@ var entries = [
     {id:"file", group:"Sharing", pluginId:"kdeconnect_share", label:"Files", description:"Choose files and review before sending", icon:"󰈔", capability:"file", legacyKey:"showActionFile"},
     {id:"text", group:"Sharing", pluginId:"kdeconnect_share", label:"Text or link", description:"Write text or a link to share", icon:"󰌹", capability:"text", legacyKey:"showActionText"},
     {id:"clipboard", group:"Sharing", pluginId:"kdeconnect_clipboard", label:"Clipboard", description:"Send the current clipboard", icon:"󰅌", capability:"clipboard", legacyKey:"showActionClipboard"},
+    {id:"quick-share", group:"Sharing", pluginId:"", label:"Quick Share", description:"Open the installed RQuickShare app to share with Android Quick Share. It is a separate app, not KDE Connect", icon:"󰒗", scope:"global", navigation:true},
     {id:"ring", group:"Device", pluginId:"kdeconnect_findmyphone", label:"Ring", description:"Request a ring on the selected device", icon:"󰂚", capability:"ring", legacyKey:"showActionRing"},
     {id:"sms", group:"Device", pluginId:"kdeconnect_sms", label:"SMS", description:"Open the native SMS conversation app", icon:"󰍦", capability:"sms", legacyKey:"showActionSms", handoff:true, navigation:true},
     {id:"ping", group:"Device", pluginId:"kdeconnect_ping", label:"Ping", description:"Compose a ping notification", icon:"󰵅", capability:"ping", legacyKey:"showActionPing"},
@@ -64,6 +65,7 @@ function ready(id,device,service) {
     if (!row || !compatible(id,device)) return false;
     if (id === "plus-settings") return true;
     if (service === null) return false;
+    if (id === "quick-share") return !!service.quickShareAvailable;
     if (!locallyActive(row,device)) return false;
     if (row.requiresMedia && (!hasMedia(service) || (service && service.mediaLoading))) return false;
     return !!(row.navigation || !service || service.actionState !== "running");
@@ -72,6 +74,7 @@ function availabilityText(id,device,service) {
     var row=entry(id);
     if (!row) return "This shortcut is unavailable.";
     if (service === null && id !== "plus-settings") return "KDE Connect controls are unavailable. Reopen Plus or check native KDE Connect.";
+    if (id === "quick-share") return service && service.quickShareAvailable ? "Opens RQuickShare. Quick Share is a separate app; KDE Connect does not use it." : "Install the r-quick-share package to use Quick Share. Plus only opens it.";
     if (row.scope === "global") return id === "plus-settings" ? "Opens Plus settings. No device connection is required." : "Opens native features and Plugin settings, including the device list when no device is connected.";
     if (!device) return "Choose a device to check availability. Your choice stays saved.";
     if (!device.paired || !device.reachable) return "Available when the device is paired and reachable.";

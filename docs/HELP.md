@@ -58,6 +58,9 @@ Each action shows its description and selected-device availability.
 - **Files:** Open the normal desktop file chooser, then review before Send.
 - **Text or link:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
 - **Clipboard:** Send the current clipboard to the selected device.
+- **Quick Share:** Open [RQuickShare](https://github.com/Martichou/rquickshare)
+  to share with Android Quick Share. Install the `r-quick-share` package first.
+  It is a separate app with its own pairing; KDE Connect does not use it.
 - **Ring:** Request a sound. If unavailable, open native **Plugin settings** and
   check Find my phone. A successful command does not confirm an audible sound.
 - **SMS:** Open native KDE Connect conversations, where the platform permits it.
@@ -110,6 +113,9 @@ Private canonical sources normally use their existing path. KDE owns its later
 file open; programs running as your user and root remain trusted.
 Text, Ping, Clipboard and remote-command success messages also report request acceptance. Check the recipient or remote result for delivery or execution.
 
+If the Quick Share window does not appear after launch, check its tray icon.
+See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare#installation).
+
 ## Syncthing identity note
 
 Enable **Show Syncthing identity notes** in **Settings → Appearance**. Select a
@@ -120,7 +126,15 @@ KDE device resets the draft; a pending save stays attached to its reviewed devic
 Saved readback confirms a save or removal. **Remove local note** removes only this
 association. Select the saved ID to copy it with the normal keyboard command.
 
-The note does not pair devices, start sync, check live state or verify ownership.
+When a note is saved, the section shows whether Syncthing has paused that device.
+Select **Pause in Syncthing** or **Resume in Syncthing** to change it. Syncthing's
+own `syncthing cli` makes the change and a readback confirms it. "State unknown"
+means Plus could not confirm the state. Possible causes include a stopped
+Syncthing, a different configuration folder, an unknown ID, a CLI timeout or an
+unexpected reply. Select **Refresh Syncthing state** to retry. The last checked
+state refreshes every 15 seconds while this section is visible.
+
+The note does not pair devices, start sync or verify ownership.
 **Open existing Syncthing panel** opens the general Syncshell panel, where you
 configure folders and check synchronization. It is not a per-device deep link.
 Syncshell retains the synchronization engine and keys. Read the official
