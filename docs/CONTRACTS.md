@@ -314,5 +314,19 @@ rechecks the executable and detaches its standard streams. Success confirms
 process creation, not an open window, pairing or delivery.
 `quickShareOpening`, `quickShareMessage` and `quickShareFailed` own launcher
 feedback. A launch never changes the selected device's action state, message or
-error. Only duplicate Quick Share launches wait for its result; unrelated device
-actions remain available. The toolbar shows the launch result separately.
+error. Only duplicate Quick Share launches wait for its result; device actions
+retain their existing readiness rules. The toolbar shows the launch result separately.
+
+## Daily navigation
+
+`CompactNavigation.qml` owns the fixed Devices, Send, Activity and Plus settings
+routes. It accepts no command or provider IDs. `navigationAtTop`,
+`showSendShortcut` and `showActivityShortcut` are typed boolean preferences with
+false defaults. Native settings save and migration validate the same keys.
+Placement changes only the fixed navigation row; content keeps a bounded scroll
+region. Hidden direct shortcuts do not remove routes from the menu.
+
+Navigation preserves service-owned file review and activity. A pending draft
+remains visible outside Send. Submission activity uses words, with no delivery
+claim. Menu Escape restores trigger focus without closing the daily panel.
+Choosing Devices returns to its existing keyboard navigation.

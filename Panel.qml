@@ -42,6 +42,7 @@ Panel {
     property bool syncthingExpanded: getSetting("syncthingStartExpanded", false)
     property string currentView: "Devices"
     readonly property var viewNames: ["Devices", "Send", "Activity"]
+    readonly property bool navigationAtTop: getSetting("navigationAtTop", false) === true
     readonly property var settingsWindow: preferencesWindow
     function openSettings(page) { preferencesWindow.openSettings(page || "Appearance"); root.close() }
     function openDeviceSettings(id) {
@@ -53,6 +54,7 @@ Panel {
     function openSendWindow() { root.close(); sendWindow.openSend() }
     onOpenedChanged: {
         if (service) service.panelOpened = opened
+        if (!opened) dailyNavigation.closeMenu()
         if (opened) {
             mediaActionRevealed = false
             commandsActionRevealed = false
@@ -599,15 +601,15 @@ Panel {
         owner: root.barIdentity
         bar: root.bar
         open: root.opened
-        focusTarget: root.currentView === "Devices" ? keyCatcher : viewTabs
+        focusTarget: root.currentView === "Devices" ? keyCatcher : dailyNavigation.focusItem
         contentWidth: panel.fittedContentWidth(Style.space(380))
-        contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight)
+        contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight + dailyNavigation.implicitHeight + Style.space(8))
 
         PanelKeyCatcher {
             id: keyCatcher
             anchors.fill: parent
 
-            blocked: !keyCatcher.activeFocus || root.currentView !== "Devices" || root.activeComposer !== "none" || !!(composerSection && ((composerSection.pingInput && composerSection.pingInput.activeFocus) || (composerSection.textInput && composerSection.textInput.activeFocus))) || !!(networkSection && networkSection.addressInput && networkSection.addressInput.activeFocus)
+            blocked: !keyCatcher.activeFocus || dailyNavigation.menuOpen || root.currentView !== "Devices" || root.activeComposer !== "none" || !!(composerSection && ((composerSection.pingInput && composerSection.pingInput.activeFocus) || (composerSection.textInput && composerSection.textInput.activeFocus))) || !!(networkSection && networkSection.addressInput && networkSection.addressInput.activeFocus)
             onMoveRequested: function(dx, dy) {
                 if (root.activeComposer !== "none") return
                 if (!root.cursorActive) {
@@ -627,7 +629,7 @@ Panel {
             }
             onTabRequested: function(direction) {
                 // Enter the form's normal Tab chain; all daily controls must be reachable.
-                var entry = viewTabs.currentItem || viewTabs
+                var entry = dailyNavigation.focusItem
                 entry.forceActiveFocus(direction < 0 ? Qt.BacktabFocusReason : Qt.TabFocusReason)
             }
             onTextKey: function(value) {
@@ -674,9 +676,20 @@ Panel {
             }
         }
 
+        CompactNavigation {
+            id: dailyNavigation
+            width: parent.width
+            y: root.navigationAtTop ? 0 : parent.height - height
+            menuHeightLimit: Math.max(44, parent.height - height - Style.space(4))
+            panel: root
+        }
+
         ScrollView {
             id: scrollView
+            objectName: "daily-content-scroll"
             anchors.fill: parent
+            anchors.topMargin: root.navigationAtTop ? dailyNavigation.implicitHeight + Style.space(8) : 0
+            anchors.bottomMargin: root.navigationAtTop ? 0 : dailyNavigation.implicitHeight + Style.space(8)
             clip: true
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ScrollBar.vertical.policy: ScrollBar.AlwaysOff
@@ -688,30 +701,6 @@ Panel {
                 spacing: Style.space(12)
                 bottomPadding: Style.space(8)
 
-                TabBar {
-                    id: viewTabs
-                    width: parent.width
-                    currentIndex: root.viewNames.indexOf(root.currentView)
-                    Accessible.name: "OmaConnect views"
-                    Keys.onDownPressed: if (root.currentView === "Devices") keyCatcher.forceActiveFocus()
-                    Keys.onEscapePressed: root.close()
-                    Repeater {
-                        model: root.viewNames
-                        TabButton {
-                            required property string modelData
-                            text: modelData
-                            Accessible.name: modelData
-                            onClicked: root.currentView = modelData
-                        }
-                    }
-                }
-                Button {
-                    focusable: true
-                    width: parent.width
-                    text: "Plus settings"
-                    Accessible.name: "Omaconnect KDE Plus settings"
-                    onClicked: root.openSettings()
-                }
                 Column {
                     width: parent.width
                     visible: root.currentView === "Send"

@@ -138,33 +138,37 @@ ShellRoot {
                 test.key(Qt.Key_Tab)
                 test.phase = 2
             } else if (test.phase === 2) {
-                var tabs = test.find(panel, function(object) { return "itemAt" in object && "count" in object && object.count === panel.viewNames.length }, [])
-                if (!test.check(!!tabs && test.isWithin(preview.activeFocusItem, tabs), "Tab enters view tabs from device catcher")) return
+                var trigger = test.find(panel, function(object) { return object.objectName === "daily-view-menu" }, [])
+                if (!test.check(!!trigger && test.isWithin(preview.activeFocusItem, trigger), "Tab enters the labelled view menu from device catcher")) return
                 test.check(fakeBar.switches === 0, "Tab stays inside this panel")
-                test.phase = 3
-            } else if (test.phase === 3 && test.seek(test.named("Send"))) {
                 test.key(Qt.Key_Space)
+                test.phase = 3
+            } else if (test.phase === 3) {
+                test.key(Qt.Key_Down)
+                test.key(Qt.Key_Return)
                 test.phase = 4
             } else if (test.phase === 4) {
                 if (!test.check(panel.currentView === "Send", "keyboard activates Send view")) return
-                test.phase = 41
-            } else if (test.phase === 41 && test.seek(test.named("Activity"))) {
                 test.key(Qt.Key_Space)
+                test.phase = 41
+            } else if (test.phase === 41) {
+                test.key(Qt.Key_Down)
+                test.key(Qt.Key_Return)
                 test.phase = 42
             } else if (test.phase === 42) {
                 if (!test.check(panel.currentView === "Activity", "keyboard activates Activity view")) return
+                test.key(Qt.Key_Space)
                 test.phase = 5
             } else if (test.phase === 5) {
-                test.phase = 10
-            } else if (test.phase === 10 && test.seek(test.named("Devices"))) {
-                test.key(Qt.Key_Space)
+                test.key(Qt.Key_Up)
+                test.key(Qt.Key_Up)
+                test.key(Qt.Key_Return)
                 test.phase = 11
             } else if (test.phase === 11) {
                 if (!test.check(panel.currentView === "Devices", "keyboard returns to Devices")) return
-                test.key(Qt.Key_Down)
                 test.phase = 12
             } else if (test.phase === 12) {
-                if (!test.check(preview.activeFocusItem === panel.focusTarget, "Down returns from tabs to device navigation")) return
+                if (!test.check(preview.activeFocusItem === panel.focusTarget, "choosing Devices returns to device navigation")) return
                 test.key(Qt.Key_Down)
                 test.phase = 13
             } else if (test.phase === 13) {

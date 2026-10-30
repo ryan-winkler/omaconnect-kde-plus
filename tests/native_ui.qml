@@ -60,7 +60,12 @@ ShellRoot {
         return null
     }
     function click(label) {
-        var button = find(panel,function(object) { return "text" in object && object.text === label && typeof object.clicked === "function" },[])
+        var viewIndex = panel.viewNames.indexOf(label)
+        if (viewIndex >= 0) {
+            var trigger = find(panel,function(object) { return object.objectName === "daily-view-menu" },[])
+            if (trigger) trigger.clicked()
+        }
+        var button = find(panel,function(object) { return viewIndex >= 0 ? object.objectName === "daily-route-" + viewIndex : "text" in object && object.text === label && typeof object.clicked === "function" },[])
         check(!!button,"control exists: "+label)
         if (button) button.clicked()
     }
@@ -139,7 +144,9 @@ ShellRoot {
                 if (headerGear) headerGear.clicked()
                 test.check(headerGear && panel.settingsWindow.currentPage==="Device features" && service.selectedDeviceId==="B","header gear follows the same Plus device-settings route")
                 panel.settingsWindow.closeSettings()
-                test.click("Plus settings")
+                var settingsControl = test.find(panel, function(object) { return object.objectName === "daily-plus-settings" }, [])
+                test.check(!!settingsControl, "compact settings control exists")
+                if (settingsControl) settingsControl.clicked()
                 test.check(panel.settingsWindow.visible, "dedicated settings window opens")
                 test.activeChooser = test.find(panel.settingsWindow,function(object) { return typeof object.openForBar === "function" },[])
                 test.check(!!test.activeChooser,"settings icon chooser exists")
@@ -179,7 +186,7 @@ ShellRoot {
                 panel.settingsWindow.closeSettings()
                 panel.open()
                 test.click("Send")
-                test.check(panel.currentView === "Send", "Send tab action")
+                test.check(panel.currentView === "Send", "Send menu action")
                 service.selectDevice("A")
                 test.click("Choose files")
                 test.check(service.selectionState === "choosing", "explicit portal choose starts")
@@ -188,6 +195,13 @@ ShellRoot {
                 test.check(service.selection.length === 2 && service.selectionBytes === 7, "portal files reach review with real sizes")
                 test.capture("send")
                 test.check(!service.operationBusy && service.operations.length === 0, "chooser close does not send")
+                var draftBeforeNavigation = JSON.stringify(service.draftTarget) + JSON.stringify(service.selection)
+                test.click("Activity")
+                var navigation = test.find(panel,function(object) { return object.objectName === "daily-navigation" },[])
+                test.check(navigation.draftSummary.indexOf("Draft for ") === 0, "draft review cue stays visible outside Send")
+                test.click("Devices")
+                test.click("Send")
+                test.check(service.selectionState === "draft" && draftBeforeNavigation === JSON.stringify(service.draftTarget) + JSON.stringify(service.selection), "view changes preserve files and reviewed recipient")
                 service.selectDevice("B")
                 test.check(service.draftTarget.peerId === "A", "draft target survives selection change")
                 test.check(service.submitSelection(), "explicit Send starts queue")
@@ -203,7 +217,7 @@ ShellRoot {
                 test.check(service.activeOperation.delivery === "unknown", "accepted does not claim delivery")
                 test.check(JSON.stringify(service.operations).indexOf("/one") === -1, "activity excludes raw file paths")
                 test.click("Activity")
-                test.check(panel.currentView === "Activity", "Activity tab action")
+                test.check(panel.currentView === "Activity", "Activity menu action")
                 service.selectDevice("A")
                 service.chooseFiles("A")
                 test.phase=8
@@ -218,7 +232,7 @@ ShellRoot {
                 service.clearOperations()
                 test.check(service.operations.length === 0, "clear finished activity")
                 test.click("Devices")
-                test.check(panel.currentView === "Devices", "Devices tab action")
+                test.check(panel.currentView === "Devices", "Devices menu action")
                 service.openSyncthingPanel()
                 test.phase=11
             } else if(test.phase === 11 && service.ownerPanelMessage.indexOf("unavailable") !== -1) {
