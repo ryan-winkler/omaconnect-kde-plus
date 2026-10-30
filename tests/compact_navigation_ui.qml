@@ -4,6 +4,7 @@ import QtTest
 import Quickshell
 import Quickshell.Io
 import "plugin/components" as Components
+import "plugin/TransferModel.js" as Transfers
 
 ShellRoot {
     id: test
@@ -60,9 +61,9 @@ ShellRoot {
         id: preview
         visible: true
         width: 400
-        height: 640
-        Components.CompactNavigation { id: navigation; width: parent.width; panel: panel }
-        Components.NavigationSettings { id: preferences; y: 260; width: parent.width; panel: panel }
+        height: 840
+        Components.CompactNavigation { id: navigation; y: 220; width: parent.width; panel: panel }
+        Components.NavigationSettings { id: preferences; y: 340; width: parent.width; panel: panel }
         Item { TestEvent { id: events } }
     }
     Timer {
@@ -109,9 +110,9 @@ ShellRoot {
                     test.phase=8
                 }else if(test.phase===8 && panel.getSetting("navigationAtTop",false)===true && !test.controlsBusy()){
                     if(!test.check(test.find(preferences,"Place navigation at Top").checked,"saved host readback updates placement"))return
-                    test.find(preferences,"Show a direct Send shortcut").clicked();test.phase=9
+                    test.find(preferences,"Show Send shortcut").clicked();test.phase=9
                 }else if(test.phase===9 && panel.getSetting("showSendShortcut",false)===true && !test.controlsBusy()){
-                    test.find(preferences,"Show a direct Activity shortcut").clicked();test.phase=10
+                    test.find(preferences,"Show Activity shortcut").clicked();test.phase=10
                 }else if(test.phase===10 && panel.getSetting("showActivityShortcut",false)===true && !test.controlsBusy()){
                     if(!test.check(test.find(navigation,"Open Send").visible && test.find(navigation,"Open Activity").visible,"saved shortcuts are composable without hiding menu routes"))return
                     var saved=panel.settings
@@ -126,13 +127,51 @@ ShellRoot {
                     if(!test.check(test.find(preferences,"Place navigation at Top").checked,"default recovery waits for saved host readback"))return
                     test.phase=11
                 }else if(test.phase===11 && panel.getSetting("navigationAtTop",true)===false && !test.controlsBusy()){
-                    test.find(preferences,"Show a direct Send shortcut").clicked();test.phase=12
+                    test.find(preferences,"Show Send shortcut").clicked();test.phase=12
                 }else if(test.phase===12 && panel.getSetting("showSendShortcut",true)===false && !test.controlsBusy()){
-                    test.find(preferences,"Show a direct Activity shortcut").clicked();test.phase=13
+                    test.find(preferences,"Show Activity shortcut").clicked();test.phase=13
                 }else if(test.phase===13 && panel.getSetting("showActivityShortcut",true)===false && !test.controlsBusy()){
-                    if(!test.check(!test.find(preferences,"Place navigation at Top").checked && !test.find(preferences,"Show a direct Send shortcut").checked && !test.find(preferences,"Show a direct Activity shortcut").checked,"saved readback restores all three default switches"))return
+                    if(!test.check(!test.find(preferences,"Place navigation at Top").checked && !test.find(preferences,"Show Send shortcut").checked && !test.find(preferences,"Show Activity shortcut").checked,"saved readback restores all three default switches"))return
                     if(!test.check(!test.find(navigation,"Open Send").visible && !test.find(navigation,"Open Activity").visible && navigation.entries.join(",")==="Devices,Send,Activity,Plus settings","default recovery hides shortcuts and keeps every menu route"))return
                     if(!test.check(panel.currentView===test.recoveryView && service.selectionState==="draft" && JSON.stringify(service.draftTarget)===test.recoveryDraft && navigation.draftSummary.indexOf(service.draftTarget.peerName)>=0,"default recovery preserves current view and reviewed draft reminder"))return
+                    test.phase=14
+                }else if(test.phase===14){
+                    if(!test.check(events.mouseClick(navigation.focusItem,navigation.focusItem.width/2,navigation.focusItem.height/2,Qt.LeftButton,Qt.NoModifier,1),"first real trigger click is delivered"))return
+                    test.phase=15
+                }else if(test.phase===15){
+                    if(!test.check(navigation.menuOpen,"first real trigger click opens menu"))return
+                    if(!test.check(events.mouseClick(navigation.focusItem,navigation.focusItem.width/2,navigation.focusItem.height/2,Qt.LeftButton,Qt.NoModifier,1),"second real trigger click is delivered"))return
+                    test.phase=16
+                }else if(test.phase===16){
+                    if(!test.check(!navigation.menuOpen,"second real trigger click closes without reopening"))return
+                    events.mouseClick(navigation.focusItem,navigation.focusItem.width/2,navigation.focusItem.height/2,Qt.LeftButton,Qt.NoModifier,1)
+                    test.phase=17
+                }else if(test.phase===17){
+                    if(!test.check(navigation.menuOpen,"real trigger click reopens menu"))return
+                    if(!test.check(events.mouseClick(preview.contentItem,preview.width-4,preview.height-4,Qt.LeftButton,Qt.NoModifier,1),"outside-parent click is delivered"))return
+                    test.phase=18
+                }else if(test.phase===18){
+                    if(!test.check(!navigation.menuOpen && panel.opened,"outside-parent click closes only the menu"))return
+                    var target={peerId:"fixture-peer",peerName:"Fixture phone"}
+                    var cancelled=Transfers.record(Transfers.create("pure-cancel",target,[{size:1}],1),0,"cancelled_before_submit","",2)
+                    service.operations=[cancelled]
+                    if(!test.check(cancelled.state==="cancelled_before_submit" && cancelled.accepted===0 && navigation.activitySummary==="","pure pre-submit cancellation makes no accepted-submission claim"))return
+                    var mixed=Transfers.record(Transfers.create("mixed",target,[{size:1},{size:1}],1),0,"request_accepted","",2)
+                    mixed=Transfers.record(mixed,1,"cancelled_before_submit","",3)
+                    service.operations=[mixed]
+                    if(!test.check(mixed.state==="cancelled_before_submit" && mixed.accepted===1 && navigation.activitySummary==="Submission recorded · delivery unknown","mixed accepted and cancelled requests retain accepted evidence"))return
+                    service.operations=[{state:"request_accepted",accepted:0}]
+                    if(!test.check(navigation.activitySummary==="","state label alone cannot claim an accepted submission"))return
+                    service.operations=[{state:"cancelled_before_submit",accepted:0},{state:"request_accepted",accepted:2}]
+                    if(!test.check(navigation.activitySummary==="Submission recorded · delivery unknown","accepted count is retained across activity history"))return
+                    for(var i=0;i<3;i++){
+                        service.operations=[{state:"request_accepted",accepted:1},{state:["queued","preparing","submitting"][i],accepted:0}]
+                        if(!test.check(navigation.activitySummary==="In progress","pending state keeps priority over recorded submissions"))return
+                        service.operations=[{state:"request_accepted",accepted:1},{state:["submission_failed","submission_unknown","cancellation_unconfirmed"][i],accepted:0}]
+                        if(!test.check(navigation.activitySummary==="Needs review","uncertain or failed state keeps highest priority"))return
+                    }
+                    service.operations=[{state:"submitting",accepted:1},{state:"submission_failed",accepted:0}]
+                    if(!test.check(navigation.activitySummary==="Needs review","failed activity takes priority over pending work"))return
                     console.log("COMPACT_NAVIGATION_PASS "+JSON.stringify(test.checks))
                     console.log("NATIVE_PASS compact navigation")
                     Qt.quit()

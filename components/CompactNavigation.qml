@@ -21,12 +21,14 @@ Column {
     readonly property string activitySummary: {
         var operations = panel.service ? panel.service.operations : []
         var pending = false
+        var hasAccepted = false
         for (var i = 0; i < operations.length; i++) {
             var state = operations[i].state
+            if (operations[i].accepted > 0) hasAccepted = true
             if (["submission_failed", "submission_unknown", "cancellation_unconfirmed"].indexOf(state) >= 0) return "Needs review"
             if (["queued", "preparing", "submitting"].indexOf(state) >= 0) pending = true
         }
-        return pending ? "In progress" : operations.length ? "Submission recorded · delivery unknown" : ""
+        return pending ? "In progress" : hasAccepted ? "Submission recorded · delivery unknown" : ""
     }
     spacing: Style.space(4)
     objectName: "daily-navigation"
@@ -160,7 +162,7 @@ Column {
         padding: Style.space(4)
         height: Math.min(menuColumn.implicitHeight + topPadding + bottomPadding, Math.max(44, root.menuHeightLimit))
         focus: true
-        closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutside
+        closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutsideParent
         background: Kit.BorderSurface {
             color: Commons.Color.popups.background
             borderSpec: Border.surfaceSpec("popups", "border", Commons.Color.popups.border, Style.normalBorderWidth)
