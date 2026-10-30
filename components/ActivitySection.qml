@@ -21,11 +21,11 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: "KDE Connect owns delivery. An accepted request is not a delivery receipt. Activity holds up to 50 operations in memory and has no saved file paths."
+        text: "Accepted means KDE Connect took the request. Check the other device to confirm that it arrived."
 
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
     }
     Repeater {
         model: root.service ? root.service.operations : []

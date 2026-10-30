@@ -93,7 +93,7 @@ Column {
             text: panel.composerError
             color: Commons.Color.urgent
             font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.bodySmall
         }
     }
 
@@ -168,7 +168,7 @@ Column {
             text: panel.composerError
             color: Commons.Color.urgent
             font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.bodySmall
         }
     }
 }

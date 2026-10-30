@@ -49,7 +49,7 @@ ShellRoot {
         property var service: service
         property var device: service.selectedDevice
         property var settings: ({networkBthEnabled:true})
-        function getSetting(key,fallback) { return key in settings ? settings[key] : fallback }
+        function getSetting(key,fallback) { return key in panel.settings ? panel.settings[key] : fallback }
     }
     Components.SettingsPanel { id: settings; panel: panel; onReturnToPanelRequested: test.returned++ }
     TestCase { id: events; when:false }
@@ -67,6 +67,7 @@ ShellRoot {
                 test.named("Settings: Connections").clicked();test.phase=2
             } else if(test.phase===2) {
                 if(!test.check(settings.currentPage==="Connections" && test.named("Show MikroTik Back to Home")!==null,"domain navigation exposes connection preferences"))return
+                if(!test.check(panel.getSetting("networkBthEnabled",false) === true && test.named("Show MikroTik Back to Home").checked,"saved BTH preference reaches the real native toggle"))return
                 var scroll=test.find(settings.contentItem,function(o){return o.objectName === "settings-page-scroll"},[])
                 if(!test.check(scroll && scroll.contentHeight > scroll.availableHeight,"long domain content uses a bounded scrolling region"))return
                 events.mouseWheel(scroll,scroll.width/2,scroll.height/2,0,-2400,Qt.NoButton,Qt.NoModifier,1)

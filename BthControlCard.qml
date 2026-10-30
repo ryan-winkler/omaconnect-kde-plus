@@ -119,11 +119,11 @@ Column {
         textFormat: Text.PlainText
         width: parent.width
 
-        text: root.helperMissing ? "Optional BTH controller is not installed. Use your existing reviewed VPN setup to install remote-access-mode, then refresh. No setup runs from this card." : Control.errorText(root.status)
+        text: root.helperMissing ? "Optional BTH controller is not installed. Install remote-access-mode with your VPN setup, then reopen the panel. This card installs nothing." : Control.errorText(root.status)
         visible: text !== ""
         color: Commons.Color.urgent
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
     Row {
@@ -156,17 +156,17 @@ Column {
         visible: text !== ""
         color: root.status.last_apply_failed ? Commons.Color.urgent : Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
     Text {
         textFormat: Text.PlainText
         width: parent.width
 
-        text: "Automatic: off at home, on away. Off: stays off until you choose On or Automatic. This card shows interface state, not a remote-service test."
+        text: "Automatic: off at home, on away. Off: stays off until you choose On or Automatic. The WireGuard line shows this computer's connection only."
         color: Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
 }

@@ -18,9 +18,9 @@ Column {
     readonly property bool wireguardEnabled: valueFor("networkWireguardEnabled")
     readonly property string helperPath: localScript("open_network_owner.py")
     readonly property var providers: [
-        {key: "networkTailscaleEnabled", label: "Tailscale", description: "Use your existing Tailscale app to connect. Save the other device's Tailscale IP under Manage saved addresses.", help: "https://tailscale.com/docs/how-to/quickstart"},
-        {key: "networkBthEnabled", label: "MikroTik Back to Home", description: "Use your existing BTH setup. Automatic / On / Off controls appear in Devices when the reviewed helper is available. Save the peer's BTH IP for rediscovery.", help: "https://manual.mikrotik.com/docs/network-management/cloud/back-to-home/"},
-        {key: "networkWireguardEnabled", label: "Other WireGuard profiles", description: "Use the manager that owns your existing profile to connect. The profiles button opens NetworkManager when installed. Save the peer's private IP for rediscovery.", help: "https://www.wireguard.com/quickstart/"}
+        {key: "networkTailscaleEnabled", label: "Tailscale", description: "Adds an Open Tailscale panel button. Then save the other device's Tailscale IP under Manage saved addresses.", help: "https://tailscale.com/docs/how-to/quickstart"},
+        {key: "networkBthEnabled", label: "MikroTik Back to Home", description: "Adds Automatic, On and Off buttons when your Back to Home script is installed. Then save the other device's BTH IP under Manage saved addresses.", help: "https://manual.mikrotik.com/docs/network-management/cloud/back-to-home/"},
+        {key: "networkWireguardEnabled", label: "Other WireGuard profiles", description: "Adds an Open WireGuard profiles button for NetworkManager. Then save the other device's VPN IP under Manage saved addresses.", help: "https://www.wireguard.com/quickstart/"}
     ]
     function localScript(name) {
         return decodeURIComponent(Qt.resolvedUrl("../scripts/" + name).toString().replace(/^file:\/\//, ""))
@@ -50,11 +50,11 @@ Column {
         spacing: Style.space(8)
         Text {
             width: parent.width
-            text: "Show only the integrations you use. These switches show or hide controls; they do not connect, disconnect or install a VPN."
+            text: "Turn on the VPN tools you use. These switches only show or hide buttons in Devices. They never connect or disconnect a VPN."
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font.family: Style.font.family
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.bodySmall
             wrapMode: Text.Wrap
         }
         Repeater {
@@ -66,8 +66,10 @@ Column {
                 Kit.Toggle {
                     width: parent.width
                     label: "Show " + modelData.label
+                    description: root.valueFor(modelData.key) ? "On" : "Off"
+                    descriptionSize: Style.font.bodySmall
                     Accessible.role: Accessible.CheckBox
-                    Accessible.name: label
+                    Accessible.name: "Show " + modelData.label
                     Accessible.checkable: true
                     Accessible.checked: checked
                     enabled: !root.busy
@@ -81,7 +83,7 @@ Column {
                     textFormat: Text.PlainText
                     color: Commons.Color.popups.text
                     font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
+                    font.pixelSize: Style.font.bodySmall
                     wrapMode: Text.Wrap
                 }
                 Kit.Button {
@@ -122,7 +124,7 @@ Column {
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
     Process {

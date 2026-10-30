@@ -19,6 +19,12 @@ ShellRoot {
         for (var i = 0; i < children.length; i++) { var result = find(children[i], label); if (result) return result }
         return null
     }
+    function textItem(item, value) {
+        if ("text" in item && item.text === value && "truncated" in item) return item
+        var children = item.children || []
+        for (var i=0; i<children.length; i++) { var found=textItem(children[i],value); if(found)return found }
+        return null
+    }
     QtObject {
         id: fakePanel
         property var settings: ({})
@@ -26,6 +32,7 @@ ShellRoot {
     }
     Item {
         width: 400; height: 700
+        Components.PreferenceControls { id: preferences; width: 220; panel: fakePanel; preferences: [{key:"fixture",label:"A long settings label that must not hide state",defaultValue:false}] }
         Components.NetworkOptions { id: options; width: parent.width; panel: fakePanel; configuration: true }
         Components.NetworkOptions { id: daily; width: parent.width; panel: fakePanel }
     }
@@ -38,6 +45,8 @@ ShellRoot {
                 if (!test.check(!test.find(daily, "Open Tailscale panel").visible && !test.find(daily, "Open WireGuard profiles").visible, "disabled owner buttons hidden")) return
                 var checkbox = test.find(options, "Show Tailscale")
                 if (!test.check(options.configuration && checkbox !== null, "dedicated settings shows labelled switches directly")) return
+                var off = test.textItem(checkbox,"Off"), pref = test.find(preferences,"A long settings label that must not hide state")
+                if (!test.check(off && !off.truncated && pref && pref.description === "Off", "both switch types expose non-elided saved state")) return
                 checkbox.clicked()
                 if (!test.check(!checkbox.checked && !options.tailscaleEnabled, "save request does not optimistically change saved state")) return
                 test.phase = 1
@@ -48,6 +57,8 @@ ShellRoot {
             } else if (test.phase === 2) {
                 var checkbox = test.find(options, "Show Tailscale")
                 if (!test.check(checkbox.checked && options.tailscaleEnabled && test.find(daily, "Open Tailscale panel").visible && !test.find(options, "Open Tailscale panel").visible, "saved config readback shows owner only in daily view")) return
+                var on = test.textItem(checkbox,"On")
+                if (!test.check(on && !on.truncated, "saved On state remains visible")) return
                 checkbox.clicked()
                 test.phase = 3
             } else if (test.phase === 3 && !options.busy && options.message.indexOf("not confirmed") !== -1) {

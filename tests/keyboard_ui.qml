@@ -233,6 +233,21 @@ ShellRoot {
                 test.check(panel.opened && panel.currentView === "Devices", "typing leaves the panel open in its view")
                 test.check(fakeBar.switches === 0, "keyboard traversal never switches another bar panel")
                 if (test.failed) return
+                service.discoveryState = "not_installed"
+                service.devices = []
+                test.phase = 28
+            } else if (test.phase === 28) {
+                var install = test.find(panel, function(object) { return object.objectName === "kdeconnect-install-command" }, [])
+                if (test.seek(install)) {
+                    if (!test.check(install.readOnly && install.selectedText === install.text, "install command selects all on keyboard focus")) return
+                    test.selectedBeforeTyping = service.selectedDeviceId
+                    test.indexBeforeTyping = panel.selectedIndex
+                    test.key(Qt.Key_Left)
+                    test.key(Qt.Key_A, Qt.ControlModifier)
+                    if (!test.check(install.selectedText === install.text && panel.selectedIndex === test.indexBeforeTyping && service.selectedDeviceId === test.selectedBeforeTyping, "install command selection keys do not navigate devices")) return
+                    test.phase = 29
+                }
+            } else if (test.phase === 29) {
                 console.log("KEYBOARD_PASS " + JSON.stringify(test.outcomes))
                 console.log("NATIVE_PASS keyboard")
                 Qt.quit()

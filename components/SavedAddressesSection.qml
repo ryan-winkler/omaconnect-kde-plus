@@ -27,12 +27,12 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: root.width
-        text: "Select LAN, Back to Home, WireGuard or Tailscale. Approve one IP for the selected KDE identity. An IP does not prove identity or pairing."
+        text: "Save an IP address that KDE Connect can use to reach this device over LAN, Back to Home, WireGuard or Tailscale. Saving an address does not pair the device."
 
         wrapMode: Text.Wrap
         color: root.foreground
         font.family: root.fontFamily
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
     }
     Text {
         width: parent.width
@@ -157,11 +157,11 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: root.width
-        text: root.discovery ? (root.discovery.error || (root.discovery.busy ? "Saving address changes…" : "External KDE addresses are preserved. Forget removes local metadata only. Automatic discovery runs every 60 seconds while this panel is open.")) : "Address storage is unavailable."
+        text: root.discovery ? (root.discovery.error || (root.discovery.busy ? "Saving address changes…" : "Forget removes only the Plus record. Addresses you added in KDE Connect stay. When enabled, automatic rediscovery checks every 60 seconds while this panel is open.")) : "Address storage is unavailable."
 
         wrapMode: Text.Wrap
         color: root.foreground
         font.family: root.fontFamily
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
     }
 }

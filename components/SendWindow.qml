@@ -108,7 +108,7 @@ Window {
                     wrapMode: Text.Wrap
                     color: Commons.Color.popups.text
                     font.family: Style.font.family
-                    font.pixelSize: Style.font.caption
+                    font.pixelSize: Style.font.bodySmall
                 }
             }
         }

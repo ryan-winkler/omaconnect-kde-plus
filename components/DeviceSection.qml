@@ -101,7 +101,7 @@ Column {
                     : Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
-                elide: Text.ElideRight
+                wrapMode: Text.Wrap
             }
 
             Row {
@@ -164,8 +164,8 @@ Column {
             }
             color: ((root.service && (root.service.actionError || root.service.fileTransferError)) || (root.panel && root.panel.composerError)) ? Commons.Color.urgent : root.foreground
             font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
-            elide: Text.ElideRight
+            font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.Wrap
         }
 
         MouseArea {
@@ -483,7 +483,7 @@ Column {
             text: {
                 if (root.service && root.service.scanning) return "Scanning..."
                 if (root.service && root.service.discoveryState === "not_installed") return "Required packages missing"
-                if (root.service && root.service.discoveryState === "unavailable") return "KDE Connect daemon stopped"
+                if (root.service && root.service.discoveryState === "unavailable") return "KDE Connect unavailable"
                 return "No devices found"
             }
             color: Qt.darker(root.foreground, 1.4)
@@ -493,12 +493,26 @@ Column {
 
         Text {
             width: parent.width
-            text: "Use the setup guide for missing packages or connection requirements. Pair devices and manage native features in KDE Connect."
+            text: root.service && root.service.discoveryState === "not_installed"
+                ? "Run this command in a terminal to install KDE Connect, then select Refresh. To copy it, focus the command and press Ctrl+C."
+                : "Pair devices in KDE Connect. The setup guide helps with connection problems."
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: root.foreground
             font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
+            font.pixelSize: Style.font.bodySmall
+        }
+        TextField {
+            objectName: "kdeconnect-install-command"
+            visible: !!root.service && root.service.discoveryState === "not_installed"
+            width: parent.width
+            // Shown for copying only; Plus never runs it.
+            text: "omarchy pkg add kdeconnect python python-gobject"
+            readOnly: true
+            selectByMouse: true
+            foreground: root.foreground
+            Accessible.name: "KDE Connect install command; focus and press Control+C to copy"
+            onActiveFocusChanged: if (activeFocus) selectAll()
         }
         Button {
             text: "KDE Connect setup guide ↗"

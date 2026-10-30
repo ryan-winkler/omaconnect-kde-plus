@@ -428,10 +428,13 @@ Item {
             }
         }
         daemonAvailable = scanProcess.exitCode === 0
-        sessionBusAvailable = scanProcess.exitCode !== 127
+        sessionBusAvailable = scanProcess.exitCode !== 127 && scanProcess.exitCode !== 78
         if (scanProcess.exitCode === 127) {
             discoveryState = "not_installed"
             discoveryMessage = "KDE Connect not installed"
+        } else if (scanProcess.exitCode === 78) {
+            discoveryState = "unavailable"
+            discoveryMessage = "Discovery needs busctl and Python 3. Check the system tools, then select Refresh."
         } else if (scanProcess.exitCode === 0) {
             discoveryState = "ready"
             discoveryMessage = next.length ? "Device state is current" : "No KDE Connect devices"
