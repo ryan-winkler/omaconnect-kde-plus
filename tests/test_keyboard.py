@@ -28,7 +28,7 @@ class KeyboardUi(unittest.TestCase):
     def assert_fixture(self, fixture, home, output, calls):
         self.assertIn('KEYBOARD_PASS', output, output)
         self.assertEqual(json.loads((fixture / 'portal-receipt.json').read_text()), [])
-        self.assertFalse(any(row['tool'] in ('kdeconnect-cli', 'nmcli', 'omarchy-shell')
+        self.assertFalse(any(row['tool'] in ('kdeconnect-cli', 'kdeconnect-share', 'nmcli', 'omarchy-shell')
                              for row in calls), calls)
         modes = [row for row in calls if row['tool'] == 'remote-access-mode']
         self.assertTrue(modes, calls)

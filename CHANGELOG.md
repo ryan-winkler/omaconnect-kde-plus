@@ -13,6 +13,15 @@ All notable changes are listed here. The format follows
   killed, so a stuck provider cannot hang the panel. The command list keeps at
   most 100 commands.
 
+### Security
+
+- Plus now also tries to remove private copies of shared files at plugin start,
+  not only before a later send. Copies become eligible after 24 hours.
+- File paths go to KDE Connect over D-Bus, no longer in `kdeconnect-cli`
+  arguments that other local accounts can list.
+- The README now says that a saved default Ping message passes through process
+  arguments.
+
 ## [0.1.3] - 2026-10-30
 
 ### Fixed

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""One-shot portal chooser and KDE submission boundary. No payload bytes or history."""
+"""One-shot portal chooser and KDE submission boundary. No payload bytes or history.
+
+Modes: choose, inspect, submit, and sweep (expired share copies, at plugin start).
+"""
 import json
 import os
 from pathlib import Path
 import signal
 import stat
-import subprocess
 import sys
 import uuid
 from urllib.parse import unquote, urlsplit
@@ -128,18 +130,12 @@ def choose():
 
 
 def submit(payload):
-    child = None
     attempted = False
     cancelled = False
 
     def stop(*unused):
         nonlocal cancelled
         cancelled = True
-        if child is not None and child.poll() is None:
-            try:
-                os.killpg(child.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
 
     signal.signal(signal.SIGTERM, stop)
     peer = payload.get('peerId')
@@ -151,42 +147,36 @@ def submit(payload):
         return
     try:
         from private_sources import prepared_source
+        from send_text import SHARE_URLS, SubmissionError, call
         emit({"event": "preparing"})
         with prepared_source(payload.get("file"), lambda: cancelled) as prepared:
             # The prepared path is protected from a different local writer.
             # Shared sources use a retained descriptor-backed snapshot; normal
             # private paths avoid a copy. KDE still owns its later native open.
+            # The path goes over D-Bus, as kdeconnect-cli does, never into argv.
+            if cancelled:
+                raise ValueError('cancelled-before-submit')
             emit({'event': 'submitting'})
             attempted = True
-            child = subprocess.Popen(['kdeconnect-cli', '-d', peer, '--share', prepared.path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-            if cancelled:
-                stop()
             try:
-                code = child.wait(timeout=SUBMISSION_TIMEOUT)
-                state = 'request_accepted' if code == 0 else 'submission_failed'
-                error = '' if code == 0 else 'submission-failed'
-            except subprocess.TimeoutExpired:
-                stop()
-                state, error = 'submission_unknown', 'submission-unknown'
-            # stop() also services timeout; only an external cancel changes this flag.
-            if cancelled and state != 'submission_unknown':
+                call(peer, SHARE_URLS, [Path(prepared.path).as_uri()],
+                     int(SUBMISSION_TIMEOUT * 1000), lambda: cancelled)
+                state, error = 'request_accepted', ''
+            except SubmissionError as failure:
+                state, error = {'submission-unknown': ('submission_unknown', 'submission-unknown'),
+                                'provider-unavailable': ('submission_failed', 'provider-missing'),
+                                'invalid-input': ('submission_failed', 'identity-mismatch')}.get(
+                                    str(failure), ('submission_failed', 'submission-failed'))
+            # Only SIGTERM sets this flag; the deadline alone stays submission_unknown.
+            if cancelled:
                 state, error = 'cancellation_unconfirmed', 'cancellation-unconfirmed'
     except ValueError as preparation_error:
         if str(preparation_error) == "cancelled-before-submit" and not attempted:
             state, error = "cancelled_before_submit", ""
         else:
             raise
-    except FileNotFoundError:
-        state, error = 'submission_failed', 'provider-missing'
     except OSError:
         state, error = ('submission_unknown', 'submission-unknown') if attempted else ('submission_failed', 'submission-failed')
-    finally:
-        if child is not None and child.poll() is None:
-            try:
-                child.wait(timeout=1)
-            except subprocess.TimeoutExpired:
-                os.killpg(child.pid, signal.SIGKILL)
-                child.wait()
     emit({'state': state, 'error': error})
 
 
@@ -195,6 +185,9 @@ def main():
     try:
         if mode == 'choose':
             choose()
+        elif mode == 'sweep':
+            from private_sources import sweep_expired
+            sweep_expired()
         elif mode in ('inspect', 'submit'):
             raw = sys.stdin.buffer.readline(MAX_INPUT + 1)
             if len(raw) > MAX_INPUT:

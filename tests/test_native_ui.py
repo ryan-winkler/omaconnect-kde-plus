@@ -152,9 +152,10 @@ print(json.dumps({"state":"observed","peerId":peer,"enabled":values,"error":""})
             print(output)
 
     def assert_fixture(self, fixture, home, output, calls):
-        submissions = [call for call in calls if call['tool']=='kdeconnect-cli']
+        submissions = [call for call in calls if call['tool']=='kdeconnect-share']
         self.assertEqual(len(submissions), 3, output)
-        self.assertTrue(all(call['args'][:2] == ['-d','A'] for call in submissions), submissions)
+        self.assertTrue(all(call['args'][0] == 'A' for call in submissions), submissions)
+        self.assertFalse(any(call['tool']=='kdeconnect-cli' and '--share' in call['args'] for call in calls), calls)
         self.assertEqual(len(json.loads((fixture/'portal-receipt.json').read_text())), 2)
         state = json.loads((home/'.config/Omaconnect.plus/appearance.json').read_text())
         self.assertEqual(state['bar_icon']['value'], 'laptop')

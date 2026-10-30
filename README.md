@@ -47,8 +47,9 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
   file browsing, media playback and player switching, remote commands, clipboard,
   text, SMS and remote input.
 - **Network access:** optional Tailscale, MikroTik Back to Home and WireGuard
-  sections with short guides. They show controls; they never connect a VPN.
-  An optional card shows an existing Back to Home helper’s Automatic / On / Off mode.
+  sections with short guides. Tailscale and WireGuard open their own panel or
+  profiles; Plus never connects a VPN itself. An optional card shows your Back
+  to Home helper's Automatic / On / Off mode and can ask that helper to change it.
 - **Private addresses:** approve LAN or VPN addresses per device, with opt-in
   rediscovery. Existing KDE addresses are preserved.
 - **Syncthing notes:** optionally record that a KDE device and a Syncthing ID are
@@ -74,19 +75,22 @@ commands. Keep it if its workflow suits you. Plus adds:
 ## Requirements
 
 Omarchy, KDE Connect, Python 3 with PyGObject and a desktop file portal. The
-optional home-access card needs the existing `remote-access-mode` helper (path
-configurable). Opening Syncthing needs the `io.github.ilyazar.syncthing` plugin.
+optional home-access card needs your own `remote-access-mode` helper (path
+configurable). Plus does not ship or install that helper. Opening Syncthing
+needs the `io.github.ilyazar.syncthing` plugin.
 The Quick Share shortcut opens RQuickShare (`r-quick-share` package); Plus does
 not speak Quick Share itself.
 Missing optional providers stay unavailable; Plus never installs them.
 
 ## Privacy
 
-Appearance and address metadata stay in owner-only files. Typed text and Ping
-messages travel over stdin and D-Bus, never process arguments. Files in shared
-locations are sent from a private snapshot. Activity keeps at most 50 summaries
-in memory, without paths. Media shows track text and controls but never loads
-provider-supplied album art.
+Appearance and address metadata stay in owner-only files. Typed text, Ping
+messages and the paths of files you send travel over stdin and D-Bus, never
+process arguments. Saved settings, such as a default Ping message, go through
+Omarchy, which briefly passes them in process arguments. Do not save private
+text there. Files in shared locations are sent from a private snapshot. Activity
+keeps at most 50 summaries in memory, without paths. Media shows track text and
+controls but never loads provider-supplied album art.
 
 ## Contributing
 

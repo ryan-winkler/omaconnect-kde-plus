@@ -1,4 +1,5 @@
 """Private source preparation uses owned files only; no native provider runs."""
+from contextlib import contextmanager
 import errno
 import importlib.util
 import os
@@ -231,6 +232,63 @@ class PrivateSources(unittest.TestCase):
             with self.m.prepared_source(self.expected, lambda: False):
                 self.fail('nonprivate namespace accepted')
         self.assertEqual(namespace.stat().st_mode & 0o777, 0o755, 'never chmod existing unrelated state')
+
+    def test_startup_sweep_can_remove_an_enumerated_expired_entry_during_preparation(self):
+        directory = self.m._cache_directory()
+        expired = directory / ('source-' + 'a' * 32)
+        expired.mkdir(mode=0o700)
+        (expired / 'old.bin').write_bytes(b'old synthetic copy')
+        (expired / 'old.bin').chmod(0o600)
+        old = time.time() - self.m.RETENTION_SECONDS - 10
+        os.utime(expired, (old, old))
+        real_scandir = os.scandir
+        interleave = True
+
+        @contextmanager
+        def concurrent_scan(path):
+            nonlocal interleave
+            if Path(path) == directory and interleave:
+                interleave = False
+                with real_scandir(path) as entries:
+                    captured = list(entries)
+                self.m.sweep_expired()
+                yield iter(captured)
+            else:
+                with real_scandir(path) as entries:
+                    yield entries
+
+        with patch.object(self.m.os, 'scandir', side_effect=concurrent_scan):
+            with self.m.prepared_source(self.expected) as prepared:
+                self.assertTrue(prepared.snapshot_used)
+                self.assertEqual(Path(prepared.path).read_bytes(), b'intended reviewed bytes')
+        self.assertFalse(expired.exists())
+        self.assertTrue(Path(prepared.path).is_file(), 'new copy survives cleanup and the native handoff context')
+        self.assertEqual(self.source.read_bytes(), b'intended reviewed bytes')
+
+    def test_shared_preparation_does_not_ignore_other_expiry_stat_errors(self):
+        directory = self.m._cache_directory()
+        real_scandir = os.scandir
+
+        class UnreadableEntry:
+            name = 'source-' + 'a' * 32
+
+            def stat(self, **unused):
+                raise PermissionError(errno.EACCES, 'synthetic metadata failure')
+
+        @contextmanager
+        def unreadable_scan(path):
+            if Path(path) == directory:
+                yield iter([UnreadableEntry()])
+            else:
+                with real_scandir(path) as entries:
+                    yield entries
+
+        with patch.object(self.m.os, 'scandir', side_effect=unreadable_scan):
+            with self.assertRaisesRegex(ValueError, '^source-preparation-failed$'):
+                with self.m.prepared_source(self.expected):
+                    self.fail('metadata failure was ignored')
+        self.assertEqual(self.snapshots(), [])
+        self.assertEqual(self.source.read_bytes(), b'intended reviewed bytes')
 
     def test_expiration_removes_only_exact_owned_safe_old_snapshots(self):
         with self.m.prepared_source(self.expected, lambda: False) as prepared:

@@ -68,14 +68,18 @@ The helper rechecks file identity and holds an `O_NOFOLLOW` descriptor. It uses 
 canonical existing path only when the source and every ancestor have trusted
 ownership and write permissions. Other sources use a private descriptor-backed
 snapshot through `private_sources.py`, with a reflink first and a 1 MiB copy loop
-fallback. The helper then launches exactly
-`kdeconnect-cli -d <reviewed-id> --share <path>`. No shell interpolation occurs.
+fallback. The helper then calls `shareUrls` on `org.kde.kdeconnect.device.share`
+at `/modules/kdeconnect/devices/<reviewed-id>/share` with one percent-encoded
+`file://` URL, as `kdeconnect-cli --share` does. The path never enters process
+arguments. The call uses `send_text.py`'s D-Bus client without service autostart.
 Preparation has a 120-second work deadline, cancellation checks between chunks,
 a 64 MiB free-space reserve, and source identity checks after copying. Blocking
 filesystem calls cannot be forcibly preempted by that deadline. Snapshots have
 0700 directories and 0600 files below the XDG cache path documented in [Help](HELP.md).
-They become eligible after 24 hours. Cleanup is attempted on later preparation
-when the cache is safe and available. Protected-file preparation treats cache
+They become eligible after 24 hours. `portal_files.py sweep` tries to remove eligible
+copies once when the plugin starts, and later preparation retries, when the cache
+is safe and available. The sweep never creates the cache. KDE opens the file later
+and reports no completion for the request, so Plus cannot delete a copy sooner. Protected-file preparation treats cache
 housekeeping as best effort; shared-file snapshots still require a safe cache. Cleanup accepts only the exact owned flat snapshot
 shape; it preserves unrelated or unexpected state. A process deadline is 15 seconds. The queue invokes one helper per file in order.
 There is no automatic retry after an ambiguous timeout.
@@ -84,9 +88,9 @@ There is no automatic retry after an ambiguous timeout.
 | --- | --- |
 | `queued` | Not yet submitted |
 | `preparing` | Validating or snapshotting; this file has not reached KDE |
-| `submitting` | CLI invocation has started |
-| `request_accepted` | CLI exit 0; delivery unknown |
-| `submission_failed` | Request could not be submitted / nonzero exit |
+| `submitting` | D-Bus share call has started |
+| `request_accepted` | KDE accepted the call; delivery unknown |
+| `submission_failed` | Request could not be submitted / D-Bus error |
 | `submission_unknown` | Deadline after invocation; check for duplicates |
 | `cancelled_before_submit` | Queue item stopped before invocation |
 | `cancellation_unconfirmed` | Stop requested after invocation; remote result unknown |
@@ -94,7 +98,7 @@ There is no automatic retry after an ambiguous timeout.
 Operation summaries contain provider, reviewed ID/name, count/size, aggregate
 counters and timestamps. They hold no raw paths and have a 50-operation memory
 limit. The transient draft/queue does hold selected paths until use/cancellation.
-The CLI path argument can appear in process metadata. Shared sources reach KDE
+Shared sources reach KDE
 through the retained private snapshot. Protected private sources keep the native
 pathname flow. Same-UID code and root remain trusted. No native atomic descriptor
 handoff is claimed. A running helper without a final cancellation acknowledgement
@@ -287,7 +291,8 @@ The explicit Native KDE Connect settings link retains the native launch boundary
 
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
 keys, four bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`, `sectionOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
-arguments and JSON-typed values. Exact `ok` confirms the native API accepted the
+arguments and JSON-typed values. `omarchy-shell` takes values only as process
+arguments, so a saved string is briefly visible to local process listings. Exact `ok` confirms the native API accepted the
 write and controls success feedback. The controls display host-provided settings;
 the helper does not independently read back or verify persistence. A visibility
 setting never changes a VPN. Hidden BTH does not poll.
