@@ -22,6 +22,7 @@ Dependencies: busctl (systemd), python3.
 import json
 import subprocess
 import sys
+import threading
 
 PROPS_IFACE = "org.freedesktop.DBus.Properties"
 MPRIS_IFACE = "org.kde.kdeconnect.device.mprisremote"
@@ -136,14 +137,29 @@ def fetch_props(device_id):
         "busctl", "--user", "--json=short", "call", SERVICE, mpris_path(device_id),
         PROPS_IFACE, "GetAll", "s", MPRIS_IFACE,
     ]
+    raw = read_bounded(argv, 3)
+    if raw is None or not raw.strip():
+        return None
+    return parse_properties(raw)
+
+
+def read_bounded(argv, seconds):
+    """stdout of argv, or None on failure, on timeout or when it exceeds MAX_REPLY_BYTES."""
     try:
-        result = subprocess.run(argv, capture_output=True, text=True, timeout=3)
+        with subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as proc:
+            timer = threading.Timer(seconds, proc.kill)
+            timer.start()
+            try:
+                raw = proc.stdout.read(MAX_REPLY_BYTES + 1)
+                if len(raw) > MAX_REPLY_BYTES:
+                    proc.kill()
+                    return None
+                code = proc.wait()
+            finally:
+                timer.cancel()
     except Exception:
         return None
-    # shortcut: the 3 s timeout bounds the capture, the cap bounds the parse; read in chunks if a reply can flood memory sooner.
-    if result.returncode != 0 or not result.stdout.strip() or len(result.stdout.encode()) > MAX_REPLY_BYTES:
-        return None
-    return parse_properties(result.stdout)
+    return raw.decode("utf-8", "replace") if code == 0 else None
 
 
 def select_player(device_id, player):

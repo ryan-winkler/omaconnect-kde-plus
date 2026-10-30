@@ -8,9 +8,10 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
-- Discovery, the command list and media status read at most 64 KiB per reply
-  and stop after a deadline, so a stuck provider cannot hang the panel. The
-  command list keeps at most 100 commands.
+- Discovery, the command list and media status read at most 64 KiB per reply.
+  Each read stops at a deadline, and a provider that ignores the stop request is
+  killed, so a stuck provider cannot hang the panel. The command list keeps at
+  most 100 commands.
 
 ## [0.1.3] - 2026-10-30
 

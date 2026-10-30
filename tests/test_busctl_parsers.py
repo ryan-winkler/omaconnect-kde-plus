@@ -440,6 +440,13 @@ class BoundedProviderOutputTests(unittest.TestCase):
         self.assertEqual(json.loads(res.stdout), media_status.empty_status())
         self.assertLess(elapsed, 10)
 
+    def test_media_status_stops_reading_an_endless_reply_at_the_cap(self):
+        # Reading stops one byte over the cap instead of collecting until the deadline.
+        res, elapsed = self.run_media_status("exec yes x\n")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertEqual(json.loads(res.stdout), media_status.empty_status())
+        self.assertLess(elapsed, 2.5)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

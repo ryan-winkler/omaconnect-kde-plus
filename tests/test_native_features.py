@@ -157,24 +157,70 @@ assert.equal(api.parseRemoteCommands('lock: Lock\n'+' '.repeat(input.limits.maxR
         result = subprocess.run([shutil.which('node'), '-e', script], input=json.dumps({'fn': function, 'limits': limits}), text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_provider_processes_have_deadlines(self):
+    def deadline_argv(self, seconds, argv):
+        # Evaluate the controller's own helpers so the test runs the exact production argv.
         source = (ROOT / 'KdeConnectController.qml').read_text()
-        for process, timer, interval in (('scanProcess', 'scanDeadline', 'scanDeadlineMs'),
-                                         ('commandsProcess', 'commandsDeadline', 'commandsDeadlineMs'),
-                                         ('mediaStatusProcess', 'mediaStatusDeadline', 'mediaStatusDeadlineMs')):
+        helpers = source[source.index('    function withDeadline('):source.index('    function parseRemoteCommands(')]
+        script = 'const i=JSON.parse(require("fs").readFileSync(0,"utf8"));' + helpers + \
+            ';process.stdout.write(JSON.stringify(withDeadline(i.s,i.a)))'
+        result = subprocess.run([shutil.which('node'), '-e', script], input=json.dumps({'s': seconds, 'a': argv}),
+                                text=True, capture_output=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    def test_provider_processes_use_the_deadline_wrapper(self):
+        source = (ROOT / 'KdeConnectController.qml').read_text()
+        for process, seconds in (('scanProcess', 'scanDeadlineSeconds'), ('commandsProcess', 'commandsDeadlineSeconds'),
+                                 ('mediaStatusProcess', 'mediaStatusDeadlineSeconds')):
             with self.subTest(process=process):
-                self.assertRegex(source, r'readonly property int %s: \d+' % interval)
-                timer_block = source[source.index('id: %s\n' % timer):][:300]
-                self.assertIn('interval: root.%s' % interval, timer_block)
-                self.assertIn('onTriggered: { %s.timedOut = true; %s.running = false }' % (process, process), timer_block)
-                self.assertIn('%s.timedOut = false\n        %s.running = true\n        %s.restart()' % (process, process, timer), source)
-                handler = source[source.index('id: %s\n' % process):]
-                handler = handler[handler.index('onExited'):][:200]
-                self.assertIn('%s.stop()' % timer, handler)
-        # Output from a stopped process never reaches the UI; each falls back to its failure state.
-        self.assertIn('root.applyScan(timedOut ? "" : stdout.text, targetGeneration)', source)
-        self.assertIn('code === 0 && !timedOut ? root.parseRemoteCommands(stdout.text) : []', source)
-        self.assertIn('if (isCurrent && !timedOut && code === 0', source)
+                self.assertRegex(source, r'readonly property int %s: \d+' % seconds)
+                self.assertIn('%s.command = withDeadline(%s, ' % (process, seconds), source)
+        # Output from an expired provider never reaches the UI; each falls back to its failure state.
+        self.assertIn('root.applyScan(code === 0 ? stdout.text : "", targetGeneration)', source)
+        self.assertIn('root.remoteCommands = code === 0 ? root.parseRemoteCommands(stdout.text) : []', source)
+        self.assertIn('if (isCurrent && code === 0 && stdout.text.trim())', source)
+
+    @unittest.skipUnless(shutil.which('node') and shutil.which('timeout'), 'node or timeout unavailable')
+    def test_deadline_kills_a_provider_tree_that_ignores_sigterm(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pid_file = Path(tmp) / 'grandchild.pid'
+            provider = Path(tmp) / 'provider.sh'
+            provider.write_text('#!/bin/bash\ntrap "" TERM\nprintf partial\n'
+                                '(trap "" TERM; exec sleep 60) & echo $! > "$1"\nwait\n')
+            provider.chmod(0o700)
+            started = time.monotonic()
+            run = subprocess.run(self.deadline_argv(1, ['bash', str(provider), str(pid_file)]), capture_output=True, timeout=15)
+            self.assertLess(time.monotonic() - started, 6, 'SIGKILL follows SIGTERM after 2 s')
+            # timeout's group SIGKILL also ends timeout itself; any nonzero result is a failed read.
+            self.assertNotEqual(run.returncode, 0)
+            grandchild = int(pid_file.read_text())
+            deadline = time.monotonic() + 2
+            while Path('/proc/%d' % grandchild).exists() and time.monotonic() < deadline:
+                time.sleep(0.05)
+            state = Path('/proc/%d/stat' % grandchild)
+            self.assertTrue(not state.exists() or state.read_text().split()[2] == 'Z', 'grandchild still running')
+
+    @unittest.skipUnless(shutil.which('node') and shutil.which('timeout') and shutil.which('head'), 'tools unavailable')
+    def test_command_list_read_stops_one_byte_over_the_cap(self):
+        source = (ROOT / 'KdeConnectController.qml').read_text()
+        call = source[source.index('commandsProcess.command = withDeadline('):]
+        call = call[:call.index('commandsProcess.running = true')]
+        cap = int(re.search(r'maxRemoteCommandOutput: (\d+)', source).group(1))
+        snippet = re.search(r'"(set -o pipefail; kdeconnect-cli .*?)" \+ \(maxRemoteCommandOutput \+ 1\)', call).group(1)
+        snippet = snippet.replace('\\"', '"') + str(cap + 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            cli = Path(tmp) / 'kdeconnect-cli'
+            cli.write_text('#!/bin/bash\nhead -c %d /dev/zero | tr "\\0" x\n' % (cap * 4))
+            cli.chmod(0o700)
+            env = {**os.environ, 'PATH': '%s:%s' % (tmp, os.environ['PATH'])}
+            run = subprocess.run(self.deadline_argv(5, ['bash', '-c', snippet, 'list-commands', 'dev_1']),
+                                 capture_output=True, env=env, timeout=15)
+            self.assertEqual(len(run.stdout), cap + 1)
+            self.assertNotEqual(run.returncode, 0, 'an over-cap list is a failed read')
+            cli.write_text('#!/bin/bash\n[ "$1 $2 $3" = "-d dev_1 --list-commands" ] && printf "lock: Lock\\n"\n')
+            run = subprocess.run(self.deadline_argv(5, ['bash', '-c', snippet, 'list-commands', 'dev_1']),
+                                 capture_output=True, env=env, timeout=15)
+            self.assertEqual((run.returncode, run.stdout), (0, b'lock: Lock\n'))
 
     @unittest.skipUnless(shutil.which('node'), 'node unavailable')
     def test_pairing_response_rejects_ids_unsafe_for_a_dbus_path(self):

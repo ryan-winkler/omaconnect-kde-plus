@@ -75,10 +75,10 @@ Item {
 
     property int monitorRestartCount: 0
 
-    // Provider deadlines and remote-command caps, generous for real phones.
-    readonly property int scanDeadlineMs: 30000
-    readonly property int commandsDeadlineMs: 10000
-    readonly property int mediaStatusDeadlineMs: 10000
+    // Provider deadlines (seconds) and remote-command caps, generous for real phones.
+    readonly property int scanDeadlineSeconds: 30
+    readonly property int commandsDeadlineSeconds: 10
+    readonly property int mediaStatusDeadlineSeconds: 10
     readonly property int maxRemoteCommands: 100
     readonly property int maxRemoteCommandText: 256
     readonly property int maxRemoteCommandOutput: 65536
@@ -294,10 +294,8 @@ Item {
         scanProcess.targetGeneration = nextGeneration
         var cmd = ["bash", getScriptPath()]
         if (forceNetwork) cmd.push("--refresh")
-        scanProcess.command = cmd
-        scanProcess.timedOut = false
+        scanProcess.command = withDeadline(scanDeadlineSeconds, cmd)
         scanProcess.running = true
-        scanDeadline.restart()
     }
 
     function parseScanLine(line) {
@@ -606,10 +604,11 @@ Item {
         }
         commandsLoading = true
         commandsProcess.targetDeviceId = String(id)
-        commandsProcess.command = ["kdeconnect-cli", "-d", String(id), "--list-commands"]
-        commandsProcess.timedOut = false
+        // head keeps one byte over the cap, so parseRemoteCommands rejects a larger list.
+        commandsProcess.command = withDeadline(commandsDeadlineSeconds, ["bash", "-c",
+            "set -o pipefail; kdeconnect-cli -d \"$1\" --list-commands | head -c " + (maxRemoteCommandOutput + 1),
+            "list-commands", String(id)])
         commandsProcess.running = true
-        commandsDeadline.restart()
         return true
     }
 
@@ -619,6 +618,12 @@ Item {
         return startAction(id, ["python3", scriptPath("scripts/edit_remote_commands.py")],
             "Command editor request accepted. Check the selected device; no command was run.", "remote command editor",
             JSON.stringify({peerId: String(id)}) + "\n")
+    }
+
+    // coreutils timeout signals the provider's whole process group, then sends SIGKILL
+    // 2 s later, so onExited always runs with a nonzero code.
+    function withDeadline(seconds, argv) {
+        return ["timeout", "-k", "2", String(seconds)].concat(argv)
     }
 
     function parseRemoteCommands(text) {
@@ -766,10 +771,8 @@ Item {
         mediaLoading = true
         mediaRefreshPending = false
         mediaStatusProcess.targetDeviceId = String(devId)
-        mediaStatusProcess.command = ["bash", getMediaScriptPath(), "status", String(devId)]
-        mediaStatusProcess.timedOut = false
+        mediaStatusProcess.command = withDeadline(mediaStatusDeadlineSeconds, ["bash", getMediaScriptPath(), "status", String(devId)])
         mediaStatusProcess.running = true
-        mediaStatusDeadline.restart()
         return true
     }
 
@@ -1060,52 +1063,29 @@ Item {
         onTriggered: root.refresh()
     }
 
-    // Each deadline stops its Process; onExited then shows the existing failure state.
-    Timer {
-        id: scanDeadline
-        interval: root.scanDeadlineMs
-        onTriggered: { scanProcess.timedOut = true; scanProcess.running = false }
-    }
-
-    Timer {
-        id: commandsDeadline
-        interval: root.commandsDeadlineMs
-        onTriggered: { commandsProcess.timedOut = true; commandsProcess.running = false }
-    }
-
-    Timer {
-        id: mediaStatusDeadline
-        interval: root.mediaStatusDeadlineMs
-        onTriggered: { mediaStatusProcess.timedOut = true; mediaStatusProcess.running = false }
-    }
-
     Process {
         id: scanProcess
         property int targetGeneration: 0
         property int exitCode: -1
-        property bool timedOut: false
         command: ["bash", getScriptPath()]
         stdout: StdioCollector { waitForEnd: true }
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
-            scanDeadline.stop()
-            // Partial output from a stopped scan is never applied.
-            exitCode = timedOut ? 124 : code
-            root.applyScan(timedOut ? "" : stdout.text, targetGeneration)
+            exitCode = code
+            // Only a complete scan is applied; a failed or stopped scan shows no devices.
+            root.applyScan(code === 0 ? stdout.text : "", targetGeneration)
         }
     }
 
     Process {
         id: commandsProcess
         property string targetDeviceId: ""
-        property bool timedOut: false
         stdout: StdioCollector { waitForEnd: true }
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
-            commandsDeadline.stop()
             root.commandsLoading = false
             if (targetDeviceId !== root.selectedDeviceId) return
-            root.remoteCommands = code === 0 && !timedOut ? root.parseRemoteCommands(stdout.text) : []
+            root.remoteCommands = code === 0 ? root.parseRemoteCommands(stdout.text) : []
         }
     }
 
@@ -1325,11 +1305,9 @@ Item {
     Process {
         id: mediaStatusProcess
         property string targetDeviceId: ""
-        property bool timedOut: false
         stdout: StdioCollector { waitForEnd: true }
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
-            mediaStatusDeadline.stop()
             var currentDevice = root.deviceById(targetDeviceId)
             var isCurrent = targetDeviceId === root.selectedDeviceId
                 && currentDevice
@@ -1337,7 +1315,7 @@ Item {
                 && currentDevice.capabilities
                 && currentDevice.capabilities.media
 
-            if (isCurrent && !timedOut && code === 0 && stdout.text.trim()) {
+            if (isCurrent && code === 0 && stdout.text.trim()) {
                 try {
                     var parsed = JSON.parse(stdout.text.trim())
                     var parsedPlayerList = Array.isArray(parsed.playerList) ? parsed.playerList : []
@@ -1399,9 +1377,6 @@ Item {
         mediaDebounceTimer.stop()
         pairingWatchdogTimer.stop()
         monitorStabilityTimer.stop()
-        scanDeadline.stop()
-        commandsDeadline.stop()
-        mediaStatusDeadline.stop()
         signalRestart.stop()
         signalProcess.running = false
         scanProcess.running = false
