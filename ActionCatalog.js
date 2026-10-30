@@ -74,7 +74,7 @@ function availabilityText(id,device,service) {
     var row=entry(id);
     if (!row) return "This shortcut is unavailable.";
     if (service === null && id !== "plus-settings") return "KDE Connect controls are unavailable. Reopen Plus or check native KDE Connect.";
-    if (id === "quick-share") return service && service.quickShareOpening ? "Opening RQuickShare. Wait for the launcher result. Device actions remain available."
+    if (id === "quick-share") return service && service.quickShareOpening ? "Opening RQuickShare. Wait for the launcher result."
         : service && service.quickShareAvailable ? "Opens RQuickShare. Quick Share is a separate app; KDE Connect does not use it." : "Install the r-quick-share package to use Quick Share. Plus only opens it.";
     if (row.scope === "global") return id === "plus-settings" ? "Opens Plus settings. No device connection is required." : "Opens native features and Plugin settings, including the device list when no device is connected.";
     if (!device) return "Choose a device to check availability. Your choice stays saved.";
