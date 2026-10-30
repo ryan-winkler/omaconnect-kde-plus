@@ -1,15 +1,15 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
-import Qt5Compat.GraphicalEffects
+import qs.Commons as Commons
 import qs.Ui as Kit
 import "../Appearance.js" as Appearance
 
 Item {
     id: root
     property var icon: Appearance.phone()
-    property color foreground: "white"
-    property string fontFamily: "sans-serif"
+    property color foreground: Commons.Color.foreground
+    property string fontFamily: Commons.Style.font.family
     property string assetBaseUrl: ""
     property int iconSize: 20
     readonly property var normalized: Appearance.normalizeIcon(icon,false)
@@ -22,6 +22,10 @@ Item {
     readonly property bool useGlyph: (normalized.mode === "glyph" && !fontMissing) || usePresetGlyph
     readonly property string renderedGlyph: usePresetGlyph ? Appearance.glyphFor(normalized) : useGlyph ? normalized.value : ""
     readonly property bool imageReady: image.status === Image.Ready
+    // Full-colour application artwork has opaque internal backgrounds. Tinting
+    // its alpha mask erases that detail; symbolic theme icons remain tintable.
+    readonly property bool sourceColours: normalized.render === "color"
+        || (normalized.mode === "theme" && normalized.tint !== true && !Appearance.symbolicThemeName(normalized.value))
     readonly property bool fallback: !useGlyph && imageUnavailable
     readonly property string warning: fontMissing ? qsTr("Font unavailable. Phone is shown.") : normalized.mode === "image" && fallback ? qsTr("Imported image is unavailable. Phone is shown.") : normalized.mode === "theme" && fallback ? qsTr("Theme icon is unavailable. Phone is shown.") : normalized.mode === "preset" && fallback ? qsTr("Icon fonts are unavailable. Phone is shown.") : ""
     implicitWidth: iconSize
@@ -38,13 +42,43 @@ Item {
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         cache: true
-        visible: root.imageReady && root.normalized.render === "color"
+        onStatusChanged: symbolic.requestPaint()
+        visible: root.imageReady && root.sourceColours
     }
-    ColorOverlay {
+    // Raster composition also works with Qt's software scene graph. A shader
+    // effect can report a loaded image while drawing no symbolic icon there.
+    Canvas {
+        id: symbolic
         anchors.fill: image
-        source: image
-        color: root.foreground
-        visible: root.imageReady && root.normalized.render !== "color"
+        property url iconSource: root.normalized.mode === "glyph" || root.sourceColours ? "" : root.sourceUrl
+        property url loadedSource: ""
+        function reload() {
+            if (loadedSource.toString() !== "") unloadImage(loadedSource)
+            loadedSource = iconSource
+            if (loadedSource.toString() !== "") loadImage(loadedSource, Qt.size(Math.max(1,width * 2), Math.max(1,height * 2)))
+            requestPaint()
+        }
+        onIconSourceChanged: reload()
+        onWidthChanged: reload()
+        onHeightChanged: reload()
+        onImageLoaded: requestPaint()
+        onAvailableChanged: if (available) reload()
+        Connections {
+            target: root
+            function onForegroundChanged() { symbolic.requestPaint() }
+        }
+        onPaint: {
+            var context = getContext("2d")
+            context.reset()
+            context.clearRect(0, 0, width, height)
+            if (loadedSource.toString() === "" || !isImageLoaded(loadedSource)) return
+            var w = image.paintedWidth, h = image.paintedHeight
+            context.drawImage(loadedSource, (width - w) / 2, (height - h) / 2, w, h)
+            context.globalCompositeOperation = "source-in"
+            context.fillStyle = root.foreground
+            context.fillRect(0, 0, width, height)
+        }
+        visible: root.imageReady && !root.sourceColours
     }
     Kit.OpticalGlyph {
         objectName: "appearance-glyph"

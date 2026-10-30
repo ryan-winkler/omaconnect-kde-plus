@@ -154,6 +154,19 @@ ShellRoot {
                 test.phase=1
             } else if(test.phase === 1 && !service.appearance.busy) {
                 if(!test.check(test.activeChooser.visible,"settings action opens the actual icon chooser"))return
+                var preview=test.find(test.activeChooser,function(object){return object.objectName==="active-theme-icon-preview"},[])
+                var picker=test.find(test.activeChooser,function(object){return object.objectName==="installed-icon-picker"},[])
+                if(!test.check(preview && preview.visible && picker,"actual chooser exposes one current-theme preview and installed thumbnail picker"))return
+                test.activeChooser.contentItem.grabToImage(function(result) { result.saveToFile(Quickshell.env("NATIVE_COMMAND_LOG").replace("commands.jsonl","appearance-current-theme.png")) })
+                test.phase=101
+            } else if(test.phase === 101) {
+                test.activeChooser.choose({mode:"theme",value:"fixture-line",render:"symbolic"})
+                var colours=test.find(test.activeChooser,function(object){return object.objectName==="appearance-source-colours"},[])
+                if(!test.check(colours && colours.visible && colours.checked && !test.activeChooser.draft.tint,"legacy installed selection keeps automatic native colours"))return
+                colours.Accessible.toggleAction()
+                if(!test.check(test.activeChooser.draft.tint===true && !colours.checked && service.appearance.snapshot.bar_icon.value==="phone","installed monochrome override is an explicit accessible draft choice"))return
+                colours.Accessible.pressAction()
+                if(!test.check(!test.activeChooser.draft.tint && colours.checked,"native-colour choice clears the explicit tint override"))return
                 test.activeChooser.choose({mode:"preset",value:"laptop",render:"symbolic"})
                 var apply=test.find(test.activeChooser,function(object){return object.objectName==="appearance-apply"},[])
                 if(!test.check(apply && apply.Accessible.role===Accessible.Button,"icon chooser exposes an accessible Apply button"))return

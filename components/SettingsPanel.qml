@@ -218,6 +218,7 @@ Window {
                     Text {
                         width: parent.width
                         text: root.currentPage
+                        visible: root.currentPage !== "Device features"
                         textFormat: Text.PlainText
                         color: Commons.Color.popups.text
                         font.family: Style.font.family
@@ -227,6 +228,7 @@ Window {
                     Text {
                         width: parent.width
                         text: "Plus preferences apply to this computer only."
+                        visible: root.currentPage !== "Device features"
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
                         color: Commons.Color.popups.text
@@ -339,16 +341,7 @@ Window {
                         width: parent.width
                         visible: root.currentPage === "Device features"
                         spacing: Style.space(12)
-                        Text {
-                            width: parent.width
-                            text: "Turn device features on or off in KDE Connect. Choose what Plus shows here."
-                            textFormat: Text.PlainText
-                            wrapMode: Text.Wrap
-                            color: Commons.Color.popups.text
-                            font.family: Style.font.family
-                            font.pixelSize: Style.font.bodySmall
-                        }
-                        NativeFeaturesSection { width: parent.width; service: root.service; configuration: true }
+                        NativeFeaturesSection { width: parent.width; service: root.service; configuration: true; settingsActive: root.visible && root.currentPage === "Device features" }
                         PreferenceControls {
                             width: parent.width
                             panel: root.panel

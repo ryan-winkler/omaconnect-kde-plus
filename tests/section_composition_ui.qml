@@ -131,7 +131,9 @@ ShellRoot {
                     test.addressSection=test.find(panel,function(item){return "removalReview" in item && "peerId" in item},[])
                     address.text="10.9.8.7";addressSection.removalReview="A:10.9.8.7"
                     panel.openComposer("text");panel.draftText="Composition draft"
-                    textInput=test.find(panel,function(item){return "placeholderText" in item && item.placeholderText==="Text or link"},[])
+                    var composer=test.find(panel,function(item){return "textInput" in item && "pingInput" in item},[])
+                    textInput=composer ? composer.textInput : null
+                    if(!test.check(textInput!==null,"the existing text composer exposes its input"))return
                     if(!test.check(service.stageDroppedFiles("A",[String(Qt.resolvedUrl("one"))]),"private file review starts for A without submission"))return
                     test.phase=1
                 }else if(test.phase===1001){

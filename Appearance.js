@@ -27,6 +27,8 @@ function normalizeIcon(value, device) {
     if (mode === "glyph" && (!text.trim() || Array.from(text).length > 8 || /[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]/.test(text))) return phone();
     if (["preset","theme","image","glyph"].indexOf(mode) < 0) return phone();
     var result = {mode:mode,value:text,render:value.render === "color" ? "color" : "symbolic"};
+    // Legacy render:symbolic was automatic; tint:true records a deliberate override.
+    if (mode === "theme" && value.tint === true) { result.tint = true; result.render = "symbolic"; }
     if (mode === "glyph" && value.font) result.font = String(value.font);
     return result;
 }
@@ -61,6 +63,7 @@ function symbolFont(families, preferred) {
     for (var i = 0; i < known.length; i++) if (available.indexOf(known[i]) >= 0) return known[i];
     return "";
 }
+function symbolicThemeName(value) { return typeof value === "string" && /-symbolic(?:-(?:ltr|rtl))?$/.test(value); }
 function themeFor(icon) {
     if (icon.mode === "theme") return icon.value;
     var entry = presets.filter(function(p) { return p.value === icon.value; })[0];

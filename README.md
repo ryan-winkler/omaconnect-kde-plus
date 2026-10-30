@@ -37,8 +37,9 @@ first and add Plus without `--enable`. The plugin ID is `Omaconnect.plus`.
   sections and move every section up or down from Settings. Every view stays available.
 - **Settings:** Appearance, Connections, Quick actions and Device features, with
   short help next to each control. Sections can be hidden or collapsed.
-- **Device features:** inspect Information, search reported native modules and open the
-  selected device in KDE Connect, which keeps pairing, battery, notifications,
+- **Device features:** search installed native modules, change their local On/Off
+  state with readback, and open their native configuration forms. KDE Connect keeps
+  pairing, battery, notifications,
   file browsing, media playback and player switching, remote commands, clipboard,
   text, SMS and remote input.
 - **Network access:** optional Tailscale, MikroTik Back to Home and WireGuard
@@ -63,7 +64,7 @@ commands. Keep it if its workflow suits you. Plus adds:
 | A normal file workflow | File chooser, multiselect, drops and explicit review. |
 | Shortcuts that fit your tasks | Add, remove and reorder actions; Ring is optional. |
 | Control over popup navigation | Move the View row, choose direct shortcuts, and reorder or collapse daily sections. |
-| Every native feature in reach | Searchable native inventory and per-device KDE settings links. |
+| Every native feature in reach | Searchable installed modules, native On/Off readback and per-device configuration links. |
 | Your existing remote access | Separate Tailscale, Back to Home and WireGuard opt-ins. |
 
 ## Requirements

@@ -7,6 +7,7 @@ import "plugin/components" as Components
 ShellRoot {
     id: test
     property int page: 0
+    property bool dispatching: false
     property int step: 0
     property int direction: 1
     property int cycles: 0
@@ -21,6 +22,7 @@ ShellRoot {
     QtObject {
         id: service
         property var devices: [test.device]
+        property bool daemonAvailable: true
         property var selectedDevice: test.device
         property bool nativeAppOpening: false
         property string nativeAppMessage: ""
@@ -51,6 +53,9 @@ ShellRoot {
     Timer {
         interval:40; running:true; repeat:true
         onTriggered: {
+            if(test.dispatching)return
+            test.dispatching=true
+            try {
             if (!sectionCatalogModel.ready) {
                 if (++test.metadataWait > 50) test.fail("real section metadata did not load: " + sectionCatalogModel.error)
                 return
@@ -99,7 +104,7 @@ ShellRoot {
                     events.keyClick(Qt.Key_Tab,Qt.ShiftModifier,1)
                     if(settings.activeFocusItem!==focus) {test.fail(settings.currentPage+" reverse wrap did not return to Close");return}
                     console.log("FOCUS_WRAP_PASS "+settings.currentPage+" Close to Device and back")
-                    test.direction=-1;test.cycles=0;test.scrolled=false
+                    test.direction=-1;test.cycles=0;test.scrolled=false;test.step=1
                 }
                 else {
                     console.log("FOCUS_PASS "+settings.currentPage+" Tab and Shift+Tab")
@@ -107,9 +112,10 @@ ShellRoot {
                     return
                 }
             }
-            if(++test.step>240) {test.fail("focus cycle deadline");return}
+            if(++test.step>240) {test.fail("focus direction deadline");return}
             events.keyClick(Qt.Key_Tab,test.direction===1?Qt.NoModifier:Qt.ShiftModifier,1)
             test.previousFocus=settings.activeFocusItem
+            } finally { test.dispatching=false }
         }
     }
 }
