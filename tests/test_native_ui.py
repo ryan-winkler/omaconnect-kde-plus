@@ -56,7 +56,7 @@ Item {
             for name, content in [('one', b'abc'), ('two', b'defg'), ('slow', b'delay')]:
                 (fixture / name).write_bytes(content)
             fake_bin = fixture / 'bin'; fake_bin.mkdir()
-            for name in ('python3','bash','sh','dirname','dbus-daemon','timeout','head'):
+            for name in ('python3','bash','sh','dirname','dbus-daemon','timeout','head','sleep'):
                 (fake_bin/name).symlink_to(shutil.which(name))
             fake = fake_bin/'fake'
             fake.write_text('''#!/usr/bin/python3
