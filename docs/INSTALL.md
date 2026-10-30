@@ -51,12 +51,12 @@ cache copies become eligible for cleanup after 24 hours. See the
 Pairings stay in KDE Connect, so both UIs see the same devices. The helper below
 stages display settings for review. It never edits your configuration and has
 no apply command. Find the installed plugin folder under
-`~/.config/omarchy/plugins/`, change into it, then run:
+`${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/plugins/`, change into it, then run:
 
 ```bash
 python3 scripts/migrate_settings.py prepare \
   --source-id omaconnect \
-  --source "$HOME/.config/omarchy/shell.json" \
+  --source "${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json" \
   --output "$HOME/.local/state/omaconnect-migration-review" \
   --bindings "$HOME/.config/hypr/bindings.conf"
 ```
@@ -81,12 +81,21 @@ controls instead.
 To switch:
 
 1. Add Plus without `--enable`, or decline the enable prompt.
-2. Back up `~/.config/omarchy/shell.json`, then replace it with the reviewed
+2. Back up `${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json`, then replace it with the reviewed
    `candidate-shell.json`. If you changed shell settings after `prepare`, run
    `prepare` again first so the candidate keeps those changes. The candidate
    disables `omaconnect` and gives `Omaconnect.plus` the state the original had.
-   Copy `candidate-appearance.json`, if present, to
-   `${XDG_CONFIG_HOME:-$HOME/.config}/Omaconnect.plus/appearance.json`.
+   If `candidate-appearance.json` is present, create the destination with private
+   permissions and copy it without replacing any existing appearance file:
+
+   ```bash
+   appearance_dir="${XDG_CONFIG_HOME:-$HOME/.config}/Omaconnect.plus"
+   install -d -m 700 "$appearance_dir"
+   cp -n --preserve=mode "$HOME/.local/state/omaconnect-migration-review/candidate-appearance.json" "$appearance_dir/appearance.json"
+   ```
+
+   An existing appearance file needs manual review; keep it until you have merged
+   the intended display choices. Do not replace it with an older candidate.
 3. Check the bar, keyboard focus and your devices. Keep the original installed
    until you are satisfied.
 
@@ -94,13 +103,17 @@ To switch:
 
 ```bash
 python3 scripts/migrate_settings.py rollback \
-  --source "$HOME/.config/omarchy/shell.json" \
+  --source "${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json" \
   --snapshot "$HOME/.local/state/omaconnect-migration-review/snapshot.json" \
   --output "$HOME/.local/state/omaconnect-rollback-review"
 ```
 
 This stages a rollback `candidate-shell.json` that restores managed settings only
 and keeps later unrelated edits. It refuses changed managed values or a moved
-entry; resolve those by review. Review the candidate, replace
-`~/.config/omarchy/shell.json` with it, then disable `Omaconnect.plus`.
-Re-enable the original plugin only if you used it before the move.
+entry; resolve those by review. Review the candidate and back up the current
+shell configuration. If shell settings changed after staging, rerun `rollback`
+into a new output directory before applying the candidate. The candidate already
+restores the original bar slot and enabled state. Replacing
+`${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json` with it restores that state.
+Then disable `Omaconnect.plus` if it remains enabled as an installed plugin; the
+original stays enabled only if it was enabled before the move.
