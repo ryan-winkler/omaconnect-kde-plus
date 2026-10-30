@@ -154,8 +154,11 @@ assert.equal(rows.length,1,'a key over the cap is dropped, never cut');
 assert.equal(rows[0].key,'lock');assert.equal(rows[0].name.length,text);
 const cap=input.limits.maxRemoteCommandOutput, head='lock: Lock\n';
 assert.equal(api.parseRemoteCommands(head+' '.repeat(cap)+'x').length,0);
-assert.equal(api.parseRemoteCommands(head+' '.repeat(cap-head.length)).length,1,'a reply at the cap is read');
-assert.equal(api.parseRemoteCommands(head+' '.repeat(cap+1-head.length)).length,0,'trailing space over the cap is not trimmed away');
+for (const space of [' ','\n','\t']) {
+  const atCap=head.padEnd(cap,space);
+  assert.equal(api.parseRemoteCommands(atCap).length,1,'a reply at the cap is read');
+  assert.equal(api.parseRemoteCommands(atCap+space).length,0,'trailing space over the cap is not trimmed away');
+}
 assert.equal(api.parseRemoteCommands(head+'\u00e9'.repeat((cap+1-head.length)/2)).length,0,'the cap counts UTF-8 bytes');
 """
         result = subprocess.run([shutil.which('node'), '-e', script], input=json.dumps({'fn': function, 'limits': limits}), text=True, capture_output=True, timeout=5)
