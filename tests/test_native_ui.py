@@ -19,6 +19,7 @@ class NativeUi(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which('quickshell') and shutil.which('bwrap') and shutil.which('dbus-run-session'), 'native isolated runtime absent')
     def test_actual_service_bar_panel_and_controls(self):
+        """Load product QML with private state and fake executable and bus boundaries."""
         with tempfile.TemporaryDirectory(prefix='omaconnect-native-') as temporary:
             fixture = Path(temporary)
             desktop = not self.force_offscreen and os.environ.get('OMACONNECT_DESKTOP_VALIDATION') == '1'
@@ -80,6 +81,19 @@ else: raise SystemExit(99)
                 (fake_bin/name).symlink_to(fake)
             (plugin/'scripts/discover_devices.sh').write_text("#!/bin/bash\nprintf '%s\\n' 'CUSTOM_ADDRESSES_READY' $'DEVICE\\tA\\tOriginal phone\\tphone\\ttrue\\ttrue\\t80\\tfalse\\tkdeconnect_share,kdeconnect_battery' $'DEVICE\\tB\\tOther phone\\tlaptop\\ttrue\\ttrue\\t65\\tfalse\\tkdeconnect_share,kdeconnect_battery'\n")
             (plugin/'scripts/manage_addresses.py').write_text('import json,sys\njson.load(sys.stdin)\nprint(json.dumps({"schema_version":1,"ok":True,"addresses":[],"custom_addresses":[]}))\n')
+            (plugin/'scripts/native_settings.py').write_text('''import json,sys
+from pathlib import Path
+request=json.load(sys.stdin)
+state_file=Path.home()/"fixture-module-state.json"
+states=json.loads(state_file.read_text()) if state_file.exists() else {}
+peer=request["peerId"]
+if request["operation"]=="set":
+ states.setdefault(peer,{})[request["pluginId"]]=request["enabled"]
+ state_file.write_text(json.dumps(states))
+ids=request["pluginIds"] if request["operation"]=="read" else [request["pluginId"]]
+values={name:states.get(peer,{}).get(name,name in ("kdeconnect_share","kdeconnect_battery")) for name in ids}
+print(json.dumps({"state":"observed","peerId":peer,"enabled":values,"error":""}))
+''')
             home = fixture/'home'; home.mkdir()
             (home/'.local/bin').mkdir(parents=True)
             (home/'.local/bin/remote-access-mode').symlink_to(fake_bin/'remote-access-mode')

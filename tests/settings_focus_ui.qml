@@ -6,6 +6,7 @@ import "plugin/components" as Components
 ShellRoot {
     id: test
     property int page: 0
+    property bool dispatching: false
     property int step: 0
     property int direction: 1
     property int cycles: 0
@@ -17,6 +18,7 @@ ShellRoot {
     QtObject {
         id: service
         property var devices: [test.device]
+        property bool daemonAvailable: true
         property var selectedDevice: test.device
         property bool nativeAppOpening: false
         property string nativeAppMessage: ""
@@ -46,6 +48,9 @@ ShellRoot {
     Timer {
         interval:40; running:true; repeat:true
         onTriggered: {
+            if(test.dispatching)return
+            test.dispatching=true
+            try {
             if(test.step===0) { settings.openSettings(settings.pages[test.page]); test.step++; return }
             if(test.settling>0) {test.settling--;return}
             var focus=settings.activeFocusItem
@@ -69,12 +74,20 @@ ShellRoot {
                 events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
                 test.previousFocus=null;test.settling=3;return
             }
-            // One full cycle includes the persistent Device selector, page
-            // navigation, all page controls and the return/close buttons.
+            // Traverse each page in both directions and explicitly exercise
+            // the Close → Device → Close focus boundary before reversing.
             if(focus && focus.Accessible.name==="Close Plus settings") test.cycles++
-            if(test.cycles===2) {
+            if(test.cycles===1) {
                 if(!test.scrolled || !test.activated) {test.fail(settings.currentPage+" did not exercise clipped activation");return}
-                if(test.direction===1) {test.direction=-1;test.cycles=0;test.scrolled=false}
+                if(test.direction===1) {
+                    events.keyClick(Qt.Key_Tab,Qt.NoModifier,1)
+                    var wrapped=settings.activeFocusItem
+                    if(!wrapped || wrapped.Accessible.name!=="Device") {test.fail(settings.currentPage+" forward wrap did not reach Device");return}
+                    events.keyClick(Qt.Key_Tab,Qt.ShiftModifier,1)
+                    if(settings.activeFocusItem!==focus) {test.fail(settings.currentPage+" reverse wrap did not return to Close");return}
+                    console.log("FOCUS_WRAP_PASS "+settings.currentPage+" Close to Device and back")
+                    test.direction=-1;test.cycles=0;test.scrolled=false
+                }
                 else {
                     console.log("FOCUS_PASS "+settings.currentPage+" Tab and Shift+Tab")
                     test.page++;test.step=0;test.direction=1;test.cycles=0;test.scrolled=false;test.activated=false;test.previousFocus=null
@@ -85,6 +98,7 @@ ShellRoot {
             if(++test.step>240) {test.fail("focus cycle deadline");return}
             events.keyClick(Qt.Key_Tab,test.direction===1?Qt.NoModifier:Qt.ShiftModifier,1)
             test.previousFocus=settings.activeFocusItem
+            } finally { test.dispatching=false }
         }
     }
 }

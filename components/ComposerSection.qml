@@ -104,7 +104,7 @@ Column {
 
         Text {
             textFormat: Text.PlainText
-            text: "Share text or link with " + root.deviceName
+            text: "Share text with " + root.deviceName
             color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -118,7 +118,7 @@ Column {
             TextField {
                 id: textInput
                 width: Math.max(1, parent.width - sendText.implicitWidth - cancelText.implicitWidth - Style.space(12))
-                placeholderText: "Text or link"
+                placeholderText: "Text"
                 placeholderTextColor: Qt.darker(root.foreground, 1.5)
                 text: panel.draftText
                 color: root.foreground

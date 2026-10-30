@@ -54,7 +54,7 @@ ShellRoot {
                 fakePanel.settings=({quickActionsOrder:"file,text,clipboard"});test.phase=6
             }else if(test.phase===6){
                 if(!test.check(actions.order.indexOf("ring")<0,"Ring can be removed without changing native module state"))return
-                test.find(actions,"Remove Text or link quick action").clicked();test.phase=7
+                test.find(actions,"Remove Text quick action").clicked();test.phase=7
             }else if(test.phase===7 && !actions.busy && actions.message.indexOf("not confirmed")>=0){
                 if(!test.check(actions.order.join(",")==="file,text,clipboard","a failed save leaves the canonical order intact"))return
                 if(!test.check(!actions.moveAction("file",-1) && !actions.addAction("file") && !actions.addAction("untrusted;command"),"invalid moves and duplicate or unknown additions do not save"))return

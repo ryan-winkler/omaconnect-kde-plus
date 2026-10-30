@@ -48,6 +48,9 @@ confirm delivery.
 
 - **Bar icon:** Select **Change bar icon**. Choose a labelled preset, search the
   installed icon theme, or use a custom symbol or local PNG/SVG. Preview, then Apply.
+  Installed artwork keeps its native colours automatically. Clear **Keep installed
+  icon colours** to use the theme foreground for any monochrome icon name.
+  Custom image colours have their own choice. Browsing does not save.
 - **Device icon and name:** Select a device, then **Change selected device icon and
   alias**. A local alias changes its display here. It does not change pairing.
 - **Battery beside the icon:** Enable this to show a reported charge. Missing
@@ -95,12 +98,11 @@ and returns focus to its trigger. Choosing Devices returns to device navigation.
 ## Quick actions
 
 Choose a shortcut, then select **Add selected action**. Use **Up**, **Down** or
-**Remove** to change the toolbar. **Use default actions** restores Files, Text or
-link, and Clipboard. These choices do not enable a native module or execute it.
+**Remove** to change the toolbar. **Use default actions** restores Files, Text, and Clipboard. These choices do not enable a native module or execute it.
 Each action shows its description and selected-device availability.
 
 - **Files:** Open the normal desktop file chooser, then review before Send.
-- **Text or link:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
+- **Text:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
 - **Clipboard:** Send the current clipboard to the selected device.
 - **Quick Share:** Open [RQuickShare](https://github.com/Martichou/rquickshare)
   to share with Android Quick Share. Install the `r-quick-share` package first.
@@ -139,22 +141,27 @@ or manage display-session credentials. An accepted request does not prove that
 the other device displays an image. If state is unknown or prerequisites are
 unavailable, check **Native KDE Connect settings**.
 
-Feature names come from the installed KDE Connect metadata. The list still uses
-the selected device's reported plugin IDs. New and third-party IDs remain visible
-even when local metadata has no name. Quick actions are reviewed entry points;
-Plus does not turn arbitrary plugin names into commands.
+**KDE Connect modules** lists all modules from the installed KDE Connect package.
+Search by name, description or plugin ID. The catalogue updates with native
+package metadata; it is independent of the selected device's currently reported
+features. Unknown reported IDs remain visible below it. Quick actions are reviewed
+entry points; Plus does not turn arbitrary plugin names into commands.
 
-**Configure this computer for the selected device** lists configuration pages
-from the installed native metadata, including Run commands, clipboard, sharing,
-notifications, media pause, presenter and input sharing when installed. Choose
-**Configure…** to open that exact module in native KDE Connect. A paired device can
-be configured while offline. An unpaired device must be paired first. If direct
-configuration is unavailable on an older frontend, open **Native KDE Connect
-settings**, then **Plugin Settings**. Plus does not write native module settings.
-New configuration pages are discovered after a native package upgrade. Plus
-lists only pages that the installed package provides.
+For a paired device, **On/Off** reads and changes KDE Connect's native module state
+on this computer. Paired offline devices remain configurable. A change stays
+pending until native readback confirms the value. **Unknown** means no reliable
+value was read; use **Refresh** before changing it. An uncertain write is not
+retried automatically. An unpaired device must be paired first. These switches
+do not grant phone permissions or enable modules on the other device. A second
+change during a request is not submitted; the status explains when to try again.
 
-**Configure Run commands** defines commands on **this computer** that the selected
+**Configure ↗** opens that exact module's native configuration page. Only modules
+with an installed configuration form have this link. If direct configuration is
+unavailable on an older frontend, use **Native settings ↗**, then **Plugin Settings**.
+Plus does not write native configuration files or load native configuration QML.
+The native daemon owns module state and the native app owns configuration forms.
+
+**Commands on this computer → Configure** defines commands on **this computer** that the selected
 device can run. It does not edit commands on the other device. To add or edit
 commands that run on the selected device, use that device's KDE Connect settings.
 **Request command editor on selected device** can ask a connected compatible peer
@@ -167,11 +174,10 @@ assistive-technology activation. The current player starts with **Current:**,
 so its state remains clear without color or hover. Unavailable controls do not
 submit an action.
 
-Open **Native KDE Connect settings**, then use native **Plugin settings** to enable
-or configure installed modules and permissions. Search in Plus by task or plugin
-ID to find reported features and installed configuration pages. Supported
-means compatible; Loaded describes the local daemon. Neither confirms permission.
-The native page manages installed modules; it is not a plugin download store.
+Use **Info** and **Actions** to expand device details and occasional actions.
+Use **Native settings ↗** for the full KDE Connect application. Modules ship with
+KDE Connect; there is no separate module download store. Install or update the
+native package to receive its modules. Phone permissions stay on the phone.
 Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
 
 - **Battery details:** Show charge and charging state when reported.

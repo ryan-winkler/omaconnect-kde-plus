@@ -35,6 +35,12 @@ The installed-icon inventory includes a `library_truncated` boolean and at most
 1,024 candidate names. The UI resolves them through the active Qt theme; presence
 in the inventory alone is not an availability claim. See [icon sources](ICONS.md).
 
+Theme-icon metadata can include `tint: true` with `render: "symbolic"` for an
+explicit foreground override. The field is a boolean and valid only for theme
+icons. Other types, other modes and a conflicting colour-render value are
+rejected. Legacy theme entries without the flag retain automatic rendering;
+reading does not rewrite their stored metadata.
+
 ## File chooser and submission
 
 `scripts/pick_file.sh` runs `portal_files.py choose`. A normal FileChooser portal
@@ -181,13 +187,32 @@ Oversized information lists are omitted as needed; valid monitor state is retain
 Feature display names use the installed `PluginModel.pluginDisplayName` API in an
 optional loader. The metadata model has no device target. Its Instantiator requests
 only pluginId, name, description and configSource; it never requests isChecked or
-reads/writes plugin check state. Installed configuration sources produce a native
-Configure list independent of the peer's reported feature list. Plus passes IDs
+reads/writes plugin check state. All installed rows form the module catalogue,
+independent of the peer's reported feature list. Installed configuration sources
+identify the rows with a native Configure link. Plus passes IDs
 to the native app and does not load those configuration QML files itself. Missing
 metadata falls back to the reported ID and the native settings route. Local Run
 commands configuration controls what the peer can run on this computer; it does
 not edit the peer's command definitions. Native actions still need a reviewed
 dispatcher.
+
+`native_settings.py` accepts complete JSON on stdin, at most 64 KiB. A read has
+exact keys `{operation:"read", peerId, pluginIds}` with at most 256 unique safe
+module IDs. A set has `{operation:"set", peerId, pluginId, enabled}` with a boolean
+value. It validates the device D-Bus path and rechecks native pairing. Offline
+paired devices are allowed. Fixed Device `isPluginEnabled` / `setPluginEnabled`
+calls use NO_AUTO_START, 1.5-second call timeouts and a shared five-second deadline.
+Reads use at most eight workers. No configuration file is read or written.
+
+Replies contain exactly `state`, `peerId`, `enabled` and `error`. The enabled map
+contains only observed boolean values. A set succeeds only after native readback;
+a mismatch retains the actual value. An uncertain submission has state `unknown`
+and no observed value. The UI does not retry it. A read-only Refresh can recover
+state. QML revalidates the reply and bounds each output stream to 64 KiB.
+`NativeModuleController` serializes requests, rejects duplicate writes and captures
+the original peer for an initiated write. Selection changes invalidate stale
+responses and queue only the latest visible target's read. Hidden pages do not
+start requests. This state is separate from shared device-action feedback.
 
 `edit_remote_commands.py` accepts only JSON stdin `{peerId}` of at most 512 bytes.
 It validates the D-Bus path ID and rechecks paired/reachable and native
@@ -213,9 +238,10 @@ and [virtual-monitor interface](https://github.com/KDE/kdeconnect-kde/blob/v26.0
 
 `SettingsPanel.qml` is an independent nonmodal native Window. Its four domains
 share the current device context and retain a Back to devices route. Native KDE
-module settings open in KDE Connect with the selected ID; peer pairing/reachability
-conditions are explained. The searchable inventory is reported support, not an
-installation catalog or enabled-state writer.
+configuration forms open in KDE Connect with the selected ID; peer pairing and
+reachability conditions are explained. The searchable inventory is the installed
+module catalogue, independent of peer-reported features. It is not a module download catalogue. Its On/Off rows
+read and change native state only through the `native_settings.py` contract above.
 
 The persistent Settings Device selector uses the existing `Panel.selectDevice`
 path. It does not store another selected ID. Options include offline and unpaired
