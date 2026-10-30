@@ -45,7 +45,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "Choose a shortcut, then Add. Use Up, Down or Remove to edit the toolbar. Native shortcuts open KDE Connect for that task or its Plugin settings. Saving a shortcut does not enable or run a plugin."
+        text: "Choose an action, then select Add selected action. Use Up, Down and Remove to arrange your toolbar."
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -55,11 +55,11 @@ Column {
     Text {
         width: parent.width
         visible: Actions.parse(root.storedOrder) === null
-        text: "The saved action list is invalid. Defaults are shown; choose an action or Use default actions to save a valid list."
+        text: "Your saved action list could not be read, so the defaults are shown. Select Use default actions to fix it."
         textFormat: Text.PlainText
         color: Commons.Color.urgent
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
     Kit.SearchableDropdown {
@@ -79,7 +79,7 @@ Column {
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
     Kit.Button {
@@ -114,7 +114,7 @@ Column {
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Style.font.bodySmall
                 wrapMode: Text.Wrap
             }
             Flow {
@@ -149,21 +149,21 @@ Column {
     }
     Text {
         width: parent.width
-        text: "More native modules, including unfamiliar plugin IDs, stay searchable in Device features. KDE Connect owns their configuration and permissions."
+        text: "Find every other KDE Connect feature in Device features."
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
     Text {
         width: parent.width
         visible: root.order.length === 0
-        text: "No quick actions are selected. Choose an action above, then Add. Native KDE features remain available in Settings."
+        text: "Your toolbar is empty. Choose an action above, then select Add selected action."
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
     Kit.Button {
@@ -182,7 +182,7 @@ Column {
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
-        font.pixelSize: Style.font.caption
+        font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
     Process {
