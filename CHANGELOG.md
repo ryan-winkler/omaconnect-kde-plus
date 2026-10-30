@@ -6,6 +6,8 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-30
+
 ### Added
 
 - A shared daily device picker, inline reviewed file drop, and settings to move
@@ -57,6 +59,12 @@ All notable changes are listed here. The format follows
 - When KDE Connect is missing, Devices shows the install command to copy.
 - Media player choices and transport controls support keyboard and accessible activation.
 
+### Security
+
+- A pairing response checks the device ID before it builds a D-Bus path.
+- Discovery, media status and saved addresses are read as structured D-Bus
+  data. Device names and media metadata stay plain text.
+
 ## [0.1.1] - 2026-10-29
 
 ### Changed
@@ -88,6 +96,7 @@ All notable changes are listed here. The format follows
   drop review, honest transfer activity, optional network sections and help
   next to each control.
 
-[Unreleased]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.1...main
+[Unreleased]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.2...main
+[0.1.2]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0
