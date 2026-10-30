@@ -6,8 +6,18 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-30
+
 ### Fixed
 
+- Use the lowercase machine ID `omaconnect.plus` required by the Community
+  marketplace. The display name remains Omaconnect KDE Plus.
+- Preserve existing uppercase private-data paths. Explicit former Plus migration
+  stages all understood settings, positions and enablement without resetting
+  icons or changing original OmaConnect. Native updates alone do not rename IDs.
+- Refresh and automatic rediscovery ask KDE Connect to search the network.
+- Remote command rows are buttons that work with the keyboard and screen readers.
+- The saved-address field keeps its text until readback confirms the save.
 - Discovery, the command list and media status read at most 64 KiB per reply.
   Each read stops at a deadline, and a provider that ignores the stop request is
   killed, so a stuck provider cannot hang the panel. The command list keeps at
@@ -21,16 +31,6 @@ All notable changes are listed here. The format follows
   arguments that other local accounts can list.
 - The README now says that a saved default Ping message passes through process
   arguments.
-
-## [0.1.3] - 2026-10-30
-
-### Fixed
-
-- Use the lowercase machine ID `omaconnect.plus` required by the Community
-  marketplace. The display name remains Omaconnect KDE Plus.
-- Preserve existing uppercase private-data paths. Explicit former Plus migration
-  stages all understood settings, positions and enablement without resetting
-  icons or changing original OmaConnect. Native updates alone do not rename IDs.
 
 ## [0.1.2] - 2026-10-30
 
