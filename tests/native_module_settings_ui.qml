@@ -75,14 +75,27 @@ ShellRoot {
                 if (!test.check(test.configured === 2,"keyboard and AT Configure use exact module signal")) return
                 share.forceActiveFocus(); events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
                 if (!test.check(share.checked && backend.busy,"keyboard request never toggles optimistically")) return
+                events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
+                test.phase=102
+            } else if(test.phase===102 && backend.busy) {
+                if (!test.check(test.toggle("kdeconnect_share").activeFocus,"checkbox keeps active keyboard focus while native request is pending")) return
                 test.phase=2
             } else if (test.phase === 2 && !backend.busy) {
+                if (!test.check(test.toggle("kdeconnect_share").activeFocus,"checkbox retains keyboard focus through native readback")) return
                 if (!test.check(backend.enabledStates.kdeconnect_share === false && test.toggle("kdeconnect_share").text === "Off","native write readback changes row to Off")) return
                 test.toggle("kdeconnect_share").Accessible.toggleAction()
                 if (!test.check(backend.busy && !test.toggle("kdeconnect_share").checked,"AT request also waits for native readback")) return
                 test.phase=3
             } else if (test.phase === 3 && !backend.busy) {
                 if (!test.check(test.toggle("kdeconnect_share").checked,"AT action confirms native On")) return
+                var refresh=test.find(view,"native-module-refresh")
+                refresh.forceActiveFocus();events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
+                test.phase=302
+            } else if(test.phase===302 && backend.busy) {
+                if (!test.check(test.find(view,"native-module-refresh").activeFocus,"Refresh keeps active keyboard focus while native read is pending")) return
+                test.phase=301
+            } else if(test.phase===301 && !backend.busy) {
+                if (!test.check(test.find(view,"native-module-refresh").activeFocus,"Refresh retains keyboard focus through native read")) return
                 backend.setEnabled("native_mismatch",true);test.phase=4
             } else if (test.phase === 4 && !backend.busy) {
                 if (!test.check(backend.error === "readback-mismatch" && backend.enabledStates.native_mismatch === false,"mismatch shows actual native state")) return

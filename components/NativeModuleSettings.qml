@@ -45,7 +45,7 @@ Column {
             Accessible.name: "Refresh native settings"
             foreground: Commons.Color.popups.text
             focusable: true
-            enabled: controller.ready && !controller.busy
+            enabled: controller.ready
             onClicked: controller.refresh()
         }
     }
@@ -116,7 +116,7 @@ Column {
                     text: controller.known(modelData.id) ? controller.enabledStates[modelData.id] ? "On" : "Off" : "Unknown"
                     checked: controller.known(modelData.id) && controller.enabledStates[modelData.id] === true
                     nextCheckState: function() { return checkState }
-                    enabled: controller.ready && !controller.busy && controller.known(modelData.id)
+                    enabled: controller.ready && controller.known(modelData.id)
                     activeFocusOnTab: true
                     palette.windowText: Commons.Color.popups.text
                     palette.text: Commons.Color.popups.text

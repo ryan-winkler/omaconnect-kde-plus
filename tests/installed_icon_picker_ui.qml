@@ -116,6 +116,22 @@ Window {
             }
             if(test.phase===23){
                 if(!test.check(!picker.popupOpen && test.changes===2 && test.draft==="icon-1000","changed inventory closes stale choices without selecting"))return
+                picker.open();test.phase=24;return
+            }
+            if(test.phase===24){
+                if(!test.check(picker.popupOpen,"single-result popup opens before moving trigger"))return
+                picker.close();picker.y=25;picker.x=35;test.phase=25;return
+            }
+            if(test.phase===25){picker.open();test.phase=26;return}
+            if(test.phase===26){
+                var position=picker.mapToItem(popup.parent,0,picker.height)
+                var expectedY=Math.max(popup.margin,Math.min(position.y,popup.parent.height-popup.height-popup.margin))
+                var expectedX=Math.max(popup.margin,Math.min(position.x,popup.parent.width-popup.width-popup.margin))
+                if(!test.check(Math.abs(popup.y-expectedY)<1 && Math.abs(popup.x-expectedX)<1,"reopened popup follows moved trigger"))return
+                test.width=400;test.height=300;test.phase=27;return
+            }
+            if(test.phase===27){
+                if(!test.check(popup.x>=popup.margin && popup.y>=popup.margin && popup.x+popup.width<=popup.parent.width-popup.margin+1 && popup.y+popup.height<=popup.parent.height-popup.margin+1,"open popup stays within resized overlay"))return
                 console.log("NATIVE_PASS installed icon picker");Qt.quit()
             }
         }

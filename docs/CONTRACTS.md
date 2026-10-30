@@ -232,9 +232,10 @@ and [virtual-monitor interface](https://github.com/KDE/kdeconnect-kde/blob/v26.0
 
 `SettingsPanel.qml` is an independent nonmodal native Window. Its four domains
 share the current device context and retain a Back to devices route. Native KDE
-module settings open in KDE Connect with the selected ID; peer pairing/reachability
-conditions are explained. The searchable inventory is reported support, not an
-installation catalog or enabled-state writer.
+configuration forms open in KDE Connect with the selected ID; peer pairing and
+reachability conditions are explained. The searchable inventory is the installed
+module catalogue, independent of peer-reported features. It is not a module download catalogue. Its On/Off rows
+read and change native state only through the `native_settings.py` contract above.
 
 The persistent Settings Device selector uses the existing `Panel.selectDevice`
 path. It does not store another selected ID. Options include offline and unpaired

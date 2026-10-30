@@ -116,12 +116,24 @@ Item {
         height: Math.min(search.implicitHeight + padding * 2 + Style.space(8)
             + Math.max(1, Math.min(6, root.matchingOptions.length)) * root.popupRowHeight,
             parent ? Math.max(0, parent.height - margin * 2) : 340)
-        x: parent ? Math.max(margin, Math.min(root.mapToItem(parent, 0, 0).x, parent.width - width - margin)) : 0
-        y: parent ? Math.max(margin, Math.min(root.mapToItem(parent, 0, root.height).y, parent.height - height - margin)) : 0
+        function place() {
+            if (!parent) return
+            x = Math.max(margin, Math.min(root.mapToItem(parent, 0, 0).x, parent.width - width - margin))
+            y = Math.max(margin, Math.min(root.mapToItem(parent, 0, root.height).y, parent.height - height - margin))
+        }
+        onAboutToShow: place()
+        onWidthChanged: if (opened) place()
+        onHeightChanged: if (opened) place()
+        Connections {
+            target: popup.parent
+            function onWidthChanged() { if (popup.opened) popup.place() }
+            function onHeightChanged() { if (popup.opened) popup.place() }
+        }
         padding: Style.space(8)
         focus: true
         closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutside
         onOpened: {
+            place()
             search.text = ""
             results.currentIndex = Math.max(0, root.matchingOptions.indexOf(root.value))
             Qt.callLater(function() { search.forceActiveFocus() })
