@@ -24,7 +24,7 @@ assert.equal(new Set(api.entries.map(row=>row.id)).size,api.entries.length);
 assert.equal(api.parse('').length,0);assert.equal(api.parse('ring,file').join(','),'ring,file');
 for(const value of [null,{},['ring'],'ring,ring','file,unknown',' ring','file,','ring;id','x'.repeat(513)])assert.equal(api.parse(value),null);
 assert.equal(api.order('invalid').join(','),api.DEFAULT_ORDER);
-const every=api.entries.map(row=>row.id).join(',');assert.ok(every.length>128 && every.length<=512);assert.equal(api.parse(every).length,18);
+const every=api.entries.map(row=>row.id).join(',');assert.ok(every.length>128 && every.length<=512);assert.equal(api.parse(every).length,19);
 for(const row of api.entries){assert.ok(row.label && row.description && row.group);assert.ok(row.description.length<200)}
 const phone={paired:true,reachable:true,capabilities:{file:true,ring:true},loadedKnown:true,loadedPluginIds:[]};
 assert.equal(api.available('ring,text,file,native-features',phone).join(','),'ring,file,native-features');
@@ -35,6 +35,8 @@ assert.equal(api.available('plus-settings,native-features,file',null).join(','),
 assert.equal(api.ready('plus-settings',null,null),true);assert.equal(api.ready('native-features',null,null),false);
 const service={actionState:'idle',mediaLoading:false,mediaState:{}};
 assert.equal(api.ready('native-features',null,service),true);
+assert.equal(api.ready('quick-share',null,service),false,'Quick Share needs the installed app');assert.match(api.availabilityText('quick-share',null,service),/Install the r-quick-share/);
+service.quickShareAvailable=true;assert.equal(api.ready('quick-share',null,service),true);assert.match(api.availabilityText('quick-share',null,service),/separate app/);
 phone.reachable=true;assert.equal(api.compatible('ring',phone),true);assert.equal(api.ready('ring',phone,service),false,'inactive module stays visible but cannot dispatch');
 phone.loadedPluginIds=['kdeconnect_findmyphone'];assert.equal(api.ready('ring',phone,service),true);
 const media={paired:true,reachable:true,capabilities:{media:true,commands:true},pluginIds:['kdeconnect_mprisremote','kdeconnect_sftp','kdeconnect_systemvolume'],loadedKnown:true,loadedPluginIds:['kdeconnect_mprisremote']};

@@ -40,6 +40,8 @@ This keeps the private HOME, D-Bus and fake providers. It connects only to the
 current Wayland socket and the DRI devices, and copies only the public
 `colors.toml` and `shell.toml` into the fixture. No installed plugin or bar
 configuration changes. The sample window closes when the test exits.
+Screenshots and `native-ui.log` are saved to `../desktop-validation`, next to
+the checkout.
 
 ## What these tests do not cover
 

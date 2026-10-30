@@ -135,7 +135,13 @@ local desktop stays on native LAN; no local WireGuard interface is required.
 The fixed `omarchy-shell shell summon io.github.ilyazar.syncthing {}` call must
 return `ok` before the UI reports it opened. A missing plugin, unknown response or
 failed call remains unavailable. No API key, CoreProcess or raw owner object is
-loaded. Inline status and device actions remain deferred.
+loaded.
+
+Pause/resume runs only for the saved, validated Syncthing ID:
+`timeout 4 syncthing cli config devices <ID> paused get|set true|false`. Syncthing's
+CLI reads its own API key; Plus never reads its configuration. Each change is
+followed by a `get` readback. A failed call or other output shows "unknown" and
+disables the action. Folder operations stay with Syncthing/Syncshell.
 
 ## Native feature visibility and network owners
 
@@ -194,7 +200,7 @@ section is session UI state; opening the panel restores the selected defaults.
 Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
 
-`ActionCatalog.js` owns the 18 reviewed shortcut IDs, groups, help, supported and
+`ActionCatalog.js` owns the 19 reviewed shortcut IDs, groups, help, supported and
 locally-active readiness. The preference/migration boundary accepts only those
 IDs, no duplicates, with a 512-character CSV limit. Native handoffs remain explicit
 and keep the selected KDE peer. They do not directly invoke a guessed plugin
@@ -214,3 +220,8 @@ malformed session-bus reply is unavailable. A valid stopped-daemon reply with
 an installed KDE command or activatable KDE service is also unavailable. Only
 confirmed absence of both command and activation evidence reports missing KDE
 tools. A running daemon can be discovered without `kdeconnect-cli`.
+
+
+Quick Share uses only the fixed `/usr/bin/rquickshare` app path. The launcher
+rechecks the executable and detaches its standard streams. Success confirms
+process creation, not an open window, pairing or delivery.
