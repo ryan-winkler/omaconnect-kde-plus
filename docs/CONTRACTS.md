@@ -204,3 +204,9 @@ current view without changing its saved preference.
 The bar and the Send card instantiate the same `FileDropArea.qml`. It locks the
 selected recipient through `stageDroppedFiles`, refuses busy/existing drafts,
 accepts Copy only, and emits a review-window signal after staging. It never sends.
+
+Discovery keeps missing tools distinct from unavailable state. A failed or
+malformed session-bus reply is unavailable. A valid stopped-daemon reply with
+an installed KDE command or activatable KDE service is also unavailable. Only
+confirmed absence of both command and activation evidence reports missing KDE
+tools. A running daemon can be discovered without `kdeconnect-cli`.

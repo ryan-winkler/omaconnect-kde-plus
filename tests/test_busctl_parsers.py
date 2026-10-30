@@ -348,13 +348,25 @@ class ScriptLevelGracefulFailureTests(unittest.TestCase):
             self.assertEqual(res.stdout, "")
             self.assertNotIn("Traceback", res.stderr)
 
-    def test_discover_report_truthy_rejects_garbage(self):
-        res = subprocess.run(
-            [PYTHON, str(SCRIPTS / "discover_report.py"), "truthy"],
-            input='{"type":"b","data":[tru', capture_output=True, text=True,
+    def test_discovery_predicates_separate_absence_from_malformed_replies(self):
+        cases = (
+            ("truthy", '{"type":"b","data":[true]}', 0),
+            ("truthy", '{"type":"b","data":[false]}', 1),
+            ("truthy", '{"type":"b","data":[tru', 3),
+            ("truthy", '{"type":"s","data":[true]}', 3),
+            ("truthy", '{"type":"b","data":[0]}', 3),
+            ("registered", '{"type":"as","data":[[]]}', 1),
+            ("registered", '{"type":"as","data":[["org.kde.kdeconnect"]]}', 0),
+            ("registered", '{"type":"b","data":[[]]}', 3),
+            ("registered", '{"type":"as","data":[[null]]}', 3),
         )
-        self.assertEqual(res.returncode, 1)
-        self.assertNotIn("Traceback", res.stderr)
+        for command, reply, expected in cases:
+            with self.subTest(command=command, reply=reply):
+                res = subprocess.run([PYTHON, str(SCRIPTS / "discover_report.py"), command],
+                                     input=reply, capture_output=True, text=True)
+                self.assertEqual(res.returncode, expected)
+                self.assertEqual(res.stdout, "")
+                self.assertNotIn("Traceback", res.stderr)
 
 
 if __name__ == "__main__":

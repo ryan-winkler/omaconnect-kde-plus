@@ -1695,9 +1695,9 @@ class ScriptIntegrationTests(unittest.TestCase):
     # Only fake D-Bus and an owned PATH; never inspect the host daemon.
     with tempfile.TemporaryDirectory() as tmp:
       folder = Path(tmp)
-      for name in ("bash", "python3", "dirname"):
+      for name in ("bash", "python3", "dirname", "cat"):
         (folder/name).symlink_to(shutil.which(name))
-      write_busctl_stub(folder, [("*NameHasOwner*", FIXTURES / "busctl-namehasowner-false.json")])
+      write_busctl_stub(folder, [("*NameHasOwner*", FIXTURES / "busctl-namehasowner-false.json"), ("*ListActivatableNames*", '{"type":"as","data":[[]]}')])
       command = [BASH, str(ROOT / "scripts/discover_devices.sh")]
       env = {**os.environ, "PATH": tmp}
       missing = subprocess.run(command, capture_output=True, env=env)

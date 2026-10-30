@@ -14,7 +14,7 @@ BASH = shutil.which('bash')
 
 
 class NativeFeaturesTests(unittest.TestCase):
-    def discover(self, supported, loaded=None):
+    def discovery(self, supported, loaded=None, owner=True, activatable=None, cli=False):
         with tempfile.TemporaryDirectory() as tmp:
             bindir = Path(tmp)
             (bindir / 'python3').symlink_to(sys.executable)
@@ -24,7 +24,13 @@ class NativeFeaturesTests(unittest.TestCase):
 args=[a for a in sys.argv[1:] if a not in ('--user', '--json=short')]
 def reply(kind, *data): print(json.dumps({'type': kind, 'data': list(data)}))
 def v(kind, value): return {'type': kind, 'data': value}
-if 'NameHasOwner' in args: reply('b', True)
+if 'NameHasOwner' in args:
+    if os.environ['OWNER'] == 'error': sys.exit(1)
+    if os.environ['OWNER'] == 'malformed': reply('s', 'unknown')
+    else: reply('b', os.environ['OWNER'] == 'true')
+elif 'ListActivatableNames' in args:
+    if os.environ['ACTIVATABLE'] == 'error': sys.exit(1)
+    print(os.environ['ACTIVATABLE'])
 elif 'devices' in args: reply('as', ['fixture_peer'])
 elif 'customDevices' in args: print(json.dumps({'type': 'as', 'data': []}))
 elif 'loadedPlugins' in args:
@@ -35,14 +41,36 @@ elif args[-1] == 'org.kde.kdeconnect.device':
 else: sys.exit(1)
 ''')
             stub.chmod(0o700)
-            env = {**os.environ, 'PATH': tmp, 'SUPPORTED': json.dumps(supported)}
+            if cli:
+                (bindir / 'kdeconnect-cli').symlink_to(stub)
+            env = {**os.environ, 'PATH': tmp, 'SUPPORTED': json.dumps(supported),
+                   'OWNER': owner if isinstance(owner, str) else 'true' if owner else 'false',
+                   'ACTIVATABLE': activatable or '{"type":"as","data":[[]]}'}
             if loaded is not None:
                 env['LOADED'] = loaded
             else:
                 env.pop('LOADED', None)
-            result = subprocess.run([BASH, str(ROOT / 'scripts/discover_devices.sh')], env=env, text=True, capture_output=True, timeout=5)
-            self.assertEqual(result.returncode, 0, result.stderr)
-            return next(line.split('\t') for line in result.stdout.splitlines() if line.startswith('DEVICE\t'))
+            return subprocess.run([BASH, str(ROOT / 'scripts/discover_devices.sh')], env=env, text=True, capture_output=True, timeout=5)
+
+    def discover(self, supported, loaded=None):
+        result = self.discovery(supported, loaded)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return next(line.split('\t') for line in result.stdout.splitlines() if line.startswith('DEVICE\t'))
+
+    def test_discovery_distinguishes_missing_package_from_stopped_or_unknown_daemon(self):
+        # Closed PATH and fake bus only. A running daemon does not need the CLI.
+        self.assertEqual(self.discovery([], owner=True).returncode, 0)
+        self.assertEqual(self.discovery([], owner=False).returncode, 127)
+        for owner in ('error', 'malformed'):
+            with self.subTest(owner=owner):
+                self.assertEqual(self.discovery([], owner=owner).returncode, 69)
+        registered = '{"type":"as","data":[["org.kde.kdeconnect"]]}'
+        for reply, cli in ((registered, False), (None, True), ('error', False),
+                           ('{"type":"b","data":[false]}', False),
+                           ('{"type":"b","data":[[]]}', False),
+                           ('{"type":"as","data":[[null]]}', False)):
+            with self.subTest(reply=reply, cli=cli):
+                self.assertEqual(self.discovery([], owner=False, activatable=reply, cli=cli).returncode, 69)
 
     def test_future_native_feature_survives_and_loading_is_separate(self):
         row = self.discover(['kdeconnect_notifications', 'kdeconnect_sftp', 'kdeconnect_future_feature', 'thirdparty.custom-addon', 'kdeconnect_remotecommands'], '{"type":"as","data":[["kdeconnect_sftp"]]}')
