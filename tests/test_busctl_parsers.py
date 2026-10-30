@@ -9,10 +9,12 @@ or a valid empty JSON status (media), never a python traceback on stdout.
 
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -391,6 +393,52 @@ class ScriptLevelGracefulFailureTests(unittest.TestCase):
                 self.assertEqual(res.returncode, expected)
                 self.assertEqual(res.stdout, "")
                 self.assertNotIn("Traceback", res.stderr)
+
+
+class BoundedProviderOutputTests(unittest.TestCase):
+    """Oversized and slow fake providers stay inside the caps and deadlines."""
+
+    def run_report(self, command, stdin):
+        return subprocess.run([PYTHON, str(SCRIPTS / "discover_report.py"), command],
+                              input=stdin, capture_output=True, text=True, timeout=10)
+
+    def test_discover_report_rejects_stdin_over_the_cap(self):
+        cap = discover_report.MAX_REPLY_BYTES
+        ids = json.dumps({"type": "as", "data": [["dev_%05d" % i for i in range(cap // 8)]]})
+        self.assertGreater(len(ids), cap)
+        for command in ("ids", "addresses"):
+            res = self.run_report(command, ids)
+            self.assertEqual(res.returncode, 3, command)
+            self.assertEqual(res.stdout, "")
+        # Valid JSON padded past the cap is still refused.
+        self.assertEqual(self.run_report("truthy", '{"type":"b","data":[true]}'.ljust(cap + 1)).returncode, 3)
+        self.assertEqual(self.run_report("truthy", '{"type":"b","data":[true]}'.ljust(cap)).returncode, 0)
+        res = self.run_report("ids", json.dumps({"type": "as", "data": [["dev-1"]]}).ljust(cap))
+        self.assertEqual((res.returncode, res.stdout), (0, "dev-1\n"))
+
+    def run_media_status(self, stub_body):
+        with tempfile.TemporaryDirectory() as tmp:
+            stub = Path(tmp) / "busctl"
+            stub.write_text("#!/usr/bin/env bash\n" + stub_body)
+            stub.chmod(0o755)
+            started = time.monotonic()
+            res = subprocess.run([PYTHON, str(SCRIPTS / "media_status.py"), "dev-1"],
+                                 capture_output=True, text=True, timeout=20,
+                                 env={**os.environ, "PATH": f"{tmp}:{os.environ['PATH']}"})
+            return res, time.monotonic() - started
+
+    def test_media_status_ignores_an_oversized_reply(self):
+        title = "x" * media_status.MAX_REPLY_BYTES
+        reply = json.dumps({"type": "a{sv}", "data": [{"title": {"type": "s", "data": title}}]})
+        res, _ = self.run_media_status("printf '%%s' %s\n" % shlex.quote(reply))
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertEqual(json.loads(res.stdout), media_status.empty_status())
+
+    def test_media_status_stops_waiting_for_a_slow_provider(self):
+        res, elapsed = self.run_media_status("exec sleep 30\n")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertEqual(json.loads(res.stdout), media_status.empty_status())
+        self.assertLess(elapsed, 10)
 
 
 if __name__ == "__main__":

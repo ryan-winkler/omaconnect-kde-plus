@@ -6,6 +6,12 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Discovery, the command list and media status read at most 64 KiB per reply
+  and stop after a deadline, so a stuck provider cannot hang the panel. The
+  command list keeps at most 100 commands.
+
 ## [0.1.3] - 2026-10-30
 
 ### Fixed

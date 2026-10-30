@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -19,6 +20,7 @@ class NativeFeaturesTests(unittest.TestCase):
             bindir = Path(tmp)
             (bindir / 'python3').symlink_to(sys.executable)
             (bindir / 'dirname').symlink_to(shutil.which('dirname'))
+            (bindir / 'head').symlink_to(shutil.which('head'))
             stub = bindir / 'busctl'
             stub.write_text('#!' + sys.executable + '\n' + '''import json,os,sys
 args=[a for a in sys.argv[1:] if a not in ('--user', '--json=short')]
@@ -131,6 +133,48 @@ assert.equal(row.reachableAddresses.length,0);assert.equal(row.virtualMonitor.kn
 '''
         result = subprocess.run([shutil.which('node'), '-e', script], input=json.dumps({'fn': function}), text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    @unittest.skipUnless(shutil.which('node'), 'node unavailable')
+    def test_remote_command_list_is_capped(self):
+        source = (ROOT / 'KdeConnectController.qml').read_text()
+        function = source[source.index('    function parseRemoteCommands('):source.index('    function executeRemoteCommand(')]
+        limits = {name: int(value) for name, value in re.findall(r'readonly property int (maxRemoteCommand\w*): (\d+)', source)}
+        self.assertEqual(sorted(limits), ['maxRemoteCommandOutput', 'maxRemoteCommandText', 'maxRemoteCommands'])
+        script = r"""const assert=require('node:assert/strict');
+const vm=require('node:vm');const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const api=vm.createContext(input.limits);vm.runInContext(input.fn,api);
+const max=input.limits.maxRemoteCommands, text=input.limits.maxRemoteCommandText;
+const lines=Array.from({length:max+50},(_,i)=>'cmd'+i+': Command '+i).join('\n');
+let rows=api.parseRemoteCommands(lines);
+assert.equal(rows.length,max);assert.equal(rows[0].key,'cmd0');assert.equal(rows[0].name,'Command 0');
+rows=api.parseRemoteCommands(JSON.stringify(Array.from({length:max+50},(_,i)=>'c'+i)));
+assert.equal(rows.length,max);
+rows=api.parseRemoteCommands('k'.repeat(text+1)+': too long\nlock: '+'n'.repeat(text+40));
+assert.equal(rows.length,1,'a key over the cap is dropped, never cut');
+assert.equal(rows[0].key,'lock');assert.equal(rows[0].name.length,text);
+assert.equal(api.parseRemoteCommands('lock: Lock\n'+' '.repeat(input.limits.maxRemoteCommandOutput)+'x').length,0);
+"""
+        result = subprocess.run([shutil.which('node'), '-e', script], input=json.dumps({'fn': function, 'limits': limits}), text=True, capture_output=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_provider_processes_have_deadlines(self):
+        source = (ROOT / 'KdeConnectController.qml').read_text()
+        for process, timer, interval in (('scanProcess', 'scanDeadline', 'scanDeadlineMs'),
+                                         ('commandsProcess', 'commandsDeadline', 'commandsDeadlineMs'),
+                                         ('mediaStatusProcess', 'mediaStatusDeadline', 'mediaStatusDeadlineMs')):
+            with self.subTest(process=process):
+                self.assertRegex(source, r'readonly property int %s: \d+' % interval)
+                timer_block = source[source.index('id: %s\n' % timer):][:300]
+                self.assertIn('interval: root.%s' % interval, timer_block)
+                self.assertIn('onTriggered: { %s.timedOut = true; %s.running = false }' % (process, process), timer_block)
+                self.assertIn('%s.timedOut = false\n        %s.running = true\n        %s.restart()' % (process, process, timer), source)
+                handler = source[source.index('id: %s\n' % process):]
+                handler = handler[handler.index('onExited'):][:200]
+                self.assertIn('%s.stop()' % timer, handler)
+        # Output from a stopped process never reaches the UI; each falls back to its failure state.
+        self.assertIn('root.applyScan(timedOut ? "" : stdout.text, targetGeneration)', source)
+        self.assertIn('code === 0 && !timedOut ? root.parseRemoteCommands(stdout.text) : []', source)
+        self.assertIn('if (isCurrent && !timedOut && code === 0', source)
 
     @unittest.skipUnless(shutil.which('node'), 'node unavailable')
     def test_pairing_response_rejects_ids_unsafe_for_a_dbus_path(self):

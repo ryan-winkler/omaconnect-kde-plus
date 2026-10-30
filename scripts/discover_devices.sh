@@ -30,8 +30,12 @@ set -Eeuo pipefail
 # Exit codes: 127 confirmed KDE absence, 78 missing helper dependencies,
 # 69 daemon down / D-Bus error, 70 malformed reply, 64 bad usage.
 base=/modules/kdeconnect
+# Bounded provider output: busctl's method-call deadline and one reply's size
+# (MAX_REPLY_BYTES matches discover_report.py).
+BUSCTL_TIMEOUT=5
+MAX_REPLY_BYTES=65536
 
-for command in busctl python3; do
+for command in busctl python3 head; do
     if ! command -v "$command" >/dev/null 2>&1; then
         printf '%s\n' "Discovery needs busctl and Python 3. Check the system tools, then select Refresh." >&2
         exit 78
@@ -45,7 +49,12 @@ report="$script_dir/discover_report.py"
 
 busctl_json() {
     # Structured JSON only; any D-Bus failure maps onto the 69 protocol.
-    busctl --user --json=short "$@" 2>/dev/null || return 69
+    # A reply over the cap is malformed (70) and never reaches the parser.
+    local LC_ALL=C reply
+    reply=$(busctl --user --json=short --timeout="$BUSCTL_TIMEOUT" "$@" 2>/dev/null \
+        | head -c "$((MAX_REPLY_BYTES + 1))") || return 69
+    (( ${#reply} <= MAX_REPLY_BYTES )) || return 70
+    printf '%s' "$reply"
 }
 
 is_daemon_running() {
@@ -57,7 +66,7 @@ is_daemon_running() {
 
 ensure_daemon() {
     if ! is_daemon_running; then
-        busctl --user call org.freedesktop.DBus /org/freedesktop/DBus \
+        busctl --user --timeout="$BUSCTL_TIMEOUT" call org.freedesktop.DBus /org/freedesktop/DBus \
             org.freedesktop.DBus StartServiceByName su org.kde.kdeconnect 0 >/dev/null 2>&1 || true
         sleep 0.5
     fi
@@ -68,7 +77,7 @@ if [[ "${1:-}" == "--refresh" || "${1:-}" == "-r" ]]; then
     if command -v kdeconnect-cli >/dev/null 2>&1; then
         kdeconnect-cli --refresh >/dev/null 2>&1 || true
     fi
-    busctl --user call org.kde.kdeconnect "$base" \
+    busctl --user --timeout="$BUSCTL_TIMEOUT" call org.kde.kdeconnect "$base" \
         org.kde.kdeconnect.daemon forceOnNetworkChange >/dev/null 2>&1 || true
     sleep 1.2
 fi

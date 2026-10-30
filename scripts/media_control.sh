@@ -25,6 +25,8 @@ argument=${3:-}
 
 command -v busctl >/dev/null 2>&1 || exit 127
 
+# busctl's method-call deadline, in seconds.
+BUSCTL_TIMEOUT=5
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 base="/modules/kdeconnect/devices/$device_id/mprisremote"
 
@@ -34,19 +36,19 @@ case "$operation" in
         exec python3 "$script_dir/media_status.py" "$device_id"
         ;;
     request_players)
-        busctl --user call org.kde.kdeconnect "$base" \
+        busctl --user --timeout="$BUSCTL_TIMEOUT" call org.kde.kdeconnect "$base" \
             org.kde.kdeconnect.device.mprisremote requestPlayerList >/dev/null 2>&1 || true
         ;;
     action)
         action_name="$argument"
         [[ "$action_name" =~ ^(PlayPause|Next|Previous)$ ]] || exit 64
-        busctl --user call org.kde.kdeconnect "$base" \
+        busctl --user --timeout="$BUSCTL_TIMEOUT" call org.kde.kdeconnect "$base" \
             org.kde.kdeconnect.device.mprisremote sendAction s "$action_name" >/dev/null 2>&1 || exit 69
         ;;
     player)
         target_player="$argument"
         [[ -n "$target_player" && "$target_player" != -* && "$target_player" != *$'\n'* && "$target_player" != *$'\r'* ]] || exit 64
-        busctl --user set-property org.kde.kdeconnect "$base" \
+        busctl --user --timeout="$BUSCTL_TIMEOUT" set-property org.kde.kdeconnect "$base" \
             org.kde.kdeconnect.device.mprisremote player s "$target_player" >/dev/null 2>&1 || exit 69
         ;;
     *)

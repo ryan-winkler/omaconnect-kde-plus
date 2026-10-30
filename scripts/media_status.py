@@ -26,6 +26,8 @@ import sys
 PROPS_IFACE = "org.freedesktop.DBus.Properties"
 MPRIS_IFACE = "org.kde.kdeconnect.device.mprisremote"
 SERVICE = "org.kde.kdeconnect"
+# One GetAll reply; a larger one is treated as no status.
+MAX_REPLY_BYTES = 65536
 
 # albumArt fallback chain, most local first (same order as the old parser).
 ART_KEYS = ("localAlbumArtUrl", "albumArtUrl", "artUrl", "albumArt")
@@ -138,7 +140,8 @@ def fetch_props(device_id):
         result = subprocess.run(argv, capture_output=True, text=True, timeout=3)
     except Exception:
         return None
-    if result.returncode != 0 or not result.stdout.strip():
+    # shortcut: the 3 s timeout bounds the capture, the cap bounds the parse; read in chunks if a reply can flood memory sooner.
+    if result.returncode != 0 or not result.stdout.strip() or len(result.stdout.encode()) > MAX_REPLY_BYTES:
         return None
     return parse_properties(result.stdout)
 
