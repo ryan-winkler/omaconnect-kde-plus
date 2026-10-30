@@ -69,7 +69,12 @@ if [[ "${1:-}" == "--refresh" || "${1:-}" == "-r" ]]; then
     sleep 1.2
 fi
 
-is_daemon_running || exit 69
+if ! is_daemon_running; then
+    # A stopped installed daemon needs recovery, not another installation.
+    # If its CLI is absent too, required KDE Connect tools are missing.
+    command -v kdeconnect-cli >/dev/null 2>&1 || exit 127
+    exit 69
+fi
 
 sanitize_field() {
     local field=$1

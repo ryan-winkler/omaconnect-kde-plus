@@ -120,7 +120,7 @@ Column {
         }
         Text {
             width: parent.width
-            text: "Supported: the device can use it. Loaded: KDE Connect runs it now."
+            text: "Supported: the device can use it. Loaded: KDE Connect runs it now. This does not confirm settings or phone permissions."
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text

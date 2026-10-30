@@ -38,7 +38,9 @@ Column {
                 width: parent.width
                 visible: !row.stringType
                 // State in words, from the saved value, not only the knob.
-                label: row.modelData.label + (root.valueFor(row.modelData) === true ? ": On" : ": Off")
+                label: row.modelData.label
+                description: root.valueFor(row.modelData) === true ? "On" : "Off"
+                descriptionSize: Style.font.bodySmall
                 checked: root.valueFor(row.modelData) === true
                 enabled: !root.busy
                 foreground: Commons.Color.popups.text

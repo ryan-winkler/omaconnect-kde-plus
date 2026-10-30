@@ -157,7 +157,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: root.width
-        text: root.discovery ? (root.discovery.error || (root.discovery.busy ? "Saving address changes…" : "Forget removes only the Plus record. Addresses you added in KDE Connect stay. Automatic rediscovery checks every 60 seconds while this panel is open.")) : "Address storage is unavailable."
+        text: root.discovery ? (root.discovery.error || (root.discovery.busy ? "Saving address changes…" : "Forget removes only the Plus record. Addresses you added in KDE Connect stay. When enabled, automatic rediscovery checks every 60 seconds while this panel is open.")) : "Address storage is unavailable."
 
         wrapMode: Text.Wrap
         color: root.foreground

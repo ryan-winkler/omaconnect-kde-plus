@@ -141,7 +141,7 @@ Column {
 
             Text {
                 width: parent.width
-                text: "Control music and video playing on the selected device. Choose a player below."
+                text: "Control music and video playing on the selected device. If more than one player is available, choose one below."
                 textFormat: Text.PlainText
                 wrapMode: Text.Wrap
                 color: root.foreground

@@ -223,7 +223,7 @@ Window {
                                 {key: "networkStartExpanded", label: "Start network controls expanded", defaultValue: true, description: "On shows the network buttons when the panel opens."},
                                 {key: "showSavedAddresses", label: "Show saved addresses", defaultValue: true, description: "Shows each device's saved IP addresses in Devices. Hiding them deletes nothing."},
                                 {key: "addressesStartExpanded", label: "Start saved addresses expanded", defaultValue: false, description: "On shows saved addresses when the panel opens."},
-                                {key: "bthHelperPath", label: "BTH helper path", defaultValue: "", type: "string", description: "Optional. The full path to your Back to Home script. Leave empty to use ~/.local/bin/remote-access-mode."}
+                                {key: "bthHelperPath", label: "BTH helper path", defaultValue: "", type: "string", description: "Optional. Use the full path to your Back to Home script, ending in /remote-access-mode. Leave empty to use ~/.local/bin/remote-access-mode."}
                             ]
                         }
                     }

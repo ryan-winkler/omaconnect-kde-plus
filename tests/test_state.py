@@ -1691,6 +1691,23 @@ class ScriptIntegrationTests(unittest.TestCase):
           "customDevices", "as", "0"])
       assert_busctl_argv_clean(self, read_busctl_calls(log_path))
 
+  def test_discovery_distinguishes_missing_package_from_stopped_daemon(self):
+    # Only fake D-Bus and an owned PATH; never inspect the host daemon.
+    with tempfile.TemporaryDirectory() as tmp:
+      folder = Path(tmp)
+      for name in ("bash", "python3", "dirname"):
+        (folder/name).symlink_to(shutil.which(name))
+      write_busctl_stub(folder, [("*NameHasOwner*", FIXTURES / "busctl-namehasowner-false.json")])
+      command = [BASH, str(ROOT / "scripts/discover_devices.sh")]
+      env = {**os.environ, "PATH": tmp}
+      missing = subprocess.run(command, capture_output=True, env=env)
+      self.assertEqual(missing.returncode, 127, missing.stderr)
+      cli = folder / "kdeconnect-cli"
+      cli.write_text("#!/bin/bash\nexit 0\n"); cli.chmod(0o700)
+      stopped = subprocess.run(command, capture_output=True, env=env)
+      self.assertEqual(stopped.returncode, 69, stopped.stderr)
+      self.assertEqual(missing.stdout + stopped.stdout, b"")
+
   def test_discover_devices_end_to_end(self):
     script = ROOT / "scripts" / "discover_devices.sh"
 
@@ -2636,7 +2653,7 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
   def test_settings_switches_state_on_or_off_in_words(self):
     for name in ("PreferenceControls.qml", "NetworkOptions.qml"):
       source = (ROOT / "components" / name).read_text()
-      self.assertIn('? ": On" : ": Off")', source, name)
+      self.assertRegex(source, r'description: .*\? "On" : "Off"', name)
       # Screen readers get state from Accessible.checked; the name stays the bare label.
       self.assertNotIn("Accessible.name: label", source, name)
 

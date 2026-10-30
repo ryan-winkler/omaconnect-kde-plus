@@ -3,7 +3,7 @@
 Open **Settings** from the bar menu. Choose the domain that matches your task.
 Use **Back to devices** to return. Native KDE Connect opens in its own window;
 your Plus settings remain available. Select a device before changing its features.
-Each switch shows **On** or **Off** after its name.
+Settings switches show **On** or **Off** below their names.
 
 ## Appearance
 

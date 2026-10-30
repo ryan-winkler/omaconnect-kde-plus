@@ -101,7 +101,7 @@ Column {
                     : Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
-                elide: Text.ElideRight
+                wrapMode: Text.Wrap
             }
 
             Row {
@@ -165,7 +165,7 @@ Column {
             color: ((root.service && (root.service.actionError || root.service.fileTransferError)) || (root.panel && root.panel.composerError)) ? Commons.Color.urgent : root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
-            elide: Text.ElideRight
+            wrapMode: Text.Wrap
         }
 
         MouseArea {
@@ -494,7 +494,7 @@ Column {
         Text {
             width: parent.width
             text: root.service && root.service.discoveryState === "not_installed"
-                ? "Run this command in a terminal to install KDE Connect, then select Refresh. To copy it, select the text and press Ctrl+C."
+                ? "Run this command in a terminal to install KDE Connect, then select Refresh. To copy it, focus the command and press Ctrl+C."
                 : "Pair devices in KDE Connect. The setup guide helps with connection problems."
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
@@ -511,7 +511,8 @@ Column {
             readOnly: true
             selectByMouse: true
             foreground: root.foreground
-            Accessible.name: "KDE Connect install command; select to copy"
+            Accessible.name: "KDE Connect install command; focus and press Control+C to copy"
+            onActiveFocusChanged: if (activeFocus) selectAll()
         }
         Button {
             text: "KDE Connect setup guide ↗"

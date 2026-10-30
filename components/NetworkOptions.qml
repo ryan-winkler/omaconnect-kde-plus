@@ -65,7 +65,9 @@ Column {
                 spacing: Style.space(4)
                 Kit.Toggle {
                     width: parent.width
-                    label: "Show " + modelData.label + (root.valueFor(modelData.key) ? ": On" : ": Off")
+                    label: "Show " + modelData.label
+                    description: root.valueFor(modelData.key) ? "On" : "Off"
+                    descriptionSize: Style.font.bodySmall
                     Accessible.role: Accessible.CheckBox
                     Accessible.name: "Show " + modelData.label
                     Accessible.checkable: true
