@@ -164,6 +164,8 @@ plus native virtual-monitor known/active/available booleans. QML revalidates the
 bounds. Legacy 16-field records remain valid. Unknown reads never mean false or
 available. Virtual-monitor properties are read only for reported support, with a
 two-second native-call timeout.
+The serialized information field is at most16,384characters after JSON escaping.
+Oversized information lists are omitted as needed; valid monitor state is retained.
 
 Feature display names use the installed `PluginModel.pluginDisplayName` API in an
 optional loader. The metadata model has no device target and is never bound as a

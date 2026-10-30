@@ -208,7 +208,7 @@ def main(argv):
 
     if command == "device":
         if len(argv) not in (6, 7, 8):
-            print("usage: discover_report.py device <id> <device_json> <battery_json> <conn_json> [<loaded_json>]", file=sys.stderr)
+            print("usage: discover_report.py device <id> <device_json> <battery_json> <conn_json> [<loaded_json> [<monitor_json>]]", file=sys.stderr)
             return 64
         device_props = parse_properties(argv[3]) if argv[3].strip() else None
         battery_props = parse_properties(argv[4]) if argv[4].strip() else None
