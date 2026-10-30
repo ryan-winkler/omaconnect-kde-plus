@@ -83,9 +83,9 @@ entries=$(printf '%s' "$ids_raw" | python3 "$report" ids) || exit 70
 # KDE Connect owns this list and persists it. Exposing it in the same snapshot
 # lets the UI add Tailscale or other VPN addresses without a second database.
 if custom_raw=$(busctl_json get-property org.kde.kdeconnect "$base" \
-    org.kde.kdeconnect.daemon customDevices); then
+    org.kde.kdeconnect.daemon customDevices) \
+    && custom_entries=$(printf '%s' "$custom_raw" | python3 "$report" addresses); then
     printf 'CUSTOM_ADDRESSES_READY\n'
-    custom_entries=$(printf '%s' "$custom_raw" | python3 "$report" addresses) || custom_entries=""
     while IFS= read -r address; do
         [[ -n "$address" ]] || continue
         printf 'CUSTOM_ADDRESS\t%s\n' "$(sanitize_field "$address")"

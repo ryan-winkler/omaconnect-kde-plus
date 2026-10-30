@@ -341,8 +341,9 @@ assert literal.startswith("/") and literal.endswith("/"), "not a regex literal: 
 pattern = literal[1:-1]
 assert pattern.startswith("^") and pattern.endswith("$"), "regex not anchored: " + pattern
 rx = re.compile(pattern[1:-1])  # anchors become fullmatch
-valid = ["0123456789abcdef0123456789abcdef", "device_1-x", "A", "abcDEF012_-9"]
-invalid = ["", "../../etc/passwd", "foo bar", "a;b", "$(cmd)", "a/b", "id'", 'x"y', "a`b", "a\nb"]
+# D-Bus object-path elements allow only [A-Za-z0-9_], so '-' is rejected.
+valid = ["0123456789abcdef0123456789abcdef", "device_1_x", "A", "abcDEF012_9"]
+invalid = ["", "device-1", "../../etc/passwd", "foo bar", "a;b", "$(cmd)", "a/b", "id'", 'x"y', "a`b", "a\nb"]
 for v in valid:
     assert rx.fullmatch(v), "should accept: %r" % v
 for v in invalid:
