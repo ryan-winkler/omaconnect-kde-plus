@@ -80,6 +80,6 @@ Run the focused fake-HTTP suite with:
 python3 -m unittest discover -s tests -p test_upstream_watch.py -v
 ```
 
-The suite covers baselines, deduplication, scoped writes, malformed/oversized/WAF responses, token routing, remote-text injection, ownership, pagination and coverage gaps. Tests make no real network request or GitHub write. The 29 October 2026 read-only live dry-run returned `desktop=ok, android=ok, omaconnect=ok`. This verifies those public metadata reads at that time. The first real Actions apply, issue creation, schedule and later change detection still need a repository receipt after merge.
+The suite covers baselines, deduplication, scoped writes, malformed/oversized/WAF responses, token routing, remote-text injection, ownership, pagination and coverage gaps. Tests make no real network request or GitHub write.
 
 Use **Experience feedback** for a concrete task, what helped/blocked it and one useful next result. The form requests no private configuration. Use **Discussions** for open questions and ideas, a bug issue for reproducible failures, and the private route in [SECURITY.md](../SECURITY.md) for security concerns. Maintainers enable Discussions and own its categories; this watcher does not create discussion posts or send cross-service messages.

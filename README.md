@@ -18,8 +18,8 @@ omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --ena
 ```
 
 Open the new bar icon, select **All KDE Connect features** and pair your device.
-See [install, update and recovery](docs/INSTALL.md), including how to move from
-the original OmaConnect. The plugin ID is `Omaconnect.plus`.
+Moving from the original OmaConnect? Read [install, update and recovery](docs/INSTALL.md)
+first and add Plus without `--enable`. The plugin ID is `Omaconnect.plus`.
 
 ## Features
 

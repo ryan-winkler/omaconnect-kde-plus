@@ -37,10 +37,6 @@ when a desired choice is omitted. The full lookup/inheritance contract follows
 the [freedesktop icon theme specification](https://specifications.freedesktop.org/icon-theme/latest/)
 and [Qt QIcon lookup](https://doc.qt.io/qt-6/qicon.html#fromTheme).
 
-The native Omarchy image picker is a general image-directory overlay, not an icon
-bank; its current file list also includes video and omits SVG. The emoji overlay
-inserts text into another app. Neither is used as a direct replacement for this
-private draft/import flow.
 
 ## User storage
 
