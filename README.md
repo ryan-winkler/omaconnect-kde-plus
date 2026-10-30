@@ -83,12 +83,12 @@ Missing optional providers stay unavailable; Plus never installs them.
 ## Privacy
 
 Appearance and address metadata stay in owner-only files. Typed text, Ping
-messages and file paths travel over stdin and D-Bus, never process arguments. A
-saved default Ping message is an Omarchy bar setting: Omarchy briefly passes it in
-process arguments, so do not save private text there. Files in shared
-locations are sent from a private snapshot. Activity keeps at most 50 summaries
-in memory, without paths. Media shows track text and controls but never loads
-provider-supplied album art.
+messages and the paths of files you send travel over stdin and D-Bus, never
+process arguments. Saved settings, such as a default Ping message, go through
+Omarchy, which briefly passes them in process arguments. Do not save private
+text there. Files in shared locations are sent from a private snapshot. Activity
+keeps at most 50 summaries in memory, without paths. Media shows track text and
+controls but never loads provider-supplied album art.
 
 ## Contributing
 

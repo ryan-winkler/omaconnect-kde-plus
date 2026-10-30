@@ -6,6 +6,15 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Security
+
+- Private copies of shared files older than 24 hours are now deleted when the
+  plugin starts, not only before a later send.
+- File paths go to KDE Connect over D-Bus, no longer in `kdeconnect-cli`
+  arguments that other local accounts can list.
+- The README now says that a saved default Ping message passes through process
+  arguments.
+
 ## [0.1.3] - 2026-10-30
 
 ### Fixed
@@ -74,12 +83,6 @@ All notable changes are listed here. The format follows
 - A pairing response checks the device ID before it builds a D-Bus path.
 - Discovery, media status and saved addresses are read as structured D-Bus
   data. Device names and media metadata stay plain text.
-- Private copies of shared files older than 24 hours are now deleted when the
-  plugin starts, not only before a later send.
-- File paths go to KDE Connect over D-Bus, no longer in `kdeconnect-cli`
-  arguments that other local accounts can list.
-- The README now says that a saved default Ping message passes through process
-  arguments.
 
 ## [0.1.1] - 2026-10-29
 

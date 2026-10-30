@@ -158,7 +158,7 @@ def submit(payload):
             attempted = True
             try:
                 call(peer, SHARE_URLS, [Path(prepared.path).as_uri()],
-                     SUBMISSION_TIMEOUT * 1000, lambda: cancelled)
+                     int(SUBMISSION_TIMEOUT * 1000), lambda: cancelled)
                 state, error = 'request_accepted', ''
             except SubmissionError as failure:
                 state, error = {'submission-unknown': ('submission_unknown', 'submission-unknown'),
