@@ -26,12 +26,15 @@ set -Eeuo pipefail
 # call. Tabs/newlines in remote values are folded to spaces (anti-spoofing of
 # the TSV record).
 #
-# Exit codes: 127 missing dependencies, 69 daemon down / D-Bus error,
-# 70 malformed reply, 64 bad usage.
+# Exit codes: 127 confirmed KDE absence, 78 missing helper dependencies,
+# 69 daemon down / D-Bus error, 70 malformed reply, 64 bad usage.
 base=/modules/kdeconnect
 
 for command in busctl python3; do
-    command -v "$command" >/dev/null 2>&1 || exit 127
+    if ! command -v "$command" >/dev/null 2>&1; then
+        printf '%s\n' "Discovery needs busctl and Python 3. Check the system tools, then select Refresh." >&2
+        exit 78
+    fi
 done
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -47,7 +50,7 @@ busctl_json() {
 is_daemon_running() {
     local reply
     reply=$(busctl_json call org.freedesktop.DBus /org/freedesktop/DBus \
-        org.freedesktop.DBus NameHasOwner s org.kde.kdeconnect) || return 1
+        org.freedesktop.DBus NameHasOwner s org.kde.kdeconnect) || return 69
     printf '%s' "$reply" | python3 "$report" truthy
 }
 
@@ -69,7 +72,25 @@ if [[ "${1:-}" == "--refresh" || "${1:-}" == "-r" ]]; then
     sleep 1.2
 fi
 
-is_daemon_running || exit 69
+if is_daemon_running; then
+    : # A working daemon is sufficient; kdeconnect-cli remains optional.
+else
+    status=$?
+    [[ "$status" == 1 ]] || exit 69
+    # A stopped installed daemon is unavailable, not a reason to reinstall.
+    for command in kdeconnect-cli kdeconnect-app kdeconnectd; do
+        if command -v "$command" >/dev/null 2>&1; then exit 69; fi
+    done
+    registered=$(busctl_json call org.freedesktop.DBus /org/freedesktop/DBus \
+        org.freedesktop.DBus ListActivatableNames) || exit 69
+    if printf '%s' "$registered" | python3 "$report" registered; then
+        exit 69
+    else
+        status=$?
+        [[ "$status" == 1 ]] && exit 127
+        exit 69
+    fi
+fi
 
 sanitize_field() {
     local field=$1

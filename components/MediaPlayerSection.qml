@@ -141,12 +141,12 @@ Column {
 
             Text {
                 width: parent.width
-                text: "Control media on the selected device. Choose a reported player below; playback stays in its owner app. Artwork stays in the native app; Plus does not fetch device-supplied image URLs."
+                text: "Control music and video playing on the selected device. If more than one player is available, choose one below."
                 textFormat: Text.PlainText
                 wrapMode: Text.Wrap
                 color: root.foreground
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
+                font.pixelSize: Style.font.bodySmall
             }
             Row {
                 width: parent.width
@@ -221,59 +221,28 @@ Column {
 
                         Repeater {
                             model: root.playerList.length > 0 ? root.playerList : (root.trackPlayer !== "" ? [root.trackPlayer] : [])
-                            delegate: CursorSurface {
-                                id: playerChipSurface
+                            delegate: Button {
+                                id: playerChip
                                 required property string modelData
                                 required property int index
                                 readonly property bool isCurrent: modelData === root.trackPlayer
-
-                                implicitWidth: chipContent.implicitWidth + Style.space(14)
-                                implicitHeight: Style.space(22)
-                                radius: Style.cornerRadius
+                                objectName: "media-player-" + index
+                                width: Math.min(playerControlsRow.width, implicitWidth)
+                                text: isCurrent ? "Current: " + modelData : modelData
+                                iconText: "󰐌"
+                                tooltipText: isCurrent ? "Current player" : "Choose this player"
+                                selected: isCurrent
+                                focusable: true
+                                enabled: !isCurrent && root.playerList.length > 1 && !!root.service && !!root.device
+                                implicitHeight: Math.max(44, Style.space(32))
                                 foreground: root.foreground
-                                fill: isCurrent ? Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.18) : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.06)
-                                currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
-
-                                PanelToolTip {
-                                    visible: chipMouseArea.containsMouse && !isCurrent
-                                    text: "Switch to " + modelData
-                                    fontFamily: root.fontFamily
-                                }
-
-                                MouseArea {
-                                    id: chipMouseArea
-                                    anchors.fill: parent
-                                    enabled: !isCurrent && root.playerList.length > 1
-                                    hoverEnabled: true
-                                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                                    onClicked: if (root.service && root.device && modelData) root.service.mediaSelectPlayer(root.device.id, modelData)
-                                }
-
-                                Row {
-                                    id: chipContent
-                                    anchors.centerIn: parent
-                                    spacing: Style.space(5)
-
-                                    Text {
-                                        textFormat: Text.PlainText
-                                        text: "󰐌"
-                                        color: isCurrent ? Commons.Color.accent : Qt.darker(root.foreground, 1.4)
-                                        font.family: root.fontFamily
-                                        font.pixelSize: Style.font.caption
-                                        anchors.verticalCenter: parent.verticalCenter
-                                    }
-
-                                    Text {
-                                        textFormat: Text.PlainText
-                                        id: playerNameText
-                                        text: modelData
-                                        color: isCurrent ? root.foreground : Qt.darker(root.foreground, 1.3)
-                                        font.family: root.fontFamily
-                                        font.pixelSize: Style.font.caption
-                                        font.bold: isCurrent
-                                        anchors.verticalCenter: parent.verticalCenter
-                                    }
-                                }
+                                fontFamily: root.fontFamily
+                                fontSize: Style.font.bodySmall
+                                Accessible.role: Accessible.Button
+                                Accessible.name: (isCurrent ? "Current player " : "Choose player ") + modelData
+                                Accessible.description: isCurrent ? "Current player" : "Select this reported player on the selected device."
+                                Accessible.onPressAction: if (enabled) clicked()
+                                onClicked: if (enabled) root.service.mediaSelectPlayer(root.device.id, modelData)
                             }
                         }
                     }
@@ -284,130 +253,73 @@ Column {
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: Style.space(12)
 
-                CursorSurface {
+                PanelActionButton {
                     id: prevBtn
-                    implicitWidth: Style.space(40)
-                    implicitHeight: Style.space(34)
-                    enabled: root.hasMedia
+                    objectName: "media-transport-0"
+                    iconText: "󰒮"
+                    tooltipText: "Previous track"
+                    size: Math.max(44, Style.space(44))
+                    fontSize: Style.font.title
+                    focusable: true
+                    enabled: root.hasMedia && !!root.service && !!root.device
                     opacity: enabled ? 1 : 0.4
                     hasCursor: panel.cursorActive && panel.focusSection === "media" && panel.mediaExpanded && panel.mediaControlIndex === 0
-                    radius: width / 2
                     foreground: root.foreground
-                    fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
-                    currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
-
-                    PanelToolTip {
-                        visible: prevMouseArea.containsMouse
-                        text: "Previous track"
-                        fontFamily: root.fontFamily
+                    fontFamily: root.fontFamily
+                    Accessible.role: Accessible.Button
+                    Accessible.name: tooltipText
+                    Accessible.description: "Control the selected device's active player."
+                    Accessible.onPressAction: if (enabled) clicked()
+                    onHovered: function(inside) {
+                        if (inside) { panel.cursorActive = true; panel.focusSection = "media"; panel.mediaControlIndex = 0 }
                     }
-
-                    MouseArea {
-                        id: prevMouseArea
-                        anchors.fill: parent
-                        enabled: prevBtn.enabled
-                        hoverEnabled: true
-                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onEntered: {
-                            panel.cursorActive = true
-                            panel.focusSection = "media"
-                            panel.mediaControlIndex = 0
-                        }
-                        onClicked: if (root.service && root.device) root.service.mediaPrevious(root.device.id)
-                    }
-
-                    Text {
-                        textFormat: Text.PlainText
-                        anchors.centerIn: parent
-                        text: "󰒮"
-                        color: root.foreground
-                        font.family: root.fontFamily
-                        font.pixelSize: Style.font.title
-                    }
+                    onClicked: if (enabled) root.service.mediaPrevious(root.device.id)
                 }
 
-                CursorSurface {
+                PanelActionButton {
                     id: playPauseBtn
-                    implicitWidth: Style.space(48)
-                    implicitHeight: Style.space(40)
-                    enabled: root.hasMedia
+                    objectName: "media-transport-1"
+                    iconText: root.isPlaying ? "󰏤" : "󰐊"
+                    tooltipText: root.isPlaying ? "Pause playback" : "Resume playback"
+                    size: Math.max(44, Style.space(48))
+                    fontSize: Style.font.title
+                    focusable: true
+                    enabled: root.hasMedia && !!root.service && !!root.device
                     opacity: enabled ? 1 : 0.4
                     hasCursor: panel.cursorActive && panel.focusSection === "media" && panel.mediaExpanded && panel.mediaControlIndex === 1
-                    radius: width / 2
                     foreground: root.foreground
-                    fill: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.18)
-                    currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
-
-                    PanelToolTip {
-                        visible: playMouseArea.containsMouse
-                        text: root.isPlaying ? "Pause playback" : "Resume playback"
-                        fontFamily: root.fontFamily
+                    fontFamily: root.fontFamily
+                    Accessible.role: Accessible.Button
+                    Accessible.name: tooltipText
+                    Accessible.description: "Control the selected device's active player."
+                    Accessible.onPressAction: if (enabled) clicked()
+                    onHovered: function(inside) {
+                        if (inside) { panel.cursorActive = true; panel.focusSection = "media"; panel.mediaControlIndex = 1 }
                     }
-
-                    MouseArea {
-                        id: playMouseArea
-                        anchors.fill: parent
-                        enabled: playPauseBtn.enabled
-                        hoverEnabled: true
-                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onEntered: {
-                            panel.cursorActive = true
-                            panel.focusSection = "media"
-                            panel.mediaControlIndex = 1
-                        }
-                        onClicked: if (root.service && root.device) root.service.mediaPlayPause(root.device.id)
-                    }
-
-                    Text {
-                        textFormat: Text.PlainText
-                        anchors.centerIn: parent
-                        text: root.isPlaying ? "󰏤" : "󰐊"
-                        color: Commons.Color.accent
-                        font.family: root.fontFamily
-                        font.pixelSize: Style.font.title
-                    }
+                    onClicked: if (enabled) root.service.mediaPlayPause(root.device.id)
                 }
 
-                CursorSurface {
+                PanelActionButton {
                     id: nextBtn
-                    implicitWidth: Style.space(40)
-                    implicitHeight: Style.space(34)
-                    enabled: root.hasMedia
+                    objectName: "media-transport-2"
+                    iconText: "󰒭"
+                    tooltipText: "Next track"
+                    size: Math.max(44, Style.space(44))
+                    fontSize: Style.font.title
+                    focusable: true
+                    enabled: root.hasMedia && !!root.service && !!root.device
                     opacity: enabled ? 1 : 0.4
                     hasCursor: panel.cursorActive && panel.focusSection === "media" && panel.mediaExpanded && panel.mediaControlIndex === 2
-                    radius: width / 2
                     foreground: root.foreground
-                    fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
-                    currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
-
-                    PanelToolTip {
-                        visible: nextMouseArea.containsMouse
-                        text: "Next track"
-                        fontFamily: root.fontFamily
+                    fontFamily: root.fontFamily
+                    Accessible.role: Accessible.Button
+                    Accessible.name: tooltipText
+                    Accessible.description: "Control the selected device's active player."
+                    Accessible.onPressAction: if (enabled) clicked()
+                    onHovered: function(inside) {
+                        if (inside) { panel.cursorActive = true; panel.focusSection = "media"; panel.mediaControlIndex = 2 }
                     }
-
-                    MouseArea {
-                        id: nextMouseArea
-                        anchors.fill: parent
-                        enabled: nextBtn.enabled
-                        hoverEnabled: true
-                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onEntered: {
-                            panel.cursorActive = true
-                            panel.focusSection = "media"
-                            panel.mediaControlIndex = 2
-                        }
-                        onClicked: if (root.service && root.device) root.service.mediaNext(root.device.id)
-                    }
-
-                    Text {
-                        textFormat: Text.PlainText
-                        anchors.centerIn: parent
-                        text: "󰒭"
-                        color: root.foreground
-                        font.family: root.fontFamily
-                        font.pixelSize: Style.font.title
-                    }
+                    onClicked: if (enabled) root.service.mediaNext(root.device.id)
                 }
             }
         }

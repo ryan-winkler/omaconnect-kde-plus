@@ -211,6 +211,17 @@ The bar and the Send card instantiate the same `FileDropArea.qml`. It locks the
 selected recipient through `stageDroppedFiles`, refuses busy/existing drafts,
 accepts Copy only, and emits a review-window signal after staging. It never sends.
 
+Discovery keeps missing helper tools distinct from confirmed KDE absence.
+The discovery helper returns `78` when `busctl` or `python3` is missing, before
+any D-Bus call or parser run. The controller maps `78` to `unavailable`, marks
+the session bus unverified and shows fixed dependency and recovery text. Exit
+`127` is reserved for confirmed KDE absence. A failed or
+malformed session-bus reply is unavailable. A valid stopped-daemon reply with
+an installed KDE command or activatable KDE service is also unavailable. Only
+confirmed absence of both command and activation evidence reports missing KDE
+tools. A running daemon can be discovered without `kdeconnect-cli`.
+
+
 Quick Share uses only the fixed `/usr/bin/rquickshare` app path. The launcher
 rechecks the executable and detaches its standard streams. Success confirms
 process creation, not an open window, pairing or delivery.

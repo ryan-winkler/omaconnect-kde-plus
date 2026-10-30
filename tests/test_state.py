@@ -1691,17 +1691,37 @@ class ScriptIntegrationTests(unittest.TestCase):
           "customDevices", "as", "0"])
       assert_busctl_argv_clean(self, read_busctl_calls(log_path))
 
+  def test_discovery_distinguishes_missing_package_from_stopped_daemon(self):
+    # Only fake D-Bus and an owned PATH; never inspect the host daemon.
+    with tempfile.TemporaryDirectory() as tmp:
+      folder = Path(tmp)
+      for name in ("bash", "python3", "dirname", "cat"):
+        (folder/name).symlink_to(shutil.which(name))
+      write_busctl_stub(folder, [("*NameHasOwner*", FIXTURES / "busctl-namehasowner-false.json"), ("*ListActivatableNames*", '{"type":"as","data":[[]]}')])
+      command = [BASH, str(ROOT / "scripts/discover_devices.sh")]
+      env = {**os.environ, "PATH": tmp}
+      missing = subprocess.run(command, capture_output=True, env=env)
+      self.assertEqual(missing.returncode, 127, missing.stderr)
+      cli = folder / "kdeconnect-cli"
+      cli.write_text("#!/bin/bash\nexit 0\n"); cli.chmod(0o700)
+      stopped = subprocess.run(command, capture_output=True, env=env)
+      self.assertEqual(stopped.returncode, 69, stopped.stderr)
+      self.assertEqual(missing.stdout + stopped.stdout, b"")
+
   def test_discover_devices_end_to_end(self):
     script = ROOT / "scripts" / "discover_devices.sh"
 
-    # Missing required dependency exits 127
+    # Missing helper dependencies must not imply KDE is absent.
     with tempfile.TemporaryDirectory() as empty_dir:
       res_dep = subprocess.run([BASH, str(script)], capture_output=True, env={**os.environ, "PATH": empty_dir})
-      self.assertEqual(res_dep.returncode, 127)
+      self.assertEqual(res_dep.returncode, 78)
 
-    # Daemon not running exits 69
+    # Installed CLI with a stopped daemon exits 69, independent of host packages.
     with tempfile.TemporaryDirectory() as tmp:
       stub_dir = Path(tmp)
+      cli = stub_dir / "kdeconnect-cli"
+      cli.write_text("#!/bin/bash\nexit 0\n")
+      cli.chmod(0o700)
       write_busctl_stub(stub_dir, [
           ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-false.json"),
       ])
@@ -2205,12 +2225,12 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("visible: panel.mediaExpanded", media_section)
     self.assertIn("panel.mediaExpanded", media_section)
     self.assertIn("toggleMediaExpanded", media_section)
-    self.assertIn("PanelToolTip", media_section)
+    self.assertIn("tooltipText:", media_section)
     self.assertIn("prevBtn", media_section)
     self.assertIn("playPauseBtn", media_section)
     self.assertIn("nextBtn", media_section)
     self.assertIn("playerControlsRow", media_section)
-    self.assertIn("playerNameText", media_section)
+    self.assertIn('text: isCurrent ? "Current: " + modelData : modelData', media_section)
     self.assertNotIn("id: pText", media_section)
     self.assertNotIn("source: root.albumArt", media_section)
     self.assertIn("localAlbumArtUrl", (ROOT / "scripts" / "media_control.sh").read_text())
@@ -2618,9 +2638,38 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
     self.assertIn("Required packages missing", device_section)
     self.assertIn("KDE Connect setup guide", device_section)
-    self.assertIn("KDE Connect daemon stopped", device_section)
+    self.assertIn("KDE Connect unavailable", device_section)
     self.assertIn("No devices found", device_section)
     self.assertNotIn("Allow in Firewall", device_section)
+
+  def test_missing_kde_connect_shows_the_documented_install_line_read_only(self):
+    device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
+    command = "omarchy pkg add kdeconnect python python-gobject"
+    self.assertIn('text: "' + command + '"', device_section)
+    # One install line: the panel copy must match the install guide.
+    self.assertIn(command, (ROOT / "docs" / "INSTALL.md").read_text())
+    field = device_section.split('objectName: "kdeconnect-install-command"', 1)[1].split("}", 1)[0]
+    self.assertIn('discoveryState === "not_installed"', field)
+    self.assertIn("readOnly: true", field)
+    self.assertNotIn("Process", device_section)
+
+  def test_settings_switches_state_on_or_off_in_words(self):
+    for name in ("PreferenceControls.qml", "NetworkOptions.qml"):
+      source = (ROOT / "components" / name).read_text()
+      self.assertRegex(source, r'description: .*\? "On" : "Off"', name)
+      # Screen readers get state from Accessible.checked; the name stays the bare label.
+      self.assertNotIn("Accessible.name: label", source, name)
+
+  def test_section_visibility_switches_live_on_their_settings_page(self):
+    settings = (ROOT / "components" / "SettingsPanel.qml").read_text()
+    def page(name):
+      return settings.split('visible: root.currentPage === "' + name + '"', 1)[1].split("visible: root.currentPage ===", 1)[0]
+    for key in ("showNetworkControls", "networkStartExpanded", "showSavedAddresses", "addressesStartExpanded"):
+      self.assertIn('key: "' + key + '"', page("Connections"), key)
+      self.assertNotIn('key: "' + key + '"', page("Appearance"), key)
+    for key in ("showMediaPlayer", "mediaStartExpanded", "showRemoteCommands", "commandsStartExpanded"):
+      self.assertIn('key: "' + key + '"', page("Device features"), key)
+      self.assertNotIn('key: "' + key + '"', page("Appearance"), key)
 
   def test_keyboard_navigation_no_double_movement_and_hotkey_safety(self):
     panel_source = (ROOT / "Panel.qml").read_text()

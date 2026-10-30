@@ -37,11 +37,12 @@ def mpris_path(device_id):
 
 # ---------- busctl --json=short parsing (port of omarchy-connect Model.js) ----------
 
-def parse_call_result(raw):
+def parse_call_result(raw, expected_type=None):
     """busctl --json=short `call` reply -> list of return values, or None.
 
     Replies have the shape {"type": "...", "data": [<return values>]}; any
-    malformed input yields None, never an exception.
+    malformed input yields None, never an exception. With expected_type, the
+    outer D-Bus signature must match before the values are used.
     """
     if not isinstance(raw, (str, bytes)):
         return None
@@ -49,7 +50,8 @@ def parse_call_result(raw):
         obj = json.loads(raw)
     except Exception:
         return None
-    if not isinstance(obj, dict) or not isinstance(obj.get("data"), list):
+    if (not isinstance(obj, dict) or not isinstance(obj.get("data"), list)
+            or (expected_type is not None and obj.get("type") != expected_type)):
         return None
     return obj["data"]
 

@@ -3,6 +3,7 @@
 Open **Settings** from the bar menu. Choose the domain that matches your task.
 Use **Back to devices** to return. Native KDE Connect opens in its own window;
 your Plus settings remain available. Select a device before changing its features.
+Settings switches show **On** or **Off** below their names.
 
 ## Appearance
 
@@ -18,7 +19,9 @@ your Plus settings remain available. Select a device before changing its feature
 ## Connections
 
 Enable only the integrations you use. Each display switch shows or hides its
-controls. It does not install, connect or disconnect a VPN.
+controls. It does not install, connect or disconnect a VPN. In this page, choose
+whether network controls and saved addresses show or start expanded. Hiding a
+section keeps its saved data.
 
 | Integration | Use it | Official setup guide |
 | --- | --- | --- |
@@ -71,7 +74,15 @@ Each action shows its description and selected-device availability.
   you can edit up to 8192 characters before sending. Private Ping content also uses the session bus. Ping and Ring use different native modules.
 - **KDE Connect features:** Open the selected peer in native KDE Connect.
 
+If the Quick Share window does not appear after launch, check its tray icon.
+See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare#installation).
+
 ## Device features
+
+Media player choices and transport buttons support Tab, Enter, Space and
+assistive-technology activation. The current player starts with **Current:**,
+so its state remains clear without color or hover. Unavailable controls do not
+submit an action.
 
 Open **All KDE Connect features**, then use native **Plugin settings** to enable
 or configure installed modules and permissions. Search in Plus by task or plugin
@@ -116,9 +127,6 @@ Private canonical sources normally use their existing path. KDE owns its later
 file open; programs running as your user and root remain trusted.
 Text, Ping, Clipboard and remote-command success messages also report request acceptance. Check the recipient or remote result for delivery or execution.
 
-If the Quick Share window does not appear after launch, check its tray icon.
-See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare#installation).
-
 ## Syncthing identity note
 
 Enable **Show Syncthing identity notes** in **Settings → Appearance**. Select a
@@ -146,8 +154,15 @@ Syncshell retains the synchronization engine and keys. Read the official
 ## Install, update or recover
 
 Use the supported commands in [install, update and recovery](INSTALL.md),
-including how to move settings from the original OmaConnect. Native plugin
+including how to move settings from the original OmaConnect. If KDE Connect is
+missing, Devices shows `omarchy pkg add kdeconnect python python-gobject`. Copy
+it into a terminal, run it, then select **Refresh**. Plus never runs it for you. Native plugin
 removal does not remove pairing, VPN profiles or private Plus metadata.
+
+If discovery reports missing **busctl and Python 3**, check those system tools,
+then select **Refresh**. This is a discovery dependency problem, not proof that
+KDE Connect is missing. On Omarchy, `busctl` comes from systemd and `python3`
+comes from Python. Plus does not install or change these packages.
 
 ## Get help or contribute
 
@@ -155,6 +170,7 @@ Use [support](../SUPPORT.md) for task help and safe issue evidence,
 [contributing](../CONTRIBUTING.md) for small changes, or
 [security reporting](../SECURITY.md) for private vulnerability reports.
 Do not publish private IDs, addresses, configurations or credentials.
+
 
 ## Update KDE Connect itself
 
