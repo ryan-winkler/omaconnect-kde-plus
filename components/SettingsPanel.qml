@@ -52,6 +52,21 @@ Window {
     flags: Qt.Window
     modality: Qt.NonModal
     color: root.surfaceColor
+    onActiveFocusItemChanged: Qt.callLater(root.revealFocusedControl)
+
+    function revealFocusedControl() {
+        var item = root.activeFocusItem
+        var viewport = pageScroll.contentItem
+        if (!item || !viewport) return
+        var ancestor = item
+        while (ancestor && ancestor !== viewport) ancestor = ancestor.parent
+        if (!ancestor) return
+        var position = item.mapToItem(pageScroll, 0, 0)
+        var offset = position.y < 0 ? position.y
+            : Math.max(0, position.y + item.height - pageScroll.availableHeight)
+        if (offset !== 0) viewport.contentY = Math.max(0, Math.min(
+            viewport.contentY + offset, pageScroll.contentHeight - pageScroll.availableHeight))
+    }
 
     function deviceName(entry) {
         return service && typeof service.displayName === "function" ? service.displayName(entry) : entry.name
@@ -283,6 +298,15 @@ Window {
                             font.family: Style.font.family
                             font.pixelSize: Style.font.bodySmall
                         }
+                        Text {
+                            width: parent.width
+                            text: "To change this computer’s KDE Connect name, open Native KDE Connect settings in Device features, then choose Settings in the native app menu."
+                            textFormat: Text.PlainText
+                            wrapMode: Text.Wrap
+                            color: Commons.Color.popups.text
+                            font.family: Style.font.family
+                            font.pixelSize: Style.font.bodySmall
+                        }
                         Kit.Button {
                             width: parent.width
                             text: "Change bar icon"
@@ -338,6 +362,15 @@ Window {
                         width: parent.width
                         visible: root.currentPage === "Connections"
                         spacing: Style.space(12)
+                        Text {
+                            width: parent.width
+                            text: "These Plus switches only show or hide controls. To enable KDE Connect connection providers, open Native KDE Connect settings in Device features, then choose Settings in the native app menu."
+                            textFormat: Text.PlainText
+                            wrapMode: Text.Wrap
+                            color: Commons.Color.popups.text
+                            font.family: Style.font.family
+                            font.pixelSize: Style.font.bodySmall
+                        }
                         NetworkOptions { width: parent.width; panel: root.panel; configuration: true }
                         PreferenceControls {
                             width: parent.width

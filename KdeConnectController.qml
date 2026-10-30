@@ -598,6 +598,14 @@ Item {
         return true
     }
 
+    function editRemoteCommands(id) {
+        var device = deviceById(id)
+        if (!device || !device.capabilities.commands) return false
+        return startAction(id, ["python3", scriptPath("scripts/edit_remote_commands.py")],
+            "Command editor request accepted. Check the selected device; no command was run.", "remote command editor",
+            JSON.stringify({peerId: String(id)}) + "\n")
+    }
+
     function parseRemoteCommands(text) {
         var source = String(text || "").trim()
         if (!source) return []
@@ -943,16 +951,21 @@ Item {
         return true
     }
 
-    function openKdeConnectApp() {
+    function openKdeConnectApp(pluginId) {
         if (appProcess.running) return false
+        if (pluginId !== undefined && typeof pluginId !== "string") return false
+        pluginId = pluginId || ""
+        if (pluginId && (!selectedDevice || !selectedDevice.paired || !/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(pluginId))) return false
         appProcess.targetDeviceId = selectedDeviceId
-        nativeAppMessage = "Opening KDE Connect"
+        appProcess.configurationRequested = pluginId !== ""
+        nativeAppMessage = pluginId ? "Opening native feature configuration" : "Opening KDE Connect"
         nativeAppFailed = false
         actionState = "running"
-        actionMessage = "Opening KDE Connect"
+        actionMessage = nativeAppMessage
         actionError = ""
         appProcess.command = ["bash", getAppScriptPath()]
         if (selectedDeviceId) appProcess.command = appProcess.command.concat([selectedDeviceId])
+        if (pluginId) appProcess.command = appProcess.command.concat([pluginId])
         appProcess.running = true
         return true
     }
@@ -1256,10 +1269,13 @@ Item {
     Process {
         id: appProcess
         property string targetDeviceId: ""
+        property bool configurationRequested: false
         onExited: function(code) {
             if (targetDeviceId !== root.selectedDeviceId) return
             root.nativeAppFailed = code !== 0
-            root.nativeAppMessage = code === 0 ? "KDE Connect launch requested" : root.safeError(code, "KDE Connect app")
+            root.nativeAppMessage = code === 0 ? (configurationRequested ? "Native configuration launch requested" : "KDE Connect launch requested")
+                : configurationRequested && code === 69 ? "Direct configuration unavailable. Open Native KDE Connect settings, then Plugin Settings."
+                : root.safeError(code, "KDE Connect app")
             if (code === 0) {
                 root.actionState = "accepted"
                 root.actionMessage = root.nativeAppMessage

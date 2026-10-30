@@ -41,6 +41,19 @@ ShellRoot {
                 if (!test.check(!service.nativeAppFailed && service.nativeAppMessage === "KDE Connect launch requested", "zero exit reports request acceptance")) return
                 service.actionError = "Unrelated action failed"
                 if (!test.check(service.nativeAppMessage === "KDE Connect launch requested", "other actions do not overwrite native launch feedback")) return
+                if (!test.check(!service.openKdeConnectApp("../bad") && !service.openKdeConnectApp(42), "invalid native module input is rejected")) return
+                service.openKdeConnectApp("kdeconnect_runcommand")
+                test.phase = 4
+            } else if (test.phase === 4 && !service.nativeAppOpening) {
+                if (!test.check(service.nativeAppMessage === "Native configuration launch requested", "module handoff reports request acceptance")) return
+                service.openKdeConnectApp("kdeconnect_clipboard")
+                test.phase = 5
+            } else if (test.phase === 5 && !service.nativeAppOpening) {
+                if (!test.check(service.nativeAppFailed && service.nativeAppMessage.indexOf("Direct configuration unavailable") === 0, "unsupported direct configuration gives a native fallback step")) return
+                if (!test.check(service.editRemoteCommands("A"), "native editor request accepts the paired capable peer")) return
+                test.phase = 6
+            } else if (test.phase === 6 && service.actionState !== "running") {
+                if (!test.check(service.actionState === "accepted" && service.actionMessage.indexOf("Command editor request accepted") === 0, "editor acceptance does not claim execution or opened remote UI")) return
                 console.log("NATIVE_PASS native launch")
                 Qt.quit()
             }

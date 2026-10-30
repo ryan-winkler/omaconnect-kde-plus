@@ -80,6 +80,11 @@ Each action shows its description and selected-device availability.
 addresses and connection providers. Missing values say **Not reported**. Offline
 addresses are not presented as current. The daily Information section respects
 the battery and cellular visibility preferences.
+For native certificate fingerprints and protocol details, use
+`kdeconnect-cli --device DEVICE_ID --encryption-info` with the ID shown in
+Information. This is a read-only native route. The pairing verification code is
+different from the complete certificate information; a saved address does not
+establish identity or trust.
 
 **Use device as an external monitor** uses KDE Connect's native Virtual Monitor
 module. It appears in Devices when reported and is also available in Device
@@ -95,9 +100,29 @@ the selected device's reported plugin IDs. New and third-party IDs remain visibl
 even when local metadata has no name. Quick actions are reviewed entry points;
 Plus does not turn arbitrary plugin names into commands.
 
+**Configure this computer for the selected device** lists configuration pages
+from the installed native metadata, including Run commands, clipboard, sharing,
+notifications, media pause, presenter and input sharing when installed. Choose
+**Configure…** to open that exact module in native KDE Connect. A paired device can
+be configured while offline. An unpaired device must be paired first. If direct
+configuration is unavailable on an older frontend, open **Native KDE Connect
+settings**, then **Plugin Settings**. Plus does not write native module settings.
+New configuration pages are discovered after a native package upgrade. For
+example, current KDE development source adds a find-this-device sound page that
+is absent from the installed 26.08.2 package. Plus does not claim that an upstream
+development feature is already installed.
+
+**Configure Run commands** defines commands on **this computer** that the selected
+device can run. It does not edit commands on the other device. To add or edit
+commands that run on the selected device, use that device's KDE Connect settings.
+**Request command editor on selected device** can ask a connected compatible peer
+to open its setup page. It rechecks whether the peer accepts that request. Check
+the other device for the editor. Request acceptance does not confirm that it
+opened, and no command runs. If unavailable, open Run commands settings there.
+
 Open **Native KDE Connect settings**, then use native **Plugin settings** to enable
 or configure installed modules and permissions. Search in Plus by task or plugin
-ID to find reported features, including unfamiliar third-party IDs. Supported
+ID to find reported features and installed configuration pages. Supported
 means compatible; Loaded describes the local daemon. Neither confirms permission.
 The native page manages installed modules; it is not a plugin download store.
 Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).

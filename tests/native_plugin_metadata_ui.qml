@@ -12,6 +12,10 @@ ShellRoot {
         interval: 1
         running: true
         onTriggered: {
+            if (!check(metadata.configurations.length > 0, "installed configuration pages are discovered without a device target")) return
+            var commands = metadata.configurations.find(function(entry) { return entry.id === "kdeconnect_runcommand" })
+            if (!check(commands && commands.name.length > 0 && commands.description.length > 0, "local command configuration has native metadata")) return
+            if (!check(!metadata.configurations.some(function(entry) { return entry.id === "kdeconnect_remotecommands" }), "remote command execution is not confused with local configuration")) return
             var name = metadata.displayName("kdeconnect_virtualmonitor")
             if (!check(name.length > 0 && name !== "kdeconnect_virtualmonitor", "installed virtual monitor metadata resolves")) return
             if (!check(metadata.displayName("kdeconnect_nonexistent_metadata_fixture") === "", "unknown safe ID has no native label")) return

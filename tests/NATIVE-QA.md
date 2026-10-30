@@ -28,6 +28,13 @@ Quickshell has no PanelWindow backend under `QT_QPA_PLATFORM=offscreen`, so the
 offscreen run replaces only KeyboardPanel's window-hosting boundary with an Item.
 The panel contents and other controls stay real.
 
+The Settings fixtures also check exact-device native configuration launch,
+unsupported-frontend feedback, the separate peer command-editor request, and
+Tab/Shift+Tab visibility in all four pages at the minimum 520 × 440 window size.
+The metadata fixture enumerates installed configuration pages using explicit
+read-only roles, without a device target or native configuration directory.
+These checks do not prove that a real native or remote editor opened or saved.
+
 ## Desktop session mode
 
 To open the real KeyboardPanel on your current Wayland desktop:

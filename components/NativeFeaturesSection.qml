@@ -16,6 +16,11 @@ Column {
         return pluginIds.filter(function(id) { return !query || id.toLowerCase().indexOf(query) !== -1 || root.taskName(id).toLowerCase().indexOf(query) !== -1 })
     }
     readonly property var pluginIds: device && device.pluginIds ? device.pluginIds : []
+    readonly property var nativeConfigurations: nativeMetadata.item ? nativeMetadata.item.configurations : []
+    readonly property var filteredConfigurations: {
+        var query = featureSearch.text.trim().toLowerCase()
+        return nativeConfigurations.filter(function(entry) { return !query || (entry.id + " " + entry.name + " " + entry.description).toLowerCase().indexOf(query) !== -1 })
+    }
     // IDs remain visible even when this version has no friendly task label.
     function taskName(id) {
         var name = nativeMetadata.item ? nativeMetadata.item.displayName(id) : ""
@@ -117,8 +122,8 @@ Column {
         }
         Text {
             width: parent.width
-            text: root.pluginIds.length === 0 ? "No feature list was reported. Open KDE Connect to inspect the selected device."
-                : root.filteredPluginIds.length === 0 ? "No matching features. Clear the search or open native Plugin settings."
+            text: root.pluginIds.length === 0 ? "No device feature list was reported. Installed configuration pages may still be available below."
+                : root.filteredPluginIds.length === 0 ? "No matching reported device features. Check the configuration pages below or clear the search."
                 : "Matching reported features: " + root.filteredPluginIds.length + " / " + root.pluginIds.length
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
@@ -134,6 +139,122 @@ Column {
             color: Commons.Color.popups.text
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
+        }
+        Column {
+            width: parent.width
+            spacing: Style.space(6)
+            Text {
+                width: parent.width
+                text: "Commands on the selected device"
+                textFormat: Text.PlainText
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.body
+                font.bold: true
+            }
+            Kit.Button {
+                objectName: "request-remote-command-editor"
+                width: parent.width
+                height: Math.max(44, implicitHeight)
+                text: "Request command editor on selected device"
+                Accessible.name: text
+                Accessible.description: "Ask the selected device to open its command setup. No command runs."
+                focusable: true
+                enabled: !!root.device && root.device.paired && root.device.reachable
+                    && root.pluginIds.indexOf("kdeconnect_remotecommands") !== -1
+                    && root.service.actionState !== "running"
+                foreground: Commons.Color.popups.text
+                onClicked: if (enabled) root.service.editRemoteCommands(root.device.id)
+            }
+            Text {
+                width: parent.width
+                text: "For commands that run there. The device must be connected and accept remote setup requests. Check that device for the editor; if unavailable, open its KDE Connect Run commands settings. No command runs."
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+            }
+            Text {
+                width: parent.width
+                visible: !!root.service && !!(root.service.actionError || root.service.actionMessage)
+                text: root.service ? "Latest device action: " + (root.service.actionError || root.service.actionMessage) : ""
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+            }
+            Text {
+                width: parent.width
+                text: "Configure this computer for the selected device"
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.body
+                font.bold: true
+            }
+            Text {
+                width: parent.width
+                text: "Open installed KDE Connect configuration pages. Run commands defines commands on this computer that the selected device can run. Edit commands on the other device there. Module switches and permissions stay in native Plugin Settings."
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+            }
+            Repeater {
+                model: root.filteredConfigurations
+                delegate: Column {
+                    required property var modelData
+                    width: parent.width
+                    spacing: Style.space(2)
+                    Kit.Button {
+                        objectName: "native-configure-" + modelData.id
+                        width: parent.width
+                        height: Math.max(44, implicitHeight)
+                        text: modelData.id === "kdeconnect_runcommand" ? "Configure commands on this computer ↗" : "Configure " + modelData.name + " ↗"
+                        Accessible.name: modelData.id === "kdeconnect_runcommand" ? "Configure commands on this computer in native KDE Connect" : "Configure " + modelData.name + " in native KDE Connect"
+                        Accessible.description: modelData.description + ". On this computer, for the selected device."
+                        enabled: !!root.device && root.device.paired && !root.service.nativeAppOpening
+                        focusable: true
+                        foreground: Commons.Color.popups.text
+                        onClicked: root.service.openKdeConnectApp(modelData.id)
+                    }
+                    Text {
+                        width: parent.width
+                        text: modelData.description
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        color: Commons.Color.popups.text
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.caption
+                    }
+                }
+            }
+            Text {
+                width: parent.width
+                visible: !root.device || !root.device.paired || root.filteredConfigurations.length === 0
+                text: !root.device ? "Choose a device to configure its native features."
+                    : !root.device.paired ? "Pair this device in KDE Connect before configuring native features."
+                    : root.nativeConfigurations.length === 0 ? "Native configuration metadata is unavailable. Open Native KDE Connect settings, then Plugin Settings."
+                    : "No matching configuration pages. Clear the search to see all installed pages."
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+            }
+        }
+        Text {
+            width: parent.width
+            text: "Reported device features"
+            textFormat: Text.PlainText
+            color: Commons.Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.body
+            font.bold: true
         }
         Repeater {
             model: root.filteredPluginIds

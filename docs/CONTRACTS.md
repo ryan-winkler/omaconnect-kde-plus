@@ -144,8 +144,13 @@ whitelist. `pluginIds` is supported metadata. Optional `loadedPluginIds` plus
 `loadedKnown` report the daemon's runtime list. Neither means an enabled setting
 or granted phone permission. Failed metadata reads remain unknown. Quick actions
 must use the matching sender interface, not a receiver plugin with a similar name.
-The selected-peer native route passes only a validated device ID to
-`kdeconnect-app --device`; older settings frontends open the device list.
+The selected-peer native route passes a validated device ID to
+`kdeconnect-app --device`. An optional validated module ID adds `--plugin-config`
+only after a two-second offscreen help probe confirms that option. Configuration
+requires a paired selected device. Older frontends retain the ordinary device-list
+route; direct configuration returns unavailable with a manual Plugin Settings next
+step instead of claiming a module opened. Launch acceptance does not prove a
+window rendered or settings were saved.
 
 Network options delegate Tailscale to its existing Omarchy panel and generic
 WireGuard profiles to the installed NetworkManager editor. Launch requests use
@@ -164,14 +169,27 @@ plus native virtual-monitor known/active/available booleans. QML revalidates the
 bounds. Legacy 16-field records remain valid. Unknown reads never mean false or
 available. Virtual-monitor properties are read only for reported support, with a
 two-second native-call timeout.
-The serialized information field is at most16,384characters after JSON escaping.
+The serialized information field is at most 16,384 characters after JSON escaping.
 Oversized information lists are omitted as needed; valid monitor state is retained.
 
 Feature display names use the installed `PluginModel.pluginDisplayName` API in an
-optional loader. The metadata model has no device target and is never bound as a
-view model or used to read/write plugin check state. Missing metadata falls back
-to the reported ID. This replaces the private name map, not the safe action
-catalog. Native actions still need a reviewed dispatcher.
+optional loader. The metadata model has no device target. Its Instantiator requests
+only pluginId, name, description and configSource; it never requests isChecked or
+reads/writes plugin check state. Installed configuration sources produce a native
+Configure list independent of the peer's reported feature list. Plus passes IDs
+to the native app and does not load those configuration QML files itself. Missing
+metadata falls back to the reported ID and the native settings route. Local Run
+commands configuration controls what the peer can run on this computer; it does
+not edit the peer's command definitions. Native actions still need a reviewed
+dispatcher.
+
+`edit_remote_commands.py` accepts only JSON stdin `{peerId}` of at most 512 bytes.
+It validates the D-Bus path ID and rechecks paired/reachable and native
+`canAddCommand` before the fixed `remotecommands.editCommands` call. Reads and
+mutation use NO_AUTO_START, a 1.5 second call timeout and a 5 second total cancellation
+deadline. It reports request acceptance only; a lost mutation reply stays
+submission-unknown. It does not add, edit or execute command definitions. Plus
+does not retry automatically or manage the remote editor.
 
 `virtual_monitor.py` accepts one bounded 512-byte JSON line containing `peerId` and
 `operation` (`start` or `stop`). It validates the D-Bus path ID, rechecks native

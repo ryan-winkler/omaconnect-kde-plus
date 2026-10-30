@@ -101,16 +101,19 @@ for (const id of ['','_peer','peer-123','../peer','peer/sub','peer.name','peer i
         result = subprocess.run([shutil.which('node'), '-e', script], input=function, text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def launch(self, app, args):
+    def launch(self, app, args, config_support=True):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             log = base / 'argv.json'
+            (base / 'timeout').symlink_to(shutil.which('timeout'))
             for name in ('nohup', app):
                 path = base / name
                 if name == 'nohup':
                     path.write_text('#!/bin/bash\nexec "$@"\n')
                 else:
-                    path.write_text('#!' + sys.executable + '\nimport json,sys\nfrom pathlib import Path\nPath(' + repr(str(log)) + ').write_text(json.dumps(sys.argv[1:]))\n')
+                    path.write_text('#!' + sys.executable + '\nimport json,sys\nfrom pathlib import Path\n'
+                        + 'if sys.argv[1:] == ["--help"]:\n print(' + repr('--plugin-config' if config_support else '--device') + '); sys.exit(0)\n'
+                        + 'Path(' + repr(str(log)) + ').write_text(json.dumps(sys.argv[1:]))\n')
                 path.chmod(0o700)
             result = subprocess.run([BASH, str(ROOT / 'scripts/open_app.sh'), *args], env={**os.environ, 'PATH': tmp}, text=True, capture_output=True, timeout=5)
             if result.returncode == 0:
@@ -124,5 +127,14 @@ for (const id of ['','_peer','peer-123','../peer','peer/sub','peer.name','peer i
         self.assertEqual(self.launch('kdeconnect-app', []), (0, []))
         self.assertEqual(self.launch('kdeconnect-settings', ['peer_123-abc']), (0, []))
         self.assertEqual(self.launch('kcmshell6', ['peer_123-abc']), (0, ['kcm_kdeconnect']))
-        for args in (['--plugin-config'], ['peer;command'], ['../peer'], ['peer', 'extra']):
+        for args in (['--plugin-config'], ['peer;command'], ['../peer'], ['peer', 'config', 'extra']):
+            self.assertEqual(self.launch('kdeconnect-app', args), (2, None))
+
+    def test_configuration_launcher_targets_exact_device_and_module_or_reports_unavailable(self):
+        self.assertEqual(self.launch('kdeconnect-app', ['peer_123', 'kdeconnect_runcommand']),
+            (0, ['--device', 'peer_123', '--plugin-config', 'kdeconnect_runcommand']))
+        self.assertEqual(self.launch('kdeconnect-app', ['peer_123', 'kdeconnect_clipboard'], False), (69, None))
+        for app in ('kdeconnect-settings', 'kcmshell6'):
+            self.assertEqual(self.launch(app, ['peer_123', 'kdeconnect_runcommand']), (69, None))
+        for args in (['', 'kdeconnect_runcommand'], ['peer', '../config'], ['peer', '--bad'], ['peer', 'x' * 129]):
             self.assertEqual(self.launch('kdeconnect-app', args), (2, None))

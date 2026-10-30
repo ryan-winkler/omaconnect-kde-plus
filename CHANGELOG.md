@@ -15,6 +15,11 @@ All notable changes are listed here. The format follows
 - Device Information now includes native addresses and connection providers.
   Feature names come from installed KDE metadata, with unknown IDs preserved.
   A native external-monitor action exposes observed availability and Start/Stop.
+- Device features discovers installed native configuration pages and opens the
+  exact module for the selected device. Run commands configuration now states
+  which computer runs the commands; older frontends have an explicit fallback.
+  A separate request can open a compatible peer's command editor without running
+  a command. Keyboard focus now scrolls into view in every Settings page.
 - Trimmed the docs to user and contributor guides; install, update and
   migration now live in `docs/INSTALL.md`.
 

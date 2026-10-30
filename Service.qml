@@ -181,10 +181,11 @@ Item {
         return controller.openSmsApp(id)
     }
 
-    function openKdeConnectApp() {
-        return controller.openKdeConnectApp()
+    function openKdeConnectApp(pluginId) {
+        return controller.openKdeConnectApp(pluginId)
     }
     function toggleVirtualMonitor(id) { return controller.toggleVirtualMonitor(id) }
+    function editRemoteCommands(id) { return controller.editRemoteCommands(id) }
 
     function refreshTailscale() {
         controller.refreshTailscale()

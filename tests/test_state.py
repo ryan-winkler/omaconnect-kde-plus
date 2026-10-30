@@ -2023,7 +2023,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     device_ui = (ROOT / "components" / "DeviceSection.qml").read_text()
     app_script = (ROOT / "scripts" / "open_app.sh").read_text()
 
-    self.assertIn("function openKdeConnectApp()", controller_source)
+    self.assertIn("function openKdeConnectApp(pluginId)", controller_source)
     self.assertIn("getAppScriptPath()", controller_source)
     self.assertNotIn("openKdeConnectApp()", device_ui)
     self.assertIn("openDeviceSettings(modelData.id)", device_ui)

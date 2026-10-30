@@ -13,8 +13,10 @@ ShellRoot {
     property int nativeOpens: 0
     property int returned: 0
     property string nativeTarget: ""
+    property string nativePluginTarget: ""
     property int deviceSelections: 0
     property int monitorRequests: 0
+    property string commandEditorTarget: ""
     property var initialDevices: [
         {id:"fixture-phone",name:"Fixture phone",type:"phone",paired:true,reachable:true,reachableAddresses:["192.0.2.10:1716"],activeProviderNames:["LAN"],virtualMonitor:{known:true,active:false,available:true},pluginIds:["kdeconnect_share","kdeconnect_sftp","thirdparty.custom-addon","kdeconnect_remotecommands","kdeconnect_virtualmonitor"],loadedKnown:true,loadedPluginIds:["kdeconnect_share","kdeconnect_virtualmonitor"]},
         {id:"fixture-offline",name:"Fixture phone",type:"laptop",paired:true,reachable:false,pluginIds:["kdeconnect_battery"],loadedKnown:true,loadedPluginIds:["kdeconnect_battery"]},
@@ -30,7 +32,9 @@ ShellRoot {
         {page:"Device features", width:520, popup:true, name:"settings-520-dropdown.png"},
         {page:"Appearance", width:520, device:"fixture-new", name:"settings-520-long-name.png"},
         {page:"Device features", width:520, height:440, name:"settings-520-minimum-height.png"},
-        {page:"Device features", width:720, scroll:500, name:"settings-720-feature-inventory.png"}
+        {page:"Device features", width:720, scroll:500, name:"settings-720-command-setup.png"},
+        {page:"Device features", width:520, scroll:850, name:"settings-520-native-configuration.png"},
+        {page:"Device features", width:720, scroll:99999, name:"settings-720-feature-inventory.png"}
     ]
     function check(value, message) {
         if (!value) { console.error("NATIVE_FAIL settings: " + message); Qt.quit(); return false }
@@ -66,8 +70,9 @@ ShellRoot {
         property string actionError: ""
         property string actionState: "idle"
         function displayName(device) { return device.name }
-        function openKdeConnectApp() { test.nativeOpens++;test.nativeTarget=selectedDeviceId }
+        function openKdeConnectApp(pluginId) { test.nativeOpens++;test.nativeTarget=selectedDeviceId;test.nativePluginTarget=pluginId || "" }
         function toggleVirtualMonitor(id) { if(id===selectedDeviceId)test.monitorRequests++;return true }
+        function editRemoteCommands(id) { test.commandEditorTarget=id;return true }
     }
     QtObject {
         id: panel
@@ -108,6 +113,15 @@ ShellRoot {
             } else if(test.phase===4) {
                 var features=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])
                 if(!test.check(features && features.pluginIds.length===5,"complete reported inventory is present in settings"))return
+                if(!test.check(features.nativeConfigurations.some(function(entry) { return entry.id === "kdeconnect_runcommand" }),"native local command configuration is discovered without requiring remote feature support"))return
+                var configure=test.find(settings.contentItem,function(o){return o.objectName === "native-configure-kdeconnect_runcommand"},[])
+                if(!test.check(configure && configure.enabled,"paired device has a native command configuration control"))return
+                configure.clicked()
+                if(!test.check(test.nativeTarget==="fixture-phone" && test.nativePluginTarget==="kdeconnect_runcommand","Configure passes the selected device and exact native module"))return
+                var editor=test.find(settings.contentItem,function(o){return o.objectName === "request-remote-command-editor"},[])
+                if(!test.check(editor && editor.enabled,"connected command-capable peer has an explicit editor request"))return
+                editor.clicked()
+                if(!test.check(test.commandEditorTarget==="fixture-phone","remote editor request uses the selected peer, separate from local configuration"))return
                 var addressInfo=test.find(settings.contentItem,function(o){return o.objectName==="device-information-Addresses"},[])
                 if(!test.check(addressInfo && addressInfo.text.indexOf("192.0.2.10:1716")!==-1,"Information shows reported native addresses"))return
                 var monitor=test.named("Use device as an external monitor")
@@ -123,7 +137,7 @@ ShellRoot {
                 var featureList2=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])
                 if(!test.check(featureList2.filteredPluginIds.length===1 && featureList2.filteredPluginIds[0]==="thirdparty.custom-addon","search retains unknown third-party IDs"))return
                 test.named("Native KDE Connect settings").clicked()
-                if(!test.check(test.nativeOpens===1 && settings.visible,"native settings handoff keeps Plus settings available"))return
+                if(!test.check(test.nativeOpens===2 && settings.visible,"native settings handoff keeps Plus settings available"))return
                 featureList2.searchText="";test.phase=7
             } else if(test.phase===7) {
                 test.named("Back to devices").clicked();test.phase=8
