@@ -10,6 +10,11 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Refresh and automatic rediscovery ask KDE Connect to search the network.
+- Remote command rows support keyboard and assistive-technology activation.
+- Saved-address input clears only after readback confirms the save.
+- Network guidance separates Tailscale/WireGuard provider links from requests to
+  the existing Back to Home helper. Plus does not ship that helper.
 - Discovery, the command list and media status read at most 64 KiB per reply.
   Each read stops at a deadline, and a provider that ignores the stop request is
   killed, so a stuck provider cannot hang the panel. The command list keeps at
