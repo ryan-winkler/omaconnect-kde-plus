@@ -33,7 +33,7 @@ class Migration(unittest.TestCase):
             result, snapshot, appearance = M.prepare(original)
             self.assertEqual(original, before)
             entry = result["bar"]["layout"]["right"][1]
-            self.assertEqual(entry["id"], "Omaconnect.plus")
+            self.assertEqual(entry["id"], "omaconnect.plus")
             self.assertEqual(result["bar"]["id"], bar)
             self.assertEqual(result["bar"]["layout"]["right"][::2], ["tray", "power"])
             self.assertFalse(entry["showTailscale"])
@@ -54,16 +54,16 @@ class Migration(unittest.TestCase):
         entry = original["bar"]["layout"]["right"].pop(1)
         original["bar"]["layout"]["tray"] = ["other", entry]
         candidate, snapshot, _ = M.prepare(original)
-        self.assertEqual(candidate["bar"]["layout"]["tray"][1]["id"], "Omaconnect.plus")
+        self.assertEqual(candidate["bar"]["layout"]["tray"][1]["id"], "omaconnect.plus")
         self.assertEqual(M.rollback(candidate, snapshot), original)
 
     def test_dual_bar_and_service_settings_migrate_without_two_active_ids(self):
         original = self.source()
         original["plugins"].append({"id":"omaconnect","settings":{"showBarBattery":True}})
         candidate, snapshot, _appearance = M.prepare(original)
-        self.assertEqual(candidate["plugins"][-1]["id"], "Omaconnect.plus")
+        self.assertEqual(candidate["plugins"][-1]["id"], "omaconnect.plus")
         self.assertIn("omaconnect", candidate["disabledPlugins"])
-        self.assertNotIn("Omaconnect.plus", candidate["disabledPlugins"])
+        self.assertNotIn("omaconnect.plus", candidate["disabledPlugins"])
         self.assertEqual(M.rollback(candidate, snapshot), original)
 
     def test_rollback_preserves_unrelated_later_changes_and_rejects_conflict(self):

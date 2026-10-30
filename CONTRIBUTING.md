@@ -59,7 +59,7 @@ For a bounded contributor task, use the [task form](https://github.com/ryan-wink
 
 Small documentation and focused bug fixes can go directly to a PR. For a new provider, public schema, native-module installer or major navigation change, open a feature issue first. This avoids duplicate work and protects the existing boundaries. KDE Connect's daemon owns module state. Plus can expose its native enable and readback APIs for the selected paired device; native configuration forms remain in KDE Connect. Do not write native configuration files, add a separate permission store, or invent a module download catalogue.
 
-The stable plugin ID is `Omaconnect.plus`. Do not change it after release: Omarchy registers plugins by manifest ID, and `omarchy plugin update` cannot rename an installed plugin, so a new ID would drop users' bar placement, settings and private metadata. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
+The stable machine plugin ID is `omaconnect.plus`, using the Community marketplace’s required lowercase format. The display name is Omaconnect KDE Plus. Do not change the ID after this format correction: native updates do not rename stored bar/service references or the checkout directory. The [explicit migration guide](docs/INSTALL.md) preserves former development settings. Existing uppercase private-data directories stay unchanged. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
 
 ## Change the version slowly
 

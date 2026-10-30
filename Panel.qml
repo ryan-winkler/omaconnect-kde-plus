@@ -14,8 +14,8 @@ import "ActionCatalog.js" as Actions
 
 Panel {
     id: root
-    moduleName: "Omaconnect.plus"
-    ipcTarget: "Omaconnect.plus"
+    moduleName: "omaconnect.plus"
+    ipcTarget: "omaconnect.plus"
     manageIpc: false
 
     property var anchorItem: hostWidget && hostWidget.button ? hostWidget.button : null
@@ -26,7 +26,7 @@ Panel {
     // hostWidget.service already carries the bridge fallback (see
     // BarWidget.qml); the bridge here covers standalone instantiation with
     // no host widget. See bridge/Bridge.qml.
-    readonly property var service: hostWidget && hostWidget.service ? hostWidget.service : (bar && bar.shell && typeof bar.shell.serviceFor === "function" ? (bar.shell.serviceFor("Omaconnect.plus") || OmaconnectBridge.Bridge.service) : OmaconnectBridge.Bridge.service)
+    readonly property var service: hostWidget && hostWidget.service ? hostWidget.service : (bar && bar.shell && typeof bar.shell.serviceFor === "function" ? (bar.shell.serviceFor("omaconnect.plus") || OmaconnectBridge.Bridge.service) : OmaconnectBridge.Bridge.service)
     readonly property var device: service ? service.selectedDevice : null
     readonly property string deviceName: service ? service.displayName(device) : "KDE Connect"
     readonly property var incomingRequest: service ? service.incomingPairRequest : null

@@ -54,7 +54,7 @@ class SectionComposition(unittest.TestCase):
                 self.assertEqual(writes,[],writes)
             else:
                 self.assertEqual(len(writes),3,writes)
-                self.assertTrue(all(row[:4]==['shell','setBarWidget','Omaconnect.plus','sectionOrder'] and row[-1]=='{}' for row in writes),writes)
+                self.assertTrue(all(row[:4]==['shell','setBarWidget','omaconnect.plus','sectionOrder'] and row[-1]=='{}' for row in writes),writes)
                 self.assertEqual(json.loads(writes[0][-2]).split(',')[:3],['devices','drop','actions'])
                 self.assertEqual(json.loads(writes[1][-2]).split(',')[:3],['devices','actions','drop'])
                 self.assertEqual(json.loads(writes[2][-2]).split(',')[-2:],['syncthing','addresses'])

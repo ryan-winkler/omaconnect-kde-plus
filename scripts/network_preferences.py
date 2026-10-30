@@ -51,7 +51,7 @@ def save(request):
     except (ValueError, KeyError, TypeError):
         return {"ok": False, "message": "Invalid setting. Check its value and try again."}
     try:
-        reply = bounded_command(["/usr/bin/omarchy-shell", "shell", "setBarWidget", "Omaconnect.plus",
+        reply = bounded_command(["/usr/bin/omarchy-shell", "shell", "setBarWidget", "omaconnect.plus",
                                  request["key"], json.dumps(value, ensure_ascii=True), "{}"],
                                 time.monotonic() + 4)
         if reply.strip() == b"ok":

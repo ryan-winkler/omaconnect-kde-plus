@@ -74,7 +74,7 @@ class Client:
         url = "https://" + host + path
         if query:
             url += "?" + urllib.parse.urlencode(query)
-        headers = {"Accept": "application/json", "User-Agent": "Omaconnect.plus-upstream-watch/1"}
+        headers = {"Accept": "application/json", "User-Agent": "omaconnect.plus-upstream-watch/1"}
         if host == "api.github.com":
             headers["X-GitHub-Api-Version"] = "2022-11-28"
             if self.token:

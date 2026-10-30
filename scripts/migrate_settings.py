@@ -20,7 +20,7 @@ except ModuleNotFoundError:
     from scripts.section_order import BOOL_DEFAULTS, normalized_value
 
 OLD = "omaconnect"
-NEW = "Omaconnect.plus"
+NEW = "omaconnect.plus"
 MAX_BYTES = 2097152
 BOOL_SETTINGS = {"showBatteryStats", "showBarBattery", "showNetworkStats", "showTailscale", "showDeviceTypeIcons", "showTroubleshooting", "showActionRing", "showActionClipboard", "showActionFile", "showActionSms", "showActionPing", "showActionText"}
 BOOL_SETTINGS |= {"networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled"}
@@ -138,8 +138,11 @@ def prepare(config, source_id=OLD):
     for loc in reversed(found):
         source = entries_at(config, loc)[loc["index"]]
         before = settings(source)
-        after = {k:v for k,v in before.items() if k != "showDeviceTypeIcons" and not k.startswith("showAction")}
-        after.update(showTailscale=False, showTroubleshooting=False, quickActionsOrder=before.get("quickActionsOrder", legacy_actions(before)))
+        # A Plus identity change preserves choices; only upstream needs conversion.
+        after = dict(before)
+        if source_id == OLD:
+            after = {k:v for k,v in before.items() if k != "showDeviceTypeIcons" and not k.startswith("showAction")}
+            after.update(showTailscale=False, showTroubleshooting=False, quickActionsOrder=before.get("quickActionsOrder", legacy_actions(before)))
         # Registry reads native bar/service entry settings inline, not under settings.
         entries_at(result, loc)[loc["index"]] = dict(after, id=NEW)
         snapshot["entries"].append(dict(loc, source_shape=source_shape(source), target_shape="inline", was_string=isinstance(source,str), settings_present=isinstance(source,dict) and "settings" in source, before=dict(before), after=dict(after)))
@@ -216,12 +219,21 @@ def rollback(config, snapshot):
     return result
 
 
+def unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise MigrationError("json-duplicate-key")
+        result[key] = value
+    return result
+
+
 def read_json(path):
     with Path(path).open("rb") as source:
         raw = source.read(MAX_BYTES+1)
     if len(raw) > MAX_BYTES:
         raise MigrationError("source-limit")
-    return json.loads(raw), hashlib.sha256(raw).hexdigest()
+    return json.loads(raw, object_pairs_hook=unique_object), hashlib.sha256(raw).hexdigest()
 
 
 def binding_provenance(paths, source_id=OLD):
@@ -271,7 +283,7 @@ def write_stage(directory, artifacts):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("prepare", "rollback"))
-    parser.add_argument("--source-id", default=OLD, help="Existing plugin ID; target is fixed to Omaconnect.plus")
+    parser.add_argument("--source-id", default=OLD, help="Existing plugin ID; use Omaconnect.plus for the former Plus ID. Target is fixed to omaconnect.plus")
     parser.add_argument("--source", required=True, help="Source shell JSON; never modified")
     parser.add_argument("--output", required=True, help="New private staging directory; must not exist")
     parser.add_argument("--snapshot", help="Previously staged minimal snapshot for rollback")
