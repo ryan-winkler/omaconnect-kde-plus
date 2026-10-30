@@ -138,6 +138,13 @@ Column {
                 foreground: root.foreground
                 fill: Style.hoverFillFor(root.foreground, Commons.Color.accent)
                 currentFill: Style.selectedFillFor(root.foreground, Commons.Color.accent)
+                function run() { if (root.service && root.device && modelData) root.service.executeRemoteCommand(root.device.id, modelData.key) }
+                activeFocusOnTab: true
+                Accessible.role: Accessible.Button
+                Accessible.name: "Run remote command " + (modelData ? modelData.name : "")
+                Accessible.onPressAction: run()
+                Keys.onReturnPressed: run()
+                Keys.onSpacePressed: run()
 
                 MouseArea {
                     anchors.fill: parent
@@ -147,7 +154,7 @@ Column {
                         panel.focusSection = "commands"
                         panel.commandSelectedIndex = cmdSurface.index
                     }
-                    onClicked: if (root.service && root.device && cmdSurface.modelData) root.service.executeRemoteCommand(root.device.id, cmdSurface.modelData.key)
+                    onClicked: cmdSurface.run()
                 }
 
                 Row {

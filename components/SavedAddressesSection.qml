@@ -13,7 +13,20 @@ Column {
     property color foreground: Commons.Color.popups.text
     property string fontFamily: Style.font.family
     property string removalReview: ""
+    property string pendingAddress: ""
     spacing: Style.space(6)
+
+    // Keep the typed address until saved readback contains it, so a failed save needs no retyping.
+    Connections {
+        target: root.discovery
+        ignoreUnknownSignals: true
+        function onAddressesChanged() {
+            var saved = root.pendingAddress
+            root.pendingAddress = ""
+            if (saved && address.text.trim() === saved && root.discovery.addresses.some(function(row) { return row.peer_id === root.peerId && row.address === saved }))
+                address.clear()
+        }
+    }
 
     Text {
         visible: root.showTitle
@@ -87,7 +100,7 @@ Column {
         focusable: true
         foreground: root.foreground
         Accessible.name: text
-        onClicked: if (root.discovery.addAddress(root.peerId, address.text.trim(), source.currentValue, automatic.checked)) address.clear()
+        onClicked: if (root.discovery.addAddress(root.peerId, address.text.trim(), source.currentValue, automatic.checked)) root.pendingAddress = address.text.trim()
     }
     Controls.CheckBox {
         width: root.width
