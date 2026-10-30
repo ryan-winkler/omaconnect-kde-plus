@@ -7,12 +7,14 @@ Column {
     id: root
     required property var service
     readonly property var device: service ? service.selectedDevice : null
+    property bool showTitle: true
     property bool showBattery: true
     property bool showCellular: true
     readonly property bool current: !!(device && device.paired && device.reachable)
     width: parent ? parent.width : 0
     spacing: Style.space(6)
     Text {
+        visible: root.showTitle
         text: "Information"
         textFormat: Text.PlainText
         color: Commons.Color.popups.text

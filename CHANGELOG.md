@@ -8,6 +8,9 @@ All notable changes are listed here. The format follows
 
 ### Added
 
+- A shared daily device picker, inline reviewed file drop, and settings to move
+  every daily section up or down. Sections can collapse and have saved display
+  defaults. Native features and saved addresses can be hidden without data loss.
 - An optional Quick Share shortcut opens an installed RQuickShare app.
 - Linked Syncthing devices show their last checked pause state, with explicit
   refresh and pause/resume controls. Changes wait for Syncthing readback.

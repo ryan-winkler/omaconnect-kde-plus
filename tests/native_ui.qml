@@ -65,7 +65,7 @@ ShellRoot {
             var trigger = find(panel,function(object) { return object.objectName === "daily-view-menu" },[])
             if (trigger) trigger.clicked()
         }
-        var button = find(panel,function(object) { return viewIndex >= 0 ? object.objectName === "daily-route-" + viewIndex : "text" in object && object.text === label && typeof object.clicked === "function" },[])
+        var button = find(panel,function(object) { return viewIndex >= 0 ? object.objectName === "daily-route-" + viewIndex : "text" in object && object.visible && object.text === label && typeof object.clicked === "function" },[])
         check(!!button,"control exists: "+label)
         if (button) button.clicked()
     }
@@ -122,8 +122,9 @@ ShellRoot {
             test.ticks++
             if(test.ticks > 600) { test.check(false,"timeout phase="+test.phase); return }
             if(test.phase === 0 && (!test.desktopMode || panel.opened) && service.appearance.ready && !service.appearance.busy && service.devices.length === 2) {
-                // ListView delegates are created on the next layout pass.
-                if (!test.find(panel,function(object) { return object.objectName === "device-settings-B" },[])) { panel.open();return }
+                // Wait for the shared device picker in the composed daily view.
+                var devicePicker = test.find(panel,function(object) { return object.objectName === "daily-device-selector" },[])
+                if (!devicePicker) { panel.open();return }
                 test.check(Bridge.Bridge.service === service, "own-service bridge")
                 test.check(widget.service === service && panel.service === service, "bar and panel bridge fallback")
                 test.check(!!test.find(widget,function(object) { return object.objectName === "bar-file-drop-area" },[]), "actual bar icon installs the shared file-drop target")
@@ -134,15 +135,14 @@ ShellRoot {
                 panel.settings = {showTailscale:false}
                 test.capture("devices")
 
-                var deviceGear = test.find(panel,function(object) { return object.objectName === "device-settings-B" },[])
-                test.check(deviceGear && deviceGear.focusable && deviceGear.width>=44 && deviceGear.Accessible.name.indexOf("Other phone")!==-1,"paired device gear has a named keyboard target")
-                if (deviceGear) deviceGear.clicked()
-                test.check(panel.settingsWindow.visible && panel.settingsWindow.currentPage==="Device features" && service.selectedDeviceId==="B","device gear opens Plus features for that exact device")
-                test.check(!service.nativeAppOpening,"device gear does not launch native settings implicitly")
-                panel.settingsWindow.closeSettings()
+                test.check(devicePicker.count===2,"shared picker contains both known devices")
+                devicePicker.selectDevice("B")
+                test.check(devicePicker.currentValue==="B" && service.selectedDeviceId==="B","shared picker selects the exact paired device")
                 var headerGear = test.find(panel,function(object) { return object.objectName === "selected-device-settings" },[])
+                test.check(headerGear && headerGear.focusable && headerGear.width>=44 && headerGear.Accessible.name==="Plus device settings","selected device gear has a named keyboard target")
                 if (headerGear) headerGear.clicked()
-                test.check(headerGear && panel.settingsWindow.currentPage==="Device features" && service.selectedDeviceId==="B","header gear follows the same Plus device-settings route")
+                test.check(headerGear && panel.settingsWindow.visible && panel.settingsWindow.currentPage==="Device features" && service.selectedDeviceId==="B","selected device gear opens Plus features for that exact device")
+                test.check(!service.nativeAppOpening,"device gear does not launch native settings implicitly")
                 panel.settingsWindow.closeSettings()
                 var settingsControl = test.find(panel, function(object) { return object.objectName === "daily-plus-settings" }, [])
                 test.check(!!settingsControl, "compact settings control exists")

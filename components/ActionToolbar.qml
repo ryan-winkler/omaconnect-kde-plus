@@ -9,6 +9,7 @@ import "../ActionCatalog.js" as Actions
 Column {
     id: root
 
+    property bool showSectionHeader: true
     required property var panel
 
     width: parent ? parent.width : 0
@@ -26,9 +27,10 @@ Column {
         return (id === "file" && service && service.fileBusy) || Actions.ready(id,device,service)
     }
 
-    PanelSeparator { foreground: root.foreground }
+    PanelSeparator { visible: root.showSectionHeader; foreground: root.foreground }
 
     PanelSectionHeader {
+        visible: root.showSectionHeader
         text: (root.device && root.device.type && root.device.type !== "unknown") ? (root.device.type.toUpperCase() + " ACTIONS") : "ACTIONS"
         foreground: root.foreground
         fontFamily: root.fontFamily

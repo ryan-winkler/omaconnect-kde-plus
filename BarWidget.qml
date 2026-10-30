@@ -115,6 +115,11 @@ BarWidget {
             anchors.fill: parent
             service: root.service
             device: root.device
+            onDragReadyEntered: {
+                var target = panelLoader.item
+                if (target && typeof target.openDropTarget === "function") target.openDropTarget()
+                else root.open()
+            }
             onFilesStaged: root.openSendWindow()
         }
     }

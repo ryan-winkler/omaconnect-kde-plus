@@ -1,0 +1,101 @@
+[
+  {
+    "id": "devices",
+    "label": "Devices",
+    "description": "Keep the selected device and quick switcher visible. This sets whether its device details start expanded.",
+    "expandedKey": "devicesStartExpanded",
+    "defaultVisible": true,
+    "defaultExpanded": true,
+    "settingsPage": "Device features"
+  },
+  {
+    "id": "actions",
+    "label": "Quick actions",
+    "description": "Show selected device shortcuts and their Ping or Text composer together. Hiding shortcuts does not change native modules.",
+    "expandedKey": "actionsStartExpanded",
+    "defaultVisible": true,
+    "defaultExpanded": true,
+    "settingsPage": "Quick actions",
+    "visibilityKey": "showQuickActions"
+  },
+  {
+    "id": "drop",
+    "label": "File sharing",
+    "description": "Choose or drop local files, then review the fixed recipient and select Send. Hiding this section does not clear a draft.",
+    "expandedKey": "inlineSendStartExpanded",
+    "defaultVisible": true,
+    "defaultExpanded": true,
+    "settingsPage": "Quick actions",
+    "visibilityKey": "showInlineSend"
+  },
+  {
+    "id": "native",
+    "label": "Native KDE Connect",
+    "description": "Show native feature links in Devices. The full inventory stays available in Device features settings.",
+    "expandedKey": "nativeFeaturesStartExpanded",
+    "defaultVisible": true,
+    "defaultExpanded": false,
+    "settingsPage": "Device features",
+    "visibilityKey": "showNativeFeatures"
+  },
+  {
+    "id": "information",
+    "label": "Device information",
+    "description": "Show information already reported by KDE Connect. Hiding details does not change device trust.",
+    "expandedKey": "informationStartExpanded",
+    "defaultVisible": true,
+    "defaultExpanded": false,
+    "settingsPage": "Device features",
+    "visibilityKey": "showDeviceInformation"
+  },
+  {
+    "id": "media",
+    "label": "Media controls",
+    "description": "Show reported players and media controls. Hiding this section does not stop playback.",
+    "expandedKey": "mediaStartExpanded",
+    "defaultVisible": true,
+    "defaultExpanded": true,
+    "settingsPage": "Device features",
+    "visibilityKey": "showMediaPlayer"
+  },
+  {
+    "id": "commands",
+    "label": "Remote commands",
+    "description": "Show commands configured on the selected device. A command runs only after an explicit request.",
+    "expandedKey": "commandsStartExpanded",
+    "defaultVisible": true,
+    "defaultExpanded": false,
+    "settingsPage": "Device features",
+    "visibilityKey": "showRemoteCommands"
+  },
+  {
+    "id": "connections",
+    "label": "Connection controls",
+    "description": "Show enabled VPN tool controls. Hiding or collapsing them does not connect or disconnect a VPN.",
+    "expandedKey": "networkStartExpanded",
+    "defaultVisible": true,
+    "defaultExpanded": true,
+    "settingsPage": "Connections",
+    "visibilityKey": "showNetworkControls"
+  },
+  {
+    "id": "addresses",
+    "label": "Saved addresses",
+    "description": "Keep approved addresses available for review. Hiding this section preserves saved records and rediscovery choices.",
+    "expandedKey": "addressesStartExpanded",
+    "defaultVisible": true,
+    "defaultExpanded": false,
+    "settingsPage": "Connections",
+    "visibilityKey": "showSavedAddresses"
+  },
+  {
+    "id": "syncthing",
+    "label": "Syncthing identity note",
+    "description": "Show the optional local identity note and existing owner controls. Hiding it does not change Syncthing.",
+    "expandedKey": "syncthingStartExpanded",
+    "defaultVisible": false,
+    "defaultExpanded": false,
+    "settingsPage": "Connections",
+    "visibilityKey": "showSyncthingLinks"
+  }
+]

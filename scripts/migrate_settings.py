@@ -13,16 +13,20 @@ import os
 from pathlib import Path
 import re
 import sys
+try:
+    from section_order import BOOL_DEFAULTS, normalized_value
+except ModuleNotFoundError:
+    # Also support the existing repository tests importing this script by path.
+    from scripts.section_order import BOOL_DEFAULTS, normalized_value
 
 OLD = "omaconnect"
 NEW = "Omaconnect.plus"
 MAX_BYTES = 2097152
-BOOL_SETTINGS = {"showBatteryStats", "showBarBattery", "showNetworkStats", "showTailscale", "showDeviceTypeIcons", "showMediaPlayer", "showRemoteCommands", "showTroubleshooting", "showActionRing", "showActionClipboard", "showActionFile", "showActionSms", "showActionPing", "showActionText"}
+BOOL_SETTINGS = {"showBatteryStats", "showBarBattery", "showNetworkStats", "showTailscale", "showDeviceTypeIcons", "showTroubleshooting", "showActionRing", "showActionClipboard", "showActionFile", "showActionSms", "showActionPing", "showActionText"}
 BOOL_SETTINGS |= {"networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled"}
-BOOL_SETTINGS |= frozenset(('showSavedAddresses', 'showSyncthingLinks', 'showNetworkControls', 'networkStartExpanded', 'mediaStartExpanded', 'commandsStartExpanded', 'addressesStartExpanded', 'syncthingStartExpanded'))
-BOOL_SETTINGS |= frozenset(("showNativeFeatures",))
 BOOL_SETTINGS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
-STRING_SETTINGS = {"defaultPingMessage", "bthHelperPath", "quickActionsOrder"}
+BOOL_SETTINGS |= frozenset(BOOL_DEFAULTS)
+STRING_SETTINGS = {"defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder"}
 ALLOWED = BOOL_SETTINGS | STRING_SETTINGS
 ACTION_IDS = set(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock', 'external-monitor'))
 SECTIONS = ("left", "centerBegin", "center", "centerEnd", "right", "tray")
@@ -90,6 +94,11 @@ def settings(entry):
             ids = item.split(",") if item else []
             if len(item) > 512 or len(set(ids)) != len(ids) or any(i not in ACTION_IDS for i in ids):
                 raise MigrationError("settings-invalid")
+        if key == "sectionOrder":
+            try:
+                normalized_value(item)
+            except ValueError:
+                raise MigrationError("settings-invalid") from None
         if key == "bthHelperPath" and item and (not item.startswith("/") or not item.endswith("/remote-access-mode") or ".." in item.split("/") or any(ord(c) < 32 or ord(c) == 127 for c in item)):
             raise MigrationError("settings-invalid")
     return dict(value)
