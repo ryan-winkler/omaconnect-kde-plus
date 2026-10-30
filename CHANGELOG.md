@@ -6,6 +6,16 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-30
+
+### Fixed
+
+- Use the lowercase machine ID `omaconnect.plus` required by the Community
+  marketplace. The display name remains Omaconnect KDE Plus.
+- Preserve existing uppercase private-data paths. Explicit former Plus migration
+  stages all understood settings, positions and enablement without resetting
+  icons or changing original OmaConnect. Native updates alone do not rename IDs.
+
 ## [0.1.2] - 2026-10-30
 
 ### Added
@@ -96,7 +106,8 @@ All notable changes are listed here. The format follows
   drop review, honest transfer activity, optional network sections and help
   next to each control.
 
-[Unreleased]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.2...main
+[Unreleased]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.3...main
+[0.1.3]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ryan-winkler/omaconnect-kde-plus/releases/tag/v0.1.0

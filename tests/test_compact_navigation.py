@@ -28,7 +28,7 @@ class CompactNavigation(unittest.TestCase):
     def assert_fixture(self, fixture, home, output, calls):
         self.assertIn('COMPACT_NAVIGATION_PASS',output)
         writes=[row['args'] for row in calls if row['tool']=='omarchy-shell']
-        self.assertEqual(writes, [['shell','setBarWidget','Omaconnect.plus',key,value,'{}']
+        self.assertEqual(writes, [['shell','setBarWidget','omaconnect.plus',key,value,'{}']
             for value in ('true','false')
             for key in ('navigationAtTop','showSendShortcut','showActivityShortcut')])
         self.assertEqual(json.loads((fixture/'preferences.json').read_text()),

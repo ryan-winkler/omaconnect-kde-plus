@@ -45,14 +45,14 @@ class SectionOrderTests(unittest.TestCase):
         self.assertEqual(sections.order_ids('syncthing'), expected)
         self.assertEqual(preferences.setting_value({'key': 'sectionOrder', 'value': 'syncthing'}), ','.join(expected))
         self.assertEqual(preferences.setting_value({'key': 'sectionOrder', 'value': ''}), '')
-        self.assertEqual(migration.settings({'id': 'Omaconnect.plus', 'sectionOrder': 'syncthing'})['sectionOrder'], 'syncthing')
+        self.assertEqual(migration.settings({'id': 'omaconnect.plus', 'sectionOrder': 'syncthing'})['sectionOrder'], 'syncthing')
         for value in (None, [], 'unknown', 'devices,devices', 'devices,', ' devices', 'devices;command', 'x' * 513):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 sections.order_ids(value)
             with self.subTest(save=value), self.assertRaises(ValueError):
                 preferences.setting_value({'key': 'sectionOrder', 'value': value})
             with self.subTest(migration=value), self.assertRaises(migration.MigrationError):
-                migration.settings({'id': 'Omaconnect.plus', 'sectionOrder': value})
+                migration.settings({'id': 'omaconnect.plus', 'sectionOrder': value})
 
     @unittest.skipUnless(shutil.which('node'), 'Node runtime absent')
     def test_actual_js_and_python_share_catalogue_and_rejection_cases(self):
@@ -112,11 +112,11 @@ assert.equal(api.move(ids,'actions',-1).slice(0,2).join(','),'actions,devices');
             self.assertIn('NATIVE_PASS section order', output)
             writes = [row['args'] for row in calls if row['tool'] == 'omarchy-shell']
             self.assertEqual(len(writes), 4, writes)
-            self.assertTrue(all(row[:4] == ['shell', 'setBarWidget', 'Omaconnect.plus', 'sectionOrder'] and row[-1] == '{}' for row in writes[:3]))
+            self.assertTrue(all(row[:4] == ['shell', 'setBarWidget', 'omaconnect.plus', 'sectionOrder'] and row[-1] == '{}' for row in writes[:3]))
             self.assertEqual(json.loads(writes[0][-2]), 'actions,devices,drop,native,information,media,commands,connections,addresses,syncthing')
             self.assertEqual(json.loads(writes[1][-2]), 'actions,devices,drop,native,information,media,commands,connections,syncthing,addresses')
             self.assertEqual(json.loads(writes[2][-2]), '')
-            self.assertEqual(writes[3], ['shell', 'setBarWidget', 'Omaconnect.plus', 'showRemoteCommands', 'false', '{}'])
+            self.assertEqual(writes[3], ['shell', 'setBarWidget', 'omaconnect.plus', 'showRemoteCommands', 'false', '{}'])
             self.assertTrue(all(row['tool'] in ('fc-match', 'hyprctl', 'omarchy-shell') for row in calls), calls)
             self.assertEqual(json.loads((fixture / 'portal-receipt.json').read_text()), [])
 

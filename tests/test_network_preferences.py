@@ -25,7 +25,7 @@ class NetworkPreferences(unittest.TestCase):
             for enabled in (True, False):
                 with patch.object(preferences, 'bounded_command', return_value=b'ok\n') as command:
                     self.assertTrue(preferences.save({'key':key, 'enabled':enabled})['ok'])
-                    self.assertEqual(command.call_args.args[0], ['/usr/bin/omarchy-shell', 'shell', 'setBarWidget', 'Omaconnect.plus', key, 'true' if enabled else 'false', '{}'])
+                    self.assertEqual(command.call_args.args[0], ['/usr/bin/omarchy-shell', 'shell', 'setBarWidget', 'omaconnect.plus', key, 'true' if enabled else 'false', '{}'])
         for request in (None, {}, {'key':[], 'enabled':True}, {'key':'bth-on', 'enabled':True}, {'key':'showTailscale', 'enabled':True}, {'key':'showDeviceTypeIcons', 'enabled':False}, {'key':'showTroubleshooting', 'enabled':True}, {'key':'networkTailscaleEnabled', 'enabled':'true'}, {'key':'networkBthEnabled', 'enabled':True, 'command':'anything'}):
             with patch.object(preferences, 'bounded_command') as command:
                 self.assertFalse(preferences.save(request)['ok'])
@@ -46,7 +46,7 @@ class NetworkPreferences(unittest.TestCase):
 
     def test_preference_owner_matches_fork_and_excludes_original(self):
         manifest = json.loads((SCRIPTS.parent / "manifest.json").read_text())
-        self.assertEqual(manifest["id"], "Omaconnect.plus")
+        self.assertEqual(manifest["id"], "omaconnect.plus")
         self.assertNotEqual(manifest["id"], "omaconnect")
         self.assertTrue((preferences.KEYS | preferences.STRING_KEYS).issubset(manifest["settings"]))
 
@@ -70,7 +70,7 @@ class NetworkPreferences(unittest.TestCase):
     def assert_fixture(self, fixture, home, output, calls):
         self.assertIn('PREFERENCES_PASS', output, output)
         writes = [r['args'] for r in calls if r['tool'] == 'omarchy-shell']
-        self.assertEqual(writes, [['shell', 'setBarWidget', 'Omaconnect.plus', 'networkTailscaleEnabled', 'true', '{}'], ['shell', 'setBarWidget', 'Omaconnect.plus', 'networkTailscaleEnabled', 'false', '{}'], ['shell', 'setBarWidget', 'Omaconnect.plus', 'showRemoteCommands', 'true', '{}']])
+        self.assertEqual(writes, [['shell', 'setBarWidget', 'omaconnect.plus', 'networkTailscaleEnabled', 'true', '{}'], ['shell', 'setBarWidget', 'omaconnect.plus', 'networkTailscaleEnabled', 'false', '{}'], ['shell', 'setBarWidget', 'omaconnect.plus', 'showRemoteCommands', 'true', '{}']])
         self.assertFalse(any(r['tool'] in ('kdeconnect-cli', 'nmcli', 'remote-access-mode') for r in calls), calls)
         self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()), [])
 

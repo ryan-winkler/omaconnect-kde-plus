@@ -4,6 +4,20 @@ All new helpers use fixed argv plus bounded JSON stdin/stdout. Raw provider stde
 is not shown in the UI. These are local process contracts; the fork adds no HTTP
 server, arbitrary REST proxy, protocol daemon or cross-plugin service API.
 
+## Runtime identity and retained storage
+
+The Community machine ID and IPC target are `omaconnect.plus`. The display name
+remains Omaconnect KDE Plus. The private config, data and cache directories keep
+the existing `Omaconnect.plus` spelling. This preserves aliases, icons, address
+records and cache ownership without copying or resetting them. Plugin ID and
+storage path are separate contracts; do not derive one from the other.
+
+A former uppercase-ID installation needs an explicit bar/service reference and
+source-directory migration; native update alone does not do this. The stage-only
+migration helper accepts `--source-id Omaconnect.plus`, preserves understood
+settings and enablement, and emits no appearance candidate for that source.
+See [install and recovery](INSTALL.md). Native pairings remain with KDE Connect.
+
 ## Appearance helper
 
 `python3 scripts/appearance.py read|update|import|library` reads one JSON line.

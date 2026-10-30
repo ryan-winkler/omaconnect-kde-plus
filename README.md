@@ -12,6 +12,10 @@ on [KDE Connect](https://kdeconnect.kde.org/).
 
 ## Install
 
+**Existing Plus through 0.1.2:** follow the [ID migration guide](docs/INSTALL.md#former-uppercase-development-id)
+before this fresh-install command. This preserves placement and settings and
+avoids a second active Plus copy.
+
 ```bash
 omarchy pkg add kdeconnect python python-gobject
 omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --enable
@@ -19,7 +23,7 @@ omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --ena
 
 Open the new bar icon, select **Native KDE Connect settings** and pair your device.
 Moving from the original OmaConnect? Read [install, update and recovery](docs/INSTALL.md)
-first and add Plus without `--enable`. The plugin ID is `Omaconnect.plus`.
+first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
 
 ## Features
 

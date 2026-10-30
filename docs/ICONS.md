@@ -84,3 +84,7 @@ Do not commit these user files or hardcode a machine's absolute asset path.
 The UI normalization and helper allowlist are separate trust boundaries. A small
 parity check is deliberate; do not replace independent input validation with a
 runtime code generator just to remove two short lists.
+
+The machine plugin ID is lowercase `omaconnect.plus`. The uppercase storage paths
+above are retained deliberately for compatibility. Changing the plugin ID does
+not authorize moving, copying or resetting these private records or assets.

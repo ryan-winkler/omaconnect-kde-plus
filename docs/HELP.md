@@ -286,7 +286,7 @@ Do not publish private IDs, addresses, configurations or credentials.
 
 ## Update KDE Connect itself
 
-`omarchy plugin update Omaconnect.plus` updates this UI fork. KDE Connect's native
+`omarchy plugin update omaconnect.plus` updates this UI fork. KDE Connect's native
 package follows the supported Omarchy system update route, `omarchy update`.
 That can update other packages, so review its normal system update scope first.
 Plus does not compile KDE's development branch or run a package update for you.
