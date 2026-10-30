@@ -12,6 +12,10 @@ on [KDE Connect](https://kdeconnect.kde.org/).
 
 ## Install
 
+**Existing Plus through 0.1.2:** follow the [ID migration guide](docs/INSTALL.md#former-uppercase-development-id)
+before this fresh-install command. This preserves placement and settings and
+avoids a second active Plus copy.
+
 ```bash
 omarchy pkg add kdeconnect python python-gobject
 omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --enable

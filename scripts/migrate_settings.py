@@ -125,7 +125,9 @@ def set_disabled(config, target, disabled):
 def prepare(config, source_id=OLD):
     source_id = source_identity(source_id)
     found = locations(config, source_id)
-    if not found or sum(l["kind"] == "bar" for l in found) > 1 or sum(l["kind"] == "plugin" for l in found) > 1 or locations(config, NEW):
+    # Native disable removes roles without a marker. Do not invent replacement roles.
+    disabled_former = source_id == "Omaconnect.plus" and not found
+    if (not found and not disabled_former) or sum(l["kind"] == "bar" for l in found) > 1 or sum(l["kind"] == "plugin" for l in found) > 1 or locations(config, NEW):
         raise MigrationError("entry-conflict")
     result = copy.deepcopy(config)
     disabled = config.get("disabledPlugins", [])
@@ -148,9 +150,10 @@ def prepare(config, source_id=OLD):
         snapshot["entries"].append(dict(loc, source_shape=source_shape(source), target_shape="inline", was_string=isinstance(source,str), settings_present=isinstance(source,dict) and "settings" in source, before=dict(before), after=dict(after)))
         if "showDeviceTypeIcons" in before:
             legacy_icon = before["showDeviceTypeIcons"]
-    set_disabled(result, source_id, True)
-    set_disabled(result, NEW, snapshot["old_disabled"])
-    snapshot["disabled_after"] = {source_id:True, NEW:snapshot["old_disabled"]}
+    if not disabled_former:
+        set_disabled(result, source_id, True)
+    set_disabled(result, NEW, disabled_former or snapshot["old_disabled"])
+    snapshot["disabled_after"] = {source_id:not disabled_former or snapshot["old_disabled"], NEW:disabled_former or snapshot["old_disabled"]}
     appearance = {"schema_version":1, "bar_icon": {"mode":"automatic", "render":"symbolic"} if legacy_icon else {"mode":"preset", "value":"phone", "render":"symbolic"}, "devices":{}}
     return result, snapshot, appearance if source_id == OLD else None
 
@@ -161,6 +164,11 @@ def rollback(config, snapshot):
     source_id = source_identity(snapshot.get("old_id"))
     result = copy.deepcopy(config)
     try:
+        captured = [dict(kind=row["kind"], index=row["index"],
+            **({"section":row["section"]} if row["kind"] == "bar" else {})) for row in snapshot["entries"]]
+        targets = locations(config, NEW)
+        if locations(config, source_id) or len(targets) != len(captured) or any(location not in captured for location in targets):
+            raise MigrationError("rollback-conflict")
         for receipt in snapshot["entries"]:
             entries = entries_at(result, receipt)
             entry = entries[receipt["index"]]

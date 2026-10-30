@@ -64,6 +64,40 @@ source and target directories as well as configuration and bindings before the
 one-time switch. Do not install a second active copy or run update-all across
 both identities. A source rollback alone does not restore migrated references.
 
+A normally disabled former Plus installation can have no bar or service entry.
+For this explicit source ID, the helper adds no missing role or settings and
+keeps the new target disabled. It does not reconstruct settings that native
+disable already removed.
+
+### If native update already changed the manifest
+
+An uppercase-named checkout can already contain a lowercase manifest after
+native update. Check the checkout's manifest before using Add. An installed
+lowercase manifest will make Add refuse the duplicate ID.
+
+1. Stop file submissions and close Plus dialogs. Back up shell configuration,
+   bindings and the entire current checkout privately, including Git history
+   and local changes. Keep the private XDG data folders in place.
+2. Move that conflicting checkout out of `~/.config/omarchy/plugins/` into the
+   private recovery area. Preserve it; do not delete or edit its manifest to
+   hide the conflict. Run `omarchy-shell shell rescanPlugins`, then confirm the
+   old checkout no longer registers the lowercase ID. Do not overwrite a
+   canonical lowercase checkout that already exists; review that conflict first.
+3. If saved references still use `Omaconnect.plus`, continue the staged Add and
+   candidate procedure below with that old configuration ID. If references
+   already use `omaconnect.plus`, preserve them and their enablement; do not run
+   the former-ID helper or remove them to satisfy the ordinary preflight.
+   Restore the verified source at the canonical lowercase location instead.
+   In this already-configured case, rescan can activate its existing intent even
+   without `--enable`; review that intent before adding source.
+4. If both identities have saved references, stop and reconcile the two sets.
+   Keep all backups and values. Do not guess which settings to overwrite.
+
+A backup whose manifest already uses the lowercase ID is not an uppercase-code
+rollback point. Restore a reviewed former release with the correct old manifest
+and IPC target before restoring uppercase configuration; do not change only
+its manifest ID.
+
 ## Move from an existing installation
 
 Pairings stay in KDE Connect, so both UIs see the same devices. The helper below
@@ -100,8 +134,10 @@ to that exact `--output` path and use it for every artifact below. If you rerun
 In a new terminal, set it to your chosen prepare directory again. Omit
 `--bindings` if that file does not exist, or repeat it for other binding files.
 Older configurations can use `bindings.conf`; pass the file your setup uses.
-`--source-id` selects the plugin you move from; read the exact `id` from its
-installed `manifest.json`.
+`--source-id` selects the old configuration and binding identity. It normally
+matches the source manifest. For an already-updated checkout, use the saved
+uppercase references when those remain, even if its current manifest is lower.
+Do not pass the new target ID as the source.
 
 The output directory (mode 0700) contains:
 
@@ -168,9 +204,19 @@ python3 scripts/migrate_settings.py rollback \
   --output "$rollback_dir"
 ```
 
+If the former source was removed, restore its privately archived checkout to
+its original source directory before applying the rollback candidate. Verify
+that its manifest ID matches `old_id` in the snapshot and that its code is the
+recorded former release. Do not overwrite another checkout or restore an
+already-updated lowercase manifest as uppercase code. Run
+`omarchy-shell shell rescanPlugins` and confirm the former source is registered.
+The configuration switch must not point to an absent or mismatched plugin.
+Original OmaConnect needs no source restore if it remained installed.
+
 This stages a rollback `candidate-shell.json` that restores managed settings only
-and keeps later unrelated edits. It refuses changed managed values or a moved
-entry; resolve those by review. Review the candidate and back up the current
+and keeps later unrelated edits. It refuses changed managed values, moved or
+extra target references, or a reappeared old-source reference; resolve those by
+review. Review the candidate and back up the current
 shell configuration. If shell settings changed after staging, rerun `rollback`
 into a new output directory before applying the candidate. The new `$rollback_dir/candidate-shell.json` already restores the original bar
 slot and enabled state. Replacing
@@ -184,3 +230,10 @@ record to reverse only the command-target edits you made, such as
 First verify that the current line and hash still match your edited version.
 If they differ, reconcile that line by review. Preserve all unrelated later
 changes; do not restore a whole binding file or replace IDs globally.
+
+After rollback, keep the recovered uppercase source at its reviewed revision.
+Do not run update-all across the recovered and replacement identities: another
+native update can change the recovered manifest without renaming references.
+Once recovery is verified, remove any unused replacement source through native
+Omarchy controls, keeping private data and original OmaConnect intact. Use the
+explicit migration when moving to the current lowercase release again.

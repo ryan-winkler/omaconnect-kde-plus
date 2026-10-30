@@ -85,6 +85,79 @@ class IdentityMigration(unittest.TestCase):
             else:changed['disabledPlugins'].append('omaconnect.plus')
             with self.subTest(problem=problem),self.assertRaisesRegex(M.MigrationError,'conflict'):M.rollback(changed,receipt)
 
+    def test_rollback_rejects_reappeared_source_or_uncaptured_target_references(self):
+        source=self.uppercase_source();candidate,receipt,_=M.prepare(source,'Omaconnect.plus')
+        for problem in ('old-bar','old-service','extra-target-bar','extra-target-service','moved-target-bar','moved-target-service'):
+            changed=copy.deepcopy(candidate)
+            if problem=='old-bar':changed['bar']['layout']['left'].append('Omaconnect.plus')
+            elif problem=='old-service':changed['plugins'].append({'id':'Omaconnect.plus'})
+            elif problem=='extra-target-bar':changed['bar']['layout']['left'].append({'id':'omaconnect.plus'})
+            elif problem=='extra-target-service':changed['plugins'].append('omaconnect.plus')
+            elif problem=='moved-target-bar':changed['bar']['layout']['left'].append(changed['bar']['layout']['tray'].pop(1))
+            else:changed['plugins'].append(changed['plugins'].pop(1));changed['plugins'].insert(1,'another')
+            before=copy.deepcopy(changed)
+            with self.subTest(problem=problem),self.assertRaisesRegex(M.MigrationError,'conflict'):M.rollback(changed,receipt)
+            self.assertEqual(changed,before)
+
+    def test_rollback_dual_slots_keep_original_module_and_unrelated_later_edits(self):
+        original=self.uppercase_source();candidate,receipt,_=M.prepare(original,'Omaconnect.plus')
+        candidate['bar']['layout']['left'].append('another-widget')
+        candidate['plugins'].append({'id':'another-service','settings':{'private':'UNCHANGED'}})
+        restored=M.rollback(candidate,receipt)
+        expected=copy.deepcopy(original)
+        expected['bar']['layout']['left'].append('another-widget')
+        expected['plugins'].append({'id':'another-service','settings':{'private':'UNCHANGED'}})
+        self.assertEqual(restored,expected)
+
+    def disabled_source(self,markers=None):
+        source={'bar':{'id':'omarchy.bar','layout':{'tray':['omaconnect','clock']}},
+            'plugins':[{'id':'omaconnect','settings':{'upstream_only':'unchanged'}}]}
+        if markers is not None:source['disabledPlugins']=list(markers)
+        return source
+
+    def test_disabled_former_plus_without_roles_stays_disabled_and_round_trips_exactly(self):
+        for markers in (None,[],['before','after'],['before','Omaconnect.plus','after']):
+            with self.subTest(markers=markers):
+                original=self.disabled_source(markers);before=copy.deepcopy(original)
+                candidate,receipt,appearance=M.prepare(original,'Omaconnect.plus')
+                expected=copy.deepcopy(original);expected['disabledPlugins']=list(markers or [])+['omaconnect.plus']
+                self.assertEqual(candidate,expected)
+                self.assertEqual(receipt['entries'],[])
+                self.assertIsNone(appearance)
+                self.assertEqual(M.rollback(candidate,receipt),original)
+                self.assertEqual(original,before)
+
+    def test_empty_roles_are_only_supported_for_explicit_former_plus(self):
+        for source_id in ('omaconnect','legacy.plus'):
+            with self.subTest(source_id=source_id),self.assertRaises(M.MigrationError):M.prepare({},source_id)
+        with self.assertRaises(M.MigrationError):M.prepare({})
+        for kind in ('bar','service'):
+            source=self.disabled_source()
+            if kind=='bar':source['bar']['layout']['tray'].append('omaconnect.plus')
+            else:source['plugins'].append('omaconnect.plus')
+            with self.subTest(kind=kind),self.assertRaises(M.MigrationError):M.prepare(source,'Omaconnect.plus')
+
+    def test_disabled_former_plus_missing_or_empty_role_containers_round_trip(self):
+        for original in ({},{'plugins':[]},{'bar':{'layout':{}}},{'bar':{'layout':{}},'plugins':[]}):
+            with self.subTest(original=original):
+                candidate,receipt,appearance=M.prepare(original,'Omaconnect.plus')
+                self.assertEqual(candidate,dict(original,disabledPlugins=['omaconnect.plus']))
+                self.assertEqual(receipt['entries'],[])
+                self.assertIsNone(appearance)
+                self.assertEqual(M.rollback(candidate,receipt),original)
+
+    def test_disabled_empty_roles_refuse_rollback_after_id_or_flag_changes(self):
+        original=self.disabled_source();candidate,receipt,_=M.prepare(original,'Omaconnect.plus')
+        for problem in ('new-enabled','old-disabled','old-bar','old-service','new-bar','new-service'):
+            changed=copy.deepcopy(candidate)
+            if problem=='new-enabled':changed['disabledPlugins'].remove('omaconnect.plus')
+            elif problem=='old-disabled':changed['disabledPlugins'].append('Omaconnect.plus')
+            elif problem=='old-bar':changed['bar']['layout']['tray'].append('Omaconnect.plus')
+            elif problem=='old-service':changed['plugins'].append('Omaconnect.plus')
+            elif problem=='new-bar':changed['bar']['layout']['tray'].append('omaconnect.plus')
+            else:changed['plugins'].append('omaconnect.plus')
+            with self.subTest(problem=problem),self.assertRaisesRegex(M.MigrationError,'conflict'):M.rollback(changed,receipt)
+
     def test_invalid_source_target_conflict_and_unknown_fields_refuse(self):
         for source_id in ('../escape','legacy..plus','omarchy.clock','omaconnect.plus','x y',''):
             with self.subTest(source_id=source_id),self.assertRaises(M.MigrationError):M.prepare(self.source(),source_id)
@@ -147,6 +220,27 @@ class IdentityMigration(unittest.TestCase):
                 '--source',str(source),'--source-id','Omaconnect.plus','--output',str(out)],capture_output=True,text=True,timeout=3)
             self.assertNotEqual(result.returncode,0)
             self.assertFalse(out.exists());self.assertEqual(source.read_bytes(),before)
+
+    def test_cli_disabled_former_plus_stages_no_roles_settings_or_appearance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=root/'source.json';source.write_text(json.dumps(self.disabled_source()))
+            before=source.read_bytes();out=root/'review'
+            result=subprocess.run([sys.executable,str(ROOT/'scripts/migrate_settings.py'),'prepare',
+                '--source',str(source),'--source-id','Omaconnect.plus','--output',str(out)],capture_output=True,text=True,timeout=3)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertEqual(set(p.name for p in out.iterdir()),{'candidate-shell.json','snapshot.json'})
+            candidate=json.loads((out/'candidate-shell.json').read_text())
+            self.assertEqual(candidate['bar'],self.disabled_source()['bar']);self.assertEqual(candidate['plugins'],self.disabled_source()['plugins'])
+            self.assertEqual(candidate['disabledPlugins'],['omaconnect.plus'])
+            self.assertEqual(json.loads((out/'snapshot.json').read_text())['entries'],[])
+            rollback=root/'rollback'
+            result=subprocess.run([sys.executable,str(ROOT/'scripts/migrate_settings.py'),'rollback',
+                '--source',str(out/'candidate-shell.json'),'--snapshot',str(out/'snapshot.json'),'--output',str(rollback)],capture_output=True,text=True,timeout=3)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertEqual(json.loads((rollback/'candidate-shell.json').read_text()),self.disabled_source())
+            self.assertEqual(source.read_bytes(),before)
+            self.assertEqual(out.stat().st_mode&0o777,0o700)
+            self.assertTrue(all(p.stat().st_mode&0o777==0o600 for p in out.iterdir()))
 
 
 if __name__=='__main__':unittest.main()
