@@ -10,6 +10,7 @@ else:
 
 class SettingsFocusTests(unittest.TestCase):
     def test_tab_and_backtab_reveal_each_domain_without_moving_focus(self):
+        """Exercise clipped controls and both window focus boundaries."""
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'settings_focus_ui.qml'
         runner.force_offscreen = True
@@ -25,8 +26,10 @@ class SettingsFocusTests(unittest.TestCase):
             )
 
         def assert_focus(fixture, home, output, calls):
+            """Require wraparound and traversal without real provider actions."""
             for page in ('Appearance', 'Connections', 'Quick actions', 'Device features'):
                 self.assertIn('FOCUS_PASS ' + page + ' Tab and Shift+Tab', output)
+                self.assertIn('FOCUS_WRAP_PASS ' + page + ' Close to Device and back', output)
             self.assertTrue(all(call['tool'] == 'fc-match' or (call['tool'] == 'hyprctl' and call['args'][:2] == ['-j', 'getoption']) for call in calls), calls)
             self.assertEqual(json.loads((fixture / 'portal-receipt.json').read_text()), [])
             actions = [json.loads(row) for row in (home / 'focus-actions.jsonl').read_text().splitlines()]
