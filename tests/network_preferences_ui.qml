@@ -32,7 +32,7 @@ ShellRoot {
     }
     Item {
         width: 400; height: 700
-        Components.PreferenceControls { id: preferences; width: 220; panel: fakePanel; preferences: [{key:"fixture",label:"A long settings label that must not hide state",defaultValue:false}] }
+        Components.PreferenceControls { id: preferences; width: 220; panel: fakePanel; preferences: [{key:"showRemoteCommands",label:"A long settings label that must not hide state",defaultValue:false}] }
         Components.NetworkOptions { id: options; width: parent.width; panel: fakePanel; configuration: true }
         Components.NetworkOptions { id: daily; width: parent.width; panel: fakePanel }
     }
@@ -47,7 +47,7 @@ ShellRoot {
                 if (!test.check(options.configuration && checkbox !== null, "dedicated settings shows labelled switches directly")) return
                 var off = test.textItem(checkbox,"Off"), pref = test.find(preferences,"A long settings label that must not hide state")
                 if (!test.check(off && !off.truncated && pref && pref.description === "Off", "both switch types expose non-elided saved state")) return
-                checkbox.clicked()
+                checkbox.Accessible.toggleAction()
                 if (!test.check(!checkbox.checked && !options.tailscaleEnabled, "save request does not optimistically change saved state")) return
                 test.phase = 1
             } else if (test.phase === 1 && !options.busy && options.message.indexOf("Setting saved.") === 0) {
@@ -59,7 +59,7 @@ ShellRoot {
                 if (!test.check(checkbox.checked && options.tailscaleEnabled && test.find(daily, "Open Tailscale panel").visible && !test.find(options, "Open Tailscale panel").visible, "saved config readback shows owner only in daily view")) return
                 var on = test.textItem(checkbox,"On")
                 if (!test.check(on && !on.truncated, "saved On state remains visible")) return
-                checkbox.clicked()
+                checkbox.Accessible.pressAction()
                 test.phase = 3
             } else if (test.phase === 3 && !options.busy && options.message.indexOf("not confirmed") !== -1) {
                 if (!test.check(test.find(options, "Show Tailscale").checked && options.tailscaleEnabled, "failed save preserves saved switch and integration")) return
@@ -68,6 +68,14 @@ ShellRoot {
             } else if (test.phase === 4) {
                 if (!test.check(options.bthEnabled && !options.tailscaleEnabled && !options.wireguardEnabled, "provider preferences remain independent")) return
                 if (!test.check(test.find(options, "Open official MikroTik Back to Home help in your browser") !== null, "official help is discoverable")) return
+                test.find(preferences,"A long settings label that must not hide state").Accessible.toggleAction()
+                test.phase = 5
+            } else if (test.phase === 5 && !preferences.busy && preferences.message.indexOf("Setting saved.") === 0) {
+                if (!test.check(!test.find(preferences,"A long settings label that must not hide state").checked,"AT toggle waits for saved config readback")) return
+                fakePanel.settings = ({networkBthEnabled:true,showRemoteCommands:true})
+                test.phase=6
+            } else if (test.phase === 6) {
+                if (!test.check(test.find(preferences,"A long settings label that must not hide state").checked,"AT toggle follows saved preference readback")) return
                 console.log("PREFERENCES_PASS " + JSON.stringify(test.checks))
                 console.log("NATIVE_PASS preferences")
                 Qt.quit()

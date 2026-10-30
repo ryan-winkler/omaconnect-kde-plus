@@ -51,7 +51,7 @@ ShellRoot {
                 if (found) return found
             }
         }
-        var single = ["contentItem", "item"]
+        var single = ["contentItem", "item", "footer"]
         for (var k=0;k<single.length;k++) {
             if (!(single[k] in object)) continue
             var foundItem = find(object[single[k]],predicate,seen)
@@ -141,13 +141,16 @@ ShellRoot {
                 panel.settingsWindow.closeSettings()
                 test.click("Plus settings")
                 test.check(panel.settingsWindow.visible, "dedicated settings window opens")
-                test.activeChooser = test.find(panel,function(object) { return typeof object.openForBar === "function" },[])
-                test.check(!!test.activeChooser,"panel icon chooser exists")
+                test.activeChooser = test.find(panel.settingsWindow,function(object) { return typeof object.openForBar === "function" },[])
+                test.check(!!test.activeChooser,"settings icon chooser exists")
                 test.click("Change bar icon")
                 test.phase=1
             } else if(test.phase === 1 && !service.appearance.busy) {
+                if(!test.check(test.activeChooser.visible,"settings action opens the actual icon chooser"))return
                 test.activeChooser.choose({mode:"preset",value:"laptop",render:"symbolic"})
-                test.activeChooser.applyDraft()
+                var apply=test.find(test.activeChooser,function(object){return object.objectName==="appearance-apply"},[])
+                if(!test.check(apply && apply.Accessible.role===Accessible.Button,"icon chooser exposes an accessible Apply button"))return
+                apply.Accessible.pressAction()
                 if (test.activeChooser.pendingApply) test.phase=2
             } else if(test.phase === 2 && !service.appearance.busy && service.appearance.snapshot.bar_icon.value === "laptop") {
                 test.check(service.appearance.barIcon("A","phone").value === "laptop", "chooser Apply saves bar icon")
@@ -157,7 +160,9 @@ ShellRoot {
                 test.check(service.appearance.snapshot.bar_icon.value === "laptop", "icon reload uses saved state")
                 test.activeChooser.openForBar()
                 test.activeChooser.choose({mode:"preset",value:"desktop"})
-                test.activeChooser.reject()
+                var cancel=test.find(test.activeChooser,function(object){return object.objectName==="appearance-cancel"},[])
+                if(!test.check(cancel && cancel.Accessible.role===Accessible.Button,"icon chooser exposes an accessible Cancel button"))return
+                cancel.Accessible.pressAction()
                 test.check(service.appearance.snapshot.bar_icon.value === "laptop", "chooser Cancel preserves state")
                 test.phase=31
             } else if(test.phase === 31 && !service.appearance.busy) {

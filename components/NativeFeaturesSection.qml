@@ -34,7 +34,7 @@ Column {
     }
     width: parent ? parent.width : 0
     spacing: Style.space(6)
-    Kit.Button {
+    SettingsButton {
         width: parent.width
         text: "Native KDE Connect settings"
         Accessible.name: text
@@ -50,7 +50,7 @@ Column {
         text: root.service ? root.service.nativeAppMessage : ""
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
-        color: root.service && root.service.nativeAppFailed ? Commons.Color.urgent : Commons.Color.popups.text
+        color: Commons.Color.popups.text
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
         Accessible.role: Accessible.StaticText
@@ -152,7 +152,7 @@ Column {
                 font.pixelSize: Style.font.body
                 font.bold: true
             }
-            Kit.Button {
+            SettingsButton {
                 objectName: "request-remote-command-editor"
                 width: parent.width
                 height: Math.max(44, implicitHeight)
@@ -210,7 +210,7 @@ Column {
                     required property var modelData
                     width: parent.width
                     spacing: Style.space(2)
-                    Kit.Button {
+                    SettingsButton {
                         objectName: "native-configure-" + modelData.id
                         width: parent.width
                         height: Math.max(44, implicitHeight)
@@ -270,7 +270,7 @@ Column {
                 font.pixelSize: Style.font.caption
             }
         }
-        Kit.Button {
+        SettingsButton {
             width: parent.width
             text: "KDE Connect user guide ↗"
             Accessible.name: "Open the official KDE Connect user guide"

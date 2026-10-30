@@ -93,6 +93,7 @@ ShellRoot {
                 if(!test.check(settings.visible && settings.width===720 && settings.height===640,"dedicated native settings window opens"))return
                 if(!test.check(settings.transientParent===null,"settings remains independent of the bar popup"))return
                 if(!test.check(test.named("Settings: Appearance").activeFocus,"opening settings focuses domain navigation"))return
+                if(!test.check(test.named("Change selected device icon and alias").Accessible.role===Accessible.Button,"settings actions expose a native button role"))return
                 if(!test.check(test.named("Show Syncthing identity notes")!==null && test.named("Show saved addresses")!==null,"optional sections have explicit saved visibility controls"))return
                 if(!test.check(test.named("Start media expanded")!==null && test.named("Start network controls expanded")!==null,"collapse defaults are configurable"))return
                 test.named("Settings: Connections").clicked();test.phase=2
@@ -116,11 +117,12 @@ ShellRoot {
                 if(!test.check(features.nativeConfigurations.some(function(entry) { return entry.id === "kdeconnect_runcommand" }),"native local command configuration is discovered without requiring remote feature support"))return
                 var configure=test.find(settings.contentItem,function(o){return o.objectName === "native-configure-kdeconnect_runcommand"},[])
                 if(!test.check(configure && configure.enabled,"paired device has a native command configuration control"))return
-                configure.clicked()
+                if(!test.check(configure.Accessible.role===Accessible.Button,"native configuration exposes its button role"))return
+                configure.Accessible.pressAction()
                 if(!test.check(test.nativeTarget==="fixture-phone" && test.nativePluginTarget==="kdeconnect_runcommand","Configure passes the selected device and exact native module"))return
                 var editor=test.find(settings.contentItem,function(o){return o.objectName === "request-remote-command-editor"},[])
                 if(!test.check(editor && editor.enabled,"connected command-capable peer has an explicit editor request"))return
-                editor.clicked()
+                editor.Accessible.pressAction()
                 if(!test.check(test.commandEditorTarget==="fixture-phone","remote editor request uses the selected peer, separate from local configuration"))return
                 var addressInfo=test.find(settings.contentItem,function(o){return o.objectName==="device-information-Addresses"},[])
                 if(!test.check(addressInfo && addressInfo.text.indexOf("192.0.2.10:1716")!==-1,"Information shows reported native addresses"))return
@@ -136,7 +138,7 @@ ShellRoot {
             } else if(test.phase===6) {
                 var featureList2=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])
                 if(!test.check(featureList2.filteredPluginIds.length===1 && featureList2.filteredPluginIds[0]==="thirdparty.custom-addon","search retains unknown third-party IDs"))return
-                test.named("Native KDE Connect settings").clicked()
+                test.named("Native KDE Connect settings").Accessible.pressAction()
                 if(!test.check(test.nativeOpens===2 && settings.visible,"native settings handoff keeps Plus settings available"))return
                 featureList2.searchText="";test.phase=7
             } else if(test.phase===7) {
@@ -167,6 +169,9 @@ ShellRoot {
             } else if(test.phase===32) {
                 var status=test.find(settings.contentItem,function(o){return o.objectName==="native-launch-status"},[])
                 if(!test.check(!test.named("Native KDE Connect settings").enabled && status.text==="Opening KDE Connect","native launch has visible busy feedback and prevents repeat requests"))return
+                var opens=test.nativeOpens
+                test.named("Native KDE Connect settings").Accessible.pressAction()
+                if(!test.check(test.nativeOpens===opens,"assistive-technology press cannot activate a disabled native launch"))return
                 service.nativeAppOpening=false;service.nativeAppFailed=true;service.nativeAppMessage="KDE Connect app unavailable";test.phase=33
             } else if(test.phase===33) {
                 var failed=test.find(settings.contentItem,function(o){return o.objectName==="native-launch-status"},[])
@@ -182,6 +187,17 @@ ShellRoot {
             } else if(test.phase===35) {
                 var opened=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
                 if(!test.check(opened.popup.visible,"Space opens the device dropdown"))return
+                service.devices=JSON.parse(JSON.stringify(service.devices));test.phase=350
+            } else if(test.phase===350) {
+                var unchanged=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
+                if(!test.check(unchanged.popup.visible,"identical discovery refresh keeps the device dropdown open"))return
+                var changed=JSON.parse(JSON.stringify(service.devices))
+                changed[0].name="Refreshed fixture phone";service.devices=changed;test.phase=3501
+            } else if(test.phase===3501) {
+                var refreshed=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
+                if(!test.check(!refreshed.popup.visible,"changed device labels close stale dropdown rows"))return
+                refreshed.forceActiveFocus();events.keyClick(Qt.Key_Space,Qt.NoModifier,1);test.phase=3502
+            } else if(test.phase===3502) {
                 events.keyClick(Qt.Key_Down,Qt.NoModifier,1);test.phase=351
             } else if(test.phase===351) {
                 events.keyClick(Qt.Key_Return,Qt.NoModifier,1);test.phase=36

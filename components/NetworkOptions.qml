@@ -64,11 +64,14 @@ Column {
                 width: parent.width
                 spacing: Style.space(4)
                 Kit.Toggle {
+                    id: providerToggle
                     width: parent.width
                     label: "Show " + modelData.label
                     description: root.valueFor(modelData.key) ? "On" : "Off"
                     descriptionSize: Style.font.bodySmall
                     Accessible.role: Accessible.CheckBox
+                    Accessible.onToggleAction: if (providerToggle.enabled) providerToggle.clicked()
+                    Accessible.onPressAction: if (providerToggle.enabled) providerToggle.clicked()
                     Accessible.name: "Show " + modelData.label
                     Accessible.checkable: true
                     Accessible.checked: checked
@@ -86,7 +89,7 @@ Column {
                     font.pixelSize: Style.font.bodySmall
                     wrapMode: Text.Wrap
                 }
-                Kit.Button {
+                SettingsButton {
                     width: parent.width
                     text: modelData.label + " help ↗"
                     Accessible.name: "Open official " + modelData.label + " help in your browser"
@@ -97,7 +100,7 @@ Column {
             }
         }
     }
-    Kit.Button {
+    SettingsButton {
         width: parent.width
         visible: !root.configuration && root.tailscaleEnabled
         focusable: true
@@ -107,7 +110,7 @@ Column {
         enabled: !root.busy
         onClicked: root.openOwner("tailscale")
     }
-    Kit.Button {
+    SettingsButton {
         width: parent.width
         visible: !root.configuration && root.wireguardEnabled
         focusable: true

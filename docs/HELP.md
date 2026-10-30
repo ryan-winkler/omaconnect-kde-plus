@@ -4,6 +4,10 @@ Open **Plus settings** in Devices or **Settings** from the bar menu. Choose the 
 Use **Back to devices** to return. Native KDE Connect opens in its own window;
 your Plus settings remain available. Select a device before changing its features.
 Settings switches show **On** or **Off** below their names.
+Tab and Shift+Tab move between controls and scroll the focused control into view.
+Settings buttons and switches also support assistive-technology activation.
+Disabled controls do not submit a request. A switch follows the saved value;
+requesting a save does not change its displayed state before readback.
 
 Use the **Device** dropdown below the Settings title to change devices without
 leaving the page. It also changes the selected device in Devices and clears the
@@ -126,10 +130,8 @@ notifications, media pause, presenter and input sharing when installed. Choose
 be configured while offline. An unpaired device must be paired first. If direct
 configuration is unavailable on an older frontend, open **Native KDE Connect
 settings**, then **Plugin Settings**. Plus does not write native module settings.
-New configuration pages are discovered after a native package upgrade. For
-example, current KDE development source adds a find-this-device sound page that
-is absent from the installed 26.08.2 package. Plus does not claim that an upstream
-development feature is already installed.
+New configuration pages are discovered after a native package upgrade. Plus
+lists only pages that the installed package provides.
 
 **Configure Run commands** defines commands on **this computer** that the selected
 device can run. It does not edit commands on the other device. To add or edit

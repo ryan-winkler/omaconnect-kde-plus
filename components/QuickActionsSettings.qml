@@ -82,7 +82,7 @@ Column {
         font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
-    Kit.Button {
+    SettingsButton {
         width: parent.width
         text: "Add selected action"
         Accessible.name: text
@@ -120,7 +120,7 @@ Column {
             Flow {
                 width: parent.width
                 spacing: Style.space(6)
-                Kit.Button {
+                SettingsButton {
                     text: "Up"
                     Accessible.name: "Move " + action.label + " up"
                     focusable: true
@@ -128,7 +128,7 @@ Column {
                     enabled: !root.busy && index > 0
                     onClicked: root.moveAction(modelData,-1)
                 }
-                Kit.Button {
+                SettingsButton {
                     text: "Down"
                     Accessible.name: "Move " + action.label + " down"
                     focusable: true
@@ -136,7 +136,7 @@ Column {
                     enabled: !root.busy && index < root.order.length - 1
                     onClicked: root.moveAction(modelData,1)
                 }
-                Kit.Button {
+                SettingsButton {
                     text: "Remove"
                     Accessible.name: "Remove " + action.label + " quick action"
                     focusable: true
@@ -166,7 +166,7 @@ Column {
         font.pixelSize: Style.font.bodySmall
         wrapMode: Text.Wrap
     }
-    Kit.Button {
+    SettingsButton {
         width: parent.width
         text: "Use default actions"
         Accessible.name: text

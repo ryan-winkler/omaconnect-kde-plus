@@ -26,6 +26,8 @@ All notable changes are listed here. The format follows
   which computer runs the commands; older frontends have an explicit fallback.
   A separate request can open a compatible peer's command editor without running
   a command. Keyboard focus now scrolls into view in every Settings page.
+  Settings buttons and checkboxes support assistive-technology activation.
+  Native launch feedback uses readable theme foreground text.
 - Trimmed the docs to user and contributor guides; install, update and
   migration now live in `docs/INSTALL.md`.
 - Settings and panel help use plain words, one sentence per control, at a

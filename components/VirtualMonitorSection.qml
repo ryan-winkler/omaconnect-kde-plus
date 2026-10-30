@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
-import qs.Ui as Kit
 import "../ActionCatalog.js" as Actions
 
 Column {
@@ -15,7 +14,7 @@ Column {
     visible: configuration || reported
     width: parent ? parent.width : 0
     spacing: Style.space(6)
-    Kit.Button {
+    SettingsButton {
         objectName: "virtual-monitor-action"
         width: parent.width
         height: Math.max(44, implicitHeight)

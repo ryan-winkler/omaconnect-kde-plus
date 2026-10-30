@@ -35,6 +35,7 @@ Column {
             width: parent.width
             spacing: Style.space(4)
             Kit.Toggle {
+                id: preferenceToggle
                 width: parent.width
                 visible: !row.stringType
                 // State in words, from the saved value, not only the knob.
@@ -45,6 +46,8 @@ Column {
                 enabled: !root.busy
                 foreground: Commons.Color.popups.text
                 Accessible.role: Accessible.CheckBox
+                Accessible.onToggleAction: if (preferenceToggle.enabled) preferenceToggle.clicked()
+                Accessible.onPressAction: if (preferenceToggle.enabled) preferenceToggle.clicked()
                 Accessible.name: row.modelData.label
                 Accessible.checkable: true
                 Accessible.checked: checked
@@ -91,7 +94,7 @@ Column {
                 font.pixelSize: Style.font.bodySmall
                 wrapMode: Text.Wrap
             }
-            Kit.Button {
+            SettingsButton {
                 width: parent.width
                 visible: row.stringType
                 text: "Save " + row.modelData.label

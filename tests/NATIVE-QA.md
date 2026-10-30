@@ -34,6 +34,10 @@ Tab/Shift+Tab visibility in all four pages at the minimum 520 × 440 window size
 The metadata fixture enumerates installed configuration pages using explicit
 read-only roles, without a device target or native configuration directory.
 These checks do not prove that a real native or remote editor opened or saved.
+Settings buttons expose a native button role and a guarded accessibility press
+action. Checkbox accessibility actions use the existing save path and retain
+saved-value readback. Private fixtures exercise these actions, icon Apply/Cancel
+and disabled launch guards. Full screen-reader acceptance remains a manual check.
 
 ## Desktop session mode
 

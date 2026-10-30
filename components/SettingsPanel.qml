@@ -4,7 +4,6 @@ import QtQuick.Window
 import QtQuick.Controls as Controls
 import qs.Commons
 import qs.Commons as Commons
-import qs.Ui as Kit
 
 Window {
     id: root
@@ -30,7 +29,8 @@ Window {
     readonly property string selectedName: device ? (service && typeof service.displayName === "function" ? service.displayName(device) : device.name) : "No device selected"
     readonly property string selectedId: device ? device.id : ""
     onSelectedIdChanged: if (iconChooser) iconChooser.close()
-    onDeviceOptionsChanged: if (deviceSelector) deviceSelector.popup.close()
+    readonly property string deviceOptionsKey: JSON.stringify(deviceOptions)
+    onDeviceOptionsKeyChanged: if (deviceSelector) deviceSelector.popup.close()
     readonly property var pages: ["Appearance", "Connections", "Quick actions", "Device features"]
     readonly property color surfaceColor: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     property string currentPage: "Appearance"
@@ -127,7 +127,7 @@ Window {
                 font.bold: true
                 wrapMode: Text.Wrap
             }
-            Kit.Button {
+            SettingsButton {
                 id: closeButton
                 text: "Close"
                 Accessible.name: "Close Plus settings"
@@ -232,7 +232,7 @@ Window {
                 Repeater {
                     id: navigation
                     model: root.pages
-                    delegate: Kit.Button {
+                    delegate: SettingsButton {
                         required property string modelData
                         width: parent.width
                         text: modelData
@@ -307,7 +307,7 @@ Window {
                             font.family: Style.font.family
                             font.pixelSize: Style.font.bodySmall
                         }
-                        Kit.Button {
+                        SettingsButton {
                             width: parent.width
                             text: "Change bar icon"
                             Accessible.name: text
@@ -315,7 +315,7 @@ Window {
                             foreground: Commons.Color.popups.text
                             onClicked: iconChooser.openForBar(root.device ? root.device.id : "", root.device ? root.device.type : "phone")
                         }
-                        Kit.Button {
+                        SettingsButton {
                             width: parent.width
                             text: "Change selected device icon and alias"
                             Accessible.name: text
@@ -334,7 +334,7 @@ Window {
                             font.family: Style.font.family
                             font.pixelSize: Style.font.bodySmall
                         }
-                        Kit.Button {
+                        SettingsButton {
                             width: parent.width
                             text: "Icon and contribution guide ↗"
                             Accessible.name: "Open the local icon and contribution guide"
@@ -417,7 +417,7 @@ Window {
                             ]
                         }
                     }
-                    Kit.Button {
+                    SettingsButton {
                         width: parent.width
                         text: "Help with " + root.currentPage.toLowerCase() + " ↗"
                         Accessible.name: "Open the installed task guide for " + root.currentPage.toLowerCase()
@@ -430,7 +430,7 @@ Window {
                 }
             }
         }
-        Kit.Button {
+        SettingsButton {
             id: returnButton
             width: parent.width
             text: "Back to devices"
