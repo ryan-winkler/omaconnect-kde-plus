@@ -10,6 +10,10 @@ ShellRoot {
     property int phase:0
     property int ticks:0
     property int hoverFrames:0
+    property int focusSteps:0
+    property var focusCounts:({forward:0,backward:0})
+    property var focusHeaders:({forward:[],backward:[]})
+    property string focusState:""
     property bool dispatching:false
     property var checks:[]
     property var savedSettings:({})
@@ -64,6 +68,7 @@ ShellRoot {
         return list.join(",")
     }
     function drag(actions){return {hasUrls:true,urls:[Qt.resolvedUrl("one")],supportedActions:actions,accepted:false,action:Qt.IgnoreAction,accept:function(action){this.accepted=true;this.action=action}}}
+    function currentDraftState(){return JSON.stringify([panel.draftText,address.text,addressSection.removalReview,service.selectionState,service.selectedDeviceId])}
     Plugin.Service{id:service}
     QtObject{id:facade;function serviceFor(id){return service}}
     QtObject{
@@ -155,8 +160,11 @@ ShellRoot {
                     if(!test.check(preserve(),"local address, composer and file review exist before moving"))return
                     panel.setSectionExpanded("actions",false)
                     if(!test.check(widgets.actions.expanded && panel.sectionBodyVisible("actions") && named(panel,"section-toggle-actions").Accessible.name==="Collapse Quick actions","forced composer visibility shares the effective expanded state"))return
-                    named(panel,"section-toggle-actions").Accessible.pressAction()
+                    var composerHeader=named(panel,"section-toggle-actions")
+                    composerHeader.forceActiveFocus()
+                    composerHeader.Accessible.pressAction()
                     if(!test.check(panel.activeComposer==="none" && !panel.actionsExpanded && !widgets.actions.expanded && !panel.sectionBodyVisible("actions"),"Collapse closes a forced composer section in one action"))return
+                    if(!test.check(preview.activeFocusItem===composerHeader,"collapsing a composer keeps keyboard focus on its disclosure"))return
                     if(!test.check(panel.draftText==="Composition draft","collapsing a composer keeps its unsent text"))return
                     panel.setSectionExpanded("actions",true);panel.openComposer("text");panel.draftText="Composition draft"
                     panel.openSettings("Appearance");test.phase=2
@@ -242,6 +250,29 @@ ShellRoot {
                     var scrolled=top>=-1 && top<scroll.availableHeight && scroll.contentItem.contentY>0
                     if(!scrolled && ++hoverFrames<4)return
                     if(!test.check(scrolled,"hover scroll geometry "+JSON.stringify({top:top,contentY:scroll.contentItem.contentY,contentHeight:scroll.contentHeight,available:scroll.availableHeight,dropY:widgets.drop.y,dropHeight:widgets.drop.height,order:order()})))return
+                    focusState=currentDraftState()
+                    named(panel,"daily-device-selector").forceActiveFocus()
+                    test.phase=160
+                }else if(test.phase===160){
+                    var focused=preview.activeFocusItem,viewport=named(panel,"daily-content-scroll"),ancestor=focused,inside=false
+                    while(ancestor){if(ancestor===groups){inside=true;break}ancestor=ancestor.parent}
+                    var direction=focusSteps<=65?"forward":"backward"
+                    if(focused && inside){
+                        var point=focused.mapToItem(viewport,0,0)
+                        var bounds={direction:direction,step:focusSteps,name:focused.objectName,label:focused.Accessible?focused.Accessible.name:"",top:point.y,bottom:point.y+focused.height,viewport:viewport.availableHeight,contentY:viewport.contentItem.contentY}
+                        if(point.y< -1 || point.y+focused.height>viewport.availableHeight+1){test.check(false,"Tab focus stays inside daily viewport "+JSON.stringify(bounds));return}
+                        focusCounts[direction]++
+                        if(focused.objectName.indexOf("section-toggle-")===0 && focusHeaders[direction].indexOf(focused.objectName)<0)focusHeaders[direction].push(focused.objectName)
+                    }
+                    if(focusSteps>=130){
+                        var traversed=["forward","backward"].every(function(dir){return focusCounts[dir]>10 && focusHeaders[dir].indexOf("section-toggle-actions")>=0 && focusHeaders[dir].indexOf("section-toggle-drop")>=0})
+                        if(!test.check(traversed,"actual Tab and Shift+Tab reveal daily controls across reordered sections "+JSON.stringify(focusCounts)))return
+                        if(!test.check(sameWidgets() && currentDraftState()===focusState && service.operations.length===0 && !service.operationBusy,"focus traversal preserves section objects and drafts without activation"))return
+                        test.phase=161;return
+                    }
+                    focusSteps++
+                    events.keyClick(Qt.Key_Tab,focusSteps<=65?Qt.NoModifier:Qt.ShiftModifier,1)
+                }else if(test.phase===161){
                     var drop=drag(Qt.CopyAction|Qt.MoveAction)
                     if(!test.check(named(panel,"inline-send-drop-zone").acceptFiles(drop) && drop.action===Qt.CopyAction,"actual inline zone stages Copy review only"))return
                     test.phase=17

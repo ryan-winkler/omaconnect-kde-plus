@@ -237,7 +237,7 @@ Neither the header gear nor paired-device gears launch KDE Connect implicitly.
 The explicit Native KDE Connect settings link retains the native launch boundary.
 
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
-keys, three bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
+keys, four bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`, `sectionOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
 arguments and JSON-typed values. Exact `ok` confirms the native API accepted the
 write and controls success feedback. The controls display host-provided settings;
 the helper does not independently read back or verify persistence. A visibility
@@ -295,7 +295,7 @@ review draft. An unsaved address/removal review clears when its device changes.
 Moving, hiding or collapsing sections alone does not clear saved records or drafts.
 Collapsed or hidden Syncthing controls do not begin new owner-status polls.
 
-`ActionCatalog.js` owns the 19 reviewed shortcut IDs, groups, help, supported and
+`ActionCatalog.js` owns the reviewed shortcut IDs, groups, help, supported and
 locally-active readiness. The preference/migration boundary accepts only those
 IDs, no duplicates, with a 512-character CSV limit. Native handoffs remain explicit
 and keep the selected KDE peer. They do not directly invoke a guessed plugin

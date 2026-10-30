@@ -83,7 +83,7 @@ section keeps its saved data.
 
 | Integration | Use it | Official setup guide |
 | --- | --- | --- |
-| Tailscale | Open the existing Tailscale panel. Connect in its owner app. Approve the peer’s Tailscale IP under **Manage saved addresses**. | [Tailscale quickstart](https://tailscale.com/docs/how-to/quickstart) |
+| Tailscale | Open the existing Tailscale panel. Connect in its owner app. Approve the peer’s Tailscale IP under **Saved addresses**. | [Tailscale quickstart](https://tailscale.com/docs/how-to/quickstart) |
 | MikroTik Back to Home | Use the existing reviewed helper. **Automatic** uses its policy; **On** requests activation; **Off** requests that it stay stopped. Read actual connection state separately. | [MikroTik Back to Home](https://manual.mikrotik.com/docs/network-management/cloud/back-to-home/) |
 | Other WireGuard profiles | Open the existing NetworkManager profiles. The manager owns profiles and keys. Approve the peer’s private VPN IP for rediscovery. | [WireGuard quickstart](https://www.wireguard.com/quickstart/) |
 

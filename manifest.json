@@ -212,7 +212,7 @@
     "nativeFeaturesStartExpanded": {
       "type": "boolean",
       "default": false,
-      "description": "Start native kde connect expanded. This changes the daily layout only."
+      "description": "Start Native KDE Connect expanded. This changes the daily layout only."
     },
     "showDeviceInformation": {
       "type": "boolean",

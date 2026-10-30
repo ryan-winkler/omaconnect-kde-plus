@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Window
 import QtQml.Models as Models
 import Quickshell
 import Quickshell.Io
@@ -96,6 +97,26 @@ Panel {
             }
         }
         if (dropActionRevealed && opened) Qt.callLater(function() { root.scrollSectionIntoView("drop") })
+        else Qt.callLater(root.revealDailyFocus)
+    }
+    function revealDailyFocus() {
+        if (!root.opened) return
+        var window = scrollView.Window.window
+        var item = window ? window.activeFocusItem : null
+        var viewport = scrollView.contentItem
+        if (!item || !viewport) return
+        var ancestor = item
+        while (ancestor && ancestor !== viewport) ancestor = ancestor.parent
+        if (!ancestor) return
+        var position = item.mapToItem(scrollView, 0, 0)
+        var offset = position.y < 0 ? position.y
+            : Math.max(0, position.y + item.height - scrollView.availableHeight)
+        if (offset !== 0) viewport.contentY = Math.max(0, Math.min(viewport.contentY + offset,
+            Math.max(0, scrollView.contentHeight - scrollView.availableHeight)))
+    }
+    Connections {
+        target: scrollView.Window.window
+        function onActiveFocusItemChanged() { Qt.callLater(root.revealDailyFocus) }
     }
     function scrollSectionIntoView(id) {
         // Reveal and ObjectModel moves can arrive before the positioners' next
@@ -525,11 +546,11 @@ Panel {
         }
     }
 
-    function closeComposer() {
+    function closeComposer(restorePanelFocus) {
         activeComposer = "none"
         composerError = ""
         focusSection = availableActions.length > 0 ? "actions" : "devices"
-        if (keyCatcher) keyCatcher.forceActiveFocus()
+        if (restorePanelFocus !== false && keyCatcher) keyCatcher.forceActiveFocus()
     }
 
     function resetComposer() {
@@ -869,7 +890,7 @@ Panel {
                             expanded: root.actionsExpanded || root.activeComposer !== "none"
                             onToggleRequested: {
                                 var wasExpanded = expanded
-                                if (root.activeComposer !== "none") root.closeComposer()
+                                if (root.activeComposer !== "none") root.closeComposer(false)
                                 root.setSectionExpanded(sectionId, !wasExpanded)
                             }
                             ActionToolbar { id: actionToolbar; panel: root; showSectionHeader: false }
