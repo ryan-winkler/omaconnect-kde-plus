@@ -604,9 +604,9 @@ Item {
         }
         commandsLoading = true
         commandsProcess.targetDeviceId = String(id)
-        // head keeps one byte over the cap, so parseRemoteCommands rejects a larger list.
+        // head keeps one byte over the cap, so parseRemoteCommands rejects a larger list; stderr is unused.
         commandsProcess.command = withDeadline(commandsDeadlineSeconds, ["bash", "-c",
-            "set -o pipefail; kdeconnect-cli -d \"$1\" --list-commands | head -c " + (maxRemoteCommandOutput + 1),
+            "set -o pipefail; kdeconnect-cli -d \"$1\" --list-commands 2>/dev/null | head -c " + (maxRemoteCommandOutput + 1),
             "list-commands", String(id)])
         commandsProcess.running = true
         return true
