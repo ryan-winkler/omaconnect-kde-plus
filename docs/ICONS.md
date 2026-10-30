@@ -26,15 +26,15 @@ draft. Apply saves it; Cancel leaves the stored choice unchanged.
 
 `IconChooser.qml` → `AppearanceStore.qml` → `scripts/appearance.py` writes local
 metadata. The bar and device rows call the same pure resolver in `Appearance.js`.
-`components/AppearanceIcon.qml` paints the resolved choice. Symbolic images use
-raster alpha composition so the same source silhouette works with both the
-software and accelerated Qt scene graphs. Native Omarchy
+`components/AppearanceIcon.qml` paints the resolved choice. Symbolic images are
+decoded at the screen's pixel ratio and tinted with a colour overlay. The software
+Qt scene graph, which draws no shader effects, uses raster alpha composition. Native Omarchy
 `qs.Ui` supplies the reusable chooser controls; the fork retains its own small
 appearance dialog and validation boundary.
 
 Preset IDs, labels, suggested theme names and fallback glyphs are declared near
-the top of **`Appearance.js`**. Presets use an available theme icon, then their
-own fallback glyph. A missing arbitrary theme/icon/image never silently becomes
+the top of **`Appearance.js`**. Presets draw their glyph from an installed symbol
+font, as the original OmaConnect does, then use the theme icon. A missing arbitrary theme/icon/image never silently becomes
 a claim about device type or reachability. The renderer exposes a fallback warning.
 The bar's icon is presentation, not a trust, pairing, VPN or transfer indicator.
 
