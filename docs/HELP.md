@@ -13,6 +13,8 @@ Navigation stays at **Bottom** by default, so devices come first. In
 **Plus settings → Appearance**, enable **Place navigation at Top** to move the
 whole row. Add optional direct Send or Activity shortcuts there. Hiding a
 shortcut keeps its route in the menu. The row stays visible while content scrolls.
+When space is tight, enabled shortcuts move below View and settings.
+To restore the default layout, turn all three options off.
 
 A ready draft keeps its recipient and files when you change views. Outside Send,
 a draft reminder names its recipient. Activity shows pending or uncertain

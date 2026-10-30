@@ -1,5 +1,7 @@
 import QtQuick
 import QtQuick.Window
+import QtTest
+import qs.Commons
 import Quickshell
 import "plugin" as Plugin
 
@@ -9,6 +11,7 @@ ShellRoot {
     property int step: 0
     property int wait: 0
     property bool capturing: false
+    property bool dispatching: false
     property var samples: []
     function find(item, name, seen) {
         if (!item || seen.indexOf(item)>=0)return null
@@ -35,11 +38,15 @@ ShellRoot {
         id:preview
         visible:true;width:400;height:740
         Item{id:anchor;width:26;height:26}
+        Item { TestEvent { id:events } }
         Plugin.Panel{id:panel;bar:bar;anchorItem:anchor;settings:({showSavedAddresses:false,showNativeFeatures:false})}
     }
     Timer{
         interval:40;running:true;repeat:true
         onTriggered:{
+            if(test.dispatching)return
+            test.dispatching=true
+            try {
             if(++test.tick>160){test.fail("deadline");return}
             if(service.devices.length!==2 || test.capturing)return
             var nav=test.find(panel,"daily-navigation",[])
@@ -48,6 +55,10 @@ ShellRoot {
             if(!nav || !scroll || !popup)return
             if(test.wait===0){
                 if(test.step>=6){console.log("GEOMETRY_PASS "+JSON.stringify(test.samples));console.log("NATIVE_PASS fitted navigation geometry");Qt.quit();return}
+                if(test.step===0){
+                    var controls=test.find(nav,"daily-navigation-controls",[])
+                    if(nav.shortcutsWrapped || controls.height>nav.focusItem.height+1){test.fail("default must stay one quiet row");return}
+                }
                 panel.settings={navigationAtTop:test.step>=3,showSendShortcut:true,showActivityShortcut:true,showSavedAddresses:false,showNativeFeatures:false}
                 panel.currentView=panel.viewNames[test.step%3]
                 panel.open();test.wait=1;return
@@ -63,10 +74,30 @@ ShellRoot {
             var last=test.find(nav,"daily-route-3",[])
             var lastY=last.mapToItem(popup.contentItem,0,0).y
             var lastVisible=lastY>=-1 && lastY+last.height<=popup.contentItem.height+1
-            test.samples.push({view:panel.currentView,position:top?"Top":"Bottom",height:nav.parent.height,navigationY:nav.y,navigationHeight:nav.height,scrollY:scroll.y,scrollHeight:scroll.height,menuY:popup.y+nav.y,menuHeight:popup.height,triggerWidth:nav.focusItem.width,lastRouteVisible:lastVisible})
+            var send=test.find(nav,"daily-send-shortcut",[]),activity=test.find(nav,"daily-activity-shortcut",[]),settings=test.find(nav,"daily-plus-settings",[])
+            var label=(function findText(item){
+                if("truncated" in item && item.text===nav.focusItem.text)return item
+                var children=item.children || []
+                for(var i=0;i<children.length;i++){var hit=findText(children[i]);if(hit)return hit}
+                return null
+            })(nav.focusItem)
+            var wrappedBounds=!nav.shortcutsWrapped || settings.y===nav.focusItem.y && send.y>=nav.focusItem.y+nav.focusItem.height && activity.y===send.y && activity.x>=send.x+send.width && activity.x+activity.width<=nav.width+1
+            if(Style.font.baseSize===18 && (!nav.shortcutsWrapped || !wrappedBounds || !label || label.truncated)){test.fail("large text must retain the full view label and wrap shortcuts");return}
+            nav.closeMenu()
+            nav.focusItem.forceActiveFocus()
+            events.keyClick(Qt.Key_Tab,Qt.NoModifier,1)
+            var settingsFocused=settings.activeFocus
+            events.keyClick(Qt.Key_Tab,Qt.NoModifier,1)
+            var sendFocused=send.activeFocus
+            events.keyClick(Qt.Key_Tab,Qt.NoModifier,1)
+            var activityFocused=activity.activeFocus
+            var tabOrder=settingsFocused && sendFocused && activityFocused
+            if(!tabOrder){test.fail("Tab order must match View, Settings, Send, Activity");return}
+            test.samples.push({baseFont:Style.font.baseSize,spacingScale:Style.spacing.scale,wrapped:nav.shortcutsWrapped,viewTruncated:label.truncated,viewNominalFont:label.font.pixelSize,viewPaintedWidth:label.paintedWidth,wrappedBounds:wrappedBounds,tabOrder:tabOrder,view:panel.currentView,position:top?"Top":"Bottom",height:nav.parent.height,navigationY:nav.y,navigationHeight:nav.height,scrollY:scroll.y,scrollHeight:scroll.height,menuY:popup.y+nav.y,menuHeight:popup.height,triggerWidth:nav.focusItem.width,lastRouteVisible:lastVisible})
             if(!inside || !separate || !menuInside || !rowFits || !lastVisible){test.fail(JSON.stringify(test.samples));return}
             nav.closeMenu()
             test.step++;test.wait=0
+            } finally {test.dispatching=false}
         }
     }
 }

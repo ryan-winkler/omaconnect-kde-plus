@@ -12,6 +12,9 @@ Column {
     readonly property Item focusItem: viewButton
     readonly property bool menuOpen: viewMenu.opened
     property real menuHeightLimit: 240
+    readonly property bool shortcutsWrapped: viewButton.implicitWidth + settingsButton.width + navigationControls.spacing
+        + (sendShortcut.visible ? sendShortcut.width + navigationControls.spacing : 0)
+        + (activityShortcut.visible ? activityShortcut.width + navigationControls.spacing : 0) > width
     readonly property var entries: ["Devices", "Send", "Activity", "Plus settings"]
     readonly property string draftSummary: panel.service && panel.service.selectionState === "draft" && panel.service.draftTarget
         ? "Draft for " + panel.service.draftTarget.peerName + " · Open Send to review." : ""
@@ -53,15 +56,17 @@ Column {
     }
     function closeMenu() { viewMenu.close() }
 
-    Row {
+    Flow {
+        id: navigationControls
+        objectName: "daily-navigation-controls"
         width: parent.width
         spacing: Style.space(4)
         Kit.Button {
             id: viewButton
             objectName: "daily-view-menu"
             width: Math.max(0, parent.width - settingsButton.width - parent.spacing
-                - (sendShortcut.visible ? sendShortcut.width + parent.spacing : 0)
-                - (activityShortcut.visible ? activityShortcut.width + parent.spacing : 0))
+                - (!root.shortcutsWrapped && sendShortcut.visible ? sendShortcut.width + parent.spacing : 0)
+                - (!root.shortcutsWrapped && activityShortcut.visible ? activityShortcut.width + parent.spacing : 0))
             implicitHeight: Math.max(44, Style.spacing.controlHeight)
             text: "View: " + root.panel.currentView
             iconText: "󰅀"
@@ -77,6 +82,19 @@ Column {
             onClicked: viewMenu.opened ? viewMenu.close() : viewMenu.open()
             Keys.onDownPressed: viewMenu.open()
             Keys.onEscapePressed: root.panel.close()
+        }
+        Kit.PanelActionButton {
+            id: settingsButton
+            objectName: "daily-plus-settings"
+            size: viewButton.implicitHeight
+            iconText: "󰒓"
+            foreground: Commons.Color.popups.text
+            focusable: true
+            tooltipText: "Plus settings: appearance, connections and device features."
+            Accessible.role: Accessible.Button
+            Accessible.name: "Open Plus settings"
+            Accessible.onPressAction: clicked()
+            onClicked: root.panel.openSettings()
         }
         Kit.Button {
             id: sendShortcut
@@ -108,19 +126,7 @@ Column {
             Accessible.onPressAction: clicked()
             onClicked: root.choose("Activity")
         }
-        Kit.PanelActionButton {
-            id: settingsButton
-            objectName: "daily-plus-settings"
-            size: viewButton.implicitHeight
-            iconText: "󰒓"
-            foreground: Commons.Color.popups.text
-            focusable: true
-            tooltipText: "Plus settings: appearance, connections and device features."
-            Accessible.role: Accessible.Button
-            Accessible.name: "Open Plus settings"
-            Accessible.onPressAction: clicked()
-            onClicked: root.panel.openSettings()
-        }
+
     }
     Text {
         width: parent.width

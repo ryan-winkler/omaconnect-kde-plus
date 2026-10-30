@@ -11,6 +11,8 @@ ShellRoot {
     property int ticks: 0
     property bool dispatching: false
     property var checks: []
+    property string recoveryView: ""
+    property string recoveryDraft: ""
     function check(ok, message) {
         if (!ok) { console.error("NATIVE_FAIL navigation: " + message + " phase=" + phase + " checks=" + JSON.stringify(checks)); Qt.quit(); return false }
         checks = checks.concat([message]); return true
@@ -118,6 +120,19 @@ ShellRoot {
                     panel.settings=saved
                     test.find(navigation,"Open Plus settings").Accessible.pressAction()
                     if(!test.check(panel.settingsOpens===1,"quiet settings control supports accessible activation"))return
+                    test.recoveryView=panel.currentView
+                    test.recoveryDraft=JSON.stringify(service.draftTarget)
+                    test.find(preferences,"Place navigation at Top").clicked()
+                    if(!test.check(test.find(preferences,"Place navigation at Top").checked,"default recovery waits for saved host readback"))return
+                    test.phase=11
+                }else if(test.phase===11 && panel.getSetting("navigationAtTop",true)===false && !test.controlsBusy()){
+                    test.find(preferences,"Show a direct Send shortcut").clicked();test.phase=12
+                }else if(test.phase===12 && panel.getSetting("showSendShortcut",true)===false && !test.controlsBusy()){
+                    test.find(preferences,"Show a direct Activity shortcut").clicked();test.phase=13
+                }else if(test.phase===13 && panel.getSetting("showActivityShortcut",true)===false && !test.controlsBusy()){
+                    if(!test.check(!test.find(preferences,"Place navigation at Top").checked && !test.find(preferences,"Show a direct Send shortcut").checked && !test.find(preferences,"Show a direct Activity shortcut").checked,"saved readback restores all three default switches"))return
+                    if(!test.check(!test.find(navigation,"Open Send").visible && !test.find(navigation,"Open Activity").visible && navigation.entries.join(",")==="Devices,Send,Activity,Plus settings","default recovery hides shortcuts and keeps every menu route"))return
+                    if(!test.check(panel.currentView===test.recoveryView && service.selectionState==="draft" && JSON.stringify(service.draftTarget)===test.recoveryDraft && navigation.draftSummary.indexOf(service.draftTarget.peerName)>=0,"default recovery preserves current view and reviewed draft reminder"))return
                     console.log("COMPACT_NAVIGATION_PASS "+JSON.stringify(test.checks))
                     console.log("NATIVE_PASS compact navigation")
                     Qt.quit()

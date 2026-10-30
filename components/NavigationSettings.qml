@@ -17,6 +17,15 @@ Column {
         font.pixelSize: Style.font.body
         font.bold: true
     }
+    Text {
+        width: parent.width
+        text: "To restore the default layout, turn all three options off."
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: Commons.Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.caption
+    }
     PreferenceControls {
         width: parent.width
         panel: parent.panel
