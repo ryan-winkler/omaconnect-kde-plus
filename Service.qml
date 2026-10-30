@@ -49,8 +49,9 @@ Item {
         onExited: function(code) {
             var reply = syncthingReply.text.trim(), changed = requested !== ""
             requested = ""
-            if (code === 0 && !oversized && changed) {
-                // Retain the changed target until readback, then serve the latest selection.
+            if (changed) {
+                // A failed or timed-out set can still have changed Syncthing.
+                // Reconcile that target before serving the latest selection.
                 Qt.callLater(function() { root.startSyncthingRead(root.syncthingDeviceId) })
                 return
             }

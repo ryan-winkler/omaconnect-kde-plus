@@ -26,13 +26,13 @@ ShellRoot {
                 test.phase++
             } else if (test.phase === 1 && !service.syncthingBusy) {
                 if (!test.check(service.syncthingDeviceId === test.b && service.syncthingState === "paused","queued selection gets its own state")) return
-                service.readSyncthingPause(test.a); test.phase++
+                service.setSyncthingPaused(test.b,false); service.readSyncthingPause(test.a); test.phase++
             } else if (test.phase === 2 && !service.syncthingBusy) {
                 if (!test.check(service.syncthingState === "active" && service.setSyncthingPaused(test.a,true),"confirmed active state allows pause")) return
                 if (!test.check(!service.setSyncthingPaused(test.a,false),"second mutation refused while busy")) return
                 service.readSyncthingPause(test.b); service.readSyncthingPause(test.c); test.phase++
             } else if (test.phase === 3 && !service.syncthingBusy) {
-                if (!test.check(service.syncthingDeviceId === test.c && service.syncthingState === "unknown","set readback completes before latest queued selection")) return
+                if (!test.check(service.syncthingDeviceId === test.c && service.syncthingState === "unknown","failed set readback completes before latest queued selection")) return
                 if (!test.check(!service.setSyncthingPaused(test.c,false),"unknown state cannot authorize mutation")) return
                 service.readSyncthingPause(test.d); test.phase++
             } else if (test.phase === 4 && !service.syncthingBusy) {

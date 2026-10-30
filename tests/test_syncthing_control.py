@@ -18,6 +18,7 @@ assert args[:2] == ['cli','config'] and args[2] == 'devices' and args[4] == 'pau
 device = args[3]; state = Path(os.environ['HOME']) / ('paused-' + device)
 if args[5] == 'set':
     time.sleep(.08); state.write_text(args[6])
+    if device.startswith('AAAAAAA'): raise SystemExit(1)
 elif device.startswith('CCCCCCC'): print('unexpected')
 elif device.startswith('DDDDDDD'): print('x'*5000)
 elif device.startswith('EEEEEEE'): time.sleep(8)
@@ -32,11 +33,12 @@ else:
     def assert_fixture(self, fixture, home, output, calls):
         self.assertIn('NATIVE_PASS syncthing', output)
         sync = [row['args'] for row in calls if row['tool'] == 'syncthing']
-        # A set must be followed by a get for that same ID before serving C.
-        changed = next(i for i, args in enumerate(sync) if args[5] == 'set')
-        self.assertEqual(sync[changed+1], sync[changed][:5]+['get'])
-        self.assertTrue(sync[changed+2][3].startswith('CCCCCCC'))
-        self.assertEqual(sum(args[5] == 'set' for args in sync), 1)
+        # Both successful and failed-after-effect sets reconcile their same target.
+        changes = [i for i, args in enumerate(sync) if args[5] == 'set']
+        self.assertEqual(len(changes), 2)
+        for changed in changes:
+            self.assertEqual(sync[changed+1], sync[changed][:5]+['get'])
+        self.assertTrue(sync[changes[1]+2][3].startswith('CCCCCCC'))
         self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()), [])
 
     def test_latest_selection_readback_bounds_and_recovery(self):
