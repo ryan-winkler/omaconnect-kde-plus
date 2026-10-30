@@ -58,11 +58,12 @@ python3 scripts/migrate_settings.py prepare \
   --source-id omaconnect \
   --source "${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json" \
   --output "$HOME/.local/state/omaconnect-migration-review" \
-  --bindings "$HOME/.config/hypr/bindings.conf"
+  --bindings "${XDG_CONFIG_HOME:-$HOME/.config}/hypr/bindings.lua"
 ```
 
 Use a new private directory outside the repository for each run. Omit
 `--bindings` if that file does not exist, or repeat it for other binding files.
+Older configurations can use `bindings.conf`; pass the file your setup uses.
 `--source-id` selects the plugin you move from; read the exact `id` from its
 installed `manifest.json`.
 
