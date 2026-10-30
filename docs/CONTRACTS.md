@@ -98,7 +98,7 @@ There is no automatic retry after an ambiguous timeout.
 Operation summaries contain provider, reviewed ID/name, count/size, aggregate
 counters and timestamps. They hold no raw paths and have a 50-operation memory
 limit. The transient draft/queue does hold selected paths until use/cancellation.
-The CLI path argument can appear in process metadata. Shared sources reach KDE
+Shared sources reach KDE
 through the retained private snapshot. Protected private sources keep the native
 pathname flow. Same-UID code and root remain trusted. No native atomic descriptor
 handoff is claimed. A running helper without a final cancellation acknowledgement
