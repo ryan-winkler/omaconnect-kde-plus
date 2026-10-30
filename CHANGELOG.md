@@ -28,6 +28,10 @@ All notable changes are listed here. The format follows
   a command. Keyboard focus now scrolls into view in every Settings page.
   Settings buttons and checkboxes support assistive-technology activation.
   Native launch feedback uses readable theme foreground text.
+- Daily navigation uses a compact View menu and settings icon. Place it at Top
+  or Bottom, with optional direct Send and Activity shortcuts. All routes remain
+  available, and draft and submission reminders stay visible.
+
 - Trimmed the docs to user and contributor guides; install, update and
   migration now live in `docs/INSTALL.md`.
 - Settings and panel help use plain words, one sentence per control, at a

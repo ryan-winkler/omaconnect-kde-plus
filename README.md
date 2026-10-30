@@ -32,6 +32,8 @@ first and add Plus without `--enable`. The plugin ID is `Omaconnect.plus`.
   transport, native KDE Connect routes and an optional Quick Share shortcut.
 - **Appearance:** choose a phone, computer, theme icon, symbol or local PNG/SVG,
   and an alias per device. Preview before Apply.
+- **Daily layout:** a compact View menu, top or bottom placement, and optional
+  Send and Activity shortcuts. Every view stays available.
 - **Settings:** Appearance, Connections, Quick actions and Device features, with
   short help next to each control. Sections can be hidden or collapsed.
 - **Device features:** inspect Information, search reported native modules and open the
@@ -59,6 +61,7 @@ commands. Keep it if its workflow suits you. Plus adds:
 | Your own bar and device look | Icon search, local images, aliases and preview. |
 | A normal file workflow | File chooser, multiselect, drops and explicit review. |
 | Shortcuts that fit your tasks | Add, remove and reorder actions; Ring is optional. |
+| Control over popup navigation | Move the View row and choose direct Send/Activity shortcuts. |
 | Every native feature in reach | Searchable native inventory and per-device KDE settings links. |
 | Your existing remote access | Separate Tailscale, Back to Home and WireGuard opt-ins. |
 

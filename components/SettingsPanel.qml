@@ -342,6 +342,7 @@ Window {
                             foreground: Commons.Color.popups.text
                             onClicked: Qt.openUrlExternally(Qt.resolvedUrl("../docs/ICONS.md"))
                         }
+                        NavigationSettings { width: parent.width; panel: root.panel }
                         PreferenceControls {
                             width: parent.width
                             panel: root.panel
