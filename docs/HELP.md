@@ -59,8 +59,9 @@ Each action shows its description and selected-device availability.
 ## Device features
 
 Media player choices and transport buttons support Tab, Enter, Space and
-assistive-technology activation. The current player stays marked; unavailable
-controls do not submit an action.
+assistive-technology activation. The current player starts with **Current:**,
+so its state remains clear without color or hover. Unavailable controls do not
+submit an action.
 
 Open **All KDE Connect features**, then use native **Plugin settings** to enable
 or configure installed modules and permissions. Search in Plus by task or plugin
@@ -128,6 +129,11 @@ including how to move settings from the original OmaConnect. If KDE Connect is
 missing, Devices shows `omarchy pkg add kdeconnect python python-gobject`. Copy
 it into a terminal, run it, then select **Refresh**. Plus never runs it for you. Native plugin
 removal does not remove pairing, VPN profiles or private Plus metadata.
+
+If discovery reports missing **busctl and Python 3**, check those system tools,
+then select **Refresh**. This is a discovery dependency problem, not proof that
+KDE Connect is missing. On Omarchy, `busctl` comes from systemd and `python3`
+comes from Python. Plus does not install or change these packages.
 
 ## Get help or contribute
 

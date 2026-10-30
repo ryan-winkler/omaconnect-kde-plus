@@ -77,6 +77,8 @@ ShellRoot {
     if(++test.ticks>100){test.fail("deadline");return}
     if(test.phase===0){
      test.second=test.findPlayer(media,"Owned second")
+     var current=test.findPlayer(media,"Owned first")
+     if(!current || current.text.indexOf("Current: ")!==0 || current.Accessible.name!=="Current player Owned first" || current.enabled){test.fail("current player state is not explicit in text");return}
      test.previous=test.glyph(media,"󰒮");test.play=test.glyph(media,"󰐊");test.next=test.glyph(media,"󰒭")
      if(!test.second||!test.previous||!test.play||!test.next){test.fail("real player or transport control missing");return}
      test.result.second=test.semantics(test.second)
@@ -130,7 +132,7 @@ ShellRoot {
      fakeService.mediaState=Object.assign({},fakeService.mediaState,{player:"Owned second"})
      test.phase=6
     }else if(test.phase===6){
-     if(test.second.enabled){test.fail("current player must not dispatch again");return}
+     if(test.second.enabled || test.second.text.indexOf("Current: ")!==0 || test.second.Accessible.name!=="Current player Owned second"){test.fail("current player must show its state and not dispatch again");return}
      test.second.Accessible.pressAction();test.second.clicked()
      if(fakeService.selections.length!==4){test.fail("disabled player dispatched");return}
      fakeService.mediaState=({});test.phase=7

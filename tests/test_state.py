@@ -1711,10 +1711,10 @@ class ScriptIntegrationTests(unittest.TestCase):
   def test_discover_devices_end_to_end(self):
     script = ROOT / "scripts" / "discover_devices.sh"
 
-    # Missing required dependency exits 127
+    # Missing helper dependencies must not imply KDE is absent.
     with tempfile.TemporaryDirectory() as empty_dir:
       res_dep = subprocess.run([BASH, str(script)], capture_output=True, env={**os.environ, "PATH": empty_dir})
-      self.assertEqual(res_dep.returncode, 127)
+      self.assertEqual(res_dep.returncode, 78)
 
     # Installed CLI with a stopped daemon exits 69, independent of host packages.
     with tempfile.TemporaryDirectory() as tmp:
@@ -2230,7 +2230,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("playPauseBtn", media_section)
     self.assertIn("nextBtn", media_section)
     self.assertIn("playerControlsRow", media_section)
-    self.assertIn("text: modelData", media_section)
+    self.assertIn('text: isCurrent ? "Current: " + modelData : modelData', media_section)
     self.assertNotIn("id: pText", media_section)
     self.assertNotIn("source: root.albumArt", media_section)
     self.assertIn("localAlbumArtUrl", (ROOT / "scripts" / "media_control.sh").read_text())
@@ -2638,7 +2638,7 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
     self.assertIn("Required packages missing", device_section)
     self.assertIn("KDE Connect setup guide", device_section)
-    self.assertIn("KDE Connect daemon stopped", device_section)
+    self.assertIn("KDE Connect unavailable", device_section)
     self.assertIn("No devices found", device_section)
     self.assertNotIn("Allow in Firewall", device_section)
 

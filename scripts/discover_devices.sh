@@ -26,12 +26,15 @@ set -Eeuo pipefail
 # call. Tabs/newlines in remote values are folded to spaces (anti-spoofing of
 # the TSV record).
 #
-# Exit codes: 127 missing dependencies or KDE installation, 69 daemon down / D-Bus error,
-# 70 malformed reply, 64 bad usage.
+# Exit codes: 127 confirmed KDE absence, 78 missing helper dependencies,
+# 69 daemon down / D-Bus error, 70 malformed reply, 64 bad usage.
 base=/modules/kdeconnect
 
 for command in busctl python3; do
-    command -v "$command" >/dev/null 2>&1 || exit 127
+    if ! command -v "$command" >/dev/null 2>&1; then
+        printf '%s\n' "Discovery needs busctl and Python 3. Check the system tools, then select Refresh." >&2
+        exit 78
+    fi
 done
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)

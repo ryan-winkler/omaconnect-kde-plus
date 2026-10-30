@@ -228,7 +228,7 @@ Column {
                                 readonly property bool isCurrent: modelData === root.trackPlayer
                                 objectName: "media-player-" + index
                                 width: Math.min(playerControlsRow.width, implicitWidth)
-                                text: modelData
+                                text: isCurrent ? "Current: " + modelData : modelData
                                 iconText: "󰐌"
                                 tooltipText: isCurrent ? "Current player" : "Choose this player"
                                 selected: isCurrent
@@ -239,7 +239,7 @@ Column {
                                 fontFamily: root.fontFamily
                                 fontSize: Style.font.bodySmall
                                 Accessible.role: Accessible.Button
-                                Accessible.name: "Choose player " + modelData
+                                Accessible.name: (isCurrent ? "Current player " : "Choose player ") + modelData
                                 Accessible.description: isCurrent ? "Current player" : "Select this reported player on the selected device."
                                 Accessible.onPressAction: if (enabled) clicked()
                                 onClicked: if (enabled) root.service.mediaSelectPlayer(root.device.id, modelData)

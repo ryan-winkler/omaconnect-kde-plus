@@ -483,7 +483,7 @@ Column {
             text: {
                 if (root.service && root.service.scanning) return "Scanning..."
                 if (root.service && root.service.discoveryState === "not_installed") return "Required packages missing"
-                if (root.service && root.service.discoveryState === "unavailable") return "KDE Connect daemon stopped"
+                if (root.service && root.service.discoveryState === "unavailable") return "KDE Connect unavailable"
                 return "No devices found"
             }
             color: Qt.darker(root.foreground, 1.4)
