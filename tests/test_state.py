@@ -1716,9 +1716,12 @@ class ScriptIntegrationTests(unittest.TestCase):
       res_dep = subprocess.run([BASH, str(script)], capture_output=True, env={**os.environ, "PATH": empty_dir})
       self.assertEqual(res_dep.returncode, 127)
 
-    # Daemon not running exits 69
+    # Installed CLI with a stopped daemon exits 69, independent of host packages.
     with tempfile.TemporaryDirectory() as tmp:
       stub_dir = Path(tmp)
+      cli = stub_dir / "kdeconnect-cli"
+      cli.write_text("#!/bin/bash\nexit 0\n")
+      cli.chmod(0o700)
       write_busctl_stub(stub_dir, [
           ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-false.json"),
       ])
