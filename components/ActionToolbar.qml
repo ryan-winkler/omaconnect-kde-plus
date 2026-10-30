@@ -78,6 +78,19 @@ Column {
         }
     }
     Text {
+        objectName: "quick-share-launch-status"
+        width: parent.width
+        text: root.service ? (root.service.quickShareMessage || "") : ""
+        visible: text !== ""
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: root.service && root.service.quickShareFailed ? Commons.Color.urgent : root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        Accessible.role: Accessible.StaticText
+        Accessible.name: text
+    }
+    Text {
         width: parent.width
         visible: root.blockedActions.length > 0
         text: root.blockedActions.length > 0 ? Actions.availabilityText(root.blockedActions[0],root.device,root.service)

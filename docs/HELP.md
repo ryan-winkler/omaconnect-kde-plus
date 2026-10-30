@@ -61,6 +61,9 @@ Each action shows its description and selected-device availability.
 - **Quick Share:** Open [RQuickShare](https://github.com/Martichou/rquickshare)
   to share with Android Quick Share. Install the `r-quick-share` package first.
   It is a separate app with its own pairing; KDE Connect does not use it.
+  Its launch status appears below the shortcuts. Wait while it opens before
+  choosing Quick Share again. Other device actions remain available, and their
+  results stay separate from the launcher result.
 - **Ring:** Request a sound. If unavailable, open native **Plugin settings** and
   check Find my phone. A successful command does not confirm an audible sound.
 - **SMS:** Open native KDE Connect conversations, where the platform permits it.

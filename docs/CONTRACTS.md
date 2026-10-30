@@ -214,3 +214,7 @@ accepts Copy only, and emits a review-window signal after staging. It never send
 Quick Share uses only the fixed `/usr/bin/rquickshare` app path. The launcher
 rechecks the executable and detaches its standard streams. Success confirms
 process creation, not an open window, pairing or delivery.
+`quickShareOpening`, `quickShareMessage` and `quickShareFailed` own launcher
+feedback. A launch never changes the selected device's action state, message or
+error. Only duplicate Quick Share launches wait for its result; unrelated device
+actions remain available. The toolbar shows the launch result separately.
