@@ -23,6 +23,7 @@ Item {
     property string actionState: "idle"
     property string actionMessage: ""
     property string actionError: ""
+    readonly property bool nativeAppOpening: appProcess.running
     property int actionGeneration: 0
 
     property alias fileTransferState: fileController.fileTransferState

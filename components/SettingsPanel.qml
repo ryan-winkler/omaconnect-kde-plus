@@ -11,7 +11,30 @@ Window {
     required property var panel
     readonly property var service: panel ? panel.service : null
     readonly property var device: panel ? panel.device : null
+    readonly property var devices: service ? service.devices : []
+    readonly property var deviceOptions: devices.map(function(entry) {
+        var name = root.deviceName(entry)
+        var duplicate = root.devices.some(function(other) { return other.id !== entry.id && root.deviceName(other) === name })
+        return {value: entry.id, label: name + (duplicate ? " [" + entry.id + "]" : "") + " · " + root.deviceState(entry)}
+    })
+    readonly property int deviceIndex: {
+        for (var i = 0; i < devices.length; i++) if (device && devices[i].id === device.id) return i
+        return -1
+    }
+    readonly property string deviceStatus: {
+        if (!service) return "KDE Connect is unavailable. Open KDE Connect to check its setup."
+        if (devices.length === 0) {
+            if (service.scanning || service.discoveryState === "starting") return "Checking KDE Connect for devices…"
+            if (!service.daemonAvailable) return service.discoveryMessage || "KDE Connect is unavailable. Open it to check its setup."
+            return "No devices found. Open KDE Connect to pair a device."
+        }
+        if (!device) return "Choose a device above."
+        return root.deviceState(device) + ". Switching also changes the device in Devices."
+    }
     readonly property string selectedName: device ? (service && typeof service.displayName === "function" ? service.displayName(device) : device.name) : "No device selected"
+    readonly property string selectedId: device ? device.id : ""
+    onSelectedIdChanged: if (iconChooser) iconChooser.close()
+    onDeviceOptionsChanged: if (deviceSelector) deviceSelector.popup.close()
     readonly property var pages: ["Appearance", "Connections", "Quick actions", "Device features"]
     readonly property color surfaceColor: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     property string currentPage: "Appearance"
@@ -30,7 +53,21 @@ Window {
     modality: Qt.NonModal
     color: root.surfaceColor
 
+    function deviceName(entry) {
+        return service && typeof service.displayName === "function" ? service.displayName(entry) : entry.name
+    }
+    function deviceState(entry) {
+        return !entry.paired ? "Not paired" : entry.reachable ? "Connected" : "Offline"
+    }
+    function selectSettingsDevice(id) {
+        // Resolve the stable ID again: discovery may replace or reorder the list.
+        if (!panel || !devices.some(function(entry) { return entry.id === id }) || (device && device.id === id)) return
+        iconChooser.close()
+        panel.selectDevice(id)
+    }
+
     function openSettings(page) {
+        deviceSelector.popup.close()
         currentPage = pages.indexOf(page) >= 0 ? page : "Appearance"
         visible = true
         raise()
@@ -41,6 +78,7 @@ Window {
         })
     }
     function closeSettings() {
+        deviceSelector.popup.close()
         iconChooser.close()
         visible = false
     }
@@ -51,7 +89,7 @@ Window {
     Shortcut {
         sequence: "Escape"
         context: Qt.WindowShortcut
-        enabled: root.visible && !iconChooser.opened
+        enabled: root.visible && !iconChooser.opened && !deviceSelector.popup.visible
         onActivated: root.closeSettings()
     }
 
@@ -85,6 +123,88 @@ Window {
                 focusable: true
                 foreground: Commons.Color.popups.text
                 onClicked: root.closeSettings()
+            }
+        }
+        Column {
+            id: deviceContext
+            width: parent.width
+            spacing: Style.space(4)
+            Text {
+                text: "Device"
+                textFormat: Text.PlainText
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+            }
+            Controls.ComboBox {
+                id: deviceSelector
+                objectName: "settings-device-selector"
+                width: parent.width
+                height: Math.max(44, Style.spacing.controlHeight)
+                model: root.deviceOptions
+                textRole: "label"
+                valueRole: "value"
+                currentValue: root.selectedId
+                displayText: root.deviceIndex >= 0 ? root.deviceOptions[root.deviceIndex].label : "Choose a device"
+                enabled: root.devices.length > 0
+                font.family: Style.font.family
+                font.pixelSize: Style.font.body
+                palette.text: Commons.Color.popups.text
+                palette.buttonText: Commons.Color.popups.text
+                palette.button: root.surfaceColor
+                palette.base: root.surfaceColor
+                palette.window: root.surfaceColor
+                palette.highlight: Commons.Color.accent
+                palette.highlightedText: root.surfaceColor
+                Accessible.name: "Device"
+                Accessible.description: root.deviceStatus
+                contentItem: Text {
+                    text: deviceSelector.displayText
+                    textFormat: Text.PlainText
+                    color: Commons.Color.popups.text
+                    font: deviceSelector.font
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+                background: Rectangle {
+                    color: root.surfaceColor
+                    radius: Style.cornerRadius
+                    border.width: deviceSelector.activeFocus ? 2 : Style.normalBorderWidth
+                    border.color: deviceSelector.activeFocus ? Commons.Color.accent : Commons.Color.popups.border
+                }
+                delegate: Controls.ItemDelegate {
+                    required property var modelData
+                    required property int index
+                    text: modelData.label
+                    Accessible.name: text
+                    width: deviceSelector.width
+                    height: Math.max(44, implicitHeight)
+                    highlighted: deviceSelector.highlightedIndex === index
+                    contentItem: Text {
+                        text: modelData.label
+                        textFormat: Text.PlainText
+                        color: Commons.Color.popups.text
+                        font: deviceSelector.font
+                        wrapMode: Text.WrapAnywhere
+                    }
+                    background: Rectangle {
+                        color: parent.highlighted ? Style.hoverFillFor(Commons.Color.popups.text, Commons.Color.accent) : root.surfaceColor
+                    }
+                }
+                onActivated: function(index) {
+                    var option = root.deviceOptions[index]
+                    if (option) root.selectSettingsDevice(option.value)
+                }
+            }
+            Text {
+                objectName: "settings-device-status"
+                width: parent.width
+                text: root.deviceStatus
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
             }
         }
         Row {
@@ -143,9 +263,7 @@ Window {
                     }
                     Text {
                         width: parent.width
-                        text: (root.currentPage === "Appearance" || root.currentPage === "Device features")
-                            ? "Selected device: " + root.selectedName + " · Display choices apply to Plus on this computer."
-                            : "These preferences apply to Plus on this computer."
+                        text: "Plus preferences apply to this computer."
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
                         color: Commons.Color.popups.text
@@ -185,7 +303,7 @@ Window {
                         Text {
                             width: parent.width
                             visible: !root.device
-                            text: "Choose a device in Devices first to change its icon or local name."
+                            text: "Choose a device above to change its icon or local name."
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text

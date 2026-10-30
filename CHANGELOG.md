@@ -8,6 +8,10 @@ All notable changes are listed here. The format follows
 
 ### Changed
 
+- Settings has a persistent Device dropdown, with shared selection, text states
+  for offline and unpaired devices, keyboard control and native launch feedback.
+- Device gears open the selected device's Plus settings. The explicit Native
+  KDE Connect settings link opens the full native settings application.
 - Trimmed the docs to user and contributor guides; install, update and
   migration now live in `docs/INSTALL.md`.
 

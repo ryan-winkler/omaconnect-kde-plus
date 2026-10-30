@@ -44,6 +44,12 @@ Panel {
     readonly property var viewNames: ["Devices", "Send", "Activity"]
     readonly property var settingsWindow: preferencesWindow
     function openSettings(page) { preferencesWindow.openSettings(page || "Appearance"); root.close() }
+    function openDeviceSettings(id) {
+        if (!service || !service.devices.some(function(entry) { return entry.id === id })) return false
+        selectDevice(id)
+        openSettings("Device features")
+        return true
+    }
     function openSendWindow() { root.close(); sendWindow.openSend() }
     onOpenedChanged: {
         if (service) service.panelOpened = opened
@@ -700,7 +706,7 @@ Panel {
                 Button {
                     focusable: true
                     width: parent.width
-                    text: "Settings"
+                    text: "Plus settings"
                     Accessible.name: "Omaconnect KDE Plus settings"
                     onClicked: root.openSettings()
                 }

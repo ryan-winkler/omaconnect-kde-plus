@@ -1,8 +1,27 @@
 # Help with Omaconnect KDE Plus
 
-Open **Settings** from the bar menu. Choose the domain that matches your task.
+Open **Plus settings** in Devices or **Settings** from the bar menu. Choose the domain that matches your task.
 Use **Back to devices** to return. Native KDE Connect opens in its own window;
 your Plus settings remain available. Select a device before changing its features.
+
+Use the **Device** dropdown below the Settings title to change devices without
+leaving the page. It also changes the selected device in Devices and clears the
+old device's unsent text draft. Connected, offline and unpaired devices stay in
+the list. Devices with the same local name also show their IDs. Offline devices
+can still have a local icon or alias. Pairing and native permissions stay in KDE
+Connect. Display preferences apply to Plus on this computer.
+
+Tab to **Device**, then press Space or Enter to open the list. Use the arrow keys
+and Enter to choose. Escape closes the list first; another Escape closes Settings.
+If discovery changes the list, open it again to choose from the current devices.
+**Native KDE Connect settings** shows launch progress or an error beside the button.
+Launch requested means the command was accepted; it does not confirm a visible
+window. Older KDE Connect settings frontends can open the device list instead.
+
+In Devices, the **Plus settings** button opens general Plus preferences. The gear
+beside the selected device and each paired device opens **Device features** for
+that exact device in Plus. Paired offline devices keep their gear. Use **Native
+KDE Connect settings** inside Plus for KDE Connect's full settings and permissions.
 
 ## Appearance
 
@@ -57,7 +76,7 @@ Each action shows its description and selected-device availability.
 
 ## Device features
 
-Open **All KDE Connect features**, then use native **Plugin settings** to enable
+Open **Native KDE Connect settings**, then use native **Plugin settings** to enable
 or configure installed modules and permissions. Search in Plus by task or plugin
 ID to find reported features, including unfamiliar third-party IDs. Supported
 means compatible; Loaded describes the local daemon. Neither confirms permission.

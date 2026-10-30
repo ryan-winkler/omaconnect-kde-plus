@@ -2025,8 +2025,11 @@ class QmlWiringAndContractTests(unittest.TestCase):
 
     self.assertIn("function openKdeConnectApp()", controller_source)
     self.assertIn("getAppScriptPath()", controller_source)
-    self.assertIn("openKdeConnectApp()", device_ui)
-    self.assertIn("Open KDE Connect application", device_ui)
+    self.assertNotIn("openKdeConnectApp()", device_ui)
+    self.assertIn("openDeviceSettings(modelData.id)", device_ui)
+    native_ui = (ROOT / "components" / "NativeFeaturesSection.qml").read_text()
+    self.assertIn("openKdeConnectApp()", native_ui)
+    self.assertIn("Native KDE Connect settings", native_ui)
     self.assertIn("kdeconnect-app", app_script)
 
   def test_scan_and_picker_lifecycle_guards(self):

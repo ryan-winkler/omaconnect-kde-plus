@@ -12,13 +12,23 @@ ShellRoot {
     property bool capturing: false
     property int nativeOpens: 0
     property int returned: 0
+    property string nativeTarget: ""
+    property int deviceSelections: 0
+    property var initialDevices: [
+        {id:"fixture-phone",name:"Fixture phone",type:"phone",paired:true,reachable:true,pluginIds:["kdeconnect_share","kdeconnect_sftp","thirdparty.custom-addon","kdeconnect_remotecommands"],loadedKnown:true,loadedPluginIds:["kdeconnect_share"]},
+        {id:"fixture-offline",name:"Fixture phone",type:"laptop",paired:true,reachable:false,pluginIds:["kdeconnect_battery"],loadedKnown:true,loadedPluginIds:["kdeconnect_battery"]},
+        {id:"fixture-new",name:"<b>Living room tablet with a very long device name that must stay plain and fit the settings window</b>",type:"tablet",paired:false,reachable:true,pluginIds:[],loadedKnown:false}
+    ]
     property var captures: [
         {page:"Appearance", width:720, name:"settings-720-appearance.png"},
         {page:"Connections", width:720, name:"settings-720-connections.png"},
         {page:"Quick actions", width:720, name:"settings-720-actions.png"},
         {page:"Device features", width:720, name:"settings-720-features.png"},
         {page:"Connections", width:520, name:"settings-520-connections.png"},
-        {page:"Device features", width:520, name:"settings-520-features.png"}
+        {page:"Device features", width:520, name:"settings-520-features.png"},
+        {page:"Device features", width:520, popup:true, name:"settings-520-dropdown.png"},
+        {page:"Appearance", width:520, device:"fixture-new", name:"settings-520-long-name.png"},
+        {page:"Device features", width:520, height:440, name:"settings-520-minimum-height.png"}
     ]
     function check(value, message) {
         if (!value) { console.error("NATIVE_FAIL settings: " + message); Qt.quit(); return false }
@@ -40,9 +50,18 @@ ShellRoot {
     QtObject {
         id: service
         property var appearance: null
-        property var selectedDevice: ({id:"fixture-phone",name:"Fixture phone",type:"phone",pluginIds:["kdeconnect_share","kdeconnect_sftp","thirdparty.custom-addon","kdeconnect_remotecommands"],loadedKnown:true,loadedPluginIds:["kdeconnect_share"]})
+        property var devices: test.initialDevices
+        property string selectedDeviceId: "fixture-phone"
+        readonly property var selectedDevice: devices.find(function(entry) { return entry.id === service.selectedDeviceId }) || null
+        property bool scanning: false
+        property bool daemonAvailable: true
+        property string discoveryState: "ready"
+        property string discoveryMessage: ""
+        property bool nativeAppOpening: false
+        property string actionMessage: ""
+        property string actionError: ""
         function displayName(device) { return device.name }
-        function openKdeConnectApp() { test.nativeOpens++ }
+        function openKdeConnectApp() { test.nativeOpens++;test.nativeTarget=selectedDeviceId }
     }
     QtObject {
         id: panel
@@ -50,6 +69,7 @@ ShellRoot {
         property var device: service.selectedDevice
         property var settings: ({networkBthEnabled:true})
         function getSetting(key,fallback) { return key in settings ? settings[key] : fallback }
+        function selectDevice(id) { test.deviceSelections++;service.selectedDeviceId=id }
     }
     Components.SettingsPanel { id: settings; panel: panel; onReturnToPanelRequested: test.returned++ }
     TestCase { id: events; when:false }
@@ -70,8 +90,8 @@ ShellRoot {
                 var scroll=test.find(settings.contentItem,function(o){return o.objectName === "settings-page-scroll"},[])
                 if(!test.check(scroll && scroll.contentHeight > scroll.availableHeight,"long domain content uses a bounded scrolling region"))return
                 events.mouseWheel(scroll,scroll.width/2,scroll.height/2,0,-2400,Qt.NoButton,Qt.NoModifier,1)
-                test.phase=29
-            } else if(test.phase===29) {
+                test.phase=290
+            } else if(test.phase===290) {
                 var scrolled=test.find(settings.contentItem,function(o){return o.objectName === "settings-page-scroll"},[])
                 if(!test.check(scrolled.contentItem.contentY > 0,"mouse wheel reaches lower connection settings"))return
                 test.named("Settings: Quick actions").clicked();test.phase=3
@@ -89,7 +109,7 @@ ShellRoot {
             } else if(test.phase===6) {
                 var featureList2=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])
                 if(!test.check(featureList2.filteredPluginIds.length===1 && featureList2.filteredPluginIds[0]==="thirdparty.custom-addon","search retains unknown third-party IDs"))return
-                test.named("All KDE Connect features").clicked()
+                test.named("Native KDE Connect settings").clicked()
                 if(!test.check(test.nativeOpens===1 && settings.visible,"native settings handoff keeps Plus settings available"))return
                 featureList2.searchText="";test.phase=7
             } else if(test.phase===7) {
@@ -103,19 +123,84 @@ ShellRoot {
                 test.phase=10
             } else if(test.phase===10) {
                 if(!test.check(!settings.visible,"Escape closes the independent settings window"))return
-                test.phase=20
-            } else if(test.phase>=20 && test.phase<26 && !test.capturing) {
+                settings.openSettings("Device features");test.phase=30
+            } else if(test.phase===30) {
+                var selector=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
+                if(!test.check(selector && selector.count===3 && selector.currentValue==="fixture-phone","settings has a native dropdown bound to all known devices"))return
+                if(!test.check(selector.textAt(0).indexOf("[fixture-phone]")!==-1 && selector.textAt(1).indexOf("[fixture-offline]")!==-1,"duplicate device names include stable IDs"))return
+                if(!test.check(selector.textAt(1).indexOf("Offline")!==-1 && selector.textAt(2).indexOf("Not paired")!==-1,"offline and unpaired devices have text states"))return
+                selector.activated(1);test.phase=31
+            } else if(test.phase===31) {
+                if(!test.check(service.selectedDeviceId==="fixture-offline" && test.deviceSelections===1 && settings.currentPage==="Device features","switching uses the shared panel selector and keeps the domain"))return
+                var switched=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])
+                if(!test.check(switched.pluginIds.length===1 && switched.pluginIds[0]==="kdeconnect_battery","feature inventory follows the selected device"))return
+                test.named("Native KDE Connect settings").clicked()
+                if(!test.check(test.nativeTarget==="fixture-offline","native handoff follows the new selected ID"))return
+                service.nativeAppOpening=true;service.actionMessage="Opening KDE Connect";test.phase=32
+            } else if(test.phase===32) {
+                var status=test.find(settings.contentItem,function(o){return o.objectName==="native-launch-status"},[])
+                if(!test.check(!test.named("Native KDE Connect settings").enabled && status.text==="Opening KDE Connect","native launch has visible busy feedback and prevents repeat requests"))return
+                service.nativeAppOpening=false;service.actionMessage="";service.actionError="KDE Connect app unavailable";test.phase=33
+            } else if(test.phase===33) {
+                var failed=test.find(settings.contentItem,function(o){return o.objectName==="native-launch-status"},[])
+                if(!test.check(failed.visible && failed.text==="KDE Connect app unavailable" && test.named("Native KDE Connect settings").enabled,"native launch failure is visible and retry is available"))return
+                service.actionError="";service.selectedDeviceId="fixture-phone";test.phase=34
+            } else if(test.phase===34) {
+                var keys=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
+                keys.forceActiveFocus();events.keyClick(Qt.Key_Space,Qt.NoModifier,1);test.phase=35
+            } else if(test.phase===35) {
+                var opened=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
+                if(!test.check(opened.popup.visible,"Space opens the device dropdown"))return
+                events.keyClick(Qt.Key_Down,Qt.NoModifier,1);test.phase=351
+            } else if(test.phase===351) {
+                events.keyClick(Qt.Key_Return,Qt.NoModifier,1);test.phase=36
+            } else if(test.phase===36) {
+                var selected=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
+                if(!test.check(service.selectedDeviceId==="fixture-offline" && !selected.popup.visible,"arrows and Enter select the device by keyboard: " + service.selectedDeviceId + " / " + selected.currentIndex + " / " + selected.popup.visible))return
+                selected.forceActiveFocus();events.keyClick(Qt.Key_Space,Qt.NoModifier,1);test.phase=37
+            } else if(test.phase===37) {
+                events.keyClick(Qt.Key_Escape,Qt.NoModifier,1);test.phase=38
+            } else if(test.phase===38) {
+                var dismissed=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
+                if(!test.check(settings.visible && !dismissed.popup.visible && dismissed.activeFocus,"first Escape closes the dropdown and restores focus"))return
+                events.keyClick(Qt.Key_Escape,Qt.NoModifier,1);test.phase=39
+            } else if(test.phase===39) {
+                if(!test.check(!settings.visible,"second Escape closes Settings"))return
+                settings.openSettings("Appearance");service.devices=[test.initialDevices[2],test.initialDevices[1],test.initialDevices[0]];test.phase=40
+            } else if(test.phase===40) {
+                var reordered=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
+                if(!test.check(reordered.currentValue==="fixture-offline","device list reorder preserves selected identity"))return
+                reordered.activated(0);test.phase=41
+            } else if(test.phase===41) {
+                if(!test.check(service.selectedDeviceId==="fixture-new" && settings.selectedName.indexOf("<b>")===0,"long markup-shaped names remain selectable as plain data"))return
+                service.devices=[];service.scanning=true;service.selectedDeviceId="";test.phase=42
+            } else if(test.phase===42) {
+                var empty=test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[])
+                if(!test.check(!empty.enabled && settings.deviceStatus.indexOf("Checking")===0 && settings.device===null,"removed selection and loading state do not keep a stale device"))return
+                settings.selectSettingsDevice("fixture-phone")
+                if(!test.check(service.selectedDeviceId==="","removed ID cannot be selected from a stale option"))return
+                service.scanning=false;test.phase=43
+            } else if(test.phase===43) {
+                if(!test.check(settings.deviceStatus.indexOf("No devices found")===0,"empty state explains pairing in KDE Connect"))return
+                service.daemonAvailable=false;service.discoveryMessage="KDE Connect service is unavailable";test.phase=44
+            } else if(test.phase===44) {
+                if(!test.check(settings.deviceStatus==="KDE Connect service is unavailable","provider failure stays distinct from an empty device list"))return
+                service.daemonAvailable=true;service.devices=test.initialDevices;service.selectedDeviceId="fixture-phone";test.phase=20
+            } else if(test.phase>=20 && test.phase<20+test.captures.length && !test.capturing) {
                 var capture=test.captures[test.phase-20]
-                settings.width=capture.width;settings.openSettings(capture.page)
+                settings.width=capture.width;settings.height=capture.height || 640
+                service.selectedDeviceId=capture.device || "fixture-phone"
+                settings.openSettings(capture.page)
+                if(capture.popup) test.find(settings.contentItem,function(o){return o.objectName==="settings-device-selector"},[]).popup.open()
                 test.capturing=true;test.phase+=100
-            } else if(test.phase>=120 && test.phase<126) {
+            } else if(test.phase>=120 && test.phase<120+test.captures.length) {
                 var shot=test.captures[test.phase-120]
                 test.phase+=100
                 settings.contentItem.grabToImage(function(result) {
                     if(!test.check(result.saveToFile(Qt.resolvedUrl(shot.name).toString().replace("file://","")),"filled screenshot saved: "+shot.name))return
                     test.capturing=false;test.phase-=199
                 })
-            } else if(test.phase===26) {
+            } else if(test.phase===20+test.captures.length) {
                 console.log("SETTINGS_PASS "+JSON.stringify(test.checks));console.log("NATIVE_PASS settings");Qt.quit()
             }
         }

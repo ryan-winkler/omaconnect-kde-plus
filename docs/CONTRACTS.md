@@ -162,6 +162,21 @@ module settings open in KDE Connect with the selected ID; peer pairing/reachabil
 conditions are explained. The searchable inventory is reported support, not an
 installation catalog or enabled-state writer.
 
+The persistent Settings Device selector uses the existing `Panel.selectDevice`
+path. It does not store another selected ID. Options include offline and unpaired
+devices, and equal display names include stable IDs. Selection uses `valueRole`
+and `currentValue`, so replacing or reordering discovery rows preserves identity.
+A changed inventory closes the popup before it can submit a stale row. A changed
+selected ID closes an old icon editor. Device switching keeps the current domain
+and scroll position, with the existing panel draft/action resets.
+Native launch progress, request acceptance and errors use the controller's action
+state; `nativeAppOpening` exposes its existing process-running state to prevent
+repeat requests. Offline feature reports never claim a current loaded status.
+The panel's device gears use `Panel.openDeviceSettings(id)`, which validates the
+current inventory, selects through the same panel path, then opens Device features.
+Neither the header gear nor paired-device gears launch KDE Connect implicitly.
+The explicit Native KDE Connect settings link retains the native launch boundary.
+
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
 keys, three bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
 arguments and JSON-typed values. Exact `ok` plus native config readback controls

@@ -39,12 +39,25 @@ Column {
     spacing: Style.space(6)
     Kit.Button {
         width: parent.width
-        text: "All KDE Connect features"
+        text: "Native KDE Connect settings"
         Accessible.name: text
-        Accessible.description: "Open the selected device in KDE Connect. Use Plugin settings to choose its native features and permissions."
+        Accessible.description: "Open the selected device in KDE Connect. Use Plugin settings to choose its native features and permissions. Older settings frontends may open the device list."
         focusable: true
-        enabled: !!root.service
+        enabled: !!root.service && !root.service.nativeAppOpening
         onClicked: if (root.service) root.service.openKdeConnectApp()
+    }
+    Text {
+        objectName: "native-launch-status"
+        width: parent.width
+        visible: root.configuration && text !== ""
+        text: !root.service ? "" : root.service.actionError || root.service.actionMessage || ""
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: root.service && root.service.actionError ? Commons.Color.urgent : Commons.Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
+        Accessible.role: Accessible.StaticText
+        Accessible.name: text
     }
     Text {
         width: parent.width
@@ -59,8 +72,9 @@ Column {
     Text {
         width: parent.width
         visible: root.configuration && (!root.device || !root.device.paired || !root.device.reachable)
-        text: !root.device ? "Choose a device in Devices first. KDE Connect can still open its device list."
-            : "Native Plugin Settings appears when this device is paired and reachable. Connect it, then open KDE Connect."
+        text: !root.device ? "Choose a device above. KDE Connect can still open its device list."
+            : !root.device.paired ? "Not paired. Open KDE Connect to pair this device and choose its native features."
+            : "Offline. Connect this device to use its native features. You can still change its local icon and name."
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -133,7 +147,7 @@ Column {
                 required property string modelData
                 width: parent.width
                 text: root.taskName(modelData) + "\n" + modelData + " · Supported · "
-                    + (!root.device || !root.device.loadedKnown ? "Loading status unknown" : (root.device.loadedPluginIds || []).indexOf(modelData) !== -1 ? "Loaded" : "Not loaded")
+                    + (!root.device || !root.device.paired || !root.device.reachable || !root.device.loadedKnown ? "Loading status unknown" : (root.device.loadedPluginIds || []).indexOf(modelData) !== -1 ? "Loaded" : "Not loaded")
                 textFormat: Text.PlainText
                 wrapMode: Text.WrapAnywhere
                 color: Commons.Color.popups.text

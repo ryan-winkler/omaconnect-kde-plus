@@ -18,7 +18,7 @@ class SettingsPanelTests(unittest.TestCase):
         destination=Path(__file__).resolve().parents[2]/'settings-design-review'
         destination.mkdir(exist_ok=True)
         images=list(fixture.glob('settings-*.png'))
-        self.assertEqual(len(images),6)
+        self.assertEqual(len(images),9)
         for image in images:
             shutil.copyfile(image,destination/image.name)
 

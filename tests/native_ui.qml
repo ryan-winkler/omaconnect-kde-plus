@@ -11,7 +11,6 @@ ShellRoot {
     readonly property bool desktopMode: Quickshell.env("OMACONNECT_DESKTOP_VALIDATION") === "1"
     property int captures: 0
     function capture(name) {
-        if (!desktopMode) return
         var body = find(panel,function(object) { return object.objectName === "omaconnect-content" },[])
         if (body) body.grabToImage(function(result) { result.saveToFile(Quickshell.env("NATIVE_COMMAND_LOG").replace("commands.jsonl", "desktop-"+name+".png")); test.captures++ })
     }
@@ -92,6 +91,7 @@ ShellRoot {
         property int width: 1000
         property int height: 26
         function hideTooltip(owner) {}
+        function showTooltip(owner, text, options) {}
         function registerClickTarget(owner) {}
         function unregisterClickTarget(owner) {}
         function switchPanelFrom(owner, direction) { return false }
@@ -99,7 +99,8 @@ ShellRoot {
     Window {
         id: previewWindow
         title: "OmaConnect validation — sample devices"
-        visible: test.desktopMode
+        // Offscreen Qt also needs a visible window to instantiate ListView rows.
+        visible: true
         width: 500
         height: test.desktopMode ? 60 : 700
         Item { id: anchor; width: 26; height: 26 }
@@ -116,6 +117,8 @@ ShellRoot {
             test.ticks++
             if(test.ticks > 600) { test.check(false,"timeout phase="+test.phase); return }
             if(test.phase === 0 && (!test.desktopMode || panel.opened) && service.appearance.ready && !service.appearance.busy && service.devices.length === 2) {
+                // ListView delegates are created on the next layout pass.
+                if (!test.find(panel,function(object) { return object.objectName === "device-settings-B" },[])) { panel.open();return }
                 test.check(Bridge.Bridge.service === service, "own-service bridge")
                 test.check(widget.service === service && panel.service === service, "bar and panel bridge fallback")
                 test.check(!!test.find(widget,function(object) { return object.objectName === "bar-file-drop-area" },[]), "actual bar icon installs the shared file-drop target")
@@ -124,8 +127,19 @@ ShellRoot {
                 panel.settings = {showSavedAddresses:false,showSyncthingLinks:true,showNetworkControls:false,mediaStartExpanded:false,commandsStartExpanded:true}
                 test.check(!panel.savedAddressesVisible && panel.syncthingVisible && !panel.networkControlsVisible, "saved section visibility respects settings")
                 panel.settings = {showTailscale:false}
+                test.capture("devices")
 
-                test.click("Settings")
+                var deviceGear = test.find(panel,function(object) { return object.objectName === "device-settings-B" },[])
+                test.check(deviceGear && deviceGear.focusable && deviceGear.width>=44 && deviceGear.Accessible.name.indexOf("Other phone")!==-1,"paired device gear has a named keyboard target")
+                if (deviceGear) deviceGear.clicked()
+                test.check(panel.settingsWindow.visible && panel.settingsWindow.currentPage==="Device features" && service.selectedDeviceId==="B","device gear opens Plus features for that exact device")
+                test.check(!service.nativeAppOpening,"device gear does not launch native settings implicitly")
+                panel.settingsWindow.closeSettings()
+                var headerGear = test.find(panel,function(object) { return object.objectName === "selected-device-settings" },[])
+                if (headerGear) headerGear.clicked()
+                test.check(headerGear && panel.settingsWindow.currentPage==="Device features" && service.selectedDeviceId==="B","header gear follows the same Plus device-settings route")
+                panel.settingsWindow.closeSettings()
+                test.click("Plus settings")
                 test.check(panel.settingsWindow.visible, "dedicated settings window opens")
                 test.activeChooser = test.find(panel,function(object) { return typeof object.openForBar === "function" },[])
                 test.check(!!test.activeChooser,"panel icon chooser exists")

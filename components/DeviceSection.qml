@@ -38,17 +38,28 @@ Column {
                 enabled: !root.service || !root.service.scanning
                 iconText: "󰑐"
                 tooltipText: "Refresh"
+                size: Math.max(44, Style.space(22))
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: if (root.service) root.service.refresh(true)
             }
 
             PanelActionButton {
+                objectName: "selected-device-settings"
                 iconText: "󰒓"
-                tooltipText: "Open KDE Connect application"
+                tooltipText: "Plus device settings"
+                Accessible.role: Accessible.Button
+                Accessible.name: "Plus device settings"
+                Accessible.description: "Open this device's Plus settings, with a link to native KDE Connect settings."
+                Accessible.onPressAction: if (enabled) clicked()
+                focusable: true
+                size: Math.max(44, Style.space(22))
                 foreground: root.foreground
                 fontFamily: root.fontFamily
-                onClicked: if (root.service) root.service.openKdeConnectApp()
+                onClicked: {
+                    if (root.device) panel.openDeviceSettings(root.device.id)
+                    else panel.openSettings("Device features")
+                }
             }
         }
 
@@ -371,11 +382,29 @@ Column {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: Style.space(4)
 
+                    PanelActionButton {
+                        objectName: "device-settings-" + (modelData ? modelData.id : "")
+                        visible: !!modelData && modelData.paired && !isUnpairConfirming
+                        enabled: devicePendingState !== "removing"
+                        iconText: "󰒓"
+                        tooltipText: "Plus device settings"
+                        Accessible.role: Accessible.Button
+                        Accessible.name: "Plus settings for " + (modelData ? root.service.displayName(modelData) : "device")
+                        Accessible.description: "Open settings for this device. Native KDE Connect settings is available inside."
+                        Accessible.onPressAction: if (enabled) clicked()
+                        focusable: true
+                        size: Math.max(44, Style.space(22))
+                        foreground: root.foreground
+                        fontFamily: root.fontFamily
+                        onClicked: if (enabled && modelData) panel.openDeviceSettings(modelData.id)
+                    }
+
                     Row {
                         visible: !!modelData && isUnpairConfirming
                         spacing: Style.space(4)
 
                         Button {
+                            height: Math.max(44, implicitHeight)
                             text: "Confirm"
                             selected: true
                             foreground: root.foreground
@@ -385,6 +414,7 @@ Column {
                         }
 
                         Button {
+                            height: Math.max(44, implicitHeight)
                             text: "Cancel"
                             foreground: root.foreground
                             fontFamily: root.fontFamily
@@ -394,6 +424,7 @@ Column {
                     }
 
                     Button {
+                        height: Math.max(44, implicitHeight)
                         visible: !!modelData && !isUnpairConfirming && devicePendingState === "requesting"
                         text: "Pairing..."
                         tooltipText: "Click to cancel request"
@@ -409,6 +440,7 @@ Column {
                     }
 
                     Button {
+                        height: Math.max(44, implicitHeight)
                         visible: !!modelData && !isUnpairConfirming && devicePendingState === "removing"
                         enabled: false
                         text: "Unpairing..."
@@ -422,6 +454,7 @@ Column {
                         spacing: Style.space(4)
 
                         Button {
+                            height: Math.max(44, implicitHeight)
                             text: "Accept"
                             selected: true
                             foreground: root.foreground
@@ -432,6 +465,7 @@ Column {
                         }
 
                         Button {
+                            height: Math.max(44, implicitHeight)
                             text: "Reject"
                             foreground: root.foreground
                             fontFamily: root.fontFamily
@@ -442,6 +476,7 @@ Column {
                     }
 
                     Button {
+                        height: Math.max(44, implicitHeight)
                         visible: !isUnpairConfirming && !!modelData && !modelData.paired && !modelData.pairRequestedByPeer && devicePendingState !== "requesting"
                         text: "Pair"
                         foreground: root.foreground
@@ -456,6 +491,7 @@ Column {
                     }
 
                     Button {
+                        height: Math.max(44, implicitHeight)
                         visible: !isUnpairConfirming && !!modelData && modelData.paired && devicePendingState !== "removing"
                         text: "Unpair"
                         foreground: root.foreground
