@@ -118,13 +118,12 @@ Controls.Dialog {
                 textFormat: Text.PlainText
                 color: root.foreground
             }
-            Kit.Button {
+            SettingsButton {
                 id: automaticChoice
                 Accessible.role: Accessible.Button
                 Accessible.name: text
                 Accessible.checkable: true
                 Accessible.checked: selected
-                Accessible.onPressAction: clicked()
                 Layout.fillWidth: true
                 text: root.deviceMode ? qsTr("Automatic — use device type") : qsTr("Follow selected device")
                 selected: root.draft.mode === "inherit" || root.draft.mode === "automatic"
@@ -140,7 +139,7 @@ Controls.Dialog {
                 spacing: 6
                 Repeater {
                     model: Appearance.presets
-                    Kit.Button {
+                    SettingsButton {
                         required property var modelData
                         objectName: "preset-" + modelData.value
                         text: modelData.label
@@ -155,7 +154,6 @@ Controls.Dialog {
                         Accessible.name: modelData.label + qsTr(" icon")
                         Accessible.checkable: true
                         Accessible.checked: selected
-                        Accessible.onPressAction: clicked()
                         onClicked: root.choose(modelData)
                     }
                 }
@@ -240,7 +238,7 @@ Controls.Dialog {
                 wrapMode: Text.Wrap
                 Accessible.role: Accessible.AlertMessage
             }
-            Kit.Button {
+            SettingsButton {
                 Layout.minimumHeight: 32
                 text: root.moreOptions ? qsTr("Hide more options") : qsTr("More options")
                 foreground: root.foreground
@@ -258,7 +256,7 @@ Controls.Dialog {
                         spacing: 6
                     Repeater {
                         model: Appearance.glyphs
-                        Kit.Button {
+                        SettingsButton {
                             required property var modelData
                             text: modelData.value + " " + modelData.label
                             height: Math.max(32,implicitHeight)
@@ -313,7 +311,7 @@ Controls.Dialog {
                     color: root.foreground
                     wrapMode: Text.Wrap
                 }
-                Kit.Button {
+                SettingsButton {
                     Layout.minimumHeight: 32
                     text: qsTr("Choose local SVG or PNG…")
                     foreground: root.foreground
@@ -334,7 +332,7 @@ Controls.Dialog {
                     checked: root.draft.render === "color"
                     onToggled: { var next = Object.assign({},root.draft); next.render = checked ? "color" : "symbolic"; root.draft = next; }
                 }
-                Kit.Button {
+                SettingsButton {
                     Layout.minimumHeight: 32
                     text: root.deviceMode ? qsTr("Reset to Automatic") : qsTr("Use Phone")
                     foreground: root.foreground
@@ -347,12 +345,11 @@ Controls.Dialog {
     }
     footer: RowLayout {
         spacing: 8
-        Kit.Button {
+        SettingsButton {
             text: qsTr("Cancel")
             objectName: "appearance-cancel"
             Accessible.role: Accessible.Button
             Accessible.name: text
-            Accessible.onPressAction: clicked()
             Layout.minimumHeight: 32
             Layout.fillWidth: true
             foreground: root.foreground
@@ -360,12 +357,11 @@ Controls.Dialog {
             enabled: !root.pendingApply
             onClicked: root.reject()
         }
-        Kit.Button {
+        SettingsButton {
             text: root.pendingApply ? qsTr("Saving…") : qsTr("Apply")
             objectName: "appearance-apply"
             Accessible.role: Accessible.Button
             Accessible.name: text
-            Accessible.onPressAction: clicked()
             Layout.minimumHeight: 32
             Layout.fillWidth: true
             foreground: root.foreground

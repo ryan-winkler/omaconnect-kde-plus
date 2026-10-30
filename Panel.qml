@@ -45,6 +45,12 @@ Panel {
     readonly property bool navigationAtTop: getSetting("navigationAtTop", false) === true
     readonly property var settingsWindow: preferencesWindow
     function openSettings(page) { preferencesWindow.openSettings(page || "Appearance"); root.close() }
+    function openDeviceSettings(id) {
+        if (!service || !service.devices.some(function(entry) { return entry.id === id })) return false
+        selectDevice(id)
+        openSettings("Device features")
+        return true
+    }
     function openSendWindow() { root.close(); sendWindow.openSend() }
     onOpenedChanged: {
         if (service) service.panelOpened = opened
@@ -289,6 +295,7 @@ Panel {
             return
         }
         if (!service || !device) return
+        if (actionId === "external-monitor") { service.toggleVirtualMonitor(device.id); return }
         if (actionId === "ring") service.ringDevice(device.id)
         else if (actionId === "clipboard") service.sendClipboard(device.id)
         else if (actionId === "file") {
@@ -741,6 +748,13 @@ Panel {
                     width: parent.width
                     visible: root.currentView === "Devices" && root.getSetting("showNativeFeatures", true)
                     service: root.service
+                }
+                DeviceInformationSection {
+                    width: parent.width
+                    visible: root.currentView === "Devices" && !!root.device
+                    service: root.service
+                    showBattery: root.getSetting("showBatteryStats", true)
+                    showCellular: root.getSetting("showNetworkStats", true)
                 }
 
                 ComposerSection {

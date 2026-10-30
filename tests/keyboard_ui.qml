@@ -177,8 +177,19 @@ ShellRoot {
             } else if (test.phase === 14) {
                 if (!test.check(panel.cursorActive && panel.selectedIndex === 1, "device arrow navigation remains available")) return
                 test.key(Qt.Key_Tab)
+                test.phase = 141
+            } else if (test.phase === 141 && test.seek(test.find(panel,function(object) { return object.objectName === "device-settings-B" },[]))) {
+                test.key(Qt.Key_Return)
+                test.phase = 142
+            } else if (test.phase === 142) {
+                if (!test.check(panel.settingsWindow.visible && panel.settingsWindow.currentPage === "Device features" && service.selectedDeviceId === "B", "keyboard gear opens Plus settings for the exact paired device")) return
+                if (!test.check(!service.nativeAppOpening, "keyboard gear keeps native launch explicit")) return
+                panel.settingsWindow.closeSettings()
+                panel.open()
+                preview.requestActivate()
+                panel.focusTarget.forceActiveFocus()
                 test.phase = 15
-            } else if (test.phase === 15 && test.seek(test.named("All KDE Connect features"))) {
+            } else if (test.phase === 15 && test.seek(test.named("Native KDE Connect settings"))) {
                 test.check(true, "Tab reaches all native KDE features")
                 test.phase = 153
             } else if (test.phase === 153 && test.seek(test.named("Open Tailscale panel"))) {

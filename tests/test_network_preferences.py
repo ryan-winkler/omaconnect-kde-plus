@@ -70,7 +70,7 @@ class NetworkPreferences(unittest.TestCase):
     def assert_fixture(self, fixture, home, output, calls):
         self.assertIn('PREFERENCES_PASS', output, output)
         writes = [r['args'] for r in calls if r['tool'] == 'omarchy-shell']
-        self.assertEqual(writes, [['shell', 'setBarWidget', 'Omaconnect.plus', 'networkTailscaleEnabled', 'true', '{}'], ['shell', 'setBarWidget', 'Omaconnect.plus', 'networkTailscaleEnabled', 'false', '{}']])
+        self.assertEqual(writes, [['shell', 'setBarWidget', 'Omaconnect.plus', 'networkTailscaleEnabled', 'true', '{}'], ['shell', 'setBarWidget', 'Omaconnect.plus', 'networkTailscaleEnabled', 'false', '{}'], ['shell', 'setBarWidget', 'Omaconnect.plus', 'showRemoteCommands', 'true', '{}']])
         self.assertFalse(any(r['tool'] in ('kdeconnect-cli', 'nmcli', 'remote-access-mode') for r in calls), calls)
         self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()), [])
 

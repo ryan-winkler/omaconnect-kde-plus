@@ -4,14 +4,33 @@ import QtQuick.Window
 import QtQuick.Controls as Controls
 import qs.Commons
 import qs.Commons as Commons
-import qs.Ui as Kit
 
 Window {
     id: root
     required property var panel
     readonly property var service: panel ? panel.service : null
     readonly property var device: panel ? panel.device : null
+    readonly property var devices: service ? service.devices : []
+    readonly property var deviceOptions: devices.map(function(entry) {
+        var name = root.deviceName(entry)
+        var duplicate = root.devices.some(function(other) { return other.id !== entry.id && root.deviceName(other) === name })
+        return {value: entry.id, label: name + (duplicate ? " [" + entry.id + "]" : "") + " · " + root.deviceState(entry)}
+    })
+    readonly property string deviceStatus: {
+        if (!service) return "KDE Connect is unavailable. Open KDE Connect to check its setup."
+        if (devices.length === 0) {
+            if (service.scanning || service.discoveryState === "starting") return "Checking KDE Connect for devices…"
+            if (!service.daemonAvailable) return service.discoveryMessage || "KDE Connect is unavailable. Open it to check its setup."
+            return "No devices found. Open KDE Connect to pair a device."
+        }
+        if (!device) return "Choose a device above."
+        return root.deviceState(device) + ". Switching also changes the device in Devices."
+    }
     readonly property string selectedName: device ? (service && typeof service.displayName === "function" ? service.displayName(device) : device.name) : "No device selected"
+    readonly property string selectedId: device ? device.id : ""
+    onSelectedIdChanged: if (iconChooser) iconChooser.close()
+    readonly property string deviceOptionsKey: JSON.stringify(deviceOptions)
+    onDeviceOptionsKeyChanged: if (deviceSelector) deviceSelector.popup.close()
     readonly property var pages: ["Appearance", "Connections", "Quick actions", "Device features"]
     readonly property color surfaceColor: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     property string currentPage: "Appearance"
@@ -29,8 +48,37 @@ Window {
     flags: Qt.Window
     modality: Qt.NonModal
     color: root.surfaceColor
+    onActiveFocusItemChanged: Qt.callLater(root.revealFocusedControl)
+
+    function revealFocusedControl() {
+        var item = root.activeFocusItem
+        var viewport = pageScroll.contentItem
+        if (!item || !viewport) return
+        var ancestor = item
+        while (ancestor && ancestor !== viewport) ancestor = ancestor.parent
+        if (!ancestor) return
+        var position = item.mapToItem(pageScroll, 0, 0)
+        var offset = position.y < 0 ? position.y
+            : Math.max(0, position.y + item.height - pageScroll.availableHeight)
+        if (offset !== 0) viewport.contentY = Math.max(0, Math.min(
+            viewport.contentY + offset, pageScroll.contentHeight - pageScroll.availableHeight))
+    }
+
+    function deviceName(entry) {
+        return service && typeof service.displayName === "function" ? service.displayName(entry) : entry.name
+    }
+    function deviceState(entry) {
+        return !entry.paired ? "Not paired" : entry.reachable ? "Connected" : "Offline"
+    }
+    function selectSettingsDevice(id) {
+        // Resolve the stable ID again: discovery may replace or reorder the list.
+        if (!panel || !devices.some(function(entry) { return entry.id === id }) || (device && device.id === id)) return
+        iconChooser.close()
+        panel.selectDevice(id)
+    }
 
     function openSettings(page) {
+        deviceSelector.popup.close()
         currentPage = pages.indexOf(page) >= 0 ? page : "Appearance"
         visible = true
         raise()
@@ -41,6 +89,7 @@ Window {
         })
     }
     function closeSettings() {
+        deviceSelector.popup.close()
         iconChooser.close()
         visible = false
     }
@@ -51,7 +100,7 @@ Window {
     Shortcut {
         sequence: "Escape"
         context: Qt.WindowShortcut
-        enabled: root.visible && !iconChooser.opened
+        enabled: root.visible && !iconChooser.opened && !deviceSelector.popup.visible
         onActivated: root.closeSettings()
     }
 
@@ -78,13 +127,99 @@ Window {
                 font.bold: true
                 wrapMode: Text.Wrap
             }
-            Kit.Button {
+            SettingsButton {
                 id: closeButton
                 text: "Close"
                 Accessible.name: "Close Plus settings"
                 focusable: true
                 foreground: Commons.Color.popups.text
                 onClicked: root.closeSettings()
+            }
+        }
+        Column {
+            id: deviceContext
+            width: parent.width
+            spacing: Style.space(4)
+            Text {
+                text: "Device"
+                textFormat: Text.PlainText
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+            }
+            Controls.ComboBox {
+                id: deviceSelector
+                objectName: "settings-device-selector"
+                width: parent.width
+                height: Math.max(44, Style.spacing.controlHeight)
+                model: root.deviceOptions
+                textRole: "label"
+                valueRole: "value"
+                currentValue: root.selectedId
+                displayText: {
+                    var options = root.deviceOptions
+                    var selected = options.find(function(option) { return option.value === root.selectedId })
+                    return selected ? selected.label : "Choose a device"
+                }
+                enabled: root.devices.length > 0
+                font.family: Style.font.family
+                font.pixelSize: Style.font.body
+                palette.text: Commons.Color.popups.text
+                palette.buttonText: Commons.Color.popups.text
+                palette.button: root.surfaceColor
+                palette.base: root.surfaceColor
+                palette.window: root.surfaceColor
+                palette.highlight: Commons.Color.accent
+                palette.highlightedText: root.surfaceColor
+                Accessible.name: "Device"
+                Accessible.description: root.deviceStatus
+                contentItem: Text {
+                    text: deviceSelector.displayText
+                    textFormat: Text.PlainText
+                    color: Commons.Color.popups.text
+                    font: deviceSelector.font
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+                background: Rectangle {
+                    color: root.surfaceColor
+                    radius: Style.cornerRadius
+                    border.width: deviceSelector.activeFocus ? 2 : Style.normalBorderWidth
+                    border.color: deviceSelector.activeFocus ? Commons.Color.accent : Commons.Color.popups.border
+                }
+                delegate: Controls.ItemDelegate {
+                    required property var modelData
+                    required property int index
+                    text: modelData.label
+                    Accessible.name: text
+                    width: deviceSelector.width
+                    height: Math.max(44, implicitHeight)
+                    highlighted: deviceSelector.highlightedIndex === index
+                    contentItem: Text {
+                        text: modelData.label
+                        textFormat: Text.PlainText
+                        color: Commons.Color.popups.text
+                        font: deviceSelector.font
+                        wrapMode: Text.WrapAnywhere
+                    }
+                    background: Rectangle {
+                        color: parent.highlighted ? Style.hoverFillFor(Commons.Color.popups.text, Commons.Color.accent) : root.surfaceColor
+                    }
+                }
+                onActivated: function(index) {
+                    var option = root.deviceOptions[index]
+                    if (option) root.selectSettingsDevice(option.value)
+                }
+            }
+            Text {
+                objectName: "settings-device-status"
+                width: parent.width
+                text: root.deviceStatus
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                color: Commons.Color.popups.text
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
             }
         }
         Row {
@@ -97,7 +232,7 @@ Window {
                 Repeater {
                     id: navigation
                     model: root.pages
-                    delegate: Kit.Button {
+                    delegate: SettingsButton {
                         required property string modelData
                         width: parent.width
                         text: modelData
@@ -143,9 +278,7 @@ Window {
                     }
                     Text {
                         width: parent.width
-                        text: (root.currentPage === "Appearance" || root.currentPage === "Device features")
-                            ? "Selected device: " + root.selectedName + ". These settings apply to this computer only."
-                            : "These settings apply to this computer only."
+                        text: "Plus preferences apply to this computer only."
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
                         color: Commons.Color.popups.text
@@ -165,7 +298,16 @@ Window {
                             font.family: Style.font.family
                             font.pixelSize: Style.font.bodySmall
                         }
-                        Kit.Button {
+                        Text {
+                            width: parent.width
+                            text: "To change this computer’s KDE Connect name, open Native KDE Connect settings in Device features, then choose Settings in the native app menu."
+                            textFormat: Text.PlainText
+                            wrapMode: Text.Wrap
+                            color: Commons.Color.popups.text
+                            font.family: Style.font.family
+                            font.pixelSize: Style.font.bodySmall
+                        }
+                        SettingsButton {
                             width: parent.width
                             text: "Change bar icon"
                             Accessible.name: text
@@ -173,7 +315,7 @@ Window {
                             foreground: Commons.Color.popups.text
                             onClicked: iconChooser.openForBar(root.device ? root.device.id : "", root.device ? root.device.type : "phone")
                         }
-                        Kit.Button {
+                        SettingsButton {
                             width: parent.width
                             text: "Change selected device icon and alias"
                             Accessible.name: text
@@ -185,14 +327,14 @@ Window {
                         Text {
                             width: parent.width
                             visible: !root.device
-                            text: "Choose a device in Devices first to change its icon or local name."
+                            text: "Choose a device above to change its icon or local name."
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text
                             font.family: Style.font.family
                             font.pixelSize: Style.font.bodySmall
                         }
-                        Kit.Button {
+                        SettingsButton {
                             width: parent.width
                             text: "Icon and contribution guide ↗"
                             Accessible.name: "Open the local icon and contribution guide"
@@ -215,6 +357,15 @@ Window {
                         width: parent.width
                         visible: root.currentPage === "Connections"
                         spacing: Style.space(12)
+                        Text {
+                            width: parent.width
+                            text: "These Plus switches only show or hide controls. To enable KDE Connect connection providers, open Native KDE Connect settings in Device features, then choose Settings in the native app menu."
+                            textFormat: Text.PlainText
+                            wrapMode: Text.Wrap
+                            color: Commons.Color.popups.text
+                            font.family: Style.font.family
+                            font.pixelSize: Style.font.bodySmall
+                        }
                         NetworkOptions { width: parent.width; panel: root.panel; configuration: true }
                         PreferenceControls {
                             width: parent.width
@@ -257,7 +408,7 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
-                                {key: "showNativeFeatures", label: "Show native feature entry in Devices", defaultValue: true, description: "Adds an All KDE Connect features button in Devices. The full list stays here."},
+                                {key: "showNativeFeatures", label: "Show native feature entry in Devices", defaultValue: true, description: "Adds a Native KDE Connect settings entry in Devices. The full inventory and configuration pages stay here."},
                                 {key: "showBatteryStats", label: "Show battery details", defaultValue: true, description: "Shows charge and charging state when the device reports them."},
                                 {key: "showNetworkStats", label: "Show cellular connection details", defaultValue: true, description: "Shows the phone's mobile network type and signal, not Wi-Fi or VPN."},
                                 {key: "showMediaPlayer", label: "Show media controls", defaultValue: true, description: "Shows play, pause and skip for music or video on the device."},
@@ -267,7 +418,7 @@ Window {
                             ]
                         }
                     }
-                    Kit.Button {
+                    SettingsButton {
                         width: parent.width
                         text: "Help with " + root.currentPage.toLowerCase() + " ↗"
                         Accessible.name: "Open the installed task guide for " + root.currentPage.toLowerCase()
@@ -280,7 +431,7 @@ Window {
                 }
             }
         }
-        Kit.Button {
+        SettingsButton {
             id: returnButton
             width: parent.width
             text: "Back to devices"

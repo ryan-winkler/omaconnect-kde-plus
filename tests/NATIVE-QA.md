@@ -28,6 +28,17 @@ Quickshell has no PanelWindow backend under `QT_QPA_PLATFORM=offscreen`, so the
 offscreen run replaces only KeyboardPanel's window-hosting boundary with an Item.
 The panel contents and other controls stay real.
 
+The Settings fixtures also check exact-device native configuration launch,
+unsupported-frontend feedback, the separate peer command-editor request, and
+Tab/Shift+Tab visibility in all four pages at the minimum 520 × 440 window size.
+The metadata fixture enumerates installed configuration pages using explicit
+read-only roles, without a device target or native configuration directory.
+These checks do not prove that a real native or remote editor opened or saved.
+Settings buttons expose a native button role and a guarded accessibility press
+action. Checkbox accessibility actions use the existing save path and retain
+saved-value readback. Private fixtures exercise these actions, icon Apply/Cancel
+and disabled launch guards. Full screen-reader acceptance remains a manual check.
+
 ## Desktop session mode
 
 To open the real KeyboardPanel on your current Wayland desktop:
@@ -44,6 +55,11 @@ Screenshots and `native-ui.log` are saved to `../desktop-validation`, next to
 the checkout.
 
 ## What these tests do not cover
+
+Offscreen screenshots stay in the private temporary fixture by default. To keep
+the synthetic captures, set `OMACONNECT_CAPTURE_DIR` to an explicit output folder
+when running the tests. This exports images only; no personal configuration is
+read or copied.
 
 Pointer hit testing, compositor focus, scale and RTL layout, screen readers, real
 KDE delivery and physical devices need manual checks. Hyprland-unset and Qt

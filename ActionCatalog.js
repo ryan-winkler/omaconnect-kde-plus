@@ -22,10 +22,15 @@ var entries = [
     {id:"native-volume", group:"Native KDE Connect", pluginId:"kdeconnect_remotesystemvolume", pluginIds:["kdeconnect_remotesystemvolume","kdeconnect_systemvolume"], label:"Volume in KDE", description:"Open native KDE Connect to inspect reported volume features and permissions", icon:"󰕾", handoff:true, navigation:true},
     {id:"native-input", group:"Native KDE Connect", pluginId:"kdeconnect_remotekeyboard", pluginIds:["kdeconnect_remotekeyboard","kdeconnect_mousepad","kdeconnect_presenter","kdeconnect_shareinputdevices"], label:"Input & presentation in KDE", description:"Open native KDE Connect for input or presentation features. Available directions depend on the reported module", icon:"󰌌", handoff:true, navigation:true},
     {id:"native-lock", group:"Native KDE Connect", pluginId:"kdeconnect_lockdevice", label:"Device locking in KDE", description:"Open native KDE Connect to inspect locking support and permissions", icon:"󰌾", handoff:true, navigation:true},
-    {id:"native-features", group:"Settings", pluginId:"", label:"KDE Connect features", description:"Open native KDE Connect for all features and Plugin settings", icon:"󰒓", capability:"", legacyKey:"", scope:"global", handoff:true, navigation:true},
+    {id:"external-monitor", group:"Native KDE Connect", pluginId:"kdeconnect_virtualmonitor", label:"Use device as an external monitor", activeLabel:"Stop virtual monitor session", description:"Start or stop KDE Connect's native virtual display. KDE Connect owns its session and credentials", icon:"󰍹"},
+    {id:"native-features", group:"Settings", pluginId:"", label:"Native KDE Connect settings", description:"Open native KDE Connect for all features and Plugin settings", icon:"󰒓", capability:"", legacyKey:"", scope:"global", handoff:true, navigation:true},
     {id:"plus-settings", group:"Settings", pluginId:"", label:"Plus settings", description:"Open Plus appearance, sharing and connection preferences", icon:"󰒓", scope:"global", navigation:true}
 ];
 function entry(id) { return entries.filter(function(row) { return row.id === id; })[0] || null; }
+function actionLabel(id,device) {
+    var row=entry(id);
+    return row ? (id === "external-monitor" && device && device.virtualMonitor && device.virtualMonitor.active ? row.activeLabel : row.label) : id;
+}
 function parse(value) {
     if (typeof value !== "string" || value.length > MAX_ORDER_LENGTH) return null;
     if (value === "") return [];
@@ -67,6 +72,7 @@ function ready(id,device,service) {
     if (service === null) return false;
     if (id === "quick-share") return !!service.quickShareAvailable && !service.quickShareOpening;
     if (!locallyActive(row,device)) return false;
+    if (id === "external-monitor" && (!device.virtualMonitor || !device.virtualMonitor.known || (!device.virtualMonitor.active && !device.virtualMonitor.available))) return false;
     if (row.requiresMedia && (!hasMedia(service) || (service && service.mediaLoading))) return false;
     return !!(row.navigation || !service || service.actionState !== "running");
 }
@@ -83,6 +89,8 @@ function availabilityText(id,device,service) {
         return "This device does not report support. Other devices may support it.";
     if (!locallyActive(row,device))
         return row.label + " is not active locally. Check native KDE Connect Plugin Settings.";
+    if (id === "external-monitor" && (!device.virtualMonitor || !device.virtualMonitor.known)) return "Native monitor state is unavailable. Open native KDE Connect and check Virtual Monitor.";
+    if (id === "external-monitor" && !device.virtualMonitor.active && !device.virtualMonitor.available) return "Native virtual monitor is unavailable on this computer. Check KRDP in native KDE Connect.";
     if (row.requiresMedia && (!hasMedia(service) || (service && service.mediaLoading)))
         return "Open Media controls and choose a reported player before using transport buttons.";
     if (row.handoff) return "Opens the selected device in native KDE Connect. Choose or configure the feature there; native permissions still apply.";
