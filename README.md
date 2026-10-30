@@ -47,8 +47,9 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
   file browsing, media playback and player switching, remote commands, clipboard,
   text, SMS and remote input.
 - **Network access:** optional Tailscale, MikroTik Back to Home and WireGuard
-  sections with short guides. They show controls; they never connect a VPN.
-  An optional card shows an existing Back to Home helper’s Automatic / On / Off mode.
+  sections with short guides. They show state and open each provider's own
+  tools; they never connect a VPN themselves. An optional card shows your Back to Home helper's
+  Automatic / On / Off mode and can ask that helper to change it.
 - **Private addresses:** approve LAN or VPN addresses per device, with opt-in
   rediscovery. Existing KDE addresses are preserved.
 - **Syncthing notes:** optionally record that a KDE device and a Syncthing ID are
@@ -74,8 +75,9 @@ commands. Keep it if its workflow suits you. Plus adds:
 ## Requirements
 
 Omarchy, KDE Connect, Python 3 with PyGObject and a desktop file portal. The
-optional home-access card needs the existing `remote-access-mode` helper (path
-configurable). Opening Syncthing needs the `io.github.ilyazar.syncthing` plugin.
+optional home-access card needs your own `remote-access-mode` helper (path
+configurable). Plus does not ship or install that helper. Opening Syncthing
+needs the `io.github.ilyazar.syncthing` plugin.
 The Quick Share shortcut opens RQuickShare (`r-quick-share` package); Plus does
 not speak Quick Share itself.
 Missing optional providers stay unavailable; Plus never installs them.
