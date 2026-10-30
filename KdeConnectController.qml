@@ -621,9 +621,11 @@ Item {
     }
 
     // coreutils timeout signals the provider's whole process group, then sends SIGKILL
-    // 2 s later, so onExited always runs with a nonzero code.
+    // 2 s later, so onExited always runs with a nonzero code. timeout stops supervising
+    // once its direct child exits, so this shell outlives SIGTERM and a surviving
+    // descendant still gets SIGKILL.
     function withDeadline(seconds, argv) {
-        return ["timeout", "-k", "2", String(seconds)].concat(argv)
+        return ["timeout", "-k", "2", String(seconds), "bash", "-c", "trap 'sleep 10' TERM; \"$@\"; exit", "deadline"].concat(argv)
     }
 
     function parseRemoteCommands(text) {

@@ -207,6 +207,33 @@ assert.equal(api.parseRemoteCommands(head+'\u00e9'.repeat((cap+1-head.length)/2)
             state = Path('/proc/%d/stat' % grandchild)
             self.assertTrue(not state.exists() or state.read_text().split()[2] == 'Z', 'grandchild still running')
 
+    @unittest.skipUnless(shutil.which('node') and shutil.which('timeout'), 'node or timeout unavailable')
+    def test_deadline_kills_a_descendant_that_outlives_its_parent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pid_file = Path(tmp) / 'grandchild.pid'
+            provider = Path(tmp) / 'provider.sh'
+            # The provider itself dies on SIGTERM; only its child ignores it.
+            provider.write_text('#!/bin/bash\n(trap "" TERM; exec sleep 60) & echo $! > "$1"\nwait\n')
+            provider.chmod(0o700)
+            started = time.monotonic()
+            run = subprocess.run(self.deadline_argv(1, ['bash', str(provider), str(pid_file)]), capture_output=True, timeout=15)
+            self.assertLess(time.monotonic() - started, 6)
+            self.assertNotEqual(run.returncode, 0)
+            grandchild = int(pid_file.read_text())
+            deadline = time.monotonic() + 2
+            while Path('/proc/%d' % grandchild).exists() and time.monotonic() < deadline:
+                time.sleep(0.05)
+            state = Path('/proc/%d/stat' % grandchild)
+            self.assertTrue(not state.exists() or state.read_text().split()[2] == 'Z', 'descendant still running')
+
+    @unittest.skipUnless(shutil.which('node') and shutil.which('timeout'), 'node or timeout unavailable')
+    def test_deadline_keeps_a_normal_exit_code_and_output(self):
+        for code in (0, 3):
+            with self.subTest(code=code):
+                run = subprocess.run(self.deadline_argv(5, ['bash', '-c', 'printf "a b"; exit %d' % code]),
+                                     capture_output=True, timeout=15)
+                self.assertEqual((run.returncode, run.stdout), (code, b'a b'))
+
     @unittest.skipUnless(shutil.which('node') and shutil.which('timeout') and shutil.which('head'), 'tools unavailable')
     def test_command_list_read_stops_one_byte_over_the_cap(self):
         source = (ROOT / 'KdeConnectController.qml').read_text()
