@@ -23,12 +23,12 @@ Item {
     property int popupRowHeight: Math.max(44, Style.spacing.popupRowHeight)
     readonly property Item overlayItem: Controls.Overlay.overlay
     readonly property bool popupOpen: popup.opened
-    readonly property string optionsKey: JSON.stringify((Array.isArray(options) ? options.slice(0, 1024) : []).filter(function(name) {
+    readonly property var validOptions: (Array.isArray(options) ? options.slice(0, 1024) : []).filter(function(name) {
         return typeof name === "string" && /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(name)
-    }).sort(function(a, b) {
-        // Symbolic icons stay sharp at bar size and follow the theme, so list them first.
-        return Appearance.symbolicThemeName(b) - Appearance.symbolicThemeName(a)
-    }))
+    })
+    // Symbolic icons stay sharp at bar size and follow the theme, so list them first.
+    readonly property string optionsKey: JSON.stringify(validOptions.filter(Appearance.symbolicThemeName)
+        .concat(validOptions.filter(function(name) { return !Appearance.symbolicThemeName(name) })))
     readonly property var matchingOptions: {
         var query = search.text.trim().toLowerCase()
         return JSON.parse(optionsKey).filter(function(name) { return !query || name.toLowerCase().indexOf(query) !== -1 })
