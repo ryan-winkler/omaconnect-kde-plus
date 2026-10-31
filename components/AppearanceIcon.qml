@@ -69,6 +69,15 @@ Item {
         maskSpreadAtMin: 1.0
         visible: root.imageReady && root.tintOnGpu
     }
+    // The bar host measures Text, Image and Rectangle items but not MultiEffect,
+    // so this transparent box reports the tinted icon's painted area.
+    Rectangle {
+        anchors.centerIn: image
+        width: image.paintedWidth
+        height: image.paintedHeight
+        color: "transparent"
+        visible: root.imageReady && root.tintOnGpu
+    }
     // The software scene graph draws no shader effect, so it tints with a Canvas.
     // Canvas is not used on the GPU: at scale 2 it paints a quarter-size icon.
     Canvas {
