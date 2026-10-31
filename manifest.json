@@ -141,12 +141,12 @@
     },
     "networkStartExpanded": {
       "type": "boolean",
-      "default": true,
+      "default": false,
       "description": "Expand network-provider controls when the daily panel opens"
     },
     "mediaStartExpanded": {
       "type": "boolean",
-      "default": true,
+      "default": false,
       "description": "Expand media controls when the daily panel opens"
     },
     "commandsStartExpanded": {
@@ -206,7 +206,7 @@
     },
     "inlineSendStartExpanded": {
       "type": "boolean",
-      "default": true,
+      "default": false,
       "description": "Start file sharing expanded. This changes the daily layout only."
     },
     "nativeFeaturesStartExpanded": {

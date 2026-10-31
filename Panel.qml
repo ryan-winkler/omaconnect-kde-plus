@@ -33,7 +33,7 @@ Panel {
     readonly property var sectionCatalog: sectionCatalogModel
     property bool deviceDetailsExpanded: getSetting("devicesStartExpanded", true)
     property bool actionsExpanded: getSetting("actionsStartExpanded", true)
-    property bool inlineSendExpanded: getSetting("inlineSendStartExpanded", true)
+    property bool inlineSendExpanded: getSetting("inlineSendStartExpanded", false)
     property bool nativeFeaturesExpanded: getSetting("nativeFeaturesStartExpanded", false)
     property bool informationExpanded: getSetting("informationStartExpanded", false)
     property bool dropActionRevealed: false
@@ -154,7 +154,7 @@ Panel {
     readonly property bool savedAddressesVisible: getSetting("showSavedAddresses", true)
     readonly property bool syncthingVisible: getSetting("showSyncthingLinks", false)
     readonly property bool networkControlsVisible: getSetting("showNetworkControls", true) && (networkOptions.tailscaleEnabled || networkOptions.bthEnabled || networkOptions.wireguardEnabled)
-    property bool networkControlsExpanded: getSetting("networkStartExpanded", true)
+    property bool networkControlsExpanded: getSetting("networkStartExpanded", false)
     property bool addressesExpanded: getSetting("addressesStartExpanded", false)
     property bool syncthingExpanded: getSetting("syncthingStartExpanded", false)
     property string currentView: "Devices"
@@ -176,11 +176,11 @@ Panel {
             root.restoreSectionExpansion()
             mediaActionRevealed = false
             commandsActionRevealed = false
-            mediaExpanded = getSetting("mediaStartExpanded", true)
+            mediaExpanded = getSetting("mediaStartExpanded", false)
             commandsExpanded = getSetting("commandsStartExpanded", false)
             addressesExpanded = getSetting("addressesStartExpanded", false)
             syncthingExpanded = getSetting("syncthingStartExpanded", false)
-            networkControlsExpanded = getSetting("networkStartExpanded", true)
+            networkControlsExpanded = getSetting("networkStartExpanded", false)
         }
     }
     onCurrentViewChanged: { root.cursorActive = false; if (currentView !== "Devices") root.activeComposer = "none" }
@@ -189,7 +189,7 @@ Panel {
     property int selectedIndex: 0
     property int actionSelectedIndex: 0
     property bool cursorActive: false
-    property bool mediaExpanded: getSetting("mediaStartExpanded", true)
+    property bool mediaExpanded: getSetting("mediaStartExpanded", false)
     property int mediaControlIndex: 1
     property bool commandsExpanded: getSetting("commandsStartExpanded", false)
     property int commandSelectedIndex: 0

@@ -58,8 +58,8 @@ Choose **Show in Devices** and **Start expanded** in the section's settings doma
 | Device features | Device details; Native KDE Connect; Device information; Media controls; Remote commands |
 | Connections | Connection controls; Saved addresses; Syncthing identity note |
 
-The device switcher stays available when its details collapse. Native features,
-device information and saved addresses start collapsed. Hiding a section keeps
+The device switcher stays available when its details collapse. Devices and
+Quick actions start expanded; the other sections start collapsed. Hiding a section keeps
 its data and provider settings. A temporary collapse lasts until you reopen the
 popup. Use **Start expanded** to set the next opening.
 
