@@ -189,6 +189,7 @@ Column {
                     Accessible.name: "Accept pairing request"
                     Accessible.onPressAction: if (enabled) clicked()
                     text: "Accept"
+                    bordered: true
                     selected: true
                     foreground: root.foreground
                     fontFamily: root.fontFamily
@@ -202,6 +203,7 @@ Column {
                     Accessible.name: "Reject pairing request"
                     Accessible.onPressAction: if (enabled) clicked()
                     text: "Reject"
+                    bordered: true
                     foreground: root.foreground
                     fontFamily: root.fontFamily
                     enabled: !!(root.service && root.incomingRequest && (!root.service.pendingPairing || !root.service.pendingPairing[root.incomingRequest.id]))
@@ -238,6 +240,7 @@ Column {
                 Accessible.name: "Confirm unpair selected device"
                 Accessible.onPressAction: if (enabled) clicked()
                 foreground: Commons.Color.urgent
+                accent: Commons.Color.urgent
                 fontFamily: root.fontFamily
                 onClicked: if (root.device) panel.confirmUnpair(root.device.id)
             }
@@ -302,6 +305,7 @@ Column {
             Button {
                 visible: root.pendingState === "requesting"
                 text: "Cancel pairing request"
+                bordered: true
                 height: Math.max(44, implicitHeight)
                 focusable: true
                 Accessible.role: Accessible.Button
@@ -318,6 +322,7 @@ Column {
                 visible: root.pendingState === "removing"
                 enabled: false
                 text: "Unpairing…"
+                bordered: true
                 height: Math.max(44, implicitHeight)
                 foreground: root.foreground
                 fontFamily: root.fontFamily
@@ -345,6 +350,7 @@ Column {
                 Accessible.name: "Unpair selected device"
                 Accessible.onPressAction: if (enabled) clicked()
                 foreground: Commons.Color.urgent
+                accent: Commons.Color.urgent
                 fontFamily: root.fontFamily
                 onClicked: if (root.device) panel.requestUnpairConfirm(root.device.id)
             }
@@ -392,10 +398,14 @@ Column {
             onActiveFocusChanged: if (activeFocus) selectAll()
         }
         Button {
+            height: Math.max(44, implicitHeight)
             text: "KDE Connect setup guide ↗"
+            bordered: true
             Accessible.name: "Open the official KDE Connect setup guide"
+            Accessible.onPressAction: if (enabled) clicked()
             focusable: true
             foreground: root.foreground
+            fontFamily: root.fontFamily
             onClicked: Qt.openUrlExternally("https://kdeconnect.kde.org/users.html")
         }
 
