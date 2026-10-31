@@ -47,6 +47,7 @@ Controls.ComboBox {
     width: parent.width
     height: Math.max(44, Style.spacing.controlHeight)
     leftPadding: Style.spacing.controlPaddingX
+    rightPadding: Style.spacing.controlGap + chevron.width + Style.spacing.md
     model: root.deviceOptions
     textRole: "label"
     valueRole: "value"
@@ -95,8 +96,19 @@ Controls.ComboBox {
             fontFamily: root.font.family
         }
     }
+    // Same chevron and hover fill as the Omarchy Dropdown.
+    indicator: Text {
+        id: chevron
+        x: root.width - width - Style.spacing.controlGap
+        y: (root.height - height) / 2
+        text: "󰅀"
+        textFormat: Text.PlainText
+        color: Qt.darker(Commons.Color.popups.text, 1.2)
+        font.family: root.font.family
+        font.pixelSize: Style.font.body
+    }
     background: Rectangle {
-        color: root.surfaceColor
+        color: Style.controlFill(root.activeFocus, root.enabled && root.hovered, Commons.Color.popups.text, Commons.Color.accent)
         radius: Style.cornerRadius
         border.width: root.activeFocus ? 2 : Style.normalBorderWidth
         border.color: root.activeFocus ? Commons.Color.accent : Commons.Color.popups.border

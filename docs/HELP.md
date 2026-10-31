@@ -66,7 +66,7 @@ popup. Use **Start expanded** to set the next opening.
 ## Appearance
 
 - **Bar icon:** Select **Change bar icon**. Choose a labelled preset, search the
-  installed icon theme, or use a custom symbol or local PNG/SVG. Preview, then Apply.
+  installed icon theme (symbolic icons are listed first), or use a custom symbol or local PNG/SVG. Preview, then Apply.
   Installed artwork keeps its native colours automatically. Clear **Keep installed
   icon colours** to use the theme foreground for any monochrome icon name.
   Custom image colours have their own choice. Browsing does not save.
