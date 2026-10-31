@@ -13,6 +13,9 @@ All notable changes are listed here. The format follows
   are tinted at full size.
 - Settings and device actions have button frames. Unpair uses the theme's urgent
   colour, and section headings use muted capitals.
+- The device switcher uses the theme's chevron and hover fill.
+- The bar icon picker lists symbolic icons first.
+- Only Devices and Quick actions start expanded, so the panel opens shorter.
 
 ## [0.1.4] - 2026-10-30
 

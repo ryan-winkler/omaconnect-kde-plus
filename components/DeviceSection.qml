@@ -398,11 +398,14 @@ Column {
             onActiveFocusChanged: if (activeFocus) selectAll()
         }
         Button {
+            height: Math.max(44, implicitHeight)
             text: "KDE Connect setup guide ↗"
             bordered: true
             Accessible.name: "Open the official KDE Connect setup guide"
+            Accessible.onPressAction: if (enabled) clicked()
             focusable: true
             foreground: root.foreground
+            fontFamily: root.fontFamily
             onClicked: Qt.openUrlExternally("https://kdeconnect.kde.org/users.html")
         }
 
