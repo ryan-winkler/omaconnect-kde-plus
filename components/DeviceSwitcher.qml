@@ -108,7 +108,7 @@ Controls.ComboBox {
         font.pixelSize: Style.font.body
     }
     background: Rectangle {
-        color: Style.controlFill(root.activeFocus, root.hovered, Commons.Color.popups.text, Commons.Color.accent)
+        color: Style.controlFill(root.activeFocus, root.enabled && root.hovered, Commons.Color.popups.text, Commons.Color.accent)
         radius: Style.cornerRadius
         border.width: root.activeFocus ? 2 : Style.normalBorderWidth
         border.color: root.activeFocus ? Commons.Color.accent : Commons.Color.popups.border
