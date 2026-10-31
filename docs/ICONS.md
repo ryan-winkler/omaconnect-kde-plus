@@ -19,7 +19,7 @@ metadata. Clear **Keep installed icon colours** to use the foreground even for
 a monochrome icon without a symbolic name. This explicit choice saves the optional
 `tint: true` flag for that theme icon. **Keep image colours** is
 an explicit override for a custom image. Installed choices show thumbnails and
-names in a searchable, keyboard-accessible list. Selecting a choice changes the
+names in a searchable, keyboard-accessible list, with symbolic icons first. Selecting a choice changes the
 draft. Apply saves it; Cancel leaves the stored choice unchanged.
 
 ## Source and rendering path

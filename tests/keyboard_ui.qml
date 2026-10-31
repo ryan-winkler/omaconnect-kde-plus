@@ -114,7 +114,7 @@ ShellRoot {
         width: 500
         height: 900
         Item { id: anchor; width: 26; height: 26 }
-        Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showSyncthingLinks:true,showTailscale:false, networkTailscaleEnabled:true, networkBthEnabled:true, networkWireguardEnabled:true}) }
+        Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showSyncthingLinks:true,showTailscale:false, networkTailscaleEnabled:true, networkBthEnabled:true, networkWireguardEnabled:true, networkStartExpanded:true}) }
         Item { TestEvent { id: events } }
     }
     Timer {

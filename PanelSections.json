@@ -24,7 +24,7 @@
     "description": "Choose or drop local files, then review the fixed recipient and select Send. Hiding this section does not clear a draft.",
     "expandedKey": "inlineSendStartExpanded",
     "defaultVisible": true,
-    "defaultExpanded": true,
+    "defaultExpanded": false,
     "settingsPage": "Quick actions",
     "visibilityKey": "showInlineSend"
   },
@@ -54,7 +54,7 @@
     "description": "Show reported players and media controls. Hiding this section does not stop playback.",
     "expandedKey": "mediaStartExpanded",
     "defaultVisible": true,
-    "defaultExpanded": true,
+    "defaultExpanded": false,
     "settingsPage": "Device features",
     "visibilityKey": "showMediaPlayer"
   },
@@ -74,7 +74,7 @@
     "description": "Show enabled VPN tool controls. Hiding or collapsing them does not connect or disconnect a VPN.",
     "expandedKey": "networkStartExpanded",
     "defaultVisible": true,
-    "defaultExpanded": true,
+    "defaultExpanded": false,
     "settingsPage": "Connections",
     "visibilityKey": "showNetworkControls"
   },
