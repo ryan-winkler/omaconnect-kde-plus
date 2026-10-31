@@ -6,6 +6,14 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Bar and device icons are sharp and centred on HiDPI screens. Presets use their
+  symbol-font glyph, as the original OmaConnect does, and symbolic theme icons
+  are tinted at full size.
+- Settings and device actions have button frames. Unpair uses the theme's urgent
+  colour, and section headings use muted capitals.
+
 ## [0.1.4] - 2026-10-30
 
 ### Fixed
