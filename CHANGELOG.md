@@ -6,6 +6,8 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-10-31
+
 ### Changed
 
 - Device details now include the device information: battery, cellular state,
@@ -150,7 +152,8 @@ All notable changes are listed here. The format follows
   drop review, honest transfer activity, optional network sections and help
   next to each control.
 
-[Unreleased]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.4...main
+[Unreleased]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.5...main
+[0.1.5]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/ryan-winkler/omaconnect-kde-plus/compare/v0.1.1...v0.1.2
