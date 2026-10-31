@@ -26,6 +26,8 @@ class SectionOrderTests(unittest.TestCase):
     def test_canonical_ids_flags_and_native_manifest_match(self):
         self.assertEqual(sections.IDS, ('devices', 'actions', 'drop', 'native', 'media', 'commands', 'connections', 'addresses', 'syncthing'))
         self.assertNotIn('visibilityKey', sections.CATALOG[0])
+        saved = 'actions,devices,drop,native,information,media,commands,connections,addresses,syncthing'
+        self.assertEqual(sections.normalized_value(saved), 'actions,devices,drop,native,media,commands,connections,addresses,syncthing')
         manifest = json.loads((ROOT / 'manifest.json').read_text())['settings']
         self.assertEqual(manifest['sectionOrder']['default'], '')
         for key, default in sections.BOOL_DEFAULTS.items():

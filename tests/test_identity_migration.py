@@ -73,7 +73,7 @@ class IdentityMigration(unittest.TestCase):
         row=candidate['bar']['layout']['tray'][1]
         self.assertNotIn('showDeviceInformation',row)
         self.assertNotIn('informationStartExpanded',row)
-        self.assertEqual(row['sectionOrder'],'media,devices')
+        self.assertEqual(row['sectionOrder'],'information,media,devices')
         self.assertEqual(M.rollback(candidate,receipt),original)
         self.assertEqual(original,before)
 

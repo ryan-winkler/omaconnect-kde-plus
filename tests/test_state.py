@@ -145,16 +145,6 @@ def validate_composer_input(text):
     return True, clean
 
 
-def format_overview_status(device):
-    if not device:
-        return "No devices found"
-    if not device.get("paired"):
-        return "Not paired"
-    if not device.get("reachable"):
-        return "Paired, offline"
-    return "Paired & reachable"
-
-
 
 class MediaPlayerState:
     def __init__(self, selected_device_id="dev-1"):
@@ -610,7 +600,6 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
     line_offline = "DEVICE\tdev-3\tPhone\tphone\ttrue\tfalse\t80\tfalse\tkdeconnect_findmyphone,kdeconnect_clipboard,kdeconnect_share"
     d_offline = parse_device(line_offline)
     self.assertFalse(d_offline["reachable"])
-    self.assertEqual(format_overview_status(d_offline), "Paired, offline")
 
   def test_device_type_icon_mapping_and_defaults(self):
     self.assertEqual(device_type_icon("phone"), "󰄜")
@@ -2441,7 +2430,7 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
                      {"devices": "Devices", "actions": "Quick actions", "commands": "Remote commands"})
     self.assertIn("title: root.sectionTitle(sectionId)", ui_source)
     self.assertIn("text: root.title", (ROOT / "components" / "DailySection.qml").read_text())
-    self.assertIn("deviceOverviewStatus", ui_source)
+    self.assertIn("deviceState(entry)", ui_source)
 
   def test_keyboard_navigation_state_flow(self):
     class PanelNavState:

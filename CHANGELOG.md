@@ -8,11 +8,12 @@ All notable changes are listed here. The format follows
 
 ### Changed
 
-- Device details now include the device information: status, battery, cellular
-  state, ID, addresses, connection providers and Pair or Unpair. The separate
-  Device information section is gone.
-- Section help moved from inline paragraphs to heading tooltips and the help
-  guide. The Native KDE Connect section no longer repeats the device settings
+- Device details now include the device information: battery, cellular state,
+  ID, addresses, connection providers and Pair or Unpair. Unreported rows are
+  hidden. The separate Device information section is gone, and saved section
+  orders that name it still load.
+- Inline help paragraphs moved to the help guide, heading descriptions and empty
+  states. The Native KDE Connect section no longer repeats the device settings
   button.
 
 ### Fixed

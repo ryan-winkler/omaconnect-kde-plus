@@ -2,6 +2,8 @@
 
 var MAX_ORDER_LENGTH = 512;
 var MAX_CATALOG_LENGTH = 32768;
+// Saved orders can still name sections that later releases removed.
+var RETIRED_IDS = ["information"];
 var fields = ["id", "label", "description", "visibilityKey", "expandedKey", "defaultVisible", "defaultExpanded", "settingsPage"];
 var pages = ["Appearance", "Connections", "Quick actions", "Device features"];
 
@@ -37,7 +39,7 @@ function parseCatalog(text) {
 function parse(value, entries) {
     if (typeof value !== "string" || value.length > MAX_ORDER_LENGTH) return null;
     var canonical = entries.map(function(row) { return row.id; });
-    var ids = value === "" ? [] : value.split(","), seen = Object.create(null);
+    var ids = value === "" ? [] : value.split(",").filter(function(id) { return RETIRED_IDS.indexOf(id) < 0; }), seen = Object.create(null);
     if (ids.length > canonical.length) return null;
     for (var i = 0; i < ids.length; ++i) {
         if (canonical.indexOf(ids[i]) < 0 || seen[ids[i]]) return null;

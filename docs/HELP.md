@@ -58,11 +58,13 @@ Choose **Show in Devices** and **Start expanded** in the section's settings doma
 | Device features | Device details; Native KDE Connect; Media controls; Remote commands |
 | Connections | Connection controls; Saved addresses; Syncthing identity note |
 
-The device switcher stays available when **Device details** collapse. Device
-details show the status, battery, cellular state, ID, reported addresses,
-connection providers and **Pair** or **Unpair**. Switching devices does not
-change the recipient of a file review. Devices and Quick actions start expanded;
-the other sections start collapsed. Section help is in each heading's tooltip. Hiding a section keeps
+The device switcher shows the device state and stays available when **Device
+details** collapse. Device details show the battery, cellular state, ID, reported
+addresses, connection providers and **Pair** or **Unpair**. Rows the device does
+not report are hidden. Switching devices does not change the recipient of a file
+review. Devices and Quick actions start expanded; the other sections start
+collapsed. Section headings show a short description on hover and to screen
+readers; this guide has the full help. Hiding a section keeps
 its data and provider settings. A temporary collapse lasts until you reopen the
 popup. Use **Start expanded** to set the next opening.
 

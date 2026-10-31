@@ -296,10 +296,6 @@ Item {
         return controller.formatVerificationKey(key)
     }
 
-    function deviceOverviewStatus(device) {
-        return controller.deviceOverviewStatus(device)
-    }
-
     function deviceTypeIcon(type) {
         return controller.deviceTypeIcon(type)
     }

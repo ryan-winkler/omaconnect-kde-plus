@@ -100,7 +100,7 @@ def settings(entry):
                 raise MigrationError("settings-invalid")
         if key == "sectionOrder":
             try:
-                normalized_value(current_order(item))
+                normalized_value(item)
             except ValueError:
                 raise MigrationError("settings-invalid") from None
         if key == "bthHelperPath" and item and (not item.startswith("/") or not item.endswith("/remote-access-mode") or ".." in item.split("/") or any(ord(c) < 32 or ord(c) == 127 for c in item)):
@@ -108,16 +108,9 @@ def settings(entry):
     return dict(value)
 
 
-def current_order(value):
-    return ",".join(i for i in value.split(",") if i != "information") if value else value
-
-
 def current_settings(before):
     # Drop retired settings from the new entry; the snapshot keeps them for rollback.
-    after = {k:v for k,v in before.items() if k not in RETIRED_SETTINGS}
-    if "sectionOrder" in after:
-        after["sectionOrder"] = current_order(after["sectionOrder"])
-    return after
+    return {k:v for k,v in before.items() if k not in RETIRED_SETTINGS}
 
 
 def legacy_actions(before):

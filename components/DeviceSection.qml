@@ -253,26 +253,20 @@ Column {
         sectionId: "devices"
         visible: !!root.device
         title: "Device details"
-        description: "Status, battery, network, ID and pairing for the selected device."
+        description: "Battery, network, ID and pairing for the selected device. Rows the device does not report are hidden."
         expanded: root.detailsExpanded
         onToggleRequested: root.detailsToggleRequested()
         Column {
             objectName: "selected-device-details"
             width: parent.width
             spacing: Style.space(6)
-            Text {
-                width: parent.width
-                text: root.service ? root.service.deviceOverviewStatus(root.device) : ""
-                textFormat: Text.PlainText
-                wrapMode: Text.Wrap
-                color: root.foreground
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-            }
             DeviceInformationSection {
                 width: parent.width
                 service: root.service
                 showTitle: false
+                compact: true
+                foreground: root.foreground
+                fontFamily: root.fontFamily
                 showBattery: root.showBattery
                 showCellular: root.showNetwork
             }
