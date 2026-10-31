@@ -64,6 +64,19 @@ class IdentityMigration(unittest.TestCase):
                 self.assertEqual(M.rollback(candidate,receipt),original)
                 self.assertEqual(original,before)
 
+    def test_former_plus_drops_retired_information_settings_and_keeps_rollback(self):
+        original=self.uppercase_source()
+        for row in (original['bar']['layout']['tray'][1],original['plugins'][1]['settings']):
+            row.update(showDeviceInformation=False,informationStartExpanded=True,sectionOrder='information,media,devices')
+        before=copy.deepcopy(original)
+        candidate,receipt,appearance=M.prepare(original,'Omaconnect.plus')
+        row=candidate['bar']['layout']['tray'][1]
+        self.assertNotIn('showDeviceInformation',row)
+        self.assertNotIn('informationStartExpanded',row)
+        self.assertEqual(row['sectionOrder'],'media,devices')
+        self.assertEqual(M.rollback(candidate,receipt),original)
+        self.assertEqual(original,before)
+
     def test_former_plus_duplicate_ambiguous_unknown_or_target_entries_refuse(self):
         for problem in ('duplicate-bar','duplicate-service','ambiguous-settings','unknown-setting','target-present'):
             source=self.uppercase_source();row=source['bar']['layout']['tray'][1]

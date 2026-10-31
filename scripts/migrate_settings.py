@@ -27,7 +27,9 @@ BOOL_SETTINGS |= {"networkTailscaleEnabled", "networkBthEnabled", "networkWiregu
 BOOL_SETTINGS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
 BOOL_SETTINGS |= frozenset(BOOL_DEFAULTS)
 STRING_SETTINGS = {"defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder"}
-ALLOWED = BOOL_SETTINGS | STRING_SETTINGS
+# Device information merged into Device details; earlier installs may still store these.
+RETIRED_SETTINGS = {"showDeviceInformation", "informationStartExpanded"}
+ALLOWED = BOOL_SETTINGS | STRING_SETTINGS | RETIRED_SETTINGS
 ACTION_IDS = set(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock', 'external-monitor'))
 SECTIONS = ("left", "centerBegin", "center", "centerEnd", "right", "tray")
 
@@ -85,6 +87,8 @@ def settings(entry):
     value = {} if shape == "string" else entry.get("settings", {}) if shape == "nested" else {k:v for k,v in entry.items() if k != "id"}
     if not isinstance(value, dict) or set(value) - ALLOWED:
         raise MigrationError("settings-need-review")
+    if any(type(value[key]) is not bool for key in RETIRED_SETTINGS & set(value)):
+        raise MigrationError("settings-invalid")
     for key, item in value.items():
         if key in BOOL_SETTINGS and type(item) is not bool:
             raise MigrationError("settings-invalid")
@@ -96,12 +100,24 @@ def settings(entry):
                 raise MigrationError("settings-invalid")
         if key == "sectionOrder":
             try:
-                normalized_value(item)
+                normalized_value(current_order(item))
             except ValueError:
                 raise MigrationError("settings-invalid") from None
         if key == "bthHelperPath" and item and (not item.startswith("/") or not item.endswith("/remote-access-mode") or ".." in item.split("/") or any(ord(c) < 32 or ord(c) == 127 for c in item)):
             raise MigrationError("settings-invalid")
     return dict(value)
+
+
+def current_order(value):
+    return ",".join(i for i in value.split(",") if i != "information") if value else value
+
+
+def current_settings(before):
+    # Drop retired settings from the new entry; the snapshot keeps them for rollback.
+    after = {k:v for k,v in before.items() if k not in RETIRED_SETTINGS}
+    if "sectionOrder" in after:
+        after["sectionOrder"] = current_order(after["sectionOrder"])
+    return after
 
 
 def legacy_actions(before):
@@ -141,9 +157,9 @@ def prepare(config, source_id=OLD):
         source = entries_at(config, loc)[loc["index"]]
         before = settings(source)
         # A Plus identity change preserves choices; only upstream needs conversion.
-        after = dict(before)
+        after = current_settings(before)
         if source_id == OLD:
-            after = {k:v for k,v in before.items() if k != "showDeviceTypeIcons" and not k.startswith("showAction")}
+            after = {k:v for k,v in after.items() if k != "showDeviceTypeIcons" and not k.startswith("showAction")}
             after.update(showTailscale=False, showTroubleshooting=False, quickActionsOrder=before.get("quickActionsOrder", legacy_actions(before)))
         # Registry reads native bar/service entry settings inline, not under settings.
         entries_at(result, loc)[loc["index"]] = dict(after, id=NEW)
