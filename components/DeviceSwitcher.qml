@@ -46,6 +46,7 @@ Controls.ComboBox {
     id: root
     width: parent.width
     height: Math.max(44, Style.spacing.controlHeight)
+    leftPadding: Style.spacing.controlPaddingX
     model: root.deviceOptions
     textRole: "label"
     valueRole: "value"

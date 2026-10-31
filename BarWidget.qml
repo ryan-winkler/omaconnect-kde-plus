@@ -83,6 +83,8 @@ BarWidget {
         labelText: root.showBarBattery && root.device ? (root.device.battery + "%") : ""
         iconComponent: Component {
             AppearanceIcon {
+                // Draw at the host's icon size so it never rescales a raster icon.
+                iconSize: Style.bar.iconSize
                 icon: root.service ? root.service.appearance.barIcon(root.device ? root.device.id : "", root.device ? root.device.type : "phone") : ({mode:"preset", value:"phone", render:"glyph"})
                 assetBaseUrl: root.service ? root.service.appearance.assetBaseUrl : ""
                 foreground: buttonItem.foreground

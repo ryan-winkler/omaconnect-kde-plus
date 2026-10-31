@@ -58,8 +58,8 @@ function glyphFor(icon) {
 // private-use glyphs. The renderer retains its built-in phone as the last fallback.
 function symbolFont(families, preferred) {
     var available = families || [];
-    if (/nerd|symbols/i.test(String(preferred || "")) && available.indexOf(preferred) >= 0) return preferred;
     var known = ["JetBrainsMono Nerd Font","Symbols Nerd Font Mono","Symbols Nerd Font","JetBrainsMonoNL Nerd Font"];
+    if (known.indexOf(preferred) >= 0 && available.indexOf(preferred) >= 0) return preferred;
     for (var i = 0; i < known.length; i++) if (available.indexOf(known[i]) >= 0) return known[i];
     return "";
 }

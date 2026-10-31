@@ -27,6 +27,11 @@ assert.equal(new Set(api.presets.map(entry => api.glyphFor(entry))).size,api.pre
 assert.equal(api.glyphFor({mode:'preset',value:'share'}).codePointAt(0),0xF0497);
 assert.equal(api.symbolFont(['Liberation Sans','Symbols Nerd Font'],'Liberation Sans'),'Symbols Nerd Font');
 assert.equal(api.symbolFont(['JetBrainsMono Nerd Font','Symbols Nerd Font'],'JetBrainsMono Nerd Font'),'JetBrainsMono Nerd Font');
+assert.equal(api.symbolFont(['JetBrainsMono Nerd Font','Symbols Nerd Font'],'Symbols Nerd Font'),'Symbols Nerd Font');
+assert.equal(api.symbolFont(['Noto Sans Symbols'],'Noto Sans Symbols'),'');
+assert.equal(api.symbolFont(['Unverified Nerd Font'],'Unverified Nerd Font'),'');
+assert.equal(api.symbolFont(['Unverified Nerd Font','Symbols Nerd Font'],'Unverified Nerd Font'),'Symbols Nerd Font');
+assert.equal(api.symbolFont(['Symbols Nerd Font'],'JetBrainsMono Nerd Font'),'Symbols Nerd Font');
 assert.equal(api.symbolFont(['Liberation Sans'],'Liberation Sans'),'');
 assert.equal(api.library('laptop',[]).some(x => x.value === 'laptop'),true);
 assert.equal(api.normalizeIcon({mode:'theme',value:'fixture-line',tint:true}).tint,true);
