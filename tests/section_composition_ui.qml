@@ -121,7 +121,7 @@ ShellRoot {
                     test.groups=test.named(panel,"device-sections")
                     if(!test.check(groups!==null,"real daily Column exposes composed sections"))return
                     defaults=panel.sectionCatalog.entries.map(function(entry){return entry.id})
-                    if(!test.check(defaults.length===10 && order()===defaults.join(","),"ten real section widgets follow metadata order"))return
+                    if(!test.check(defaults.length===9 && order()===defaults.join(","),"nine real section widgets follow metadata order"))return
                     var refs={};sectionItems().forEach(function(item){refs[item.sectionId]=item});widgets=refs
                     var correct=panel.sectionCatalog.entries.every(function(entry){return panel.sectionExpanded(entry.id)===panel.getSetting(entry.expandedKey,entry.defaultExpanded)})
                     if(!test.check(correct,"opening restores typed saved choices and metadata expansion defaults"))return
@@ -172,7 +172,7 @@ ShellRoot {
                     panel.openSettings("Appearance");test.phase=2
                 }else if(test.phase===2 && panel.settingsWindow.visible && editor()){
                     var rows=panel.sectionCatalog.order.every(function(id){return test.named(editor(),"section-order-row-"+id)!==null})
-                    if(!test.check(rows,"actual Settings editor keeps all ten rows including hidden sections"))return
+                    if(!test.check(rows,"actual Settings editor keeps all nine rows including hidden sections"))return
                     accessible(editor(),"Move Quick actions down").Accessible.pressAction()
                     test.phase=3
                 }else if(test.phase===3 && !editor().busy && panel.sectionCatalog.order[1]==="drop" && order()===panel.sectionCatalog.order.join(",")){
@@ -186,7 +186,7 @@ ShellRoot {
                 }else if(test.phase===6 && !editor().busy && order()===defaults.join(",")){
                     if(!test.check(preserve(),"moving back does not recreate or reset a section"))return
                     accessible(editor(),"Move Syncthing identity note up").Accessible.pressAction();test.phase=7
-                }else if(test.phase===7 && !editor().busy && panel.sectionCatalog.order[8]==="syncthing" && order()===panel.sectionCatalog.order.join(",")){
+                }else if(test.phase===7 && !editor().busy && panel.sectionCatalog.order[7]==="syncthing" && order()===panel.sectionCatalog.order.join(",")){
                     if(!test.check(!panel.sectionVisible("syncthing") && preserve(),"hidden row still moves in Settings without losing daily state"))return
                     beforeAllHidden=savedSettings
                     var hidden={};panel.sectionCatalog.entries.forEach(function(entry){if(entry.visibilityKey)hidden[entry.visibilityKey]=false})
@@ -198,7 +198,7 @@ ShellRoot {
                         var move=accessible(row,"Move "+entry.label+(index>0?" up":" down"))
                         return row && move && move.enabled && (!entry.visibilityKey || !row.shown)
                     })
-                    if(!test.check(allRows && preserve(),"all ten Settings rows remain movable when every optional section is stored hidden"))return
+                    if(!test.check(allRows && preserve(),"all nine Settings rows remain movable when every optional section is stored hidden"))return
                     savedSettings=beforeAllHidden
                     panel.settingsWindow.closeSettings();panel.open();preview.requestActivate();test.phase=8
                 }else if(test.phase===8){
@@ -233,7 +233,7 @@ ShellRoot {
                     if(!test.check(panel.sectionCatalog.error!=="" && preserve(),"invalid stored order falls back to metadata without losing widget state"))return
                     patchSettings({sectionOrder:"addresses"});test.phase=13
                 }else if(test.phase===13 && order()===["addresses"].concat(defaults.filter(function(id){return id!=="addresses"})).join(",")){
-                    if(!test.check(sameWidgets() && panel.sectionCatalog.order.length===10 && preserve(),"partial known order appends omitted metadata sections without recreating them"))return
+                    if(!test.check(sameWidgets() && panel.sectionCatalog.order.length===9 && preserve(),"partial known order appends omitted metadata sections without recreating them"))return
                     named(panel,"daily-device-selector").selectDevice("B");test.phase=14
                 }else if(test.phase===14){
                     if(!test.check(address.text==="" && addressSection.removalReview==="" && fileDraft===JSON.stringify(service.draftTarget)+JSON.stringify(service.selection),"peer switch clears unsafe address drafts but keeps the captured file recipient"))return

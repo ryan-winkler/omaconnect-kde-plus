@@ -187,7 +187,7 @@
     "devicesStartExpanded": {
       "type": "boolean",
       "default": true,
-      "description": "Start devices expanded. This changes the daily layout only."
+      "description": "Start device details expanded. This changes the daily layout only."
     },
     "showQuickActions": {
       "type": "boolean",
@@ -213,16 +213,6 @@
       "type": "boolean",
       "default": false,
       "description": "Start Native KDE Connect expanded. This changes the daily layout only."
-    },
-    "showDeviceInformation": {
-      "type": "boolean",
-      "default": true,
-      "description": "Show device information. This changes the daily layout only."
-    },
-    "informationStartExpanded": {
-      "type": "boolean",
-      "default": false,
-      "description": "Start device information expanded. This changes the daily layout only."
     },
     "sectionOrder": {
       "type": "string",

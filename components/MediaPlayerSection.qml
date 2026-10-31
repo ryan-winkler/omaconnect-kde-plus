@@ -38,7 +38,7 @@ Column {
         activeFocusOnTab: true
         Accessible.role: Accessible.Button
         Accessible.name: "Expand media controls"
-        Accessible.description: "Show the selected device's reported player and transport controls."
+        Accessible.description: "Control music and video playing on the selected device. If it reports more than one player, choose one."
         Accessible.onPressAction: panel.toggleMediaExpanded()
         Keys.onReturnPressed: panel.toggleMediaExpanded()
         Keys.onEnterPressed: panel.toggleMediaExpanded()
@@ -139,15 +139,6 @@ Column {
             anchors.margins: Style.space(10)
             spacing: Style.space(10)
 
-            Text {
-                width: parent.width
-                text: "Control music and video playing on the selected device. If more than one player is available, choose one below."
-                textFormat: Text.PlainText
-                wrapMode: Text.Wrap
-                color: root.foreground
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-            }
             Row {
                 width: parent.width
                 spacing: Style.space(10)

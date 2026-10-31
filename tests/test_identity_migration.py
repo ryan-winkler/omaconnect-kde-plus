@@ -40,7 +40,7 @@ class IdentityMigration(unittest.TestCase):
         values={key:bool(index%2) for index,key in enumerate(sorted(M.BOOL_SETTINGS))}
         values.update(defaultPingMessage='Hello\nThere',bthHelperPath='/owned/bin/remote-access-mode',
             quickActionsOrder=','.join(sorted(M.ACTION_IDS,reverse=True)),
-            sectionOrder='syncthing,addresses,connections,commands,media,information,native,drop,actions,devices')
+            sectionOrder='syncthing,addresses,connections,commands,media,native,drop,actions,devices')
         return {'bar':{'id':'omarchy.bar','layout':{'left':['clock'],
             'tray':['omaconnect',dict(values,id='Omaconnect.plus'),'power']}},
             'plugins':[{'id':'omaconnect','settings':{'upstream_only':'unchanged'}},

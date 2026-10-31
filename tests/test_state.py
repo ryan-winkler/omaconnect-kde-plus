@@ -703,8 +703,8 @@ class DeviceParsingAndFormattingTests(unittest.TestCase):
     offline_device = parse_device("DEVICE\tdev-off\tPhone\tphone\ttrue\tfalse\t80\ttrue\tkdeconnect_battery")
     self.assertEqual(format_battery_status(offline_device), "")
 
-    device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
-    self.assertIn("root.device.reachable", device_section)
+    information = (ROOT / "components" / "DeviceInformationSection.qml").read_text()
+    self.assertIn("device.paired && device.reachable", information)
 
 
 

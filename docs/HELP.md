@@ -55,11 +55,14 @@ Choose **Show in Devices** and **Start expanded** in the section's settings doma
 | Settings domain | Daily sections |
 | --- | --- |
 | Quick actions | Quick actions; File sharing |
-| Device features | Device details; Native KDE Connect; Device information; Media controls; Remote commands |
+| Device features | Device details; Native KDE Connect; Media controls; Remote commands |
 | Connections | Connection controls; Saved addresses; Syncthing identity note |
 
-The device switcher stays available when its details collapse. Devices and
-Quick actions start expanded; the other sections start collapsed. Hiding a section keeps
+The device switcher stays available when **Device details** collapse. Device
+details show the status, battery, cellular state, ID, reported addresses,
+connection providers and **Pair** or **Unpair**. Switching devices does not
+change the recipient of a file review. Devices and Quick actions start expanded;
+the other sections start collapsed. Section help is in each heading's tooltip. Hiding a section keeps
 its data and provider settings. A temporary collapse lasts until you reopen the
 popup. Use **Start expanded** to set the next opening.
 
@@ -141,13 +144,14 @@ See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare
 
 ## Device features
 
-**Information** shows the selected device's ID, battery, cellular state, reported
-addresses and connection providers. Missing values say **Not reported**. Offline
-addresses are not presented as current. The daily Information section respects
-the battery and cellular visibility preferences.
+**Device details** in Devices, and **Info** in Device features settings, show the
+selected device's ID, battery, cellular state, reported addresses and connection
+providers. Missing values say **Not reported**. Offline addresses are not
+presented as current. Device details respect the battery and cellular visibility
+preferences.
 For native certificate fingerprints and protocol details, use
 `kdeconnect-cli --device DEVICE_ID --encryption-info` with the ID shown in
-Information. This is a read-only native route. The pairing verification code is
+Device details. This is a read-only native route. The pairing verification code is
 different from the complete certificate information; a saved address does not
 establish identity or trust.
 
@@ -202,8 +206,8 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
 - **Battery details:** Show charge and charging state when reported.
 - **Cellular connection details:** Show reported cellular type and signal; this
   does not describe Wi-Fi or VPN reachability.
-- **Media controls:** Expand Media in Devices. Choose a reported player and use
-  previous, play/pause or next. Playback stays in the owner app. Track text and
+- **Media controls:** Expand Media in Devices. Control music and video playing on
+  the selected device. Choose a reported player and use previous, play/pause or next. Playback stays in the owner app. Track text and
   controls remain available; provider-supplied album-art URLs are not displayed or fetched.
 - **Remote commands:** Expand Remote commands in Devices. Commands run on the
   selected device. Add or edit them in that device’s KDE Connect Run commands settings.

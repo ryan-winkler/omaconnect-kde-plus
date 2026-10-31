@@ -35,21 +35,12 @@ Column {
         SettingsButton {
             objectName: "inline-send-open-window"
             text: "Keep Send window open"
-            tooltipText: "Open a separate review window that stays open while you use your file manager."
+            tooltipText: "Switching to your file manager can close this popup. This window stays open as a drop target while you review."
             foreground: Commons.Color.popups.text
             focusable: true
             enabled: !!root.panel && typeof root.panel.openSendWindow === "function"
             onClicked: if (enabled) root.panel.openSendWindow()
         }
-    }
-    Text {
-        width: parent.width
-        text: "Switching to your file manager can close this popup. Use Keep Send window open for a persistent drop target."
-        textFormat: Text.PlainText
-        wrapMode: Text.Wrap
-        color: Commons.Color.popups.text
-        font.family: Style.font.family
-        font.pixelSize: Style.font.bodySmall
     }
     SendSection {
         objectName: "inline-send-review"

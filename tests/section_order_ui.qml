@@ -56,7 +56,7 @@ ShellRoot {
         onTriggered: {
             if (++test.ticks > 160) { test.check(false, "bounded scenario"); return }
             if (test.phase === 0 && catalog.ready) {
-                if (!test.check(catalog.entries.length === 10 && catalog.order.length === 10, "one fixed catalogue supplies all ten rows")) return
+                if (!test.check(catalog.entries.length === 9 && catalog.order.length === 9, "one fixed catalogue supplies all nine rows")) return
                 if (!test.check(catalog.preferencesFor("Connections").length === 6, "domain visibility and expansion preferences share metadata")) return
                 if (!test.check(!test.find(editor, "Move Devices up").enabled && !test.find(editor, "Move Syncthing identity note down").enabled, "endpoints cannot move beyond the catalogue")) return
                 test.heldUp = test.find(editor, "Move Quick actions up")
@@ -76,7 +76,7 @@ ShellRoot {
                 gate.setText("release");test.phase = 1
             } else if (test.phase === 1 && !editor.busy && editor.message === "Setting saved.") {
                 if (!test.check(catalog.order[0] === "devices", "successful request still waits for configuration readback")) return
-                fakePanel.settings = ({sectionOrder: "actions,devices,drop,native,information,media,commands,connections,addresses,syncthing", networkBthEnabled: true, showSyncthingLinks: false})
+                fakePanel.settings = ({sectionOrder: "actions,devices,drop,native,media,commands,connections,addresses,syncthing", networkBthEnabled: true, showSyncthingLinks: false})
                 test.phase = 2
             } else if (test.phase === 2 && catalog.order[0] === "actions") {
                 if (!test.check(test.find(editor,"section-order-row-actions") === test.heldRow && test.find(editor,"Move Quick actions up") === test.heldUp, "readback moves the original row and controls without recreation")) return
@@ -89,7 +89,7 @@ ShellRoot {
                 if (!test.check(window.activeFocusItem === test.heldDown, "Shift Tab returns to the moved row")) return
                 test.find(editor, "Move Syncthing identity note up").Accessible.pressAction();test.phase = 3
             } else if (test.phase === 3 && !editor.busy && editor.message.indexOf("not confirmed") >= 0) {
-                if (!test.check(catalog.order[0] === "actions" && catalog.order[9] === "syncthing", "failed save preserves the read-back order")) return
+                if (!test.check(catalog.order[0] === "actions" && catalog.order[8] === "syncthing", "failed save preserves the read-back order")) return
                 test.find(editor, "Use default section order").forceActiveFocus()
                 events.keyClick(Qt.Key_Space, Qt.NoModifier, 1);test.phase = 4
             } else if (test.phase === 4 && !editor.busy && editor.message === "Setting saved.") {
