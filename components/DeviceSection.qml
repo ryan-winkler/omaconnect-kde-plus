@@ -230,18 +230,20 @@ Column {
             spacing: Style.space(4)
             Button {
                 text: "Confirm unpair"
+                bordered: true
                 height: Math.max(44, implicitHeight)
                 selected: true
                 focusable: true
                 Accessible.role: Accessible.Button
                 Accessible.name: "Confirm unpair selected device"
                 Accessible.onPressAction: if (enabled) clicked()
-                foreground: root.foreground
+                foreground: Commons.Color.urgent
                 fontFamily: root.fontFamily
                 onClicked: if (root.device) panel.confirmUnpair(root.device.id)
             }
             Button {
                 text: "Cancel"
+                bordered: true
                 height: Math.max(44, implicitHeight)
                 focusable: true
                 Accessible.role: Accessible.Button
@@ -323,6 +325,7 @@ Column {
             Button {
                 visible: !!root.device && !root.device.paired && root.pendingState === "" && !root.device.pairRequestedByPeer
                 text: "Pair"
+                bordered: true
                 height: Math.max(44, implicitHeight)
                 focusable: true
                 Accessible.role: Accessible.Button
@@ -335,12 +338,13 @@ Column {
             Button {
                 visible: !!root.device && root.device.paired && !root.isUnpairConfirming && root.pendingState !== "removing"
                 text: "Unpair"
+                bordered: true
                 height: Math.max(44, implicitHeight)
                 focusable: true
                 Accessible.role: Accessible.Button
                 Accessible.name: "Unpair selected device"
                 Accessible.onPressAction: if (enabled) clicked()
-                foreground: root.foreground
+                foreground: Commons.Color.urgent
                 fontFamily: root.fontFamily
                 onClicked: if (root.device) panel.requestUnpairConfirm(root.device.id)
             }
