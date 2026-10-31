@@ -5,6 +5,8 @@ import re
 
 MAX_ORDER_LENGTH = 512
 MAX_CATALOG_LENGTH = 32768
+# Saved orders can still name sections that later releases removed.
+RETIRED_IDS = ("information",)
 FIELDS = {"id", "label", "description", "visibilityKey", "expandedKey", "defaultVisible", "defaultExpanded", "settingsPage"}
 PAGES = {"Appearance", "Connections", "Quick actions", "Device features"}
 
@@ -57,7 +59,7 @@ BOOL_DEFAULTS = {key: row[default] for row in CATALOG
 def order_ids(value):
     if not isinstance(value, str) or len(value) > MAX_ORDER_LENGTH:
         raise ValueError("invalid-section-order")
-    ids = value.split(",") if value else []
+    ids = [ident for ident in value.split(",") if ident not in RETIRED_IDS] if value else []
     if len(ids) > len(IDS) or len(set(ids)) != len(ids) or any(ident not in IDS for ident in ids):
         raise ValueError("invalid-section-order")
     return ids + [ident for ident in IDS if ident not in ids]

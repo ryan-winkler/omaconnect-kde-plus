@@ -24,7 +24,7 @@ Controls.ComboBox {
             return "No devices found. Open KDE Connect to pair a device."
         }
         if (!device) return "Choose a device above."
-        return root.deviceState(device) + ". Switching also changes the device in Devices."
+        return root.deviceState(device) + ". Switching changes the device for actions; a file review keeps its recipient."
     }
     readonly property string deviceOptionsKey: JSON.stringify(deviceOptions)
     onDeviceOptionsKeyChanged: if (popup) popup.close()
@@ -81,7 +81,8 @@ Controls.ComboBox {
         color: Commons.Color.popups.text
         font: root.font
         verticalAlignment: Text.AlignVCenter
-        elide: Text.ElideRight
+        // Elide inside the name so the trailing device state stays visible.
+        elide: Text.ElideMiddle
         leftPadding: selectedIcon.visible ? selectedIcon.width + Style.space(6) : 0
         AppearanceIcon {
             id: selectedIcon

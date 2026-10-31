@@ -105,7 +105,7 @@ ShellRoot {
                 if(!test.check(settings.transientParent===null,"settings remains independent of the bar popup"))return
                 if(!test.check(test.named("Settings: Appearance").activeFocus,"opening settings focuses domain navigation"))return
                 if(!test.check(test.named("Change selected device icon and alias").Accessible.role===Accessible.Button,"settings actions expose a native button role"))return
-                if(!test.check(sectionCatalogModel.entries.length===10 && test.named("Use default section order").visible,"Appearance exposes order controls from the real ten-section catalogue"))return
+                if(!test.check(sectionCatalogModel.entries.length===9 && test.named("Use default section order").visible,"Appearance exposes order controls from the real nine-section catalogue"))return
                 test.named("Settings: Connections").clicked();test.phase=2
             } else if(test.phase===2) {
                 if(!test.check(settings.currentPage==="Connections" && test.named("Show MikroTik Back to Home")!==null,"domain navigation exposes connection preferences"))return

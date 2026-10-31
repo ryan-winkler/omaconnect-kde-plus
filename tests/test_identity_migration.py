@@ -40,7 +40,7 @@ class IdentityMigration(unittest.TestCase):
         values={key:bool(index%2) for index,key in enumerate(sorted(M.BOOL_SETTINGS))}
         values.update(defaultPingMessage='Hello\nThere',bthHelperPath='/owned/bin/remote-access-mode',
             quickActionsOrder=','.join(sorted(M.ACTION_IDS,reverse=True)),
-            sectionOrder='syncthing,addresses,connections,commands,media,information,native,drop,actions,devices')
+            sectionOrder='syncthing,addresses,connections,commands,media,native,drop,actions,devices')
         return {'bar':{'id':'omarchy.bar','layout':{'left':['clock'],
             'tray':['omaconnect',dict(values,id='Omaconnect.plus'),'power']}},
             'plugins':[{'id':'omaconnect','settings':{'upstream_only':'unchanged'}},
@@ -63,6 +63,19 @@ class IdentityMigration(unittest.TestCase):
                 self.assertIsNone(appearance)
                 self.assertEqual(M.rollback(candidate,receipt),original)
                 self.assertEqual(original,before)
+
+    def test_former_plus_drops_retired_information_settings_and_keeps_rollback(self):
+        original=self.uppercase_source()
+        for row in (original['bar']['layout']['tray'][1],original['plugins'][1]['settings']):
+            row.update(showDeviceInformation=False,informationStartExpanded=True,sectionOrder='information,media,devices')
+        before=copy.deepcopy(original)
+        candidate,receipt,appearance=M.prepare(original,'Omaconnect.plus')
+        row=candidate['bar']['layout']['tray'][1]
+        self.assertNotIn('showDeviceInformation',row)
+        self.assertNotIn('informationStartExpanded',row)
+        self.assertEqual(row['sectionOrder'],'information,media,devices')
+        self.assertEqual(M.rollback(candidate,receipt),original)
+        self.assertEqual(original,before)
 
     def test_former_plus_duplicate_ambiguous_unknown_or_target_entries_refuse(self):
         for problem in ('duplicate-bar','duplicate-service','ambiguous-settings','unknown-setting','target-present'):

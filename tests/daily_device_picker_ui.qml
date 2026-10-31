@@ -104,7 +104,7 @@ ShellRoot {
                     test.picker.selectDevice("C");test.phase=11
                 }else if(test.phase===11){
                     if(!test.check(service.selectedDeviceId==="C" && test.picker.displayText.indexOf("<b>")===0 && test.picker.contentItem.textFormat===Text.PlainText,"unpaired markup-shaped names stay selectable as plain text"))return
-                    var disclosure=test.find(test.section,"device-details-disclosure",[])
+                    var disclosure=test.find(test.section,"section-toggle-devices",[])
                     disclosure.Accessible.pressAction()
                     if(!test.check(test.detailsToggleCount===1,"device details exposes the controlled disclosure signal"))return
                     test.section.detailsExpanded=false

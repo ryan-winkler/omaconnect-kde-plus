@@ -35,7 +35,6 @@ Panel {
     property bool actionsExpanded: getSetting("actionsStartExpanded", true)
     property bool inlineSendExpanded: getSetting("inlineSendStartExpanded", false)
     property bool nativeFeaturesExpanded: getSetting("nativeFeaturesStartExpanded", false)
-    property bool informationExpanded: getSetting("informationStartExpanded", false)
     property bool dropActionRevealed: false
     PanelSectionCatalog {
         id: sectionCatalogModel
@@ -48,7 +47,7 @@ Panel {
         onOrderChanged: Qt.callLater(root.reorderSections)
         onReadyChanged: if (ready) { root.restoreSectionExpansion(); Qt.callLater(root.reorderSections) }
     }
-    readonly property var sectionExpansionFields: ({devices:"deviceDetailsExpanded", actions:"actionsExpanded", drop:"inlineSendExpanded", native:"nativeFeaturesExpanded", information:"informationExpanded", media:"mediaExpanded", commands:"commandsExpanded", connections:"networkControlsExpanded", addresses:"addressesExpanded", syncthing:"syncthingExpanded"})
+    readonly property var sectionExpansionFields: ({devices:"deviceDetailsExpanded", actions:"actionsExpanded", drop:"inlineSendExpanded", native:"nativeFeaturesExpanded", media:"mediaExpanded", commands:"commandsExpanded", connections:"networkControlsExpanded", addresses:"addressesExpanded", syncthing:"syncthingExpanded"})
     function sectionExpanded(id) {
         var fields = sectionExpansionFields
         return fields[id] ? root[fields[id]] : false
@@ -76,7 +75,6 @@ Panel {
     function sectionVisible(id) {
         if (!sectionFlag(id) && !(id === "drop" && dropActionRevealed) && !(id === "actions" && activeComposer !== "none") && !(id === "media" && mediaActionRevealed) && !(id === "commands" && commandsActionRevealed)) return false
         if (id === "actions") return availableActions.length > 0 || activeComposer !== "none"
-        if (id === "information") return !!device
         if (id === "media") return mediaPlayerVisible
         if (id === "commands") return remoteCommandsVisible
         if (id === "connections") return networkControlsVisible
@@ -920,32 +918,7 @@ Panel {
                             visible: root.sectionVisible(sectionId)
                             expanded: root.nativeFeaturesExpanded
                             onToggleRequested: root.toggleSection(sectionId)
-                            SettingsButton {
-                                width: Math.min(implicitWidth, parent.width)
-                                height: Math.max(44, implicitHeight)
-                                text: "Device features in Plus"
-                                Accessible.name: text
-                                tooltipText: "Open local native module controls and their configuration links in Plus settings."
-                                foreground: Commons.Color.popups.text
-                                focusable: true
-                                onClicked: root.openSettings("Device features")
-                            }
                             NativeFeaturesSection { width: parent.width; service: root.service }
-                        }
-                        DailySection {
-                            sectionId: "information"
-                            title: root.sectionTitle(sectionId)
-                            description: root.sectionHelp(sectionId)
-                            visible: root.sectionVisible(sectionId)
-                            expanded: root.informationExpanded
-                            onToggleRequested: root.toggleSection(sectionId)
-                            DeviceInformationSection {
-                                width: parent.width
-                                service: root.service
-                                showTitle: false
-                                showBattery: root.getSetting("showBatteryStats", true)
-                                showCellular: root.getSetting("showNetworkStats", true)
-                            }
                         }
                         MediaPlayerSection {
                             id: mediaPlayerSection

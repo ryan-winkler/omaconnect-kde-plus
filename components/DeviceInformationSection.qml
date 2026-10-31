@@ -10,6 +10,10 @@ Column {
     property bool showTitle: true
     property bool showBattery: true
     property bool showCellular: true
+    // Compact rows skip values the device did not report.
+    property bool compact: false
+    property color foreground: Commons.Color.popups.text
+    property string fontFamily: Style.font.family
     readonly property bool current: !!(device && device.paired && device.reachable)
     width: parent ? parent.width : 0
     spacing: Style.space(6)
@@ -34,12 +38,12 @@ Column {
             required property var modelData
             objectName: "device-information-" + modelData.label
             width: root.width
-            visible: modelData.shown !== false
+            visible: modelData.shown !== false && !(root.compact && (modelData.value === "Not reported" || modelData.value.indexOf("Unavailable") === 0))
             text: modelData.label + ": " + modelData.value
             textFormat: Text.PlainText
             wrapMode: Text.WrapAnywhere
-            color: Commons.Color.popups.text
-            font.family: Style.font.family
+            color: root.foreground
+            font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
         }
     }

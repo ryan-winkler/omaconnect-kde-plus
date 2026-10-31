@@ -2,7 +2,7 @@
   {
     "id": "devices",
     "label": "Devices",
-    "description": "Keep the selected device and quick switcher visible. This sets whether its device details start expanded.",
+    "description": "Keep the selected device and quick switcher visible. Device details show status, battery, network, ID and pairing; this sets whether they start expanded.",
     "expandedKey": "devicesStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": true,
@@ -37,16 +37,6 @@
     "defaultExpanded": false,
     "settingsPage": "Device features",
     "visibilityKey": "showNativeFeatures"
-  },
-  {
-    "id": "information",
-    "label": "Device information",
-    "description": "Show information already reported by KDE Connect. Hiding details does not change device trust.",
-    "expandedKey": "informationStartExpanded",
-    "defaultVisible": true,
-    "defaultExpanded": false,
-    "settingsPage": "Device features",
-    "visibilityKey": "showDeviceInformation"
   },
   {
     "id": "media",

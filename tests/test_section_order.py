@@ -24,8 +24,10 @@ else:
 
 class SectionOrderTests(unittest.TestCase):
     def test_canonical_ids_flags_and_native_manifest_match(self):
-        self.assertEqual(sections.IDS, ('devices', 'actions', 'drop', 'native', 'information', 'media', 'commands', 'connections', 'addresses', 'syncthing'))
+        self.assertEqual(sections.IDS, ('devices', 'actions', 'drop', 'native', 'media', 'commands', 'connections', 'addresses', 'syncthing'))
         self.assertNotIn('visibilityKey', sections.CATALOG[0])
+        saved = 'actions,devices,drop,native,information,media,commands,connections,addresses,syncthing'
+        self.assertEqual(sections.normalized_value(saved), 'actions,devices,drop,native,media,commands,connections,addresses,syncthing')
         manifest = json.loads((ROOT / 'manifest.json').read_text())['settings']
         self.assertEqual(manifest['sectionOrder']['default'], '')
         for key, default in sections.BOOL_DEFAULTS.items():
@@ -76,7 +78,7 @@ class SectionOrderTests(unittest.TestCase):
         code = r'''const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const api=vm.createContext({});vm.runInContext(fs.readFileSync(process.argv[1],'utf8').replace(/^\.pragma library\s*/,''),api);
 const input=JSON.parse(fs.readFileSync(0,'utf8')),entries=api.parseCatalog(input.catalog);
-assert.equal(entries.length,10);assert.equal(api.normalize('',entries).join(','),entries.map(row=>row.id).join(','));
+assert.equal(entries.length,9);assert.equal(api.normalize('',entries).join(','),entries.map(row=>row.id).join(','));
 assert.equal(api.normalize('syncthing',entries).join(','),'syncthing,'+entries.slice(0,-1).map(row=>row.id).join(','));
 for(const value of [null,[],'unknown','devices,devices','devices,',' devices','devices;command','x'.repeat(513)])assert.equal(api.parse(value,entries),null);
 for(const rows of input.invalid)assert.equal(api.parseCatalog(JSON.stringify(rows)).length,0);
@@ -113,8 +115,8 @@ assert.equal(api.move(ids,'actions',-1).slice(0,2).join(','),'actions,devices');
             writes = [row['args'] for row in calls if row['tool'] == 'omarchy-shell']
             self.assertEqual(len(writes), 4, writes)
             self.assertTrue(all(row[:4] == ['shell', 'setBarWidget', 'omaconnect.plus', 'sectionOrder'] and row[-1] == '{}' for row in writes[:3]))
-            self.assertEqual(json.loads(writes[0][-2]), 'actions,devices,drop,native,information,media,commands,connections,addresses,syncthing')
-            self.assertEqual(json.loads(writes[1][-2]), 'actions,devices,drop,native,information,media,commands,connections,syncthing,addresses')
+            self.assertEqual(json.loads(writes[0][-2]), 'actions,devices,drop,native,media,commands,connections,addresses,syncthing')
+            self.assertEqual(json.loads(writes[1][-2]), 'actions,devices,drop,native,media,commands,connections,syncthing,addresses')
             self.assertEqual(json.loads(writes[2][-2]), '')
             self.assertEqual(writes[3], ['shell', 'setBarWidget', 'omaconnect.plus', 'showRemoteCommands', 'false', '{}'])
             self.assertTrue(all(row['tool'] in ('fc-match', 'hyprctl', 'omarchy-shell') for row in calls), calls)

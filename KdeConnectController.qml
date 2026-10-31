@@ -130,13 +130,6 @@ Item {
         return null
     }
 
-    function deviceOverviewStatus(device) {
-        if (!device) return "No devices found"
-        if (!device.paired) return "Not paired"
-        if (!device.reachable) return "Paired, offline"
-        return "Paired & reachable"
-    }
-
     function deviceTypeIcon(type) {
         var t = String(type || "").toLowerCase().trim()
         if (t === "phone") return "󰄜"

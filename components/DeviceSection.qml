@@ -66,16 +66,6 @@ Column {
             }
         }
     }
-    Text {
-        width: parent.width
-        visible: !!root.device
-        text: root.device ? devicePicker.deviceState(root.device) + ". Switch devices here; file reviews keep their original recipient." : ""
-        textFormat: Text.PlainText
-        wrapMode: Text.Wrap
-        color: root.foreground
-        font.family: root.fontFamily
-        font.pixelSize: Style.font.caption
-    }
     Rectangle {
         id: statusBanner
         objectName: "device-status-banner"
@@ -258,101 +248,83 @@ Column {
             }
         }
     }
-    Button {
-        objectName: "device-details-disclosure"
+    // One region for everything about the selected device, styled like the other sections.
+    DailySection {
+        sectionId: "devices"
         visible: !!root.device
-        text: root.detailsExpanded ? "Hide device details" : "Show device details"
-        iconText: root.detailsExpanded ? "󰅀" : "󰅂"
-        focusable: true
-        height: Math.max(44, implicitHeight)
-        foreground: root.foreground
-        fontFamily: root.fontFamily
-        fontSize: Style.font.bodySmall
-        tooltipText: "Battery information and pairing controls for the selected device."
-        Accessible.role: Accessible.Button
-        Accessible.name: text
-        Accessible.description: tooltipText
-        Accessible.onPressAction: if (enabled) clicked()
-        onClicked: root.detailsToggleRequested()
-    }
-    Column {
-        objectName: "selected-device-details"
-        width: parent.width
-        visible: !!root.device && root.detailsExpanded
-        spacing: Style.space(6)
-        Text {
+        title: "Device details"
+        description: "Battery, network, ID and pairing for the selected device. Rows the device does not report are hidden."
+        expanded: root.detailsExpanded
+        onToggleRequested: root.detailsToggleRequested()
+        Column {
+            objectName: "selected-device-details"
             width: parent.width
-            text: root.service ? root.service.deviceOverviewStatus(root.device) : ""
-            textFormat: Text.PlainText
-            wrapMode: Text.Wrap
-            color: root.foreground
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.bodySmall
-        }
-        Text {
-            width: parent.width
-            visible: !!(root.device && root.device.reachable && root.service && root.service.deviceBatteryText(root.device, root.showBattery, root.showNetwork) !== "")
-            text: root.service ? root.service.deviceBatteryText(root.device, root.showBattery, root.showNetwork) : ""
-            textFormat: Text.PlainText
-            wrapMode: Text.Wrap
-            color: root.foreground
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.bodySmall
-        }
-        Flow {
-            width: parent.width
-            spacing: Style.space(4)
-            Button {
-                visible: root.pendingState === "requesting"
-                text: "Cancel pairing request"
-                bordered: true
-                height: Math.max(44, implicitHeight)
-                focusable: true
-                Accessible.role: Accessible.Button
-                Accessible.name: text
-                Accessible.onPressAction: if (enabled) clicked()
+            spacing: Style.space(6)
+            DeviceInformationSection {
+                width: parent.width
+                service: root.service
+                showTitle: false
+                compact: true
                 foreground: root.foreground
                 fontFamily: root.fontFamily
-                onClicked: if (root.service && root.device) {
-                    root.service.setPendingPairing(root.device.id, "")
-                    root.service.clearActionState()
+                showBattery: root.showBattery
+                showCellular: root.showNetwork
+            }
+            Flow {
+                width: parent.width
+                spacing: Style.space(4)
+                Button {
+                    visible: root.pendingState === "requesting"
+                    text: "Cancel pairing request"
+                    bordered: true
+                    height: Math.max(44, implicitHeight)
+                    focusable: true
+                    Accessible.role: Accessible.Button
+                    Accessible.name: text
+                    Accessible.onPressAction: if (enabled) clicked()
+                    foreground: root.foreground
+                    fontFamily: root.fontFamily
+                    onClicked: if (root.service && root.device) {
+                        root.service.setPendingPairing(root.device.id, "")
+                        root.service.clearActionState()
+                    }
                 }
-            }
-            Button {
-                visible: root.pendingState === "removing"
-                enabled: false
-                text: "Unpairing…"
-                bordered: true
-                height: Math.max(44, implicitHeight)
-                foreground: root.foreground
-                fontFamily: root.fontFamily
-            }
-            Button {
-                visible: !!root.device && !root.device.paired && root.pendingState === "" && !root.device.pairRequestedByPeer
-                text: "Pair"
-                bordered: true
-                height: Math.max(44, implicitHeight)
-                focusable: true
-                Accessible.role: Accessible.Button
-                Accessible.name: "Pair selected device"
-                Accessible.onPressAction: if (enabled) clicked()
-                foreground: root.foreground
-                fontFamily: root.fontFamily
-                onClicked: if (root.service && root.device) root.service.pairDevice(root.device.id)
-            }
-            Button {
-                visible: !!root.device && root.device.paired && !root.isUnpairConfirming && root.pendingState !== "removing"
-                text: "Unpair"
-                bordered: true
-                height: Math.max(44, implicitHeight)
-                focusable: true
-                Accessible.role: Accessible.Button
-                Accessible.name: "Unpair selected device"
-                Accessible.onPressAction: if (enabled) clicked()
-                foreground: Commons.Color.urgent
-                accent: Commons.Color.urgent
-                fontFamily: root.fontFamily
-                onClicked: if (root.device) panel.requestUnpairConfirm(root.device.id)
+                Button {
+                    visible: root.pendingState === "removing"
+                    enabled: false
+                    text: "Unpairing…"
+                    bordered: true
+                    height: Math.max(44, implicitHeight)
+                    foreground: root.foreground
+                    fontFamily: root.fontFamily
+                }
+                Button {
+                    visible: !!root.device && !root.device.paired && root.pendingState === "" && !root.device.pairRequestedByPeer
+                    text: "Pair"
+                    bordered: true
+                    height: Math.max(44, implicitHeight)
+                    focusable: true
+                    Accessible.role: Accessible.Button
+                    Accessible.name: "Pair selected device"
+                    Accessible.onPressAction: if (enabled) clicked()
+                    foreground: root.foreground
+                    fontFamily: root.fontFamily
+                    onClicked: if (root.service && root.device) root.service.pairDevice(root.device.id)
+                }
+                Button {
+                    visible: !!root.device && root.device.paired && !root.isUnpairConfirming && root.pendingState !== "removing"
+                    text: "Unpair"
+                    bordered: true
+                    height: Math.max(44, implicitHeight)
+                    focusable: true
+                    Accessible.role: Accessible.Button
+                    Accessible.name: "Unpair selected device"
+                    Accessible.onPressAction: if (enabled) clicked()
+                    foreground: Commons.Color.urgent
+                    accent: Commons.Color.urgent
+                    fontFamily: root.fontFamily
+                    onClicked: if (root.device) panel.requestUnpairConfirm(root.device.id)
+                }
             }
         }
     }

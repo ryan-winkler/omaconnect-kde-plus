@@ -34,7 +34,7 @@ Column {
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
             Accessible.name: panel.commandsExpanded ? "Collapse remote commands" : "Expand remote commands"
-            Accessible.description: "Show commands configured in the selected device's native KDE Connect settings."
+            Accessible.description: "Run commands configured on the selected device. Add or edit them in that device’s KDE Connect Run commands settings."
             Accessible.onPressAction: panel.toggleCommandsExpanded()
             Keys.onReturnPressed: panel.toggleCommandsExpanded()
             Keys.onEnterPressed: panel.toggleCommandsExpanded()
@@ -99,15 +99,6 @@ Column {
         spacing: Style.space(6)
 
         Text {
-            width: parent.width
-            text: "Commands run on the selected device. Add or edit them in that device’s KDE Connect Run commands settings."
-            textFormat: Text.PlainText
-            wrapMode: Text.Wrap
-            color: root.foreground
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
-        }
-        Text {
             textFormat: Text.PlainText
             visible: !!root.service && root.service.commandsLoading
             text: "Loading commands..."
@@ -119,7 +110,9 @@ Column {
         Text {
             textFormat: Text.PlainText
             visible: !!root.service && !root.service.commandsLoading && (!root.service.remoteCommands || root.service.remoteCommands.length === 0)
-            text: "No remote commands configured"
+            width: parent.width
+            text: "No remote commands. Add them in the device’s KDE Connect Run commands settings."
+            wrapMode: Text.Wrap
             color: Qt.darker(root.foreground, 1.4)
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
