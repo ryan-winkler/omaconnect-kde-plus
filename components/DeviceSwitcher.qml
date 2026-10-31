@@ -81,7 +81,8 @@ Controls.ComboBox {
         color: Commons.Color.popups.text
         font: root.font
         verticalAlignment: Text.AlignVCenter
-        elide: Text.ElideRight
+        // Elide inside the name so the trailing device state stays visible.
+        elide: Text.ElideMiddle
         leftPadding: selectedIcon.visible ? selectedIcon.width + Style.space(6) : 0
         AppearanceIcon {
             id: selectedIcon
