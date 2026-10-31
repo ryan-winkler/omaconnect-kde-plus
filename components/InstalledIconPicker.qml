@@ -4,6 +4,7 @@ import QtQuick.Controls as Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../Appearance.js" as Appearance
 
 Item {
     id: root
@@ -24,6 +25,9 @@ Item {
     readonly property bool popupOpen: popup.opened
     readonly property string optionsKey: JSON.stringify((Array.isArray(options) ? options.slice(0, 1024) : []).filter(function(name) {
         return typeof name === "string" && /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(name)
+    }).sort(function(a, b) {
+        // Symbolic icons stay sharp at bar size and follow the theme, so list them first.
+        return Appearance.symbolicThemeName(b) - Appearance.symbolicThemeName(a)
     }))
     readonly property var matchingOptions: {
         var query = search.text.trim().toLowerCase()

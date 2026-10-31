@@ -138,6 +138,8 @@ Window {
             }
             if(test.phase===220){
                 if(!test.check(picker.popupOpen,"identical icon inventory keeps the picker open"))return
+                picker.options=["b-icon","go-home-symbolic","a-icon","go-next-symbolic-rtl"]
+                if(!test.check(picker.optionsKey===JSON.stringify(["go-home-symbolic","go-next-symbolic-rtl","b-icon","a-icon"]),"symbolic icons are listed first"))return
                 picker.options=["icon-0100"];test.phase=23;return
             }
             if(test.phase===23){
