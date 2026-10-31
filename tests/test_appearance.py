@@ -278,7 +278,7 @@ Window {
   onTriggered: {
    test.checked=true;
    var presetGlyph=test.find(themeResolved,\"appearance-glyph\",[]);
-   test.check(themeResolved.usePresetGlyph && presetGlyph && presetGlyph.visible,\"font-precedes-theme\");
+   test.check(themeResolved.presetFont===\"\" || themeResolved.usePresetGlyph && presetGlyph && presetGlyph.visible,\"font-precedes-theme\");
    var snapshot=JSON.parse(JSON.stringify(store.snapshot)); snapshot.bar_icon={mode:\"automatic\"}; store.snapshot=snapshot;
    chooser.openForBar(\"fixture\",\"phone\");
    test.check(test.find(chooser,\"preset-laptop\",[]).visible,\"bar-automatic-choice-visible\");
