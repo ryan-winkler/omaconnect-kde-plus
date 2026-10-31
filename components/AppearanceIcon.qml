@@ -48,7 +48,7 @@ Item {
         asynchronous: true
         cache: true
         onStatusChanged: symbolic.requestPaint()
-        onSourceSizeChanged: symbolic.reload()
+        onSourceSizeChanged: if (symbolic) symbolic.reload()
         // The tint below uses the icon's alpha as its mask.
         layer.enabled: root.tintOnGpu
         visible: root.imageReady && root.sourceColours
