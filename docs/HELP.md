@@ -51,6 +51,22 @@ The open dropdown keeps connected, offline and unpaired devices in one list.
 </details>
 
 <details>
+<summary>Recent-file icons and native image previews</summary>
+
+File-type icons help identify recent files. Select **Image previews…** to browse
+supported images in Omarchy's native picker. Confirming a file uses your saved
+immediate-send or review preference; browsing alone does not send.
+
+![Native recent-file menu with image, document, video, audio and archive icons and an Image previews entry](screenshots/recent-file-menu.png)
+
+The native image picker shows example images here. Your installed image codecs
+and theme can change the available previews.
+
+![Native image picker displaying three example images with a highlighted preview and filename](screenshots/image-previews.png)
+
+</details>
+
+<details>
 <summary>File review, pending Cancel and submission activity</summary>
 
 The persistent Send window keeps the recipient and reviewed files visible while
