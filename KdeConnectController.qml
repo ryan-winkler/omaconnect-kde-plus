@@ -37,6 +37,7 @@ Item {
     property alias selectionBytes: fileController.selectionBytes
     property bool legacyNetworkEnabled: false
     property alias selectionState: fileController.selectionState
+    property alias selectionCancelling: fileController.selectionCancelling
     property alias selectionError: fileController.selectionError
     property alias draftTarget: fileController.draftTarget
     property alias operations: fileController.operations
@@ -112,8 +113,8 @@ Item {
     FileTransferController { id: fileController; controller: root }
 
     // File state and processes live in controller/FileTransferController.qml.
-    function startFileSelection(id) { return fileController.chooseFiles(id) }
-    function chooseFiles(id) { return fileController.chooseFiles(id) }
+    function startFileSelection(id, options) { return fileController.chooseFiles(id, options) }
+    function chooseFiles(id, options) { return fileController.chooseFiles(id, options) }
     function cancelDraft() { return fileController.cancelDraft() }
     function cancelFileSelection() { return fileController.cancelDraft() }
     function submitSelection() { return fileController.submitSelection() }

@@ -59,6 +59,8 @@ Object.assign(context, {
  devices:[{id:'A',name:'Original phone',paired:true,reachable:true,capabilities:{file:true}}, {id:'B',name:'Other phone',paired:true,reachable:true,capabilities:{file:true}}],
  selectedDeviceId:'A',selection:[],selectionBytes:0,selectionState:'idle',selectionError:'',draftTarget:null,
  selectionGeneration:0,fileTransferGeneration:0,operationSequence:0,operations:[],activeOperation:null,operationBusy:false,
+ scriptPath:p=>'/owned/'+p, getPickerScriptPath:()=>'/owned/scripts/pick_file.sh',
+ selectionCancellationTimer:{restart(){},stop(){}},cancellationTimer:{restart(){}},
  fileInspectProcess:{running:false,signal(){}},filePickerProcess:{running:false,signal(){}},
  fileTransferProcess:{running:false,signal(){this.signalled=true;}}
 });

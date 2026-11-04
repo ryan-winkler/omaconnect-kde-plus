@@ -9,7 +9,7 @@ DropArea {
     signal filesStaged()
     signal dragReadyEntered()
     readonly property bool ready: !!(service && device && device.paired && device.reachable
-        && device.capabilities && device.capabilities.file && !service.operationBusy
+        && device.capabilities && device.capabilities.file && !service.operationBusy && !service.selectionCancelling
         && service.selectionState !== "choosing" && service.selectionState !== "draft"
         && (!service.selection || service.selection.length === 0))
     readonly property string instructions: !device ? "Select a device before dropping files."
@@ -20,8 +20,17 @@ DropArea {
         : service && service.selectionState === "draft" ? "Review or clear the current selection to drop more files."
         : "Drop up to 100 local files, 1 TiB total. No folders. Review before Send."
     function canAccept(event) {
-        return ready && event && event.hasUrls && (event.supportedActions & Qt.CopyAction)
-            && event.urls && event.urls.length > 0 && event.urls.length <= 100
+        if (!(ready && event && event.hasUrls && (event.supportedActions & Qt.CopyAction)
+                && event.urls && event.urls.length > 0 && event.urls.length <= 100)) return false
+        var units = 0
+        for (var i = 0; i < event.urls.length; i++) {
+            var value = String(event.urls[i])
+            if (value.length > 16384 || !/^file:\/\/(?:localhost)?\//.test(value)
+                    || /[\u0000-\u001f\u007f]/.test(value)) return false
+            units += value.length
+            if (units > 128 * 1024) return false
+        }
+        return true
     }
     function acceptDrag(event) {
         event.accepted = !!canAccept(event)

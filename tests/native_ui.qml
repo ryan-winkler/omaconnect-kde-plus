@@ -109,8 +109,8 @@ ShellRoot {
         width: 500
         height: test.desktopMode ? 60 : 700
         Item { id: anchor; width: 26; height: 26 }
-        Plugin.BarWidget { id: widget; bar: fakeBar; settings: ({showTailscale:false}) }
-        Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false}) }
+        Plugin.BarWidget { id: widget; bar: fakeBar; settings: ({showTailscale:false,useDesktopFileChooser:true,reviewFilesBeforeSend:true}) }
+        Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false,useDesktopFileChooser:true,reviewFilesBeforeSend:true}) }
         Components.SendSection { id: send; visible: !test.desktopMode; width: 400; service: service }
     }
     Timer {
@@ -132,7 +132,7 @@ ShellRoot {
                 test.check(!panel.syncthingVisible && panel.savedAddressesVisible, "optional Syncthing starts hidden while saved addresses remain available")
                 panel.settings = {showSavedAddresses:false,showSyncthingLinks:true,showNetworkControls:false,mediaStartExpanded:false,commandsStartExpanded:true}
                 test.check(!panel.savedAddressesVisible && panel.syncthingVisible && !panel.networkControlsVisible, "saved section visibility respects settings")
-                panel.settings = {showTailscale:false}
+                panel.settings = {showTailscale:false,useDesktopFileChooser:true,reviewFilesBeforeSend:true}
                 test.capture("devices")
 
                 test.check(devicePicker.count===2,"shared picker contains both known devices")

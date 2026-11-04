@@ -25,6 +25,7 @@ MAX_BYTES = 2097152
 BOOL_SETTINGS = {"showBatteryStats", "showBarBattery", "showNetworkStats", "showTailscale", "showDeviceTypeIcons", "showTroubleshooting", "showActionRing", "showActionClipboard", "showActionFile", "showActionSms", "showActionPing", "showActionText"}
 BOOL_SETTINGS |= {"networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled"}
 BOOL_SETTINGS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
+BOOL_SETTINGS |= frozenset(("useDesktopFileChooser", "reviewFilesBeforeSend"))
 BOOL_SETTINGS |= frozenset(BOOL_DEFAULTS)
 STRING_SETTINGS = {"defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder"}
 # Device information merged into Device details; earlier installs may still store these.

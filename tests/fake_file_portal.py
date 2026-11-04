@@ -1,6 +1,7 @@
 """Only launched under dbus-run-session by test_transfer.py."""
 import json
 import os
+import signal
 import subprocess
 from gi.repository import Gio, GLib
 
@@ -9,6 +10,9 @@ bus.call_sync('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.
 xml = '''<node><interface name="org.freedesktop.portal.FileChooser"><method name="OpenFile"><arg type="s" direction="in"/><arg type="s" direction="in"/><arg type="a{sv}" direction="in"/><arg type="o" direction="out"/></method></interface></node>'''
 loop = GLib.MainLoop()
 process = None
+delayed_cancel = os.environ.get("TEST_PORTAL_DELAYED_CANCEL") == "1"
+late_registration = os.environ.get("TEST_PORTAL_LATE_REGISTRATION") == "1"
+close_requests = []
 
 
 def method(connection, sender, path, interface, name, parameters, invocation):
@@ -17,11 +21,35 @@ def method(connection, sender, path, interface, name, parameters, invocation):
     assert options['directory'] is False
     assert 'filters' not in options
     handle = '/org/freedesktop/portal/desktop/request/' + sender[1:].replace('.', '_') + '/' + options['handle_token']
-    invocation.return_value(GLib.Variant('(o)', (handle,)))
+    if late_registration:
+        handle += '_registered'
     def respond():
         connection.emit_signal(sender, handle, 'org.freedesktop.portal.Request', 'Response', GLib.Variant('(ua{sv})', (int(os.environ['TEST_PORTAL_RESPONSE']), {'uris': GLib.Variant('as', json.loads(os.environ['TEST_PORTAL_URIS']))})))
         return GLib.SOURCE_REMOVE
-    GLib.idle_add(respond)
+    def register_close():
+        close_info = Gio.DBusNodeInfo.new_for_xml('<node><interface name="org.freedesktop.portal.Request"><method name="Close"/></interface></node>').interfaces[0]
+
+        def close(connection, sender, path, interface, name, parameters, invocation):
+            close_requests.append(path)
+            invocation.return_value(None)
+
+        bus.register_object(handle, close_info, close, None, None)
+
+    def reply():
+        if late_registration:
+            register_close()
+        invocation.return_value(GLib.Variant('(o)', (handle,)))
+        if not delayed_cancel or os.environ.get("TEST_PORTAL_LATE_RESPONSE") == "1":
+            GLib.idle_add(respond)
+        return GLib.SOURCE_REMOVE
+
+    if delayed_cancel:
+        if not late_registration:
+            register_close()
+        GLib.timeout_add(50, lambda: (process.send_signal(signal.SIGTERM), False)[-1])
+        GLib.timeout_add(250, reply)
+    else:
+        reply()
 
 
 info = Gio.DBusNodeInfo.new_for_xml(xml).interfaces[0]
@@ -41,7 +69,10 @@ def done():
 
 
 GLib.timeout_add(20, done)
-GLib.timeout_add_seconds(10, lambda: (process.kill(), loop.quit(), False)[-1])
+if delayed_cancel:
+    GLib.timeout_add(1500, lambda: (process.kill(), loop.quit(), False)[-1])
+else:
+    GLib.timeout_add_seconds(10, lambda: (process.kill(), loop.quit(), False)[-1])
 loop.run()
-if process.returncode != 0:
+if process.returncode != 0 or (delayed_cancel and len(close_requests) != 1):
     raise SystemExit(1)

@@ -67,6 +67,25 @@ class AddressBoundary(unittest.TestCase):
         self.assertEqual(self.directory.stat().st_mode & 0o777, 0o700)
         self.assertEqual((self.directory / "addresses.json").stat().st_mode & 0o777, 0o600)
 
+    def test_auto_without_boolean_defaults_false_and_preserves_record(self):
+        change = self.add()
+        change["auto_discover"] = True
+        self.run_request([change])
+        before = self.bus.addresses[:]
+        writes = len(self.bus.writes)
+        result = self.run_request([dict(op="auto", peer_id="peer-one",
+                                        address="10.23.0.10", approved=True)])
+        row = result["addresses"][0]
+        self.assertFalse(row["auto_discover"])
+        self.assertEqual((row["peer_id"], row["address"], row["source"]),
+                         ("peer-one", "10.23.0.10", "manual"))
+        self.assertFalse(row["manual_baseline"])
+        self.assertTrue(row["registered"])
+        self.assertEqual(self.bus.addresses, before)
+        self.assertEqual(len(self.bus.writes), writes)
+        saved = json.loads((self.directory / "addresses.json").read_text())
+        self.assertFalse(saved["addresses"][0]["auto_discover"])
+
     def test_baseline_and_shared_addresses_are_never_removed(self):
         self.run_request([self.add("192.168.1.2"), self.add(), self.add(peer="peer-two")])
         self.run_request([dict(op="remove", peer_id="peer-one", address="192.168.1.2", remove_from_kde=True, approved=True), dict(op="remove", peer_id="peer-one", address="10.23.0.10", remove_from_kde=True, approved=True)])

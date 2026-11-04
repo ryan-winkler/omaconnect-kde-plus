@@ -4,7 +4,7 @@
   "name": "Omaconnect KDE Plus",
   "version": "0.1.5",
   "author": "Ryan Winkler; based on Jitendra Dara’s OmaConnect",
-  "description": "KDE Connect device actions, file sharing, custom icons and optional Tailscale, MikroTik Back to Home and WireGuard views for Omarchy.",
+  "description": "KDE Connect in the Omarchy bar: device actions, file sharing, media controls, custom icons and optional home-access integrations.",
   "license": "MIT",
   "homepage": "https://github.com/ryan-winkler/omaconnect-kde-plus",
   "repository": "https://github.com/ryan-winkler/omaconnect-kde-plus",
@@ -24,6 +24,16 @@
     "defaultSection": "right"
   },
   "settings": {
+    "useDesktopFileChooser": {
+      "type": "boolean",
+      "default": false,
+      "description": "Use the desktop file chooser instead of the original Omarchy recent-file menu."
+    },
+    "reviewFilesBeforeSend": {
+      "type": "boolean",
+      "default": false,
+      "description": "Review chosen files before Send. Off sends after explicit chooser selection. Drops always require review."
+    },
     "showBatteryStats": {
       "type": "boolean",
       "default": true,

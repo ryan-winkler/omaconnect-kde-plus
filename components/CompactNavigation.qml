@@ -33,6 +33,25 @@ Column {
     spacing: Style.space(4)
     objectName: "daily-navigation"
 
+    Kit.Button {
+        objectName: "cancel-pending-files"
+        width: parent.width
+        implicitHeight: Math.max(44, Style.space(44))
+        visible: !!root.panel.service && (root.panel.service.operationBusy || root.panel.service.selectionState === "choosing" || root.panel.service.selectionCancelling === true)
+        text: root.panel.service && (root.panel.service.selectionCancelling === true || (root.panel.service.operationBusy && root.panel.service.cancellationRequested === true)) ? "Cancelling pending files…" : "Cancel pending files"
+        enabled: !!root.panel.service && root.panel.service.selectionCancelling !== true && (!root.panel.service.operationBusy || root.panel.service.cancellationRequested !== true)
+        foreground: Commons.Color.popups.text
+        focusable: true
+        Accessible.role: Accessible.Button
+        Accessible.onPressAction: if (enabled) clicked()
+        Accessible.name: text
+        Accessible.description: "Stops the Plus queue and active submission. An accepted LAN transfer must be cancelled in KDE Connect's transfer progress. Bluetooth cancellation is not available here."
+        onClicked: {
+            if (root.panel.service.operationBusy) root.panel.service.cancelOperation()
+            else root.panel.service.cancelDraft()
+        }
+    }
+
     function focusMenu(index) {
         var item = menuEntries.itemAt((index + entries.length) % entries.length)
         if (item) {

@@ -36,7 +36,7 @@ class DropFiles(unittest.TestCase):
             self.assertEqual([item['size'] for item in result['files']], [3, 0])
             script = r'''const vm=require('node:vm'), assert=require('node:assert/strict');
 const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
-const ctx={operationBusy:false, fileTransferProcess:{running:false},filePickerProcess:{running:false,signal(){}},fileInspectProcess:{running:false,signal(){}},
+const ctx={operationBusy:false, fileTransferProcess:{running:false},filePickerProcess:{running:false,signal(){}},selectionCancellationTimer:{restart(){}},fileInspectProcess:{running:false,signal(){}},
  selectionState:'idle',selection:[],selectionBytes:0,selectionError:'',selectionGeneration:0,draftTarget:null,
  devices:[{id:'A',name:'Reviewed phone',paired:true,reachable:true,capabilities:{file:true}},{id:'B',name:'Another phone',paired:true,reachable:true,capabilities:{file:true}}]};
 ctx.deviceById=id=>ctx.devices.find(d=>d.id===id);ctx.canAct=id=>!!ctx.deviceById(id);ctx.controller=ctx;vm.createContext(ctx);vm.runInContext(input.functions,ctx);

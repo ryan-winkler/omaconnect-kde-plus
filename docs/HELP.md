@@ -125,7 +125,11 @@ Choose a shortcut, then select **Add selected action**. Use **Up**, **Down** or
 **Remove** to change the toolbar. **Use default actions** restores Files, Text, and Clipboard. These choices do not enable a native module or execute it.
 Each action shows its description and selected-device availability.
 
-- **Files:** Open the normal desktop file chooser, then review before Send.
+- **Files:** Open the original Omarchy recent-file menu. Selection sends to the
+  recipient shown when the menu opened. Enable **Use desktop file chooser** for
+  any local file and multiselect. Enable **Review files before Send** to check
+  chosen files before an explicit Send. These settings are independent. Drops
+  always require review. Invalid stored settings fall back to desktop review.
 - **Text:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
 - **Clipboard:** Send the current clipboard to the selected device.
 - **Quick Share:** Open [RQuickShare](https://github.com/Martichou/rquickshare)
@@ -217,21 +221,50 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
 ## Send files and read activity
 
 1. Select a paired, reachable device. Expand **File sharing** in Devices, or open **Send**.
-2. Drop files on the inline target or select **Choose files** for the graphical
-   desktop chooser. The popup can close when you focus a file manager. Select
+2. Select **Choose files**. By default the original Omarchy recent-file menu opens;
+   selecting a file submits it immediately to the recipient shown in the prompt.
+   Set **Plus settings → Quick actions → Review files before Send** to review
+   first. **Use desktop file chooser** switches to the graphical chooser with
+   multiselect. The popup can close when you focus a file manager. Select
    **Keep Send window open** in Devices, or **Open Send window** in Send, for a
    persistent target. Dragging local file URLs over the bar icon also opens and
    reveals the inline target, even if its section is hidden. This reveal lasts
    for that popup session and does not change its saved visibility.
-3. Choose or drop up to 100 local regular files, at most 1 TiB combined.
+3. The recent-file menu offers one supported file from Downloads, Documents,
+   Pictures, Videos or Desktop, within four levels, most recently changed first.
+   It skips hidden items and links. Search is bounded to 20,000 entries and two
+   seconds; a large tree can omit files. The menu options have a 64 KiB budget.
+   Use the desktop chooser for other files, names with controls, or larger trees.
+   The desktop chooser and drops support up to 100 local regular files, 1 TiB combined.
    Directories and remote URLs are not accepted. Drops use Copy and preserve originals.
-4. Check the recipient, files, count and size. Select **Send files**. A changed
-   device selection does not redirect a reviewed batch.
+4. With review enabled, or after any drop, check the recipient, files, count and
+   size. Select **Send files**. Changing devices or settings while a chooser is
+   open does not change its captured recipient or review policy.
 5. Read Activity. **Request accepted** confirms command acceptance. Check the
-   recipient for actual receipt. **Stop submitting** can stop remaining requests;
-   it does not confirm cancellation of work already accepted by KDE Connect.
+   recipient for actual receipt.
 
-**Cancel selection** discards the draft. Closing the Send window preserves it.
+**Cancel pending files** stays in daily navigation while choosing, preparing or
+submitting, even when File sharing is collapsed or you change views. **Cancel**
+in the Send window uses the same controller. A draft Cancel discards the selection.
+An operation Cancel stops remaining requests and asks the active helper to stop;
+after two seconds Plus force-stops a picker, inspector or submission helper
+that has not exited. A lost final
+acknowledgement stays **Cancellation unconfirmed**. Cancellation after a native
+invocation does not prove that the transfer stopped.
+
+For an accepted **LAN** transfer, select **Cancel** in KDE Connect's native transfer
+progress window or job notification. The native job can contain other submissions
+to the same device. The public sharing API returns no transfer ID or cancel method,
+and the Bluetooth path has no evidenced equivalent. Plus cannot cancel a specific
+accepted transfer or recall a received file. Physical transfer/cancel acceptance
+is a separate check. See [native API limits](CONTRACTS.md#native-transfer-cancellation).
+
+If the original Omarchy file menu remains visible after Cancel or timeout, press
+**Escape**. Its UI belongs to the shell, which exposes no per-request close API.
+A late choice from that cancelled menu cannot send a file. Use the desktop
+chooser when you need a picker whose Close request Plus can control.
+
+Closing the Send window preserves a draft. It does not cancel pending work.
 Activity keeps at most 50 summaries for this session and excludes raw paths.
 Files that another local user can change need a private snapshot before submission.
 Plus tries a filesystem clone, then a bounded copy. This can need free disk space.

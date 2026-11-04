@@ -6,6 +6,25 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Original-style searchable recent-file menu, with the desktop chooser retained
+  as an option in Quick actions settings. Explicit chooser selection sends by
+  default; Review files before Send restores the separate review step. Drops
+  always require review and keep the captured recipient.
+- A Cancel pending files control stays available across daily views and collapsed
+  sections. Cancellation stops the Plus queue and active helper. Accepted LAN
+  uploads use KDE Connect’s native progress Cancel; Bluetooth and per-transfer
+  native cancellation remain outside the public sharing API.
+
+### Fixed
+
+- Address automatic-discovery requests consistently apply the validated false
+  default when the optional field is absent.
+- Unsupported URL drags no longer receive accepted file-hover feedback.
+- Provider contracts describe actual D-Bus deadlines, discovery timeouts, section
+  normalization and request schemas.
+
 ## [0.1.5] - 2026-10-31
 
 ### Changed

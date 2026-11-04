@@ -27,6 +27,9 @@ Item {
     property int operationSequence: 0
     property int selectionGeneration: 0
     property bool cancellationRequested: false
+    property bool chooserSubmits: false
+    property bool selectionCancelling: false
+    property bool chooserUsesNativeMenu: false
 
     onFileTransferMessageChanged: {
         if (root.fileBusy || root.fileTransferState === "transferring") {
@@ -48,7 +51,7 @@ Item {
         }
     }
 
-    function chooseFiles(id) {
+    function chooseFiles(id, options) {
         var device = controller.deviceById(id)
         if (operationBusy || fileTransferProcess.running || filePickerProcess.running || fileInspectProcess.running) return false
         if (selectionState === "draft" || selection.length) {
@@ -66,6 +69,15 @@ Item {
         selectionError = ""
         // The recipient belongs to this draft. Later navigation cannot change it.
         draftTarget = Object.freeze({peerId: String(device.id), peerName: String(device.name || device.id), provider: "kdeconnect"})
+        // Calls without typed options keep the previous portal/review contract.
+        var typed = options && typeof options.useDesktopFileChooser === "boolean"
+            && typeof options.reviewFilesBeforeSend === "boolean"
+        chooserSubmits = !!typed && !options.reviewFilesBeforeSend
+        chooserUsesNativeMenu = !!typed && !options.useDesktopFileChooser
+        filePickerProcess.command = typed && !options.useDesktopFileChooser
+            ? ["python3", controller.scriptPath("scripts/portal_files.py"), "recent"]
+            : ["bash", controller.getPickerScriptPath()]
+        filePickerProcess.payload = JSON.stringify({recipient: draftTarget.peerName.slice(0, 256)}) + "\n"
         filePickerProcess.targetGeneration = selectionGeneration
         filePickerProcess.running = true
         return true
@@ -103,6 +115,14 @@ Item {
         selectionBytes = total
         selectionState = "draft"
         selectionError = ""
+        if (chooserSubmits) {
+            var generation = selectionGeneration
+            chooserSubmits = false
+            // Cancel can invalidate this exact selection before submission starts.
+            Qt.callLater(function() {
+                if (generation === root.selectionGeneration && root.selectionState === "draft") root.submitSelection()
+            })
+        }
     }
 
     function selectionErrorText(code) {
@@ -110,19 +130,33 @@ Item {
         if (code === "portal-unavailable") return "The desktop file chooser is unavailable. Check the desktop portal and Python Gio support."
         if (code === "source-preparation-failed") return "Could not prepare a private copy. Check cache access and free space, then choose again."
         if (code === "source-changed") return "A selected file changed. Choose the files again."
+        if (code === "recent-files-empty") return "No supported recent files found. Use the desktop chooser in Plus settings → Quick actions."
+        if (code === "recent-files-timeout") return "The file menu timed out. If it is still visible, press Escape. Use the desktop chooser to try again."
+        if (code === "recent-files-unavailable") return "The Omarchy file menu is unavailable. Use the desktop chooser in Plus settings → Quick actions."
         return "Select readable local regular files. Folders and other locations are not supported."
     }
 
     function cancelDraft() {
+        var nativeMenuMayRemain = chooserUsesNativeMenu && selectionState === "choosing"
         selectionGeneration += 1
+        chooserSubmits = false
         if (filePickerProcess.running) filePickerProcess.signal(15)
         if (fileInspectProcess.running) fileInspectProcess.signal(15)
+        selectionCancelling = filePickerProcess.running || fileInspectProcess.running
+        if (selectionCancelling) selectionCancellationTimer.restart()
         selection = []
         selectionBytes = 0
         selectionState = "idle"
-        selectionError = ""
+        selectionError = nativeMenuMayRemain ? "Selection cancelled. If the Omarchy file menu is still visible, press Escape. A later choice from that cancelled menu will not send." : ""
         draftTarget = null
         return true
+    }
+
+    function finishSelectionCancellation() {
+        if (!filePickerProcess.running && !fileInspectProcess.running) {
+            selectionCancelling = false
+            selectionCancellationTimer.stop()
+        }
     }
 
     function submitSelection() {
@@ -246,10 +280,12 @@ Item {
     }
 
     function cancelOperation() {
-        if (!operationBusy) return false
+        if (!operationBusy || cancellationRequested) return false
         cancellationRequested = true
         if (fileTransferProcess.running) {
             fileTransferProcess.signal(15)
+            cancellationTimer.operationId = activeOperation.id
+            cancellationTimer.restart()
             fileTransferMessage = "Stopping submission. Any request already submitted can still be delivered."
         } else cancelRemaining()
         return true
@@ -301,6 +337,8 @@ Item {
             values.push(value)
         }
         selectionGeneration += 1
+        chooserSubmits = false
+        chooserUsesNativeMenu = false
         draftTarget = Object.freeze({peerId: String(device.id), peerName: String(device.name || device.id), provider: "kdeconnect"})
         selection = []
         selectionBytes = 0
@@ -316,6 +354,26 @@ Item {
         var value = String(path || "")
         if (value.charAt(0) === "/") value = "file://" + encodeURI(value).replace(/#/g, "%23").replace(/\?/g, "%3F")
         return stageDroppedFiles(id, [value])
+    }
+
+    Timer {
+        id: selectionCancellationTimer
+        interval: 2000
+        repeat: false
+        onTriggered: {
+            if (filePickerProcess.running) filePickerProcess.signal(9)
+            if (fileInspectProcess.running) fileInspectProcess.signal(9)
+            root.finishSelectionCancellation()
+        }
+    }
+
+    Timer {
+        id: cancellationTimer
+        property string operationId: ""
+        interval: 2000
+        repeat: false
+        onTriggered: if (root.operationBusy && root.activeOperation
+            && root.activeOperation.id === operationId && fileTransferProcess.running) fileTransferProcess.signal(9)
     }
 
     Timer {
@@ -345,15 +403,18 @@ Item {
         stdout: SplitParser {
             onRead: function(line) { root.applySubmissionLine(line, fileTransferProcess.targetOperationId) }
         }
-        onExited: function(code) { root.submissionExited(targetOperationId) }
+        onExited: function(code) { cancellationTimer.stop(); root.submissionExited(targetOperationId) }
     }
 
     Process {
         id: filePickerProcess
         property int targetGeneration: 0
+        property string payload: ""
         command: ["bash", controller.getPickerScriptPath()]
+        stdinEnabled: true
+        onStarted: { write(payload); payload = ""; stdinEnabled = false }
         stdout: StdioCollector { waitForEnd: true }
-        onExited: function(code) { root.applySelection(stdout.text, code, targetGeneration) }
+        onExited: function(code) { stdinEnabled = true; root.finishSelectionCancellation(); root.applySelection(stdout.text, code, targetGeneration) }
     }
 
     Process {
@@ -364,7 +425,7 @@ Item {
         stdinEnabled: true
         onStarted: { write(payload); payload = "" }
         stdout: StdioCollector { waitForEnd: true }
-        onExited: function(code) { root.applySelection(stdout.text, code, targetGeneration) }
+        onExited: function(code) { root.finishSelectionCancellation(); root.applySelection(stdout.text, code, targetGeneration) }
     }
 
     // One best-effort pass per plugin start removes share copies older than 24 hours.
@@ -376,6 +437,8 @@ Item {
     Component.onCompleted: snapshotSweepProcess.running = true
 
     Component.onDestruction: {
+        selectionCancellationTimer.stop()
+        cancellationTimer.stop()
         fileTransferDismissTimer.stop()
         fileTransferProcess.running = false
         filePickerProcess.running = false

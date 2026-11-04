@@ -245,6 +245,38 @@ class Files(unittest.TestCase):
                 if expected == 'selected':
                     self.assertEqual(result['files'][0]['path'], str(source))
 
+    def test_private_portal_cancel_while_openfile_pending_returns_promptly(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'owned file.txt'
+            source.write_bytes(b'not selected after cancellation')
+            for late_response in ('0', '1'):
+                with self.subTest(late_response=late_response):
+                    env = dict(os.environ, TEST_PORTAL_URIS=json.dumps([source.as_uri()]),
+                               TEST_PICKER=str(HELPER), TEST_PORTAL_RESPONSE='0',
+                               TEST_PORTAL_DELAYED_CANCEL='1',
+                               TEST_PORTAL_LATE_RESPONSE=late_response)
+                    started = time.monotonic()
+                    run = subprocess.run(['dbus-run-session', '--', sys.executable,
+                                          str(ROOT / 'tests/fake_file_portal.py')],
+                                         env=env, capture_output=True, text=True, timeout=4)
+                    self.assertEqual(run.returncode, 0, run.stderr)
+                    self.assertLess(time.monotonic() - started, 1.5)
+                    self.assertEqual(json.loads(run.stdout), {'state': 'cancelled', 'files': []})
+                    self.assertEqual(run.stderr, '')
+
+    def test_private_portal_cancel_before_registration_closes_returned_handle(self):
+        env = dict(os.environ, TEST_PORTAL_URIS='[]', TEST_PICKER=str(HELPER),
+                   TEST_PORTAL_RESPONSE='0', TEST_PORTAL_DELAYED_CANCEL='1',
+                   TEST_PORTAL_LATE_REGISTRATION='1', TEST_PORTAL_LATE_RESPONSE='0')
+        run = subprocess.run(['dbus-run-session', '--', sys.executable,
+                              str(ROOT / 'tests/fake_file_portal.py')],
+                             env=env, capture_output=True, text=True, timeout=4)
+        # The fake registers only after SIGTERM, uses a distinct returned path,
+        # and requires exactly one Close on that actual registered request.
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(json.loads(run.stdout), {'state': 'cancelled', 'files': []})
+        self.assertEqual(run.stderr, '')
+
     def test_real_model_and_controller_functions(self):
         run = subprocess.run(['node', str(ROOT / 'tests/transfer_model_test.js')], capture_output=True, text=True, timeout=10)
         self.assertEqual(run.returncode, 0, run.stderr)

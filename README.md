@@ -27,9 +27,14 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
 
 ## Features
 
-- **Files:** pick up to 100 files with the desktop file chooser, or drop them on
-  the Devices target, bar icon or Send window. Review the recipient, count and size, then Send.
-  Drops copy and never move originals.
+- **Files:** use the original searchable Omarchy recent-file menu. Selecting a
+  file sends it to the recipient shown when the menu opened. In **Plus settings
+  → Quick actions**, enable **Review files before Send** for an explicit review,
+  or **Use desktop file chooser** for any local file and batches of up to 100.
+  Drops on Devices, the bar icon or Send window always require review and use Copy.
+- **Cancel:** stop pending file work from any daily view or the Send window.
+  After native acceptance, use KDE Connect's LAN transfer progress Cancel.
+  Bluetooth cancellation is not exposed by the current native sharing API.
 - **Honest activity:** “Request accepted” means KDE accepted the transfer;
   delivery stays unknown. A batch keeps its reviewed recipient.
 - **Quick actions:** add, remove and reorder reviewed shortcuts, including media
@@ -66,7 +71,7 @@ commands. Keep it if its workflow suits you. Plus adds:
 | If you need… | Plus adds… |
 | --- | --- |
 | Your own bar and device look | Icon search, local images, aliases and preview. |
-| A normal file workflow | File chooser, multiselect, drops and explicit review. |
+| A choice of file workflows | Original file menu, desktop chooser, multiselect, drops and optional chooser review. |
 | Shortcuts that fit your tasks | Add, remove and reorder actions; Ring is optional. |
 | Control over popup navigation | Move the View row, choose direct shortcuts, and reorder or collapse daily sections. |
 | Every native feature in reach | Searchable installed modules, native On/Off readback and per-device configuration links. |
@@ -86,7 +91,10 @@ Missing optional providers stay unavailable; Plus never installs them.
 
 Appearance and address metadata stay in owner-only files. Typed text, Ping
 messages and the paths of files you send travel over stdin and D-Bus, never
-process arguments. Saved settings, such as a default Ping message, go through
+process arguments during native submission. The original-style file menu passes
+bounded candidate paths through Omarchy’s menu arguments; those can be visible
+to same-user process inspection. Use the desktop chooser to avoid that menu
+exposure. Saved settings, such as a default Ping message, go through
 Omarchy, which briefly passes them in process arguments. Do not save private
 text there. Files in shared locations are sent from a private snapshot. Activity
 keeps at most 50 summaries in memory, without paths. Media shows track text and

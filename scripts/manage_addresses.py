@@ -86,7 +86,8 @@ def changes_from(request):
             raise AddressError("request-invalid")
         if item.get("remove_from_kde") and item.get("approved") is not True:
             raise AddressError("approval-required")
-        result.append(dict(item, peer_id=peer, address=address, source=source))
+        result.append(dict(item, peer_id=peer, address=address, source=source,
+                           auto_discover=item.get("auto_discover", False)))
     return result
 
 
