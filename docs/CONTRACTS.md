@@ -82,8 +82,17 @@ generation can submit its result. Drops always use review regardless of settings
 
 `portal_files.py recent` accepts one JSON line `{recipient:string}` of at most
 2048 bytes. `recent_files.py` adapts the original parent menu's roots, extensions,
-depth and ordering. It scans at most 20,000 entries for two seconds, skips hidden
-items and symlinks, and bounds escaped options to 64 KiB. Files with controls or
+depth and ordering. It resolves each conventional starting folder to its existing
+canonical root, so a Downloads/Documents/Pictures/Videos/Desktop alias to moved
+storage remains usable. Duplicate canonical roots are scanned once; broken or
+looping aliases are skipped. Descendant symlinks and hidden items remain excluded.
+Offered paths use the resolved root, so changing its alias while the menu is open
+does not redirect a selection. Normal file inspection and private-source trust
+checks still apply. It scans at most 20,000 entries with a cooperative two-second
+work deadline. Cancellation and both budgets are checked before resolving each
+root and between scan operations. A blocking filesystem call cannot be preempted
+by these checks and can exceed the deadline. Escaped options are bounded to
+64 KiB. Files with controls or
 line separators use the desktop chooser instead. The menu uses a fixed executable and fixed option flags with bounded candidate
 path arguments and a sanitized recipient label. Paths can appear in process
 inspection, including inside the native wrapper. It has a 120-second deadline

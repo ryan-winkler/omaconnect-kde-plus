@@ -53,10 +53,21 @@ def _candidates(home, cancelled):
     deadline = time.monotonic() + SCAN_SECONDS
     remaining = MAX_SCAN_ENTRIES
     found = []
+    roots = set()
     for name in ROOT_NAMES:
-        root = home / name
-        if root.is_symlink():
+        if cancelled():
+            raise Cancelled()
+        if remaining <= 0 or time.monotonic() >= deadline:
+            break
+        # Conventional folders can be aliases after a storage move. Resolve
+        # only this starting root; entry.stat below still rejects nested links.
+        try:
+            root = (home / name).resolve(strict=True)
+        except (OSError, RuntimeError):
             continue
+        if root in roots:
+            continue
+        roots.add(root)
         pending = [(root, 0)]
         while pending and remaining > 0 and time.monotonic() < deadline:
             if cancelled():

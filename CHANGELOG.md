@@ -19,6 +19,8 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- The recent-file menu finds files when the conventional user folders link to
+  moved storage. Links inside those folders remain excluded.
 - Address automatic-discovery requests consistently apply the validated false
   default when the optional field is absent.
 - Unsupported URL drags no longer receive accepted file-hover feedback.
