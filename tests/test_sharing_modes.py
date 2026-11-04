@@ -151,7 +151,7 @@ import json,os,sys,time
 with open(os.environ['NATIVE_COMMAND_LOG'],'a') as out:
  out.write(json.dumps({'tool':'omarchy-menu-select','args':sys.argv[1:]})+'\\n')
 time.sleep(.15)
-print(sys.argv[2])
+print(sys.argv[2].split('\\t',1)[-1])
 ''')
             menu.chmod(0o700)
 

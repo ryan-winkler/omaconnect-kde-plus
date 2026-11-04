@@ -24,7 +24,12 @@ EXTENSIONS = frozenset(('jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'avif', 'sv
                         'pptx', 'odt', 'ods', 'csv', 'json', 'md', 'epub', 'zip',
                         'tar', 'gz', 'bz2', 'xz', '7z', 'zst', 'apk', 'iso'))
 MENU = 'omarchy-menu-select'
+SHELL = 'omarchy-shell'
 PROMPT = 'Select file to send'
+PREVIEW_LABEL = 'Image previews…'
+PREVIEW_EXTENSIONS = frozenset(('jpg', 'jpeg', 'png', 'webp', 'gif'))
+MAX_PREVIEW_FILES = 200
+PREVIEW_ROW_BUDGET = 48 * 1024
 OPTION_BUDGET = 64 * 1024
 MAX_SCAN_ENTRIES = 20000
 SCAN_SECONDS = 2
@@ -38,6 +43,37 @@ class RecentError(Exception):
 
 class Cancelled(Exception):
     pass
+
+
+def _file_row(path):
+    """Add a native display glyph without changing the path returned by the menu."""
+    extension = Path(path).suffix[1:].lower()
+    groups = ((('jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'avif', 'svg'), '\uf03e'),
+              (('mp4', 'mov', 'm4v', 'mkv', 'webm', 'avi'), '\uf008'),
+              (('mp3', 'flac', 'wav', 'm4a', 'ogg', 'opus'), '\uf001'),
+              (('zip', 'tar', 'gz', 'bz2', 'xz', '7z', 'zst', 'iso', 'apk'), '\uf1c6'),
+              (('pdf',), '\uf1c1'), (('docx', 'odt'), '\uf1c2'),
+              (('xlsx', 'ods', 'csv'), '\uf1c3'), (('pptx',), '\uf1c4'))
+    glyph = next((icon for extensions, icon in groups if extension in extensions), '\uf15c')
+    return glyph + '\t' + path
+
+
+def _preview_options(options):
+    """Bound native raster rows and keep the newest path for each duplicate basename."""
+    images, names, size = [], set(), 0
+    for path in options:
+        candidate = Path(path)
+        if candidate.suffix[1:].lower() not in PREVIEW_EXTENSIONS or candidate.name in names:
+            continue
+        cost = len(json.dumps(path + '\n', ensure_ascii=True).encode('ascii'))
+        if size + cost > PREVIEW_ROW_BUDGET:
+            continue
+        images.append(path)
+        names.add(candidate.name)
+        size += cost
+        if len(images) == MAX_PREVIEW_FILES:
+            break
+    return images
 
 
 def _plain_path(value):
@@ -97,9 +133,10 @@ def _candidates(home, cancelled):
                 continue
     # json.dumps with ASCII escaping conservatively bounds JSON::PP's UTF-8
     # options array and each argv copy in the native menu wrapper's payload.
-    options, size = [], 2
+    # Reserve the optional preview route as well as each rendered glyph/TAB row.
+    options, size = [], 3 + len(json.dumps('\uf03e\t' + PREVIEW_LABEL, ensure_ascii=True))
     for _, path in sorted(found, key=lambda item: (-item[0], item[1])):
-        cost = len(json.dumps(path, ensure_ascii=True).encode('ascii')) + bool(options)
+        cost = len(json.dumps(_file_row(path), ensure_ascii=True).encode('ascii')) + bool(options)
         if size + cost > OPTION_BUDGET:
             continue
         options.append(path)
@@ -126,6 +163,39 @@ def _stop_group(process):
     process.stdout.close()
 
 
+def _read_output(process, cancelled, deadline):
+    """Read one bounded native reply while observing cancellation and the phase deadline."""
+    output = bytearray()
+    with selectors.DefaultSelector() as selector:
+        selector.register(process.stdout, selectors.EVENT_READ)
+        while True:
+            if cancelled():
+                raise Cancelled()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise RecentError('recent-files-timeout')
+            if not selector.select(min(.05, remaining)):
+                continue
+            chunk = os.read(process.stdout.fileno(), min(8192, MAX_OUTPUT + 1 - len(output)))
+            if not chunk:
+                break
+            output.extend(chunk)
+            if len(output) > MAX_OUTPUT:
+                raise RecentError('source-path-rejected')
+    while process.poll() is None:
+        if cancelled():
+            raise Cancelled()
+        if time.monotonic() >= deadline:
+            raise RecentError('recent-files-timeout')
+        time.sleep(.01)
+    if cancelled():
+        raise Cancelled()
+    try:
+        return bytes(output).decode('utf-8').removesuffix('\n')
+    except UnicodeError:
+        raise RecentError('source-path-rejected') from None
+
+
 def _menu(options, cancelled, label):
     # Recipient text is display-only. It cannot add menu rows or command flags.
     """Return one offered path and remove private result files on every exit."""
@@ -134,12 +204,16 @@ def _menu(options, cancelled, label):
                                or c in '\u2028\u2029' else c
                                for c in label[:256]).split())[:80]
     prompt = PROMPT + (' to ' + label if label else '')
+    images = _preview_options(options)
+    rows = [_file_row(path) for path in options]
+    if images:
+        rows.insert(0, '\uf03e\t' + PREVIEW_LABEL)
     # The shell menu outlives its wrapper. Removing this private parent after
     # group cleanup prevents a stale native selection from recreating result
     # files, even when its visible menu still needs dismissal with Escape.
     with tempfile.TemporaryDirectory(prefix='omaconnect-menu-') as directory:
         try:
-            process = subprocess.Popen([MENU, prompt, *options, '--', '--width', '800',
+            process = subprocess.Popen([MENU, prompt, *rows, '--', '--width', '800',
                                         '--maxheight', '500'], stdin=subprocess.DEVNULL,
                                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                        start_new_session=True,
@@ -147,43 +221,71 @@ def _menu(options, cancelled, label):
         except OSError:
             raise RecentError('recent-files-unavailable') from None
         deadline = time.monotonic() + MENU_SECONDS
-        output = bytearray()
         try:
-            with selectors.DefaultSelector() as selector:
-                selector.register(process.stdout, selectors.EVENT_READ)
-                while True:
-                    if cancelled():
-                        raise Cancelled()
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0:
-                        raise RecentError('recent-files-timeout')
-                    if not selector.select(min(.05, remaining)):
-                        continue
-                    chunk = os.read(process.stdout.fileno(), min(8192, MAX_OUTPUT + 1 - len(output)))
-                    if not chunk:
-                        break
-                    output.extend(chunk)
-                    if len(output) > MAX_OUTPUT:
-                        raise RecentError('source-path-rejected')
-            while process.poll() is None:
-                if cancelled():
-                    raise Cancelled()
-                if time.monotonic() >= deadline:
-                    raise RecentError('recent-files-timeout')
-                time.sleep(.01)
-            if cancelled() or process.returncode == 1:
+            selected = _read_output(process, cancelled, deadline)
+            if process.returncode == 1:
                 raise Cancelled()
             if process.returncode:
                 raise RecentError('recent-files-unavailable')
-            try:
-                selected = bytes(output).decode('utf-8').removesuffix('\n')
-            except UnicodeError:
-                raise RecentError('source-path-rejected') from None
-            if selected not in options:
+            if selected not in options and not (images and selected == PREVIEW_LABEL):
                 raise RecentError('source-path-rejected')
-            return selected
         finally:
             _stop_group(process)
+    return _image_menu(images, cancelled) if selected == PREVIEW_LABEL else selected
+
+
+def _image_menu(images, cancelled):
+    """Choose from exact bounded raster paths through the existing native overlay."""
+    with tempfile.TemporaryDirectory(prefix='omaconnect-images-') as directory:
+        selection, done = Path(directory) / 'selection', Path(directory) / 'done'
+        payload = json.dumps({'imageRows': '\n'.join(images), 'selectionFile': str(selection),
+                              'doneFile': str(done), 'showLabels': True, 'filterable': True},
+                             ensure_ascii=True, separators=(',', ':'))
+        if not images or len(payload.encode('ascii')) > OPTION_BUDGET:
+            raise RecentError('recent-files-unavailable')
+        if cancelled():
+            raise Cancelled()
+        deadline = time.monotonic() + MENU_SECONDS
+        try:
+            process = subprocess.Popen([SHELL, 'shell', 'summon', 'omarchy.image-picker', payload],
+                                       stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                       stderr=subprocess.DEVNULL, start_new_session=True)
+        except OSError:
+            raise RecentError('recent-files-unavailable') from None
+        try:
+            reply = _read_output(process, cancelled, deadline)
+        finally:
+            # The IPC wrapper is short-lived; clean its group now, before
+            # waiting on the persistent shell's result, to avoid stale PGIDs.
+            _stop_group(process)
+        if process.returncode or reply != 'ok':
+            raise RecentError('recent-files-unavailable')
+        while not done.exists():
+            if cancelled():
+                raise Cancelled()
+            if time.monotonic() >= deadline:
+                raise RecentError('recent-files-timeout')
+            time.sleep(.05)
+        if cancelled():
+            raise Cancelled()
+        if time.monotonic() >= deadline:
+            raise RecentError('recent-files-timeout')
+        try:
+            with selection.open('rb') as stream:
+                raw = stream.read(MAX_OUTPUT + 1)
+        except FileNotFoundError:
+            raise Cancelled() from None
+        if not raw:
+            raise Cancelled()
+        if len(raw) > MAX_OUTPUT:
+            raise RecentError('source-path-rejected')
+        try:
+            selected = raw.decode('utf-8').removesuffix('\n')
+        except UnicodeError:
+            raise RecentError('source-path-rejected') from None
+        if selected not in images:
+            raise RecentError('source-path-rejected')
+        return selected
 
 
 def choose_recent(label=''):
