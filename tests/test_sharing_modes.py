@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def block(source, marker):
+    """Extract one production JavaScript block for execution in an isolated context."""
     start = source.index(marker)
     brace = source.index('{', start)
     depth, end = 1, brace + 1
@@ -26,6 +27,7 @@ def block(source, marker):
 @unittest.skipUnless(shutil.which('node'), 'Node runtime absent')
 class SharingPolicy(unittest.TestCase):
     def node(self, assertions):
+        """Run real policy and controller functions with observable process doubles."""
         source = (ROOT / 'controller/FileTransferController.qml').read_text()
         names = ('chooseFiles', 'applySelection', 'selectionErrorText', 'cancelDraft',
                  'submitSelection', 'submitNextFile', 'updateOperation', 'finishOperation',
@@ -70,6 +72,7 @@ const review={useDesktopFileChooser:true,reviewFilesBeforeSend:true};
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_panel_defaults_normalizes_malformed_options_and_forwards_target(self):
+        """Distinguish authorized defaults from malformed preferences before forwarding selection."""
         self.node(r'''
 for(const settings of [{}]){
  const p=panel(settings,{},null);assert.deepEqual(JSON.parse(JSON.stringify(p.fileChooserOptions)),immediate);
@@ -84,6 +87,7 @@ p.device=null;assert.equal(p.chooseFiles(),false);assert.equal(seen.length,1);
 ''')
 
     def test_immediate_freezes_target_and_policy_review_waits_for_explicit_send(self):
+        """Preserve captured recipient and policy while review waits for explicit Send."""
         self.node(r'''
 const f=fresh(),c=f.ctx,opts={...immediate};
 assert.equal(c.chooseFiles('A',opts),true);assert.equal(c.filePickerProcess.command[2],'recent');
@@ -104,6 +108,7 @@ assert.equal(h.calls.length,0);assert.equal(h.ctx.selectionState,'draft');
 ''')
 
     def test_stale_cancelled_drop_and_queued_results_never_start_provider(self):
+        """Keep stale, cancelled, dropped and stopped queued selections from implicit submission."""
         self.node(r'''
 const cancelled=fresh();cancelled.ctx.chooseFiles('A',immediate);
 const old=cancelled.ctx.selectionGeneration;cancelled.ctx.cancelDraft();
@@ -130,11 +135,13 @@ assert.deepEqual(active.ctx.fileTransferProcess.signals,[15]);assert.equal(activ
 
 class SharingNative(unittest.TestCase):
     def test_native_default_menu_immediate_review_and_global_cancel(self):
+        """Exercise actual chooser modes and accessible cancellation on a private native bus."""
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'sharing_modes_ui.qml'
         runner.force_offscreen = True
 
         def configure(fixture, plugin, home, fake_bin):
+            """Provide a temporary recent file and logged native menu double."""
             downloads = home / 'Downloads'
             downloads.mkdir()
             (downloads / 'example.txt').write_bytes(b'owned menu fixture')
@@ -149,6 +156,7 @@ print(sys.argv[2])
             menu.chmod(0o700)
 
         def checked(fixture, home, output, calls):
+            """Check exact synthetic menu, portal and recipient-specific submission receipts."""
             self.assertIn('SHARING_MODES_PASS', output)
             menu = [row for row in calls if row['tool'] == 'omarchy-menu-select']
             self.assertEqual(len(menu), 1, calls)
@@ -166,11 +174,13 @@ print(sys.argv[2])
         runner.test_actual_service_bar_panel_and_controls()
 
     def test_native_stubborn_picker_cancel_escalates_then_next_choice_works(self):
+        """Verify forced picker exit preserves cancellation feedback and permits a fresh choice."""
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'picker_cancel_ui.qml'
         runner.force_offscreen = True
 
         def configure(fixture, plugin, home, fake_bin):
+            """Create a picker that first ignores SIGTERM, then returns an inspected review."""
             (plugin/'scripts/pick_file.sh').write_text(
                 '#!/bin/bash\nexec python3 "$(dirname -- "$0")/stubborn_picker.py"\n')
             (plugin/'scripts/stubborn_picker.py').write_text('''import json,signal,time
@@ -189,6 +199,7 @@ else:
 ''')
 
         def checked(fixture, home, output, calls):
+            """Confirm picker recovery started no native transfer or portal request."""
             self.assertIn('PICKER_CANCEL_PASS', output)
             self.assertEqual((home/'picker-count').read_text(), '2')
             self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()), [])

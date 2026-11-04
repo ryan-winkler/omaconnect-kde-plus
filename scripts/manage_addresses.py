@@ -63,6 +63,7 @@ def peer_id(value):
 
 
 def changes_from(request):
+    """Validate approved address changes and normalize optional discovery flags."""
     if not isinstance(request, dict) or set(request) - {"changes"}:
         raise AddressError("request-invalid")
     changes = request.get("changes", [])

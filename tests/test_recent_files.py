@@ -15,6 +15,7 @@ SCRIPTS = Path(__file__).resolve().parents[1] / 'scripts'
 
 
 def module():
+    """Load a fresh helper module without starting a picker."""
     spec = importlib.util.spec_from_file_location('recent_files', SCRIPTS / 'recent_files.py')
     helper = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(helper)
@@ -23,6 +24,7 @@ def module():
 
 class RecentFiles(unittest.TestCase):
     def setUp(self):
+        """Isolate each case in owned roots with a replaceable menu executable."""
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.home = Path(self.temporary.name)
@@ -34,6 +36,7 @@ class RecentFiles(unittest.TestCase):
         self.helper.MENU = str(self.menu)
 
     def file(self, name='Downloads/file.txt', mtime=10):
+        """Create one synthetic candidate with a controlled modification time."""
         path = self.home / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(b'owned fixture')
@@ -41,10 +44,12 @@ class RecentFiles(unittest.TestCase):
         return path
 
     def fake(self, body):
+        """Install an owned menu double that can exercise subprocess behavior."""
         self.menu.write_text('#!' + sys.executable + '\n' + body + '\n')
         self.menu.chmod(0o700)
 
     def test_selected_metadata_recent_order_and_fixed_native_arguments(self):
+        """Verify recent ordering, recipient sanitization and inspected selection metadata."""
         old = self.file('Documents/old.pdf', 1)
         new = self.file('Downloads/new ☃ \'"\\.txt', 20)
         args = self.home / 'args.json'
@@ -61,6 +66,7 @@ class RecentFiles(unittest.TestCase):
                                 '--width', '800', '--maxheight', '500'])
 
     def test_cancel_missing_menu_and_empty_roots_are_fixed_results(self):
+        """Check empty roots, missing tools and menu exits expose only fixed results."""
         with patch.object(self.helper.subprocess, 'Popen') as popen:
             self.assertEqual(self.helper.choose_recent(),
                              {'state': 'failed', 'error': 'recent-files-empty'})
@@ -74,6 +80,7 @@ class RecentFiles(unittest.TestCase):
                          {'state': 'failed', 'error': 'recent-files-unavailable'})
 
     def test_rejects_unoffered_multiline_invalid_utf8_and_output_flood(self):
+        """Reject injected selections and malformed or excessive menu output."""
         offered = self.file()
         other = self.file('elsewhere/unoffered.txt')
         for raw in [str(other).encode(), (str(offered) + '\n' + str(other)).encode(),
@@ -85,6 +92,7 @@ class RecentFiles(unittest.TestCase):
                                  {'state': 'failed', 'error': 'source-path-rejected'})
 
     def test_filters_controls_hidden_symlinks_folders_and_depth(self):
+        """Exclude entries the native menu cannot safely offer as local regular files."""
         valid = self.file('Downloads/a/b/c/depth4.TXT')
         self.file('Downloads/a/b/c/d/depth5.txt')
         self.file('Downloads/.hidden.txt')
@@ -103,6 +111,7 @@ class RecentFiles(unittest.TestCase):
         self.assertEqual(self.helper._candidates(self.home, lambda: False), [str(valid)])
 
     def test_json_option_budget_accounts_for_escapes_and_unicode(self):
+        """Keep escaped and Unicode options within the native serialized argument budget."""
         for index in range(15):
             self.file(f'Downloads/{index:02}-☃-"\\.txt', index)
         self.helper.OPTION_BUDGET = 240
@@ -116,6 +125,7 @@ class RecentFiles(unittest.TestCase):
         self.assertEqual(self.helper._candidates(self.home, lambda: False), [])
 
     def test_scan_entry_and_time_limits_and_signal_restoration(self):
+        """Bound candidate enumeration and restore the caller signal handler on failure."""
         for index in range(5):
             self.file(f'Downloads/{index}.txt')
         self.helper.MAX_SCAN_ENTRIES = 2
@@ -127,10 +137,12 @@ class RecentFiles(unittest.TestCase):
         self.assertEqual(signal.getsignal(signal.SIGTERM), previous)
 
     def test_cancel_during_scan_never_launches_menu(self):
+        """Ensure scan cancellation starts no native menu process."""
         self.file()
         previous = signal.getsignal(signal.SIGTERM)
 
         def cancel(*unused):
+            """Deliver SIGTERM while the candidate scan owns the cancellation handler."""
             os.kill(os.getpid(), signal.SIGTERM)
             return []
 
@@ -141,6 +153,7 @@ class RecentFiles(unittest.TestCase):
         self.assertEqual(signal.getsignal(signal.SIGTERM), previous)
 
     def test_source_changed_to_symlink_after_selection_is_rejected(self):
+        """Reject a selected candidate replaced by a symlink before inspection."""
         chosen = self.file()
         target = self.file('elsewhere/target.txt')
         self.fake('from pathlib import Path\n'
@@ -150,6 +163,7 @@ class RecentFiles(unittest.TestCase):
                          {'state': 'failed', 'error': 'source-path-rejected'})
 
     def test_timeout_kills_descendants_after_wrapper_exits(self):
+        """Terminate a surviving menu descendant when its wrapper exits before timeout."""
         self.file()
         child_pid = self.home / 'child.pid'
         self.fake('import subprocess,sys\nfrom pathlib import Path\n'
@@ -171,6 +185,7 @@ class RecentFiles(unittest.TestCase):
             self.fail('menu descendant still running after timeout')
 
     def test_removed_private_tmpdir_blocks_stale_native_owner_result_writes(self):
+        """Prevent late native result writes after selection, cancellation and timeout cleanup."""
         chosen = self.file()
         inherited = self.home / 'caller-temp'
         inherited.mkdir()
@@ -205,6 +220,7 @@ class RecentFiles(unittest.TestCase):
                 self.assertEqual(list(inherited.iterdir()), [], 'candidate paths remained in caller temp files')
 
     def test_sigterm_cancels_and_reaps_menu(self):
+        """Verify external cancellation returns no selection and reaps the owned wrapper."""
         self.file()
         pid_file = self.home / 'menu.pid'
         self.fake('import os,time\nfrom pathlib import Path\n'

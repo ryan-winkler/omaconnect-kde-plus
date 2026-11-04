@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class DropFiles(unittest.TestCase):
     @unittest.skipUnless(shutil.which('node'), 'Node runtime absent')
     def test_actual_controller_stages_inspected_files_without_sending_or_retargeting(self):
+        """Check real controller review boundaries against inspected temporary files."""
         source = (ROOT / 'controller' / 'FileTransferController.qml').read_text()
         def extract(name):
             start = source.index('    function ' + name + '(')

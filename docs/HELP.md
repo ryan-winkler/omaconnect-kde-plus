@@ -256,8 +256,7 @@ For an accepted **LAN** transfer, select **Cancel** in KDE Connect's native tran
 progress window or job notification. The native job can contain other submissions
 to the same device. The public sharing API returns no transfer ID or cancel method,
 and the Bluetooth path has no evidenced equivalent. Plus cannot cancel a specific
-accepted transfer or recall a received file. Physical transfer/cancel acceptance
-is a separate check. See [native API limits](CONTRACTS.md#native-transfer-cancellation).
+accepted transfer or recall a received file. See [native API limits](CONTRACTS.md#native-transfer-cancellation).
 
 If the original Omarchy file menu remains visible after Cancel or timeout, press
 **Escape**. Its UI belongs to the shell, which exposes no per-request close API.

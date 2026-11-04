@@ -246,6 +246,7 @@ class Files(unittest.TestCase):
                     self.assertEqual(result['files'][0]['path'], str(source))
 
     def test_private_portal_cancel_while_openfile_pending_returns_promptly(self):
+        """Keep cancellation authoritative while OpenFile replies and optional late responses arrive."""
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / 'owned file.txt'
             source.write_bytes(b'not selected after cancellation')
@@ -265,6 +266,7 @@ class Files(unittest.TestCase):
                     self.assertEqual(run.stderr, '')
 
     def test_private_portal_cancel_before_registration_closes_returned_handle(self):
+        """Close the actual returned handle when cancellation precedes request registration."""
         env = dict(os.environ, TEST_PORTAL_URIS='[]', TEST_PICKER=str(HELPER),
                    TEST_PORTAL_RESPONSE='0', TEST_PORTAL_DELAYED_CANCEL='1',
                    TEST_PORTAL_LATE_REGISTRATION='1', TEST_PORTAL_LATE_RESPONSE='0')

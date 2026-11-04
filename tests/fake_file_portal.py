@@ -16,6 +16,7 @@ close_requests = []
 
 
 def method(connection, sender, path, interface, name, parameters, invocation):
+    """Serve an owned chooser request with optional cancellation and registration races."""
     parent, title, options = parameters.unpack()
     assert options['multiple'] is True
     assert options['directory'] is False
@@ -27,15 +28,18 @@ def method(connection, sender, path, interface, name, parameters, invocation):
         connection.emit_signal(sender, handle, 'org.freedesktop.portal.Request', 'Response', GLib.Variant('(ua{sv})', (int(os.environ['TEST_PORTAL_RESPONSE']), {'uris': GLib.Variant('as', json.loads(os.environ['TEST_PORTAL_URIS']))})))
         return GLib.SOURCE_REMOVE
     def register_close():
+        """Expose the request handle at the configured registration checkpoint."""
         close_info = Gio.DBusNodeInfo.new_for_xml('<node><interface name="org.freedesktop.portal.Request"><method name="Close"/></interface></node>').interfaces[0]
 
         def close(connection, sender, path, interface, name, parameters, invocation):
+            """Record each Close on the actual registered request handle."""
             close_requests.append(path)
             invocation.return_value(None)
 
         bus.register_object(handle, close_info, close, None, None)
 
     def reply():
+        """Register when required, then return the handle and optional late response."""
         if late_registration:
             register_close()
         invocation.return_value(GLib.Variant('(o)', (handle,)))

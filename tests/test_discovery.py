@@ -68,6 +68,7 @@ class AddressBoundary(unittest.TestCase):
         self.assertEqual((self.directory / "addresses.json").stat().st_mode & 0o777, 0o600)
 
     def test_auto_without_boolean_defaults_false_and_preserves_record(self):
+        """Verify an omitted discovery flag updates metadata without rewriting native addresses."""
         change = self.add()
         change["auto_discover"] = True
         self.run_request([change])

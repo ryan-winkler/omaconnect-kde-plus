@@ -42,12 +42,14 @@ class Cancelled(Exception):
 
 def _plain_path(value):
     # Native menu rows cannot represent separators or bidi/control text safely.
+    """Check whether a bounded path can form one unambiguous native menu row."""
     return (len(os.fsencode(value)) <= 4096 and
             not any(unicodedata.category(c).startswith('C') or c in '\u2028\u2029'
                     for c in value))
 
 
 def _candidates(home, cancelled):
+    """Collect recent supported files within scan, depth and serialized option limits."""
     deadline = time.monotonic() + SCAN_SECONDS
     remaining = MAX_SCAN_ENTRIES
     found = []
@@ -96,6 +98,7 @@ def _candidates(home, cancelled):
 
 def _stop_group(process):
     # Always target the group, even if its wrapper exited with a child alive.
+    """Terminate wrapper descendants and reap the wrapper before removing its files."""
     try:
         os.killpg(process.pid, signal.SIGTERM)
     except ProcessLookupError:
@@ -114,6 +117,7 @@ def _stop_group(process):
 
 def _menu(options, cancelled, label):
     # Recipient text is display-only. It cannot add menu rows or command flags.
+    """Return one offered path and remove private result files on every exit."""
     label = label if isinstance(label, str) else ''
     label = ' '.join(''.join(' ' if unicodedata.category(c).startswith('C')
                                or c in '\u2028\u2029' else c
@@ -176,6 +180,7 @@ def choose_recent(label=''):
     cancelled = False
 
     def stop(*unused):
+        """Record cancellation for the scan and menu to observe safely."""
         nonlocal cancelled
         cancelled = True
 

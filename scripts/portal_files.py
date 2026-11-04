@@ -84,6 +84,7 @@ def validate_file(expected):
 
 
 def choose():
+    """Return one portal result and close a cancelled request after registration."""
     from gi.repository import Gio, GLib
     bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
     token = 'omaconnect_' + uuid.uuid4().hex
@@ -94,6 +95,7 @@ def choose():
     timeout_id = startup_id = 0
 
     def response(connection, sender, path, interface, member, parameters):
+        """Accept the first matching response without replacing a cancellation."""
         nonlocal resolved
         if resolved or path != request_path:
             return
@@ -114,6 +116,7 @@ def choose():
     subscription = bus.signal_subscribe('org.freedesktop.portal.Desktop', 'org.freedesktop.portal.Request', 'Response', None, None, Gio.DBusSignalFlags.NONE, response)
 
     def close_registered_request():
+        """Close the returned portal handle at most once after registration."""
         nonlocal close_attempted
         if not request_opened or close_attempted:
             return
@@ -126,6 +129,7 @@ def choose():
             pass
 
     def close_request(*unused):
+        """Latch cancellation before closing an existing or pending portal request."""
         nonlocal resolved
         if resolved:
             return GLib.SOURCE_REMOVE
@@ -138,11 +142,13 @@ def choose():
         return GLib.SOURCE_REMOVE
 
     def expire_request():
+        """Cancel an unanswered request when its selection deadline expires."""
         nonlocal timeout_id
         timeout_id = 0
         return close_request()
 
     def check_startup():
+        """Stop the loop if cancellation occurred immediately before loop startup."""
         nonlocal startup_id
         startup_id = 0
         # Covers a signal between the resolved check and MainLoop.run().
@@ -229,6 +235,7 @@ def submit(payload):
 
 
 def main():
+    """Dispatch bounded chooser, inspection and submission requests with fixed errors."""
     mode = sys.argv[1] if len(sys.argv) == 2 else ''
     try:
         if mode == 'recent':
