@@ -111,8 +111,9 @@ When displayed candidates include JPEG, PNG, WebP or GIF files, **Image previews
 opens the existing `omarchy.image-picker` overlay through fixed
 `omarchy-shell shell summon` argv. Its `imageRows` contains only exact displayed
 raster paths, newline-separated, at most 200 rows and 48 KiB after ASCII JSON
-escaping. The complete JSON request is at most 64 KiB, with `showLabels` and
-`filterable` true. Native duplicate-basename handling keeps the first path, so
+escaping. The complete JSON request is one command argument of at most 64 KiB,
+so its paths can appear in process inspection by programs run as the same user.
+It sets `showLabels` and `filterable` true. Native duplicate-basename handling keeps the first path, so
 Plus supplies the newest offered path per basename. SVG, video and optional
 image codecs remain in the ordinary file list. No new renderer, directory scan,
 thumbnail generator, cache or setting is added. Native Qt owns preview decoding.
