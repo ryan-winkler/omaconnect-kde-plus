@@ -319,8 +319,11 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
    for that popup session and does not change its saved visibility.
 3. The recent-file menu offers one supported file from Downloads, Documents,
    Pictures, Videos or Desktop, within four levels, most recently changed first.
-   It skips hidden items and links. Search is bounded to 20,000 entries and two
-   seconds; a large tree can omit files. The menu options have a 64 KiB budget.
+   These five starting folders can link to moved storage. The menu uses their
+   resolved locations and skips links and hidden items inside them. Search stops
+   between filesystem operations after 20,000 entries or two seconds. Blocked
+   storage can take longer; a large tree can omit files. The menu options have a
+   64 KiB budget.
    Use the desktop chooser for other files, names with controls, or larger trees.
    The desktop chooser and drops support up to 100 local regular files, 1 TiB combined.
    Directories and remote URLs are not accepted. Drops use Copy and preserve originals.

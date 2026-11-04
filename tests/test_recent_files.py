@@ -101,13 +101,55 @@ class RecentFiles(unittest.TestCase):
             self.file('Pictures/control' + char + '.png')
         target = self.file('outside/unlisted.txt')
         (self.home / 'Downloads' / 'linked.txt').symlink_to(target)
-        (self.home / 'Videos').symlink_to(self.home / 'outside', target_is_directory=True)
         (self.home / 'Downloads' / 'linked-directory').symlink_to(
             self.home / 'outside', target_is_directory=True)
         (self.home / 'Downloads' / 'directory.txt').mkdir()
         fifo = self.home / 'Downloads' / 'fifo.txt'
         os.mkfifo(fifo)
         self.file('Desktop/unsupported.exe')
+        self.assertEqual(self.helper._candidates(self.home, lambda: False), [str(valid)])
+
+    def test_conventional_root_aliases_use_canonical_paths_and_skip_nested_links(self):
+        """Follow moved conventional roots once, with unchanged depth and link filters."""
+        target = self.file('storage/files/a/b/c/depth4.txt', 20)
+        self.file('storage/files/a/b/c/d/depth5.txt')
+        self.file('storage/files/.private/hidden.txt')
+        outside = self.file('outside/unlisted.txt')
+        root = self.home / 'storage/files'
+        (root / 'linked.txt').symlink_to(outside)
+        (root / 'linked-directory').symlink_to(outside.parent, target_is_directory=True)
+        for name in self.helper.ROOT_NAMES:
+            (self.home / name).symlink_to(root, target_is_directory=True)
+        self.assertEqual(self.helper._candidates(self.home, lambda: False), [str(target)])
+        self.fake('import sys\nprint(sys.argv[2])')
+        result = self.helper.choose_recent()
+        self.assertEqual(result['state'], 'selected')
+        self.assertEqual(result['files'][0]['path'], str(target))
+        from private_sources import prepared_source
+        with prepared_source(result['files'][0]) as prepared:
+            self.assertEqual(prepared.path, str(target))
+            self.assertFalse(prepared.snapshot_used)
+
+    def test_root_alias_retarget_after_offer_does_not_redirect_selection(self):
+        """Keep the offered canonical file when a root alias changes during selection."""
+        chosen = self.file('storage/original/file.txt')
+        other = self.file('storage/other/file.txt')
+        alias = self.home / 'Downloads'
+        alias.symlink_to(chosen.parent, target_is_directory=True)
+        self.fake('from pathlib import Path\nimport sys\n'
+                  f'p=Path({str(alias)!r})\np.unlink()\np.symlink_to({str(other.parent)!r})\n'
+                  'print(sys.argv[2])')
+        result = self.helper.choose_recent()
+        self.assertEqual(result['state'], 'selected')
+        self.assertEqual(result['files'][0]['path'], str(chosen))
+        self.assertEqual(alias.resolve(), other.parent)
+
+    def test_missing_broken_loop_and_regular_file_roots_are_skipped(self):
+        """Skip unavailable conventional roots without following arbitrary descendants."""
+        (self.home / 'Downloads').symlink_to(self.home / 'missing', target_is_directory=True)
+        (self.home / 'Documents').symlink_to('Documents', target_is_directory=True)
+        (self.home / 'Pictures').write_bytes(b'not a directory')
+        valid = self.file('Desktop/valid.txt')
         self.assertEqual(self.helper._candidates(self.home, lambda: False), [str(valid)])
 
     def test_json_option_budget_accounts_for_escapes_and_unicode(self):
@@ -135,6 +177,31 @@ class RecentFiles(unittest.TestCase):
         previous = signal.getsignal(signal.SIGTERM)
         self.assertEqual(self.helper.choose_recent()['error'], 'recent-files-empty')
         self.assertEqual(signal.getsignal(signal.SIGTERM), previous)
+
+    def test_cancel_and_exhausted_budget_never_resolve_another_root(self):
+        """Avoid new filesystem work after cancellation or an exhausted scan budget."""
+        self.file('Downloads/first.txt')
+        self.file('Documents/later.txt')
+        with patch.object(Path, 'resolve', side_effect=AssertionError('unexpected filesystem work')):
+            with self.assertRaises(self.helper.Cancelled):
+                self.helper._candidates(self.home, lambda: True)
+            with patch.object(self.helper, 'MAX_SCAN_ENTRIES', 0):
+                self.assertEqual(self.helper._candidates(self.home, lambda: False), [])
+            with patch.object(self.helper, 'SCAN_SECONDS', 0):
+                self.assertEqual(self.helper._candidates(self.home, lambda: False), [])
+        resolve = Path.resolve
+        resolved = []
+
+        def record_root(path, **kwargs):
+            """Observe root access without replacing the real filesystem resolution."""
+            resolved.append(path)
+            return resolve(path, **kwargs)
+
+        with patch.object(Path, 'resolve', autospec=True, side_effect=record_root), \
+                patch.object(self.helper, 'MAX_SCAN_ENTRIES', 1):
+            self.assertEqual(self.helper._candidates(self.home, lambda: False),
+                             [str(self.home / 'Downloads/first.txt')])
+        self.assertEqual(resolved, [self.home / 'Downloads'])
 
     def test_cancel_during_scan_never_launches_menu(self):
         """Ensure scan cancellation starts no native menu process."""
