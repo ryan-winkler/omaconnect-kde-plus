@@ -92,7 +92,9 @@ checks still apply. It scans at most 20,000 entries with a cooperative two-secon
 work deadline. Cancellation and both budgets are checked before resolving each
 root and between scan operations. A blocking filesystem call cannot be preempted
 by these checks and can exceed the deadline. Escaped options are bounded to
-64 KiB. Files with controls or
+64 KiB, including each file-type glyph/TAB prefix and the optional preview row.
+The native menu displays the glyph and returns only the original canonical path.
+Files with controls or
 line separators use the desktop chooser instead. The menu uses a fixed executable and fixed option flags with bounded candidate
 path arguments and a sanitized recipient label. Paths can appear in process
 inspection, including inside the native wrapper. It has a 120-second deadline
@@ -104,6 +106,25 @@ so Cancel guidance tells the user to press Escape. Cancelled generations cannot
 submit a later selection. Wrapper result files use an owned private temporary
 directory which is removed after exit, so a stale native menu cannot recreate
 its deleted result paths. No unscoped global hide is used. The menu does not submit; it returns inspected metadata.
+
+When displayed candidates include JPEG, PNG, WebP or GIF files, **Image previews…**
+opens the existing `omarchy.image-picker` overlay through fixed
+`omarchy-shell shell summon` argv. Its `imageRows` contains only exact displayed
+raster paths, newline-separated, at most 200 rows and 48 KiB after ASCII JSON
+escaping. The complete JSON request is at most 64 KiB, with `showLabels` and
+`filterable` true. Native duplicate-basename handling keeps the first path, so
+Plus supplies the newest offered path per basename. SVG, video and optional
+image codecs remain in the ordinary file list. No new renderer, directory scan,
+thumbnail generator, cache or setting is added. Native Qt owns preview decoding.
+
+The preview phase has its own 120-second deadline and a 4097-byte result limit.
+Only native `ok` confirms the summon; `unknown` or command failure reports picker
+unavailable. Selection/done files live in a private 0700 temporary parent, removed
+on every exit. Cancellation never hides the global overlay; it may need Escape,
+but a late result cannot recreate the removed parent or submit. Only an exact
+offered raster path is inspected through `inspect_uris` before the existing
+captured-recipient immediate/review policy runs. Merely browsing previews cannot
+submit. File metadata and private-source checks remain unchanged.
 
 `scripts/pick_file.sh` runs `portal_files.py choose`. A normal FileChooser portal
 response is inspected before a draft reaches QML. Only local file URIs, readable

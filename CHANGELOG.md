@@ -8,6 +8,9 @@ All notable changes are listed here. The format follows
 
 ### Added
 
+- File-type icons in the recent-file menu and an Image previews entry for the
+  native Omarchy image selector. Explicit image confirmation follows the saved
+  immediate-send or review preference; other files stay in the searchable list.
 - Original-style searchable recent-file menu, with the desktop chooser retained
   as an option in Quick actions settings. Explicit chooser selection sends by
   default; Review files before Send restores the separate review step. Drops

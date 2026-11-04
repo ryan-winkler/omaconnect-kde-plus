@@ -131,8 +131,8 @@ Item {
         if (code === "source-preparation-failed") return "Could not prepare a private copy. Check cache access and free space, then choose again."
         if (code === "source-changed") return "A selected file changed. Choose the files again."
         if (code === "recent-files-empty") return "No supported recent files found. Use the desktop chooser in Plus settings → Quick actions."
-        if (code === "recent-files-timeout") return "The file menu timed out. If it is still visible, press Escape. Use the desktop chooser to try again."
-        if (code === "recent-files-unavailable") return "The Omarchy file menu is unavailable. Use the desktop chooser in Plus settings → Quick actions."
+        if (code === "recent-files-timeout") return "The file menu or image previews timed out. If still visible, press Escape. Use the desktop chooser to try again."
+        if (code === "recent-files-unavailable") return "The Omarchy file picker is unavailable. Use the desktop chooser in Plus settings → Quick actions."
         return "Select readable local regular files. Folders and other locations are not supported."
     }
 
@@ -147,7 +147,7 @@ Item {
         selection = []
         selectionBytes = 0
         selectionState = "idle"
-        selectionError = nativeMenuMayRemain ? "Selection cancelled. If the Omarchy file menu is still visible, press Escape. A later choice from that cancelled menu will not send." : ""
+        selectionError = nativeMenuMayRemain ? "Selection cancelled. If the file menu or image previews are still visible, press Escape. A later choice from that cancelled picker will not send." : ""
         draftTarget = null
         return true
     }

@@ -334,7 +334,7 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
-                                {key: "useDesktopFileChooser", label: "Use desktop file chooser", defaultValue: false, description: "Off uses the original Omarchy searchable recent-file menu. On opens the desktop chooser for any local file and multiple selections."},
+                                {key: "useDesktopFileChooser", label: "Use desktop file chooser", defaultValue: false, description: "Off uses the Omarchy recent-file menu with file icons and Image previews. On opens the desktop chooser for any local file and multiple selections."},
                                 {key: "reviewFilesBeforeSend", label: "Review files before Send", defaultValue: false, description: "Off sends files when you select them in the chooser. On shows a recipient and file review with a Send button. Drops always need review. Cancel pending work in Send. After acceptance, use KDE Connect's LAN progress Cancel; Bluetooth cancellation is unavailable here."},
                                 {key: "defaultPingMessage", label: "Default ping message", defaultValue: "", type: "string", description: "Fills in a new Ping message. You can edit it before you send."}
                             ]

@@ -324,6 +324,15 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
    between filesystem operations after 20,000 entries or two seconds. Blocked
    storage can take longer; a large tree can omit files. The menu options have a
    64 KiB budget.
+   File-type icons identify images, videos, audio, documents and archives.
+   **Image previews…** opens Omarchy’s native image selector for offered JPEG,
+   PNG, WebP and GIF files. Browse or filter by name, then press Enter or select
+   the highlighted image to confirm. Confirmation sends immediately by default,
+   or opens your review when **Review files before Send** is enabled. Browsing
+   alone does not send. Previews show up to 200 images within a 48 KiB row budget;
+   duplicate filenames show their most recently changed path. Other formats and
+   duplicate paths remain selectable from the normal file list. If previews are
+   unavailable, use that list or the desktop chooser.
    Use the desktop chooser for other files, names with controls, or larger trees.
    The desktop chooser and drops support up to 100 local regular files, 1 TiB combined.
    Directories and remote URLs are not accepted. Drops use Copy and preserve originals.
@@ -348,10 +357,11 @@ to the same device. The public sharing API returns no transfer ID or cancel meth
 and the Bluetooth path has no evidenced equivalent. Plus cannot cancel a specific
 accepted transfer or recall a received file. See [native API limits](CONTRACTS.md#native-transfer-cancellation).
 
-If the original Omarchy file menu remains visible after Cancel or timeout, press
-**Escape**. Its UI belongs to the shell, which exposes no per-request close API.
-A late choice from that cancelled menu cannot send a file. Use the desktop
-chooser when you need a picker whose Close request Plus can control.
+If the file menu or image previews remain visible after Cancel or timeout, press
+**Escape**. These native views belong to the shell. Plus cannot close only its
+request without risking another caller's picker. A late choice from a cancelled
+picker cannot send a file. Use the desktop chooser when you need a picker whose
+Close request Plus can control.
 
 Closing the Send window preserves a draft. It does not cancel pending work.
 Activity keeps at most 50 summaries for this session and excludes raw paths.
