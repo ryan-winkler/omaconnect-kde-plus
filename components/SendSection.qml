@@ -50,7 +50,7 @@ Column {
         textFormat: Text.PlainText
         visible: !!root.target
         width: parent.width
-        text: root.service && root.service.selectionState === "choosing" ? "Choose files in the desktop file chooser."
+        text: root.service && root.service.selectionState === "choosing" ? "Choose files in the file picker. Cancel below stops this selection."
             : root.files.length + " file(s) · " + TransferModel.formatBytes(root.service ? root.service.selectionBytes : 0) + "\nReview the recipient and files, then select Send."
 
         wrapMode: Text.Wrap
@@ -119,7 +119,7 @@ Column {
             Accessible.name: text
             Accessible.onPressAction: clicked()
             text: "Send files"
-            implicitHeight: Math.max(32, Style.space(32))
+            implicitHeight: Math.max(44, Style.space(44))
             enabled: root.service && root.service.selectionState === "draft" && root.files.length > 0 && !root.service.operationBusy
             foreground: root.foreground
             fontFamily: root.fontFamily
@@ -131,8 +131,10 @@ Column {
             Accessible.role: Accessible.Button
             Accessible.name: text
             Accessible.onPressAction: clicked()
-            text: "Cancel selection"
-            implicitHeight: Math.max(32, Style.space(32))
+            objectName: "cancel-file-selection"
+            text: "Cancel"
+            Accessible.description: "Cancel this file selection before submission."
+            implicitHeight: Math.max(44, Style.space(44))
             foreground: root.foreground
             fontFamily: root.fontFamily
             fontSize: Style.font.bodySmall
@@ -191,8 +193,11 @@ Column {
             Accessible.name: text
             Accessible.onPressAction: clicked()
             visible: root.service && root.service.operationBusy
-            text: "Stop submitting"
-            implicitHeight: Math.max(32, Style.space(32))
+            objectName: "cancel-file-submission"
+            text: root.service && root.service.cancellationRequested === true ? "Cancelling…" : "Cancel"
+            enabled: !!root.service && root.service.cancellationRequested !== true
+            Accessible.description: "Stop pending submissions. For an accepted LAN transfer, use KDE Connect's progress Cancel. Bluetooth cancellation is not available here."
+            implicitHeight: Math.max(44, Style.space(44))
             foreground: root.foreground
             fontFamily: root.fontFamily
             fontSize: Style.font.bodySmall
@@ -223,5 +228,15 @@ Column {
             fontSize: Style.font.bodySmall
             onClicked: root.service.clearOperations()
         }
+    }
+    Text {
+        width: parent.width
+        visible: root.activity.length > 0
+        text: "Cancel stops pending submissions. For an accepted LAN transfer, use Cancel in KDE Connect's transfer progress. Bluetooth cancellation is not available here. Cancellation cannot recall a received file."
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.bodySmall
     }
 }

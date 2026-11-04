@@ -1,6 +1,9 @@
 # Provider and storage contracts
 
-All new helpers use fixed argv plus bounded JSON stdin/stdout. Raw provider stderr
+Provider helpers use fixed argv plus bounded JSON stdin/stdout. The original-style
+native file menu passes bounded local candidate paths through the platform menu
+arguments; they can be visible to same-user process inspection. File submission
+paths use D-Bus instead of argv. Raw provider stderr
 is not shown in the UI. These are local process contracts; the fork adds no HTTP
 server, arbitrary REST proxy, protocol daemon or cross-plugin service API.
 
@@ -55,13 +58,59 @@ icons. Other types, other modes and a conflicting colour-render value are
 rejected. Legacy theme entries without the flag retain automatic rendering;
 reading does not rewrite their stored metadata.
 
+An icon object accepts only `mode`, `value`, `render`, `font` and `tint`.
+`mode` is required. `render` defaults to `symbolic`. Automatic/inherit omit
+`value`; inherit is device-only. Other modes require a trimmed nonempty value
+of at most 128 characters. Presets use the IDs in `Appearance.js`; theme names
+match `[A-Za-z0-9][A-Za-z0-9_.-]{0,127}`; glyphs have at most eight characters;
+images use the imported hash filename validated by `appearance.py:ASSET`.
+An optional glyph font is trimmed and bounded to 128 characters. `font` on other
+modes is ignored. Alias input is trimmed before its 80-character limit. Text
+control validation uses `appearance.py:BAD_TEXT`. Appearance records reject
+unknown top-level and device-record fields. Optional retained `addresses` are
+local metadata, at most 64 entries, and do not change native registration.
+
 ## File chooser and submission
+
+The UI's boolean settings are `useDesktopFileChooser=false` and
+`reviewFilesBeforeSend=false`. Explicit chooser selection therefore sends by
+default. Present non-boolean settings fall back to desktop review. UI callers
+pass `{useDesktopFileChooser, reviewFilesBeforeSend}` through the existing
+Service/controller API; omitted or mistyped options retain desktop review for
+compatibility. Options and recipient are captured at chooser launch. Only that
+generation can submit its result. Drops always use review regardless of settings.
+
+`portal_files.py recent` accepts one JSON line `{recipient:string}` of at most
+2048 bytes. `recent_files.py` adapts the original parent menu's roots, extensions,
+depth and ordering. It scans at most 20,000 entries for two seconds, skips hidden
+items and symlinks, and bounds escaped options to 64 KiB. Files with controls or
+line separators use the desktop chooser instead. The menu uses a fixed executable and fixed option flags with bounded candidate
+path arguments and a sanitized recipient label. Paths can appear in process
+inspection, including inside the native wrapper. It has a 120-second deadline
+and at most 4097 output bytes.
+Only an exact offered path is accepted. Cancellation/timeout terminates and reaps
+the wrapper process group. The native menu is owned by the persistent shell;
+there is no scoped request-close API. It can remain visible after wrapper exit,
+so Cancel guidance tells the user to press Escape. Cancelled generations cannot
+submit a later selection. Wrapper result files use an owned private temporary
+directory which is removed after exit, so a stale native menu cannot recreate
+its deleted result paths. No unscoped global hide is used. The menu does not submit; it returns inspected metadata.
 
 `scripts/pick_file.sh` runs `portal_files.py choose`. A normal FileChooser portal
 response is inspected before a draft reaches QML. Only local file URIs, readable
 regular files and at most 100 files/1 TiB are allowed. Final symlinks, folders,
 FIFO/devices and changed source identity are rejected. Parent-path links are
 resolved by the normal filesystem; they are not treated as trust credentials.
+
+Picker and inspector replies are `{state:"selected", files:[...]}`, or
+`{state:"cancelled",files:[]}`, or `{state:"failed",error:<fixed code>}`.
+Each inspected file contains `path` (absolute string), `name` (basename string),
+`size` (nonnegative number), and decimal strings `device`, `inode`, `mtimeNs`,
+`ctimeNs`. Submit accepts `{peerId:string,file:<inspected object>}`. It rechecks
+the size and all four identity fields; `name` is display metadata. Extra inspected
+object fields are ignored. Inspection uses at most 512 KiB input; QML also bounds
+the selection to 100 files/1 TiB. Errors are fixed values from
+`portal_files.py:main` and `recent_files.py`; raw diagnostics are never reflected.
 
 `portal_files.py submit` reads `peerId` and one inspected `file` through stdin.
 The helper rechecks file identity and holds an `O_NOFOLLOW` descriptor. It uses a
@@ -80,8 +129,11 @@ They become eligible after 24 hours. `portal_files.py sweep` tries to remove eli
 copies once when the plugin starts, and later preparation retries, when the cache
 is safe and available. The sweep never creates the cache. KDE opens the file later
 and reports no completion for the request, so Plus cannot delete a copy sooner. Protected-file preparation treats cache
-housekeeping as best effort; shared-file snapshots still require a safe cache. Cleanup accepts only the exact owned flat snapshot
-shape; it preserves unrelated or unexpected state. A process deadline is 15 seconds. The queue invokes one helper per file in order.
+housekeeping as best effort except cancellation and the shared preparation deadline;
+shared-file snapshots still require a safe cache. Cleanup accepts only the exact owned flat snapshot
+shape; it preserves unrelated or unexpected state. The D-Bus call deadline is
+15 seconds, after preparation; it is not an end-to-end process deadline. The
+queue invokes one helper per file in order.
 There is no automatic retry after an ambiguous timeout.
 
 | State | Evidence |
@@ -103,6 +155,28 @@ through the retained private snapshot. Protected private sources keep the native
 pathname flow. Same-UID code and root remain trusted. No native atomic descriptor
 handoff is claimed. A running helper without a final cancellation acknowledgement
 leaves cancellation unconfirmed, even if the progress event was not observed.
+
+### Native transfer cancellation
+
+`cancelOperation()` stops queued files and sends SIGTERM to the active submission
+helper. Picker/inspector cancellation also retains `selectionCancelling` until
+exit. After two seconds without exit, the owning controller timer sends SIGKILL. A final
+pre-invocation acknowledgement is required for confirmed cancellation; other
+interrupted outcomes remain unconfirmed. A persistent daily navigation button
+stays reachable while choosing or submitting, independent of view and collapse.
+It disables repeats and shows Cancelling while stopping. The Send window shares
+the same actions. Status remains in Activity; native-cancellation guidance remains in the Send
+activity block after submission finishes.
+
+The native [`shareUrls` API](https://github.com/KDE/kdeconnect-kde/blob/v26.08.2/plugins/share/shareplugin.h)
+returns void and exposes no job ID or cancellation method. Native LAN uploads use
+a killable [`CompositeUploadJob`](https://github.com/KDE/kdeconnect-kde/blob/v26.08.2/core/backends/lan/compositeuploadjob.cpp).
+Users can select Cancel in native progress UI when available. A composite can
+include multiple submissions to the same device; Plus must not guess its identity
+from filenames or timing. The native
+[Bluetooth upload object](https://github.com/KDE/kdeconnect-kde/blob/v26.08.2/core/backends/bluetooth/bluetoothuploadjob.h)
+exposes no equivalent stop method. Direct cancellation of a specific accepted
+transfer remains unavailable in Plus. Stopping the helper cannot recall files.
 
 ## Private text and ping submission
 
@@ -147,6 +221,20 @@ merges, writes and reads back. It permits two retries under one five-second
 deadline. KDE exposes no compare-and-swap operation: an unrelated simultaneous
 writer remains a limit. Existing external/manual baselines are preserved. Forget
 removes metadata only; KDE removal has a separate explicit review step.
+
+Request changes accept `op` values `add`, `remove` or `auto`, plus required
+`peer_id` and `address`. `source` defaults to `manual`. `add` and `auto` require
+`approved:true`; `auto_discover` defaults to false and must be a boolean.
+`remove_from_kde` defaults to false; true also requires approval. Remove without
+that flag removes local metadata only. Unknown change fields are ignored;
+unknown top-level request fields are rejected. An auto change needs an existing
+record. Metadata rows contain exactly `peer_id`, `address`, `source`,
+`auto_discover` and `manual_baseline`. Success replies contain
+`{schema_version:1,ok:true,error:"",custom_addresses:[...],addresses:[...]}`;
+each returned record adds `registered:boolean`. Failure replies contain only
+`{schema_version:1,ok:false,error:<fixed code>}`. Fixed error codes are defined
+by `AddressError` sites in `scripts/manage_addresses.py`; no raw provider text
+is returned. Existing native addresses remain the baseline.
 
 Automatic rediscovery requires opt-in and an open panel. It runs at 60 seconds,
 coalesces NM/BTH route hints for two seconds and backs off failures for five
@@ -207,7 +295,7 @@ field carries up to 16 addresses and 16 provider names of at most 256 characters
 plus native virtual-monitor known/active/available booleans. QML revalidates these
 bounds. Legacy 16-field records remain valid. Unknown reads never mean false or
 available. Virtual-monitor properties are read only for reported support, with a
-two-second native-call timeout.
+five-second native-call timeout shared by discovery properties.
 The serialized information field is at most 16,384 characters after JSON escaping.
 Oversized information lists are omitted as needed; valid monitor state is retained.
 
@@ -289,6 +377,17 @@ current inventory, selects through the same panel path, then opens Device featur
 Neither the header gear nor paired-device gears launch KDE Connect implicitly.
 The explicit Native KDE Connect settings link retains the native launch boundary.
 
+The manifest's `settings` map is the source of preference names, types and
+defaults. `scripts/network_preferences.py:KEYS` and `STRING_KEYS` define the
+writable subset; retired/legacy display keys are not all writable. A boolean
+request has exactly `{key,enabled:boolean}`. A string request has exactly
+`{key,value:string}`. Extra request fields are rejected. Strings have at most
+4096 characters: Ping permits newline/tab but no other C0 controls; the BTH path
+is empty or absolute, ends in `/remote-access-mode`, has no `..` component and
+no C0/DEL controls. Quick-action CSV is at most 512 characters, has known IDs
+and no duplicates. Section-order validation uses `section_order.py` and the
+catalogue below. Replies are `{ok:boolean,message:string}` with fixed feedback.
+
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
 keys, four bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`, `sectionOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
 arguments and JSON-typed values. `omarchy-shell` takes values only as process
@@ -302,7 +401,8 @@ setting never changes a VPN. Hidden BTH does not poll.
 `stageDroppedFiles(id, urls)` accepts at most 100 local URI strings with a bounded
 aggregate payload, freezes the reviewed recipient before the existing inspector,
 and refuses busy state or overwriting a review draft. Choose files uses the same
-draft protection. Only the existing explicit submit action sends files. The native
+draft protection. Dropped files require the explicit Send action. Chooser
+selections follow the captured review setting. The native
 DropArea accepts Copy, never Move. Directories, symlinks and remote/active URIs
 remain rejected by the shared file inspector. A normal Send Window stays mapped
 while the user focuses a file manager; closing it preserves service-owned draft
@@ -322,11 +422,11 @@ section is session UI state; opening the panel restores the selected defaults.
 Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
 
-`PanelSections.json` is the fixed catalogue for the ten daily sections. It owns
+`PanelSections.json` is the fixed catalogue for the daily sections. It owns
 their IDs, labels, help, visibility keys, expansion defaults and settings domain.
 `PanelSectionCatalog.qml` reads this trusted local file. `SectionOrder.js` and
 `scripts/section_order.py` validate the same catalogue and bounded `sectionOrder`
-CSV. Unknown or repeated IDs are rejected on save. Missing known IDs append in
+CSV. The retired `information` ID is discarded for compatibility. Unknown or repeated active IDs are rejected on save. Missing known IDs append in
 catalogue order; an empty value restores that order. Malformed stored values use
 the default order. The catalogue contains no component paths or commands.
 An unavailable catalogue or missing section entry keeps that optional section

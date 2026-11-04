@@ -84,15 +84,22 @@ def validate_file(expected):
 
 
 def choose():
+    """Return one portal result and close a cancelled request after registration."""
     from gi.repository import Gio, GLib
     bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
     token = 'omaconnect_' + uuid.uuid4().hex
     request_path = '/org/freedesktop/portal/desktop/request/' + bus.get_unique_name()[1:].replace('.', '_') + '/' + token
     loop, result = GLib.MainLoop(), {'state': 'failed', 'error': 'portal-unavailable'}
+    resolved = False
+    request_opened = close_attempted = False
+    timeout_id = startup_id = 0
 
     def response(connection, sender, path, interface, member, parameters):
-        if path != request_path:
+        """Accept the first matching response without replacing a cancellation."""
+        nonlocal resolved
+        if resolved or path != request_path:
             return
+        resolved = True
         code, values = parameters.unpack()
         result.clear()
         if code == 1:
@@ -108,24 +115,71 @@ def choose():
 
     subscription = bus.signal_subscribe('org.freedesktop.portal.Desktop', 'org.freedesktop.portal.Request', 'Response', None, None, Gio.DBusSignalFlags.NONE, response)
 
-    def close_request(*unused):
+    def close_registered_request():
+        """Close the returned portal handle at most once after registration."""
+        nonlocal close_attempted
+        if not request_opened or close_attempted:
+            return
+        # OpenFile has now returned the registered handle. Do not guess its path
+        # or send a second Close if a signal interrupts the synchronous call.
+        close_attempted = True
         try:
             bus.call_sync('org.freedesktop.portal.Desktop', request_path, 'org.freedesktop.portal.Request', 'Close', None, None, Gio.DBusCallFlags.NONE, 1000, None)
         except GLib.Error:
             pass
+
+    def close_request(*unused):
+        """Latch cancellation before closing an existing or pending portal request."""
+        nonlocal resolved
+        if resolved:
+            return GLib.SOURCE_REMOVE
+        # Latch before Close or an outstanding OpenFile can dispatch callbacks.
+        resolved = True
         result.clear()
         result.update(state='cancelled', files=[])
         loop.quit()
+        close_registered_request()
         return GLib.SOURCE_REMOVE
 
-    signal.signal(signal.SIGTERM, close_request)
+    def expire_request():
+        """Cancel an unanswered request when its selection deadline expires."""
+        nonlocal timeout_id
+        timeout_id = 0
+        return close_request()
+
+    def check_startup():
+        """Stop the loop if cancellation occurred immediately before loop startup."""
+        nonlocal startup_id
+        startup_id = 0
+        # Covers a signal between the resolved check and MainLoop.run().
+        if resolved:
+            loop.quit()
+        return GLib.SOURCE_REMOVE
+
+    previous_signal = signal.signal(signal.SIGTERM, close_request)
     try:
-        reply = bus.call_sync('org.freedesktop.portal.Desktop', '/org/freedesktop/portal/desktop', 'org.freedesktop.portal.FileChooser', 'OpenFile', GLib.Variant('(ssa{sv})', ('', 'Select files to send', {'handle_token': GLib.Variant('s', token), 'multiple': GLib.Variant('b', True), 'directory': GLib.Variant('b', False), 'modal': GLib.Variant('b', True)})), GLib.VariantType.new('(o)'), Gio.DBusCallFlags.NONE, 5000, None)
-        request_path = reply.unpack()[0]
-        GLib.timeout_add_seconds(120, close_request)
-        loop.run()
+        if not resolved:
+            reply = bus.call_sync('org.freedesktop.portal.Desktop', '/org/freedesktop/portal/desktop', 'org.freedesktop.portal.FileChooser', 'OpenFile', GLib.Variant('(ssa{sv})', ('', 'Select files to send', {'handle_token': GLib.Variant('s', token), 'multiple': GLib.Variant('b', True), 'directory': GLib.Variant('b', False), 'modal': GLib.Variant('b', True)})), GLib.VariantType.new('(o)'), Gio.DBusCallFlags.NONE, 5000, None)
+            request_path = reply.unpack()[0]
+            request_opened = True
+            # SIGTERM during OpenFile is deferred until the real handle exists.
+            if resolved and result.get('state') == 'cancelled':
+                close_registered_request()
+            if not resolved:
+                timeout_id = GLib.timeout_add_seconds(120, expire_request)
+                startup_id = GLib.idle_add(check_startup)
+                if not resolved:
+                    loop.run()
+    except GLib.Error:
+        if not resolved:
+            raise
     finally:
+        if timeout_id:
+            GLib.source_remove(timeout_id)
+        if startup_id:
+            GLib.source_remove(startup_id)
         bus.signal_unsubscribe(subscription)
+        signal.signal(signal.SIGTERM, previous_signal)
     emit(result)
 
 
@@ -181,9 +235,17 @@ def submit(payload):
 
 
 def main():
+    """Dispatch bounded chooser, inspection and submission requests with fixed errors."""
     mode = sys.argv[1] if len(sys.argv) == 2 else ''
     try:
-        if mode == 'choose':
+        if mode == 'recent':
+            from recent_files import choose_recent
+            raw = sys.stdin.buffer.readline(2049)
+            request = json.loads(raw) if len(raw) <= 2048 else None
+            if not isinstance(request, dict) or set(request) != {'recipient'} or not isinstance(request['recipient'], str):
+                raise ValueError('source-path-rejected')
+            emit(choose_recent(request['recipient']))
+        elif mode == 'choose':
             choose()
         elif mode == 'sweep':
             from private_sources import sweep_expired
@@ -201,7 +263,7 @@ def main():
             raise ValueError('source-path-rejected')
     except ValueError as error:
         code = str(error)
-        allowed = ('source-path-rejected', 'source-changed', 'selection-limit', 'identity-mismatch', 'source-preparation-failed')
+        allowed = ('source-path-rejected', 'source-changed', 'selection-limit', 'identity-mismatch', 'source-preparation-failed', 'recent-files-unavailable', 'recent-files-empty', 'recent-files-timeout')
         emit({'state': 'failed', 'error': code if code in allowed else 'source-path-rejected'})
         return 1
     except (OSError, ImportError, TypeError, KeyError):

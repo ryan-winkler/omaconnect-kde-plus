@@ -167,6 +167,21 @@ Panel {
         return true
     }
     function openSendWindow() { root.close(); sendWindow.openSend() }
+    readonly property var fileChooserOptions: {
+        var config = settings
+        var object = config && typeof config === "object" && !Array.isArray(config)
+        var desktop = object && "useDesktopFileChooser" in config ? config.useDesktopFileChooser : false
+        var review = object && "reviewFilesBeforeSend" in config ? config.reviewFilesBeforeSend : false
+        var valid = object && typeof desktop === "boolean" && typeof review === "boolean"
+        return {useDesktopFileChooser: valid ? desktop : true, reviewFilesBeforeSend: valid ? review : true}
+    }
+    readonly property string fileChoiceHint: fileChooserOptions.reviewFilesBeforeSend
+        ? "Choose files, review the recipient and files, then select Send. Drops always need review."
+        : "Selecting a file sends it to the selected recipient. To review first, use Plus settings → Quick actions. Drops always need review."
+    function chooseFiles() {
+        if (!service || !device) return false
+        return service.chooseFiles(device.id, fileChooserOptions)
+    }
     onOpenedChanged: {
         if (service) service.panelOpened = opened
         if (!opened) { dailyNavigation.closeMenu(); dropActionRevealed = false }
@@ -418,7 +433,7 @@ Panel {
         else if (actionId === "clipboard") service.sendClipboard(device.id)
         else if (actionId === "file") {
             if (service.fileBusy) service.cancelFileTransfer()
-            else { root.currentView = "Send"; service.startFileSelection(device.id) }
+            else { root.currentView = "Send"; root.chooseFiles() }
         }
         else if (actionId === "sms") service.openSmsApp(device.id)
         else if (actionId === "ping") {
@@ -672,7 +687,7 @@ Panel {
             service.sendClipboard(device.id)
         } else if (focusSection === "file" && service && device) {
             root.currentView = "Send"
-            service.startFileSelection(device.id)
+            root.chooseFiles()
         } else if (focusSection === "ping") {
             if (activeComposer === "ping") submitPing()
             else openComposer("ping")
@@ -836,8 +851,15 @@ Panel {
                         width: parent.width
                         text: "Choose files"
                         Accessible.name: text
-                        enabled: !!root.device && root.device.paired && root.device.reachable && root.device.capabilities && root.device.capabilities.file && root.service && !root.service.operationBusy && root.service.selectionState !== "choosing" && root.service.selectionState !== "draft"
-                        onClicked: root.service.chooseFiles(root.device.id)
+                        enabled: !!root.device && root.device.paired && root.device.reachable && root.device.capabilities && root.device.capabilities.file && root.service && !root.service.operationBusy && !root.service.selectionCancelling && root.service.selectionState !== "choosing" && root.service.selectionState !== "draft"
+                        onClicked: root.chooseFiles()
+                    }
+                    Text {
+                        width: parent.width
+                        text: root.fileChoiceHint
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        color: Commons.Color.popups.text
                     }
                     Button {
                         focusable: true
@@ -1015,6 +1037,8 @@ Panel {
         id: sendWindow
         service: root.service
         device: root.device
+        chooserOptions: root.fileChooserOptions
+        fileChoiceHint: root.fileChoiceHint
         onReturnToPanelRequested: { root.currentView = "Devices"; root.open() }
     }
 

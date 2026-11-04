@@ -5,7 +5,11 @@ run your own quick actions and choose how your devices look. It is a fork of
 [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect), built
 on [KDE Connect](https://kdeconnect.kde.org/).
 
-![Native settings with invented sample device data](preview.png)
+<img src="preview.png" width="428" alt="Omaconnect bar icon and daily Devices panel with an example phone">
+
+Example devices, files and media are used in the screenshots.
+See the [screenshot gallery](docs/HELP.md#screenshots) for the open device dropdown,
+Send, cancellation, activity, media and all four settings domains.
 
 [![Functional checks](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml/badge.svg)](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml)
 [![CodeQL](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml/badge.svg)](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml)
@@ -27,9 +31,14 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
 
 ## Features
 
-- **Files:** pick up to 100 files with the desktop file chooser, or drop them on
-  the Devices target, bar icon or Send window. Review the recipient, count and size, then Send.
-  Drops copy and never move originals.
+- **Files:** use the original searchable Omarchy recent-file menu. Selecting a
+  file sends it to the recipient shown when the menu opened. In **Plus settings
+  → Quick actions**, enable **Review files before Send** for an explicit review,
+  or **Use desktop file chooser** for any local file and batches of up to 100.
+  Drops on Devices, the bar icon or Send window always require review and use Copy.
+- **Cancel:** stop pending file work from any daily view or the Send window.
+  After native acceptance, use KDE Connect's LAN transfer progress Cancel.
+  Bluetooth cancellation is not exposed by the current native sharing API.
 - **Honest activity:** “Request accepted” means KDE accepted the transfer;
   delivery stays unknown. A batch keeps its reviewed recipient.
 - **Quick actions:** add, remove and reorder reviewed shortcuts, including media
@@ -58,6 +67,19 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
 
 Read the [task guide](docs/HELP.md) for every control.
 
+## Screenshots
+
+Select an image to view it at full size. The [complete gallery](docs/HELP.md#screenshots)
+also covers appearance, icon choices, section ordering, connections and native features.
+
+| Open device dropdown | File review and persistent Send window |
+| --- | --- |
+| [![Bar icon and opened device dropdown showing connected, offline and unpaired example devices](docs/screenshots/bar-dropdown.png)](docs/screenshots/bar-dropdown.png) | [![Persistent Send window reviewing two example files for the captured recipient](docs/screenshots/send-review.png)](docs/screenshots/send-review.png) |
+
+| Pending submission and Cancel | Quick actions sharing preferences |
+| --- | --- |
+| [![In-progress file submission with Cancel and the persistent Cancel pending files control](docs/screenshots/pending-cancel.png)](docs/screenshots/pending-cancel.png) | [![Quick actions settings scrolled to desktop chooser and review-before-Send preferences](docs/screenshots/sharing-preferences.png)](docs/screenshots/sharing-preferences.png) |
+
 ## Why Plus?
 
 OmaConnect already covers pairing, battery, clipboard, SMS, media and remote
@@ -66,7 +88,7 @@ commands. Keep it if its workflow suits you. Plus adds:
 | If you need… | Plus adds… |
 | --- | --- |
 | Your own bar and device look | Icon search, local images, aliases and preview. |
-| A normal file workflow | File chooser, multiselect, drops and explicit review. |
+| A choice of file workflows | Original file menu, desktop chooser, multiselect, drops and optional chooser review. |
 | Shortcuts that fit your tasks | Add, remove and reorder actions; Ring is optional. |
 | Control over popup navigation | Move the View row, choose direct shortcuts, and reorder or collapse daily sections. |
 | Every native feature in reach | Searchable installed modules, native On/Off readback and per-device configuration links. |
@@ -86,7 +108,10 @@ Missing optional providers stay unavailable; Plus never installs them.
 
 Appearance and address metadata stay in owner-only files. Typed text, Ping
 messages and the paths of files you send travel over stdin and D-Bus, never
-process arguments. Saved settings, such as a default Ping message, go through
+process arguments during native submission. The original-style file menu passes
+bounded candidate paths through Omarchy’s menu arguments; those can be visible
+to same-user process inspection. Use the desktop chooser to avoid that menu
+exposure. Saved settings, such as a default Ping message, go through
 Omarchy, which briefly passes them in process arguments. Do not save private
 text there. Files in shared locations are sent from a private snapshot. Activity
 keeps at most 50 summaries in memory, without paths. Media shows track text and

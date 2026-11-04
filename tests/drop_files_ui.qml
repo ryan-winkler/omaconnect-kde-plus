@@ -38,6 +38,21 @@ ShellRoot {
         interval: 100; running: true
         onTriggered: {
             if (!test.check(zone.ready,"ready for local files")) return
+            var localHover=test.event(["file:///tmp/one","file://localhost/tmp/two"],Qt.CopyAction)
+            if (!test.check(iconTarget.acceptDrag(localHover) && localHover.accepted && service.calls.length===0,"local URI hover accepts without inspecting or staging")) return
+            var invalidHovers=[
+                ["https://example.invalid/file"], ["file://remote/tmp/file"], ["/tmp/plain"],
+                ["file:///tmp/one","https://example.invalid/remote"],
+                ["file:///tmp/control\nname"], ["file:///tmp/control\u007fname"],
+                ["file:///"+"x".repeat(16385)]
+            ]
+            var overBudget=[];for(var j=0;j<20;j++)overBudget.push("file:///"+"x".repeat(10000))
+            invalidHovers.push(overBudget)
+            for(var h=0;h<invalidHovers.length;h++) {
+                var hover=test.event(invalidHovers[h],Qt.CopyAction)
+                if (!test.check(!iconTarget.acceptDrag(hover) && !hover.accepted && service.calls.length===0,"invalid or oversized URI hover is refused "+h)) return
+                if (!test.check(!iconTarget.acceptFiles(hover) && service.calls.length===0,"invalid URI drop is refused before staging "+h)) return
+            }
             var copy=test.event(["file:///tmp/one","file:///tmp/two"],Qt.CopyAction|Qt.MoveAction)
             if (!test.check(zone.acceptFiles(copy) && copy.accepted && copy.action===Qt.CopyAction,"drop always accepts Copy instead of proposed Move")) return
             if (!test.check(service.calls.length===1 && service.calls[0].id==="A" && service.calls[0].urls.length===2,"drop stages full batch for selected peer")) return

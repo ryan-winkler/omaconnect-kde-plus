@@ -11,7 +11,7 @@ KDE Connect owns pairing, its native modules and the device protocol. Existing n
 | Improve help or report a confusing step | [Help map](docs/HELP.md), [support](SUPPORT.md) | The instruction names the task, result and next step. |
 | Add or improve an icon | [Icon guide](docs/ICONS.md), `Appearance.js`, `components/AppearanceIcon.qml` | Source/license, preset parity and fallback. |
 | Change icon selection, aliases or local identity links | `components/IconChooser.qml`, `AppearanceStore.qml`, `scripts/appearance.py` | Apply/Cancel, keyboard use, stable IDs and private atomic state. |
-| Change sharing or file drops | `controller/FileTransferController.qml`, `TransferModel.js`, `components/SendWindow.qml`, `scripts/portal_files.py` | Fixed recipient, explicit Send, cancellation and honest delivery state. |
+| Change sharing or file drops | `controller/FileTransferController.qml`, `TransferModel.js`, `components/SendWindow.qml`, `scripts/portal_files.py`, `scripts/recent_files.py` | Captured recipient/policy, explicit chooser confirmation or reviewed Send, cancellation and honest delivery state. |
 | Change quick actions | `ActionCatalog.js`, `components/QuickActionsSettings.qml` | Capability, order, labels, contextual help and disabled reasons. |
 | Change native device features | `components/NativeFeaturesSection.qml`, `scripts/discover_devices.sh`, `scripts/open_app.sh` | Native ownership, exact device, readback and handoff failures. |
 | Change connection guidance or address discovery | `components/NetworkOptions.qml`, `DiscoveryController.qml`, `DiscoveryModel.js`, `scripts/manage_addresses.py` | Opt-in sources, approval, input bounds and baseline preservation. |
@@ -36,7 +36,7 @@ Offer reusable fixes and enhancements to the project that owns the behavior when
 
 **Search before opening an issue or PR.** Check open and closed work in this fork and the owning upstream. If an existing proposal covers the behavior, link it and contribute relevant evidence or a focused follow-up there. Do not create a competing duplicate. Treat security reports through [SECURITY.md](SECURITY.md) and the affected upstream’s private reporting route first.
 
-Existing upstream proposals cover [plain-text device values (#32)](https://github.com/jitendradara12/omaconnect/pull/32), [structured D-Bus parsing and SMS input validation (#33)](https://github.com/jitendradara12/omaconnect/pull/33), and [per-script syntax checks and CI (#34)](https://github.com/jitendradara12/omaconnect/pull/34), all by [riccelso](https://github.com/riccelso). Reference these proposals instead of opening duplicates. Recheck their current state and the exact Plus boundary before adapting code; a broad upstream patch can change contracts that Plus must preserve.
+Merged upstream contributions cover [plain-text device values (#32)](https://github.com/jitendradara12/omaconnect/pull/32), [structured D-Bus parsing and SMS input validation (#33)](https://github.com/jitendradara12/omaconnect/pull/33), and [per-script syntax checks and CI (#34)](https://github.com/jitendradara12/omaconnect/pull/34), all by [riccelso](https://github.com/riccelso). Reference these proposals instead of opening duplicates. Recheck their current state and the exact Plus boundary before adapting code; a broad upstream patch can change contracts that Plus must preserve.
 
 For each contribution:
 
@@ -99,7 +99,7 @@ Reuse the owning domain before creating a new abstraction:
 | A reviewed shortcut | `ActionCatalog.js`, then the existing `Panel.qml` dispatcher | Add the ID to preference/migration validation; keep the catalogue parity check. Expose capability, loaded state and help. Never turn a plugin name into an arbitrary command. |
 | A Plus preference | `manifest.json` and `PreferenceControls` in the owning Settings domain | Add its typed key to `network_preferences.py` and migration validation. Verify saved readback and defaults. Visibility must not change native permissions or VPN policy. |
 | A daily section | `PanelSections.json`, its existing domain component, and the static `Panel.qml` ObjectModel | Add bounded metadata and manifest defaults. The shared catalogue supplies settings controls and preference validation. Test hidden/collapsed behavior, saved ordering, focus and draft identity. Do not add a dynamic component loader or a second section catalogue. |
-| File selection or drop | `FileDropArea.qml` and the existing controller/portal helper | Both the bar and Send target share Copy-only review. Do not add a second transfer engine or implicit Send. |
+| File selection or drop | `FileDropArea.qml` and the existing controller/portal helper | The bar and drop targets share Copy-only review. Explicit chooser selection uses the captured sharing preferences. Keep one transfer engine and preserve the captured recipient. |
 | Native module support | Searchable `components/NativeFeaturesSection.qml` and selected-device native handoff | Preserve unknown reported IDs. Use a verified native API before offering a direct action. |
 | Syncthing | The optional local identity note, `Service.qml` pause/resume and the existing owner route | Pause/resume of the linked device goes through `syncthing cli` with readback. Keep keys and folder operations with Syncthing/Syncshell. |
 

@@ -30,7 +30,7 @@ Column {
             foreground: Commons.Color.popups.text
             focusable: true
             enabled: dropZone.ready
-            onClicked: if (enabled) root.service.chooseFiles(String(root.device.id))
+            onClicked: if (enabled) root.panel.chooseFiles()
         }
         SettingsButton {
             objectName: "inline-send-open-window"
@@ -41,6 +41,15 @@ Column {
             enabled: !!root.panel && typeof root.panel.openSendWindow === "function"
             onClicked: if (enabled) root.panel.openSendWindow()
         }
+    }
+    Text {
+        width: parent.width
+        text: root.panel.fileChoiceHint
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: Commons.Color.popups.text
+        font.family: Style.font.family
+        font.pixelSize: Style.font.bodySmall
     }
     SendSection {
         objectName: "inline-send-review"

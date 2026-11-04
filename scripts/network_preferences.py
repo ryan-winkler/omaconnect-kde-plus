@@ -13,6 +13,7 @@ from section_order import BOOL_DEFAULTS, normalized_value
 KEYS = frozenset(("networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled",
                   "showBatteryStats", "showBarBattery", "showNetworkStats"))
 KEYS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
+KEYS |= frozenset(("useDesktopFileChooser", "reviewFilesBeforeSend"))
 KEYS |= frozenset(BOOL_DEFAULTS)
 STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder"))
 ACTION_IDS = frozenset(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock', 'external-monitor'))

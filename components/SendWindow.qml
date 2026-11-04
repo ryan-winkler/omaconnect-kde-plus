@@ -12,9 +12,11 @@ Window {
     id: root
     required property var service
     property var device: null
+    property var chooserOptions: ({useDesktopFileChooser: false, reviewFilesBeforeSend: false})
+    property string fileChoiceHint: "Selecting a file sends it to the selected recipient. To review first, use Plus settings → Quick actions. Drops always need review."
     readonly property var target: service ? service.draftTarget : null
     readonly property bool canChoose: !!(service && device && device.paired && device.reachable
-        && device.capabilities && device.capabilities.file && !service.operationBusy
+        && device.capabilities && device.capabilities.file && !service.operationBusy && !service.selectionCancelling
         && service.selectionState !== "choosing" && service.selectionState !== "draft"
         && (!service.selection || service.selection.length === 0))
     signal returnToPanelRequested()
@@ -76,8 +78,17 @@ Window {
                 focusable: true
                 foreground: Commons.Color.popups.text
                 enabled: root.canChoose
-                onClicked: root.service.chooseFiles(root.device.id)
+                onClicked: root.service.chooseFiles(root.device.id, root.chooserOptions)
             }
+        }
+        Text {
+            width: parent.width
+            text: root.fileChoiceHint
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: Commons.Color.popups.text
+            font.family: Style.font.family
+            font.pixelSize: Style.font.bodySmall
         }
         Controls.ScrollView {
             width: parent.width

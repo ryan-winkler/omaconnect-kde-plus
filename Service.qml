@@ -119,11 +119,13 @@ Item {
     property alias selectionBytes: controller.selectionBytes
     property alias selectionError: controller.selectionError
     property alias selectionState: controller.selectionState
+    property alias selectionCancelling: controller.selectionCancelling
     property alias draftTarget: controller.draftTarget
     property alias operations: controller.operations
     property alias activeOperation: controller.activeOperation
     property alias operationBusy: controller.operationBusy
-    function chooseFiles(id) { return controller.chooseFiles(id) }
+    property alias cancellationRequested: controller.cancellationRequested
+    function chooseFiles(id, options) { return controller.chooseFiles(id, options) }
     function stageDroppedFiles(id, urls) { return controller.stageDroppedFiles(id, urls) }
     function submitSelection() { return controller.submitSelection() }
     function cancelDraft() { return controller.cancelDraft() }
@@ -246,8 +248,8 @@ Item {
         return controller.sendClipboard(id)
     }
 
-    function startFileSelection(id) {
-        return controller.startFileSelection(id)
+    function startFileSelection(id, options) {
+        return controller.startFileSelection(id, options)
     }
 
     function cancelFileSelection() {

@@ -32,6 +32,8 @@ ShellRoot {
         id: panel
         property var service: service
         readonly property var device: service.selectedDevice
+        property string fileChoiceHint: "Review files before Send."
+        function chooseFiles(){return service.chooseFiles(device.id)}
         function openSendWindow(){test.windows++}
     }
     QtObject {
