@@ -18,6 +18,7 @@ ShellRoot {
     property bool dispatching:false
     property var checks:[]
     property var savedSettings:({})
+    readonly property string expectedLayoutSuccessMessage:savedSettings.fixtureLayoutSuccessMessage || "Setting saved."
     property var panel:null
     property var groups:null
     property var widgets:({})
@@ -175,7 +176,7 @@ ShellRoot {
                     if(!test.check(catcher.blocked && panel.currentView==="Devices" && service.selectionState!=="choosing" && service.actionState!=="running","focused legacy catcher and direct daily activation cannot dispatch hidden shortcuts while editing"))return
                     named(panel,"section-visibility-commands").forceActiveFocus()
                     named(panel,"section-visibility-commands").activated(3);test.phase=2002
-                }else if(test.phase===2002 && named(panel,"layout-preference-saver").message==="Setting saved." && !named(panel,"layout-preference-saver").busy){
+                }else if(test.phase===2002 && named(panel,"layout-preference-saver").message===test.expectedLayoutSuccessMessage && !named(panel,"layout-preference-saver").busy){
                     if(!test.check(panel.layoutSaveBusy && named(panel,"section-visibility-commands").currentIndex===2,"ACK before host readback keeps the map locked and saved value selected"))return
                     var pendingControl=named(panel,"section-visibility-commands")
                     var localStatus=named(panel,"section-layout-status-commands")
@@ -210,7 +211,7 @@ ShellRoot {
                     if(!test.check(!panel.saveSectionPolicy("commands","hide"),"timeout does not permit a stale whole-map overwrite"))return
                     if(!test.check(panel.useCurrentSavedLayout() && !panel.layoutSaveBusy,"explicit recovery uses current saved settings and releases the lock"))return
                     panel.saveSectionPolicy("commands","hide");test.phase=2005
-                }else if(test.phase===2005 && named(panel,"layout-preference-saver").message==="Setting saved." && !named(panel,"layout-preference-saver").busy){
+                }else if(test.phase===2005 && named(panel,"layout-preference-saver").message===test.expectedLayoutSuccessMessage && !named(panel,"layout-preference-saver").busy){
                     var finalReadback={};finalReadback[panel.layoutPending.key]=panel.layoutPending.value;patchSettings(finalReadback);test.phase=2006
                 }else if(test.phase===2006 && !panel.layoutSaveBusy){
                     if(!test.check(panel.sectionPolicy("commands")==="hide" && sameWidgets(),"recovery and final readback keep original section instances"))return

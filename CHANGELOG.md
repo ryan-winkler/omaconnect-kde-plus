@@ -35,6 +35,11 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Phone-file browsing rechecks current KDE Connect ownership and peer state after
+  slow storage probes, before requesting the file-manager handoff.
+- Layout saves use the structured helper result, so a valid success message
+  cannot release the pending readback guard before settings are confirmed.
+
 - The recent-file menu finds files when the conventional user folders link to
   moved storage. Links inside those folders remain excluded.
 - Native direct-socket IPC registration preserves existing Plus routes and adds

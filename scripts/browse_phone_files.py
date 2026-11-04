@@ -174,6 +174,12 @@ class NativeStorage:
                 code = "storage-unavailable"
             raise BrowseError(code) from None
 
+    def check_owner(self):
+        owner = self.call("/org/freedesktop/DBus", "org.freedesktop.DBus", "GetNameOwner",
+                          "(s)", (SERVICE,), "(s)", destination="org.freedesktop.DBus")[0]
+        if owner != self.owner:
+            raise BrowseError("location-changed")
+
     def check_peer(self):
         properties = self.call(self.path, "org.freedesktop.DBus.Properties", "GetAll",
                                "(s)", (DEVICE,), "(a{sv})")[0]
@@ -228,11 +234,15 @@ def execute(request, cancelled, deadline):
     expected = request["location"]
     if expected["providerOwner"] != native.owner or expected not in native.locations():
         raise BrowseError("location-changed")
-    native.check_peer()
     identity, roots = inspect_paths(expected["mountPath"], [expected["path"]])
     if identity != expected["mountIdentity"] or roots[expected["path"]] != expected["rootIdentity"]:
         raise BrowseError("location-changed")
+    # Filesystem probes can block. Recheck live peer and well-known ownership
+    # afterward, while all device calls remain pinned to the captured connection.
+    native.check_peer()
+    native.check_owner()
     native.check_cancelled()
+    # Validation and desktop launch are separate, non-atomic operations.
     # Once the desktop has accepted a launch, cancellation cannot recall its window.
     launch_uri(Path(expected["path"]).as_uri())
     return {"state": "opened", "error": ""}

@@ -1117,7 +1117,7 @@ Panel {
                         visible: false
                         onBusyChanged: Qt.callLater(function() {
                             if (layoutSaver.busy || !root.layoutPending) return
-                            if (layoutSaver.message === "Setting saved.") root.confirmLayoutReadback()
+                            if (layoutSaver.lastSaveOk) root.confirmLayoutReadback()
                             else {
                                 root.layoutPending = null
                                 layoutReadbackTimer.stop()

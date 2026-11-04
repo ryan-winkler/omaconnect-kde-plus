@@ -14,7 +14,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 class SectionComposition(unittest.TestCase):
-    def run_composition(self,catalogue_failure=None,readback=False):
+    def run_composition(self,catalogue_failure=None,readback=False,success_message=None):
         runner=native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture='section_composition_ui.qml'
         runner.force_offscreen=True
@@ -22,10 +22,13 @@ class SectionComposition(unittest.TestCase):
             shutil.copyfile(ROOT/'scripts/manage_addresses.py',plugin/'scripts/composition_preference_boundary.py')
             helper=plugin/'scripts/network_preferences.py'
             helper.write_text(helper.read_text().replace('from manage_addresses import','from composition_preference_boundary import'))
+            if success_message is not None:
+                helper.write_text(helper.read_text().replace('Setting saved.',success_message))
             state=dict(sectionOrder='',networkBthEnabled=True,networkStartExpanded=False,
                        addressesStartExpanded=True,showSyncthingLinks=False,syncthingStartExpanded=False)
             if readback:
                 state["fixtureLayoutReadbackTest"]=True
+                state["fixtureLayoutSuccessMessage"]=success_message or "Setting saved."
                 (fixture/"pending-layout.json").write_text("{}")
             if catalogue_failure:
                 state.update(fixtureCatalogFailure=catalogue_failure,showSyncthingLinks=False,syncthingStartExpanded=True)
@@ -95,3 +98,6 @@ class SectionComposition(unittest.TestCase):
 
     def test_layout_waits_for_readback_and_timeout_requires_recovery(self):
         self.run_composition(readback=True)
+
+    def test_alternate_success_message_keeps_layout_locked_until_readback(self):
+        self.run_composition(readback=True,success_message="Saved successfully.")

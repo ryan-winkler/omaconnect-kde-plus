@@ -53,6 +53,52 @@ loop = GLib.MainLoop()
 held = []
 
 
+def change_owner(replacement):
+    bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "ReleaseName",
+                  GLib.Variant("(s)", (helper.SERVICE,)), GLib.VariantType.new("(u)"),
+                  Gio.DBusCallFlags.NO_AUTO_START, 1000, None)
+    if replacement:
+        connection = Gio.DBusConnection.new_for_address_sync(
+            os.environ["DBUS_SESSION_BUS_ADDRESS"],
+            Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION,
+            None, None)
+        held.append(connection)
+        connection.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "RequestName",
+                             GLib.Variant("(su)", (helper.SERVICE, 0)), GLib.VariantType.new("(u)"),
+                             Gio.DBusCallFlags.NO_AUTO_START, 1000, None)
+        owner = bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "GetNameOwner",
+                              GLib.Variant("(s)", (helper.SERVICE,)), GLib.VariantType.new("(s)"),
+                              Gio.DBusCallFlags.NO_AUTO_START, 1000, None).unpack()[0]
+        assert owner == connection.get_unique_name() and owner != bus.get_unique_name()
+    else:
+        owned = bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner",
+                             GLib.Variant("(s)", (helper.SERVICE,)), GLib.VariantType.new("(b)"),
+                             Gio.DBusCallFlags.NO_AUTO_START, 1000, None).unpack()[0]
+        assert not owned
+
+
+inspect_paths = helper.inspect_paths
+probe_count = 0
+
+
+def inspect_and_change_state(mount_path, roots):
+    global probe_count, reachable
+    result = inspect_paths(mount_path, roots)
+    probe_count += 1
+    # Prepare probes once; open probes advertised roots and then the selected root.
+    # Change live state after that final blocking probe, while the old unique
+    # D-Bus connection remains alive and can still answer every device request.
+    if probe_count == 3:
+        if mode in ("owner-lost-during-probe", "owner-replaced-during-probe"):
+            change_owner(mode == "owner-replaced-during-probe")
+        elif mode == "offline-during-probe":
+            reachable = False
+    return result
+
+
+helper.inspect_paths = inspect_and_change_state
+
+
 def method(connection, sender, path, interface, member, parameters, invocation):
     global reachable
     calls.append((path, interface, member))
@@ -151,6 +197,8 @@ def run():
         "offline-open": "peer-offline", "unpaired-open": "peer-unpaired", "unmounted-open": "storage-unavailable",
         "cancelled": "cancelled", "missing-opener": "opener-unavailable",
         "cancelled-mount": "cancelled", "offline-during-mount": "peer-offline",
+        "owner-lost-during-probe": "provider-unavailable",
+        "owner-replaced-during-probe": "location-changed", "offline-during-probe": "peer-offline",
     }.get(mode)
     passed = error == expected and (not opened if expected else len(opened) == 1)
     if mode == "timeout":

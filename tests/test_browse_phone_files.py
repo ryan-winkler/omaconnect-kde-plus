@@ -110,7 +110,8 @@ class BrowseContract(unittest.TestCase):
                  "unavailable", "no-shares", "share-limit", "escape", "symlink", "nonmount", "mount-failed",
                  "remote-error", "changed-advertisement", "changed-name", "stale-mount", "stale-root",
                  "owner-changed", "offline-open", "unpaired-open", "unmounted-open", "cancelled", "missing-opener",
-                 "cancelled-mount", "offline-during-mount", "timeout"]
+                 "cancelled-mount", "offline-during-mount", "owner-lost-during-probe",
+                 "owner-replaced-during-probe", "offline-during-probe", "timeout"]
         for mode in modes:
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
                 env = dict(os.environ, HOME=temporary, XDG_RUNTIME_DIR=temporary, XDG_CONFIG_HOME=temporary)

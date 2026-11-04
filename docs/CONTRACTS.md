@@ -529,7 +529,10 @@ Symlinks and escapes are rejected. KDE Connect owns mounting.
 Each prepared location carries `peerId`, `providerOwner`, `path`, `name`,
 `mountPath`, `mountIdentity`, `rootIdentity` and `advertisements`. Open accepts the
 unchanged selected item and rechecks owner, peer, capability, advertised roots
-and mount/root identity before `Gio.AppInfo.launch_default_for_uri`. One root
+and mount/root identity before `Gio.AppInfo.launch_default_for_uri`. After the
+final filesystem probe, it reads peer state again and verifies that the captured
+unique connection still owns the well-known KDE Connect service name. A lost or
+replaced owner cannot authorize the handoff through its old connection. One root
 opens automatically; multiple roots require explicit selection. `opened` means
 launch requested, not visible-window acceptance. No file content is read here.
 
@@ -583,6 +586,8 @@ unavailable section exposes a reason rather than active provider controls.
 Saves wait for matching host readback; pending requests keep focus and refuse
 repeats without a queue. A layout-specific key/value guard spans helper execution
 and readback so a second full-map edit cannot overwrite an unobserved save.
+`PreferenceControls.lastSaveOk` reflects the validated helper `ok` field and
+exit status. Feedback wording does not control the pending-save guard.
 Missing readback reports recovery text instead of silently accepting another edit. Feedback retains its originating section after the pending lock clears, so failed-save messages remain visible beside lower sections. Status changes use native polite accessibility announcements. Editor keyboard guards prevent hidden daily action dispatch; locked controls let Tab, Backtab and Escape pass. Every section can move, including
 hidden sections. The device switcher stays visible when its details collapse.
 Pairing warnings, pending unpair confirmation and launch feedback remain reachable.
