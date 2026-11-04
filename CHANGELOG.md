@@ -13,6 +13,17 @@ All notable changes are listed here. The format follows
   Browsing never sends. Explicit Send image or Review image follows the captured
   preference; Back keeps that preference and recipient. Other files stay in the
   searchable list.
+- Edit layout on the actual Devices sections, with direct visibility and position
+  menus. Show, Hide and available/unavailable rules replace the detached ordering
+  list. Hidden sections remain recoverable while editing; drafts stay intact.
+- Browse native phone shares in the default file manager. A single advertised
+  folder opens directly; several folders show a choice. Device and mount identity
+  are rechecked before opening.
+
+- Native desktop notices report final Plus file-request outcomes while the
+  popup and Send window are closed. Device names are excluded by default;
+  an explicit sharing preference adds them to notices and desktop history.
+  The Activity action opens current activity without repeating a request.
 - Original-style searchable recent-file menu, with the desktop chooser retained
   as an option in Quick actions settings. Explicit chooser selection sends by
   default; Review files before Send restores the separate review step. Drops
@@ -26,6 +37,13 @@ All notable changes are listed here. The format follows
 
 - The recent-file menu finds files when the conventional user folders link to
   moved storage. Links inside those folders remain excluded.
+- Native direct-socket IPC registration preserves existing Plus routes and adds
+  a safe Activity action for notification history.
+- Managed Settings and Send windows follow live native text direction. Settings
+  width no longer feeds back through mirrored row positioning.
+- Task-notice suppression tracks all visible popup and Send instances instead
+  of treating one closed window as every window being closed.
+
 - Address automatic-discovery requests consistently apply the validated false
   default when the optional field is absent.
 - Unsupported URL drags no longer receive accepted file-hover feedback.

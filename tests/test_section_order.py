@@ -91,6 +91,35 @@ assert.equal(api.move(ids,'actions',-1).slice(0,2).join(','),'actions,devices');
             text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_visibility_policy_validation_and_legacy_defaults(self):
+        self.assertEqual(sections.normalized_visibility('{}'), '{}')
+        for policy in ('show', 'hide', 'available', 'unavailable'):
+            value=json.dumps({'commands':policy})
+            self.assertEqual(json.loads(preferences.setting_value({'key':'sectionVisibility','value':value})), {'commands':policy})
+            self.assertEqual(migration.settings({'id':'omaconnect.plus','sectionVisibility':value})['sectionVisibility'], value)
+        invalid=[None, [], '', '[]', 'null', '{"devices":"hide"}', '{"unknown":"show"}', '{"media":true}',
+                 '{"media":"sometimes"}', '{"media":"show","media":"hide"}', '{"media":{"policy":"show"}}', 'x'*2049, r'{"media":"show","\u006dedia":"hide"}', r'{"\u006dedia":"hide"}']
+        for value in invalid:
+            with self.subTest(value=value),self.assertRaises(ValueError): sections.normalized_visibility(value)
+            with self.subTest(save=value),self.assertRaises(ValueError): preferences.setting_value({'key':'sectionVisibility','value':value})
+            with self.subTest(migrate=value),self.assertRaises(migration.MigrationError): migration.settings({'id':'omaconnect.plus','sectionVisibility':value})
+        if not shutil.which('node'): return
+        code=r'''const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const api=vm.createContext({});vm.runInContext(fs.readFileSync(process.argv[1],'utf8').replace(/^\.pragma library\s*/,''),api);
+const input=JSON.parse(fs.readFileSync(0,'utf8')), entries=api.parseCatalog(input.catalog);
+for(const value of input.invalid)assert.equal(api.parseVisibility(value,entries),null);
+for(const policy of ['show','hide','available','unavailable'])assert.equal(api.parseVisibility(JSON.stringify({commands:policy}),entries).commands,policy);
+assert.equal(api.policy(entries.find(e=>e.id==='commands'),{},true),'available');
+assert.equal(api.policy(entries.find(e=>e.id==='drop'),{},true),'show');
+assert.equal(api.policy(entries.find(e=>e.id==='syncthing'),{},false),'hide');
+for(const policy of ['available','unavailable'])assert.equal(api.matches(policy,'checking'),false);
+assert.equal(api.matches('show','checking'),true);assert.equal(api.matches('hide','available'),false);
+const order=entries.map(e=>e.id);assert.equal(api.moveTo(order,'actions',8)[8],'actions');assert.equal(order[1],'actions');
+assert.equal(api.moveTo(order,'actions',9),null);assert.equal(api.moveTo(order,'unknown',1),null);
+'''
+        result=subprocess.run(['node','-e',code,str(ROOT/'SectionOrder.js')],input=json.dumps({'catalog':(ROOT/'PanelSections.json').read_text(),'invalid':invalid}),text=True,capture_output=True,timeout=5)
+        self.assertEqual(result.returncode,0,result.stderr)
+
     def test_native_order_editor_waits_for_readback_and_preserves_failed_save(self):
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'section_order_ui.qml'

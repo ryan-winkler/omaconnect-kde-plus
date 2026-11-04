@@ -45,7 +45,10 @@ phone.reachable=true;assert.equal(api.compatible('ring',phone),true);assert.equa
 phone.loadedPluginIds=['kdeconnect_findmyphone'];assert.equal(api.ready('ring',phone,service),true);
 const media={paired:true,reachable:true,capabilities:{media:true,commands:true},pluginIds:['kdeconnect_mprisremote','kdeconnect_sftp','kdeconnect_systemvolume'],loadedKnown:true,loadedPluginIds:['kdeconnect_mprisremote']};
 assert.equal(api.compatible('browse-files',media),true,'new native task can use the reported plugin inventory');
-assert.equal(api.ready('browse-files',media,service),true,'native handoff remains available to configure an unloaded module');
+assert.equal(api.ready('browse-files',media,service),false,'direct native storage requires the loaded SFTP module');
+media.loadedPluginIds.push('kdeconnect_sftp');
+assert.equal(api.ready('browse-files',media,service),true,'direct storage is available when the native module is loaded');
+service.phoneFilesBusy=true;assert.equal(api.ready('browse-files',media,service),false,'avoid duplicate storage requests');service.phoneFilesBusy=false;
 assert.equal(api.compatible('native-volume',media),true);assert.equal(api.compatible('native-lock',media),false);
 assert.equal(api.ready('media',media,service),true);assert.equal(api.ready('media-next',media,service),false);
 assert.match(api.availabilityText('media-next',media,service),/choose a reported player/);

@@ -7,6 +7,9 @@ import qs.Commons as Commons
 
 Window {
     id: root
+    Commons.Translations { id: noticeStrings; directory: Qt.resolvedUrl("../i18n") }
+    LayoutMirroring.enabled: Commons.I18n.rightToLeft
+    LayoutMirroring.childrenInherit: true
     required property var panel
     readonly property var service: panel ? panel.service : null
     readonly property var device: panel ? panel.device : null
@@ -204,7 +207,8 @@ Window {
             Controls.ScrollView {
                 id: pageScroll
                 objectName: "settings-page-scroll"
-                width: parent.width - x
+                // Mirrored Row positions depend on child widths; do not size from x.
+                width: parent.width - navigationScroll.width - 1 - parent.spacing * 2
                 height: parent.height
                 clip: true
                 // Reserve space so the native overlay scrollbar cannot cover text.
@@ -336,6 +340,8 @@ Window {
                             preferences: [
                                 {key: "useDesktopFileChooser", label: "Use desktop file chooser", defaultValue: false, description: "Off uses the Omarchy recent-file menu with file icons and Image previews. On opens the desktop chooser for any local file and multiple selections."},
                                 {key: "reviewFilesBeforeSend", label: "Review files before Send", defaultValue: false, description: "Off sends files when you select them in the chooser. On shows a recipient and file review with a Send button. Drops always need review. Cancel pending work in Send. After acceptance, use KDE Connect's LAN progress Cancel; Bluetooth cancellation is unavailable here."},
+                                {key: "taskNotificationsEnabled", label: noticeStrings.t("notice.enabled.label"), defaultValue: true, description: noticeStrings.t("notice.enabled.help")},
+                                {key: "taskNotificationDeviceName", label: noticeStrings.t("notice.deviceName.label"), defaultValue: false, description: noticeStrings.t("notice.deviceName.help")},
                                 {key: "defaultPingMessage", label: "Default ping message", defaultValue: "", type: "string", description: "Fills in a new Ping message. You can edit it before you send."}
                             ]
                         }

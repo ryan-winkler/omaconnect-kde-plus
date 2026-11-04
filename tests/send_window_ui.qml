@@ -1,9 +1,17 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
+import qs.Commons as Commons
 import "plugin/components" as Components
 
 ShellRoot {
     id: test
+    // The native language command writes from another process; only this private HOME is reachable.
+    Process {
+        id: languageWriter
+        property string language: "en"
+        command: ["python3", "-c", "import os,pathlib,sys; pathlib.Path(os.environ['XDG_CONFIG_HOME'],'omarchy','language').write_text(sys.argv[1]+chr(10))", language]
+    }
     property int phase: 0
     property int ticks: 0
     property int returns: 0
@@ -69,6 +77,13 @@ ShellRoot {
                 send.returnToDevices();test.phase=5
             }else if(test.phase===5 && !send.visible){
                 if(!test.check(test.returns===1 && fakeService.draftTarget.peerId==="A","back to devices returns once without cancel or send"))return
+                if (!test.check(!send.contentItem.LayoutMirroring.enabled, "managed window starts left to right")) return
+                languageWriter.language="ar"; languageWriter.running=true; test.phase=9000
+            } else if (test.phase===9000 && Commons.I18n.rightToLeft) {
+                if (!test.check(send.contentItem.LayoutMirroring.enabled && send.contentItem.LayoutMirroring.childrenInherit, "managed window follows live native RTL")) return
+                languageWriter.language="en"; languageWriter.running=true; test.phase=9001
+            } else if (test.phase===9001 && !Commons.I18n.rightToLeft) {
+                if (!test.check(!send.contentItem.LayoutMirroring.enabled, "managed window returns live to LTR")) return
                 console.log("SEND_WINDOW_PASS "+JSON.stringify(test.checks));console.log("NATIVE_PASS send window");Qt.quit()
             }
         }

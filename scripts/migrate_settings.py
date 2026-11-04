@@ -14,10 +14,10 @@ from pathlib import Path
 import re
 import sys
 try:
-    from section_order import BOOL_DEFAULTS, normalized_value
+    from section_order import BOOL_DEFAULTS, normalized_value, normalized_visibility
 except ModuleNotFoundError:
     # Also support the existing repository tests importing this script by path.
-    from scripts.section_order import BOOL_DEFAULTS, normalized_value
+    from scripts.section_order import BOOL_DEFAULTS, normalized_value, normalized_visibility
 
 OLD = "omaconnect"
 NEW = "omaconnect.plus"
@@ -26,8 +26,9 @@ BOOL_SETTINGS = {"showBatteryStats", "showBarBattery", "showNetworkStats", "show
 BOOL_SETTINGS |= {"networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled"}
 BOOL_SETTINGS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
 BOOL_SETTINGS |= frozenset(("useDesktopFileChooser", "reviewFilesBeforeSend"))
+BOOL_SETTINGS |= frozenset(("taskNotificationsEnabled", "taskNotificationDeviceName"))
 BOOL_SETTINGS |= frozenset(BOOL_DEFAULTS)
-STRING_SETTINGS = {"defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder"}
+STRING_SETTINGS = {"defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder", "sectionVisibility"}
 # Device information merged into Device details; earlier installs may still store these.
 RETIRED_SETTINGS = {"showDeviceInformation", "informationStartExpanded"}
 ALLOWED = BOOL_SETTINGS | STRING_SETTINGS | RETIRED_SETTINGS
@@ -99,9 +100,9 @@ def settings(entry):
             ids = item.split(",") if item else []
             if len(item) > 512 or len(set(ids)) != len(ids) or any(i not in ACTION_IDS for i in ids):
                 raise MigrationError("settings-invalid")
-        if key == "sectionOrder":
+        if key in {"sectionOrder", "sectionVisibility"}:
             try:
-                normalized_value(item)
+                (normalized_value if key == "sectionOrder" else normalized_visibility)(item)
             except ValueError:
                 raise MigrationError("settings-invalid") from None
         if key == "bthHelperPath" and item and (not item.startswith("/") or not item.endswith("/remote-access-mode") or ".." in item.split("/") or any(ord(c) < 32 or ord(c) == 127 for c in item)):

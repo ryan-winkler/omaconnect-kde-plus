@@ -228,6 +228,53 @@ from filenames or timing. The native
 exposes no equivalent stop method. Direct cancellation of a specific accepted
 transfer remains unavailable in Plus. Stopping the helper cannot recall files.
 
+## Native task notices
+
+`FileTransferController.operationFinished(operation)` emits once after a started
+operation publishes its final snapshot, clears busy flags and clears its transient
+queue. The existing KDE controller forwards that event to the service's
+`TaskNotificationController`. Intermediate/per-file updates do not notify. Notice
+failure never changes transfer evidence or retries a notification or file request.
+
+`taskNotificationsEnabled` is a typed saved boolean, default true.
+`taskNotificationDeviceName` is a separate typed saved boolean, default false.
+The bar host supplies these values; absent or malformed values restore these
+defaults. A missing fake service property is not written. The existing Quick
+actions/sharing preferences expose both settings. They do not alter KDE Connect
+phone-forwarding permissions, native notification actions or module state.
+
+New notices are suppressed while the Plus popup or persistent Send window is
+visible. A service-owned list records actual visible popup and Send instances;
+closing or destroying one removes only its own entry. Notices remain suppressed
+until every instance closes, including instances on different monitors. Service
+changes unregister the old owner. Existing `panelOpened` discovery behavior stays
+separate. Opening either surface, disabling notices or changing the device-name
+opt-in discards waiting notices. There is no deferred replay. A policy generation is captured before process launch and rechecked before stdin is written; opt-out or a transient surface open/close discards an unwritten payload without reporting sender failure. Already submitted native notices cannot be recalled. One helper can run
+at a time; only the latest three pending outcomes are retained. Activity retains
+its existing 50-operation limit independently of desktop history.
+
+`task_notification.py` accepts at most 8192 stdin bytes and exact fields
+`summary` (nonempty, at most 256 characters), `body` (nonempty, at most 1024),
+`includeDeviceName` (boolean) and `deviceName` (at most 256). All strings must be
+valid UTF-8 without NUL. False opt-in requires an empty name; QML sends at most
+128 name characters. The helper strips control/bidi formatting from an opted-in
+name and substitutes visible angle/ampersand/colon characters so native entity
+decoding cannot revive markup or clickable URLs. Names never enter argv, logs
+or helper output. No IDs, paths, filenames, user messages or provider errors are
+sent. Host notification history can retain the optional name after opt-out.
+
+Gio calls `org.freedesktop.Notifications.Notify` with app name
+`Omaconnect KDE Plus`, normal urgency, no transient hint and no service autostart.
+The fixed Omarchy `omarchy-exec-argv` and `omarchy-actions` hints contain only
+`["/usr/bin/omarchy-shell", "omaconnect.plus", "activity"]`. This harmless current
+Activity action remains valid when replayed from history; it does not retain a
+task ID, recipient or retry command. The host owns cards, actions, DND and history.
+The helper's Gio call has a 3500 ms deadline; the process has a five-second total
+deadline and one-second kill grace. Each output stream has a 2 KiB cap. Failures
+expose only a coarse message in Plus Activity. New notice/settings strings use
+the plugin-owned `i18n/en.json` catalogue and native English fallback; other
+Plus UI strings remain outside this translation increment.
+
 ## Private text and ping submission
 
 Text/link composition and custom Ping messages use `scripts/send_text.py`.
@@ -463,9 +510,41 @@ dispatch with a native Plugin Settings next step. Unknown loading state retains
 older-version fallback. Successful CLI return means a ring request was accepted,
 not that a person heard a phone.
 
+## Native phone-file handoff
+
+`PhoneFilesController.qml` owns one captured peer, generation and bounded helper
+process. `browse_phone_files.py` accepts one JSON stdin line, at most 16 KiB:
+`{peerId, operation:"prepare"}` or `{peerId, operation:"open", location}`. IDs are
+1–128 ASCII letters, digits or underscores. Exact request fields are required.
+No peer, path or folder name enters argv. Output is one bounded JSON result.
+
+Prepare uses the unique owner of `org.kde.kdeconnect`, with NO_AUTO_START, to
+check pairing, reachability, loaded SFTP and native `mountAndWait`, `isMounted`,
+`mountPoint` and `getDirectories`. The advertised absolute directory keys are the
+only candidates. No Android path, mount location or file-manager executable is
+invented. At most 16 shares are accepted. Canonical roots must exist inside the
+native mount, on its filesystem, with a matching `fuse.sshfs` mountinfo entry.
+Symlinks and escapes are rejected. KDE Connect owns mounting.
+
+Each prepared location carries `peerId`, `providerOwner`, `path`, `name`,
+`mountPath`, `mountIdentity`, `rootIdentity` and `advertisements`. Open accepts the
+unchanged selected item and rechecks owner, peer, capability, advertised roots
+and mount/root identity before `Gio.AppInfo.launch_default_for_uri`. One root
+opens automatically; multiple roots require explicit selection. `opened` means
+launch requested, not visible-window acceptance. No file content is read here.
+
+Calls share a 27-second helper deadline. Ordinary D-Bus calls have a five-second
+maximum; native mount has twenty seconds. The QML process has a thirty-second
+outer timeout and one-second kill grace. Output is capped at 16 KiB; errors are
+fixed public codes, not raw diagnostics. Peer changes, popup closure and
+cancellation advance the generation and discard stale results. A desktop launch
+already in progress cannot be recalled. Mount validation and launch are separate
+operations; no atomic handoff is claimed. Send drafts and transfer operations
+have separate owners. Native tests use private fake providers and no real mount.
+
 ## Optional section and action contract
 
-Section visibility and start-expanded flags are typed boolean preferences. The
+Legacy section visibility and start-expanded flags remain typed boolean preferences. The
 native helper allowlists their keys and requires the native API's `ok` reply.
 The controls display host-provided settings. Expanding a
 section is session UI state; opening the panel restores the selected defaults.
@@ -473,7 +552,7 @@ Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
 
 `PanelSections.json` is the fixed catalogue for the daily sections. It owns
-their IDs, labels, help, visibility keys, expansion defaults and settings domain.
+their IDs, labels, help, legacy visibility keys, default policies, expansion defaults and settings domain.
 `PanelSectionCatalog.qml` reads this trusted local file. `SectionOrder.js` and
 `scripts/section_order.py` validate the same catalogue and bounded `sectionOrder`
 CSV. The retired `information` ID is discarded for compatibility. Unknown or repeated active IDs are rejected on save. Missing known IDs append in
@@ -484,9 +563,27 @@ hidden, so it cannot start owner-status polls. The device picker and fixed View
 routes stay available; a load failure shows recovery text in the daily panel.
 
 `Panel.qml` moves existing `QtQml.Models.ObjectModel` objects. It preserves draft
-and control identity while changing visual and Tab order. Settings uses stable
-rows and native Up/Down buttons. Saves wait for host readback; pending requests
-keep focus and refuse repeats without a queue. Every section can move, including
+and control identity while changing visual and Tab order. Devices has one inline
+Edit layout mode with native visibility and position menus; the former Appearance
+ordering list is replaced by a route to this editor. Every frame stays present
+while editing, including hidden and unavailable sections. Optional bodies are
+concealed without destroying them; display-driven BTH and Syncthing polling stops.
+The device selector stays visible. Domain settings retain expansion defaults.
+
+`sectionVisibility` is a JSON object string capped at 2048 characters. Optional
+catalogue IDs map to `show`, `hide`, `available` or `unavailable`. Arrays, duplicate
+keys, unknown IDs/policies and a policy for mandatory `devices` are rejected by
+independent JavaScript and Python boundaries. Missing entries retain legacy
+boolean behavior; explicit entries override it. No eager migration rewrites flags.
+Unknown/checking readiness matches neither conditional policy. Availability uses
+reported capability/readiness or configured tool display options, never inferred
+transfer delivery, command count, playback or VPN state. Explicit Show on an
+unavailable section exposes a reason rather than active provider controls.
+
+Saves wait for matching host readback; pending requests keep focus and refuse
+repeats without a queue. A layout-specific key/value guard spans helper execution
+and readback so a second full-map edit cannot overwrite an unobserved save.
+Missing readback reports recovery text instead of silently accepting another edit. Feedback retains its originating section after the pending lock clears, so failed-save messages remain visible beside lower sections. Status changes use native polite accessibility announcements. Editor keyboard guards prevent hidden daily action dispatch; locked controls let Tab, Backtab and Escape pass. Every section can move, including
 hidden sections. The device switcher stays visible when its details collapse.
 Pairing warnings, pending unpair confirmation and launch feedback remain reachable.
 

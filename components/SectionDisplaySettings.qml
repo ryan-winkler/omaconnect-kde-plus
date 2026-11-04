@@ -21,7 +21,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "These display choices apply to all devices. They do not change native permissions."
+        text: "These defaults apply when Devices opens. To change visibility or order, select Edit layout in Devices."
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -50,12 +50,12 @@ Column {
                 preferences: {
                     var entry = parent.modelData
                     var fields = root.catalog.preferencesFor(root.page).filter(function(row) {
-                        return row.key === entry.visibilityKey || row.key === entry.expandedKey
+                        return row.key === entry.expandedKey
                     })
                     return fields.map(function(row) {
                         var result = Object.assign({}, row)
                         result.accessibleName = row.label
-                        result.label = row.key === entry.visibilityKey ? "Show in Devices" : "Start expanded"
+                        result.label = "Start expanded"
                         return result
                     })
                 }

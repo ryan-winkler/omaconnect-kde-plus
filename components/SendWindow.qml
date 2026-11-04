@@ -10,6 +10,8 @@ import qs.Ui as Kit
 // All draft/transfer state belongs to the existing service, not this window.
 Window {
     id: root
+    LayoutMirroring.enabled: Commons.I18n.rightToLeft
+    LayoutMirroring.childrenInherit: true
     required property var service
     property var device: null
     property var chooserOptions: ({useDesktopFileChooser: false, reviewFilesBeforeSend: false})
@@ -30,6 +32,18 @@ Window {
     minimumHeight: 360
     color: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     visible: false
+    property var noticeSurfaceService: null
+    function syncTaskNoticeSurface() {
+        if (noticeSurfaceService && noticeSurfaceService !== service && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
+            noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "send", false)
+        noticeSurfaceService = service
+        if (service && typeof service.setTaskNoticeSurfaceVisible === "function")
+            service.setTaskNoticeSurfaceVisible(root, "send", visible)
+    }
+    onServiceChanged: syncTaskNoticeSurface()
+    onVisibleChanged: syncTaskNoticeSurface()
+    Component.onDestruction: if (noticeSurfaceService && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
+        noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "send", false)
 
     function openSend() { show(); raise(); requestActivate() }
     function chooseFiles() {

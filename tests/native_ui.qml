@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import Quickshell
 import Quickshell.Io
+import qs.Commons as Commons
 import "plugin" as Plugin
 import "plugin/components" as Components
 import "plugin/bridge" as Bridge
@@ -125,6 +126,17 @@ ShellRoot {
                 // Wait for the shared device picker in the composed daily view.
                 var devicePicker = test.find(panel,function(object) { return object.objectName === "daily-device-selector" },[])
                 if (!devicePicker) { panel.open();return }
+                var handler = Commons.IpcRegistry.handlerFor("omaconnect.plus")
+                test.check(!!handler, "Plus registers with native direct IPC")
+                test.check(Commons.IpcRegistry.call("omaconnect.plus", "hide", []).ran, "native direct IPC invokes the existing safe hide route")
+                test.check(!Commons.IpcRegistry.call("omaconnect.plus", "destroy", []).ran, "native direct IPC cannot call QObject methods")
+                test.check(!Commons.IpcRegistry.call("omaconnect.plus", "open", ["unexpected"]).ran, "native direct IPC rejects wrong argument counts")
+                var operationsBeforeNotice = JSON.stringify(service.operations)
+                test.check(Commons.IpcRegistry.call("omaconnect.plus", "activity", []).ran, "native notification action invokes Activity")
+                var activityPanel = test.find(widget, function(object) { return "currentView" in object && object.currentView === "Activity" }, [])
+                test.check(!!activityPanel && widget.opened, "notification action opens the current Activity view")
+                test.check(JSON.stringify(service.operations) === operationsBeforeNotice, "notification action does not replay file submission")
+                widget.close()
                 test.check(Bridge.Bridge.service === service, "own-service bridge")
                 test.check(widget.service === service && panel.service === service, "bar and panel bridge fallback")
                 test.check(!!test.find(widget,function(object) { return object.objectName === "bar-file-drop-area" },[]), "actual bar icon installs the shared file-drop target")

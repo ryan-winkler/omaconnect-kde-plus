@@ -3,6 +3,7 @@ import QtQuick.Window
 import QtTest
 import Quickshell
 import Quickshell.Io
+import qs.Commons as Commons
 import "plugin" as Plugin
 
 ShellRoot {
@@ -23,6 +24,8 @@ ShellRoot {
     property var address:null
     property var addressSection:null
     property var textInput:null
+    property var focusAfterPendingTab:null
+    property int readbackWaitTicks:0
     property string fileDraft:""
     property var defaults:[]
     property var beforeAllHidden:({})
@@ -49,7 +52,6 @@ ShellRoot {
     function order(){return sectionItems().map(function(item){return item.sectionId}).join(",")}
     function sameWidgets(){return sectionItems().every(function(item){return widgets[item.sectionId]===item})}
     function patchSettings(patch){savedSettings=Object.assign({},savedSettings,patch)}
-    function editor(){return find(panel.settingsWindow,function(item){return typeof item.moveSection==="function" && "order" in item && "busy" in item},[])}
     function preserve(){
         return sameWidgets() && address.text==="10.9.8.7" && addressSection.removalReview==="A:10.9.8.7"
             && panel.activeComposer==="text" && panel.draftText==="Composition draft"
@@ -69,6 +71,27 @@ ShellRoot {
     }
     function drag(actions){return {hasUrls:true,urls:[Qt.resolvedUrl("one")],supportedActions:actions,accepted:false,action:Qt.IgnoreAction,accept:function(action){this.accepted=true;this.action=action}}}
     function currentDraftState(){return JSON.stringify([panel.draftText,address.text,addressSection.removalReview,service.selectionState,service.selectedDeviceId])}
+    FileView { id:pendingLayout;path:Qt.resolvedUrl("pending-layout.json").toString().replace(/^file:\/\//,"");watchChanges:true;printErrors:false;onFileChanged:reload() }
+    Process {
+        id:languageWriter
+        property string language:"en"
+        command:["python3","-c","import os,pathlib,sys; pathlib.Path(os.environ['XDG_CONFIG_HOME'],'omarchy','language').write_text(sys.argv[1]+chr(10))",language]
+    }
+    function captureLayout(name,next,preservePosition) {
+        test.phase=-1
+        var viewport=named(panel,"daily-content-scroll")
+        if(!preservePosition) {
+            var focus=named(panel,panel.editingLayout ? "section-position-devices" : "daily-device-selector")
+            focus.forceActiveFocus()
+        }
+        Qt.callLater(function(){
+            if(!preservePosition)viewport.contentItem.contentY=0
+            viewport.grabToImage(function(result){
+                if(!check(result.saveToFile(Qt.resolvedUrl(name).toString().replace("file://","")),"layout screenshot saved: "+name))return
+                test.phase=next
+            })
+        })
+    }
     Plugin.Service{id:service}
     QtObject{id:facade;function serviceFor(id){return service}}
     QtObject{
@@ -100,6 +123,9 @@ ShellRoot {
     }
     Window{
         id:preview;visible:true;width:560;height:900
+        // The private Item host mirrors like the native KeyboardPanel boundary.
+        LayoutMirroring.enabled:Commons.I18n.rightToLeft
+        LayoutMirroring.childrenInherit:true
         Plugin.BarWidget{id:widget;bar:bar;settings:test.savedSettings}
         Item{TestEvent{id:events}}
     }
@@ -125,6 +151,7 @@ ShellRoot {
                     var refs={};sectionItems().forEach(function(item){refs[item.sectionId]=item});widgets=refs
                     var correct=panel.sectionCatalog.entries.every(function(entry){return panel.sectionExpanded(entry.id)===panel.getSetting(entry.expandedKey,entry.defaultExpanded)})
                     if(!test.check(correct,"opening restores typed saved choices and metadata expansion defaults"))return
+                    if(savedSettings.fixtureLayoutReadbackTest){panel.openSettings("Appearance");test.phase=2000;return}
                     var picker=test.named(panel,"daily-device-selector")
                     if(!test.check(picker && picker.count===2 && picker.currentValue==="A","one shared current-device picker replaces the duplicate roster"))return
                     test.address=test.find(panel,function(item){return "placeholderText" in item && item.placeholderText==="Private or Tailscale IP address"},[])
@@ -136,6 +163,60 @@ ShellRoot {
                     if(!test.check(textInput!==null,"the existing text composer exposes its input"))return
                     if(!test.check(service.stageDroppedFiles("A",[String(Qt.resolvedUrl("one"))]),"private file review starts for A without submission"))return
                     test.phase=1
+                }else if(test.phase===2000 && panel.settingsWindow.visible){
+                    accessible(panel.settingsWindow,"Edit Devices layout").Accessible.pressAction()
+                    preview.requestActivate();test.phase=2001
+                }else if(test.phase===2001 && panel.editingLayout){
+                    if(!test.check(named(panel,"edit-layout").activeFocus,"Appearance route enters layout editing with deliberate Done focus"))return
+                    var catcher=named(panel,"daily-key-catcher")
+                    catcher.forceActiveFocus();panel.focusSection="actions";panel.actionSelectedIndex=0
+                    events.keyClick(Qt.Key_Return,Qt.NoModifier,1)
+                    panel.activate();panel.triggerAction("file")
+                    if(!test.check(catcher.blocked && panel.currentView==="Devices" && service.selectionState!=="choosing" && service.actionState!=="running","focused legacy catcher and direct daily activation cannot dispatch hidden shortcuts while editing"))return
+                    named(panel,"section-visibility-commands").forceActiveFocus()
+                    named(panel,"section-visibility-commands").activated(3);test.phase=2002
+                }else if(test.phase===2002 && named(panel,"layout-preference-saver").message==="Setting saved." && !named(panel,"layout-preference-saver").busy){
+                    if(!test.check(panel.layoutSaveBusy && named(panel,"section-visibility-commands").currentIndex===2,"ACK before host readback keeps the map locked and saved value selected"))return
+                    var pendingControl=named(panel,"section-visibility-commands")
+                    var localStatus=named(panel,"section-layout-status-commands")
+                    if(!test.check(pendingControl.enabled && pendingControl.activeFocus && pendingControl.locked && pendingControl.opacity<1 && localStatus.visible && localStatus.font.bold && localStatus.text.indexOf("Status:")===0,"lower focused menu keeps identity and exposes a local waiting status"))return
+                    events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
+                    pendingControl.Accessible.pressAction()
+                    if(!test.check(!pendingControl.popup.visible && !named(panel,"section-position-syncthing").enabled,"pending native controls cannot open a menu or change selection"))return
+                    panel.scrollSectionIntoView("commands")
+                    captureLayout("layout-pending-lower-section.png",20022,true)
+                }else if(test.phase===20022){
+                    var waitingMenu=named(panel,"section-visibility-commands")
+                    events.keyClick(Qt.Key_Tab,Qt.NoModifier,1)
+                    focusAfterPendingTab=preview.activeFocusItem
+                    if(!test.check(focusAfterPendingTab!==waitingMenu && !waitingMenu.activeFocus,"Tab leaves a locked lower menu without trapping keyboard focus"))return
+                    test.phase=20021
+                }else if(test.phase===20021){
+                    if(!test.check(!panel.saveSectionPolicy("commands","show") && panel.layoutMessage.indexOf("not submitted")>=0,"second whole-map edit is rejected before matching readback"))return
+                    var applied={};applied[panel.layoutPending.key]=panel.layoutPending.value;patchSettings(applied);test.phase=2003
+                }else if(test.phase===2003 && !panel.layoutSaveBusy){
+                    if(!test.check(preview.activeFocusItem===focusAfterPendingTab && panel.sectionPolicy("commands")==="unavailable","matching readback unlocks without stealing the user's new focus"))return
+                    panel.saveSectionPolicy("commands","show");panel.setLayoutEditing(false);test.phase=2004
+                }else if(test.phase===2004 && panel.layoutReadbackTimedOut){
+                    if(!test.check(panel.layoutSaveBusy && named(panel,"layout-message").visible && panel.layoutMessage.indexOf("not confirmed")>=0,"missing readback times out visibly outside edit mode and stays locked"))return
+                    captureLayout("layout-timeout-status.png",20041)
+                }else if(test.phase===20041){
+                    panel.setLayoutEditing(true);test.phase=200411
+                }else if(test.phase===200411){
+                    panel.scrollSectionIntoView("commands")
+                    captureLayout("layout-timeout-lower-section.png",20042,true)
+                }else if(test.phase===20042){
+                    if(!test.check(named(panel,"section-layout-status-commands").visible && named(panel,"section-layout-status-commands").text.indexOf("not confirmed")>=0,"timed-out lock remains visible at the lower section"))return
+                    if(!test.check(!panel.saveSectionPolicy("commands","hide"),"timeout does not permit a stale whole-map overwrite"))return
+                    if(!test.check(panel.useCurrentSavedLayout() && !panel.layoutSaveBusy,"explicit recovery uses current saved settings and releases the lock"))return
+                    panel.saveSectionPolicy("commands","hide");test.phase=2005
+                }else if(test.phase===2005 && named(panel,"layout-preference-saver").message==="Setting saved." && !named(panel,"layout-preference-saver").busy){
+                    var finalReadback={};finalReadback[panel.layoutPending.key]=panel.layoutPending.value;patchSettings(finalReadback);test.phase=2006
+                }else if(test.phase===2006 && !panel.layoutSaveBusy){
+                    if(!test.check(panel.sectionPolicy("commands")==="hide" && sameWidgets(),"recovery and final readback keep original section instances"))return
+                    panel.layoutGuardMessage="Setting was not confirmed. Controls show the saved configuration."
+                    if(!test.check(named(panel,"section-layout-status-commands").visible && named(panel,"section-layout-status-commands").text.indexOf("not confirmed")>=0,"failed-save feedback remains beside its lower section after the pending lock clears"))return
+                    console.log("LAYOUT_READBACK_PASS "+JSON.stringify(checks));console.log("NATIVE_PASS layout readback");Qt.quit()
                 }else if(test.phase===1001){
                     var coldSync=find(panel,function(item){return "linkedId" in item && "draftPeerId" in item},[])
                     var coldTimer=find(coldSync,function(item){return "interval" in item && item.interval===15000 && "running" in item},[])
@@ -169,38 +250,78 @@ ShellRoot {
                     if(!test.check(preview.activeFocusItem===composerHeader,"collapsing a composer keeps keyboard focus on its disclosure"))return
                     if(!test.check(panel.draftText==="Composition draft","collapsing a composer keeps its unsent text"))return
                     panel.setSectionExpanded("actions",true);panel.openComposer("text");panel.draftText="Composition draft"
-                    panel.openSettings("Appearance");test.phase=2
-                }else if(test.phase===2 && panel.settingsWindow.visible && editor()){
-                    var rows=panel.sectionCatalog.order.every(function(id){return test.named(editor(),"section-order-row-"+id)!==null})
-                    if(!test.check(rows,"actual Settings editor keeps all nine rows including hidden sections"))return
-                    accessible(editor(),"Move Quick actions down").Accessible.pressAction()
+                    panel.setLayoutEditing(true);test.phase=2
+                }else if(test.phase===2 && panel.editingLayout){
+                    if(!test.check(panel.sectionCatalog.order.every(function(id){return named(panel,"layout-section-"+id).visible && named(panel,"section-position-"+id).visible}),"all actual section positions are editable, including hidden sections"))return
+                    if(!test.check(named(panel,"daily-device-selector").visible && !named(panel,"section-visibility-devices").visible,"device selector remains usable and has no hide policy"))return
+                    var position=named(panel,"section-position-actions")
+                    position.forceActiveFocus();events.keyClick(Qt.Key_Space,Qt.NoModifier,1)
+                    events.keyClick(Qt.Key_Down,Qt.NoModifier,1);events.keyClick(Qt.Key_Return,Qt.NoModifier,1)
                     test.phase=3
-                }else if(test.phase===3 && !editor().busy && panel.sectionCatalog.order[1]==="drop" && order()===panel.sectionCatalog.order.join(",")){
-                    if(!test.check(preserve(),"host-saved reorder moves the same widgets and preserves all drafts"))return
-                    panel.settingsWindow.closeSettings();panel.open();preview.requestActivate();test.phase=4
+                }else if(test.phase===3 && !panel.layoutSaveBusy && panel.sectionCatalog.order[1]==="drop" && order()===panel.sectionCatalog.order.join(",")){
+                    if(!test.check(preserve() && named(panel,"section-position-actions").activeFocus,"native position move preserves the same widgets, drafts and keyboard focus"))return
+                    panel.setLayoutEditing(false);test.phase=4
                 }else if(test.phase===4){
                     if(!test.check(widgets.drop.y<widgets.actions.y && tabHeaderOrder()==="section-toggle-drop,section-toggle-actions","actual visual and Tab order change together after live move"))return
-                    panel.openSettings("Appearance");test.phase=5
-                }else if(test.phase===5 && panel.settingsWindow.visible && !editor().busy){
-                    accessible(editor(),"Move Quick actions up").Accessible.pressAction();test.phase=6
-                }else if(test.phase===6 && !editor().busy && order()===defaults.join(",")){
+                    panel.setLayoutEditing(true);test.phase=5
+                }else if(test.phase===5 && panel.editingLayout && !panel.layoutSaveBusy){
+                    named(panel,"section-position-actions").activated(1);test.phase=6
+                }else if(test.phase===6 && !panel.layoutSaveBusy && order()===defaults.join(",")){
                     if(!test.check(preserve(),"moving back does not recreate or reset a section"))return
-                    accessible(editor(),"Move Syncthing identity note up").Accessible.pressAction();test.phase=7
-                }else if(test.phase===7 && !editor().busy && panel.sectionCatalog.order[7]==="syncthing" && order()===panel.sectionCatalog.order.join(",")){
-                    if(!test.check(!panel.sectionVisible("syncthing") && preserve(),"hidden row still moves in Settings without losing daily state"))return
+                    named(panel,"section-position-syncthing").activated(7);test.phase=7
+                }else if(test.phase===7 && !panel.layoutSaveBusy && panel.sectionCatalog.order[7]==="syncthing" && order()===panel.sectionCatalog.order.join(",")){
+                    if(!test.check(!panel.sectionVisible("syncthing") && named(panel,"layout-section-syncthing").visible && preserve(),"hidden section moves directly at its actual position without losing daily state"))return
                     beforeAllHidden=savedSettings
                     var hidden={};panel.sectionCatalog.entries.forEach(function(entry){if(entry.visibilityKey)hidden[entry.visibilityKey]=false})
                     patchSettings(hidden);test.phase=71
                 }else if(test.phase===71){
-                    var allRows=panel.sectionCatalog.order.every(function(id,index){
-                        var row=named(editor(),"section-order-row-"+id)
-                        var entry=panel.sectionCatalog.entry(id)
-                        var move=accessible(row,"Move "+entry.label+(index>0?" up":" down"))
-                        return row && move && move.enabled && (!entry.visibilityKey || !row.shown)
-                    })
-                    if(!test.check(allRows && preserve(),"all nine Settings rows remain movable when every optional section is stored hidden"))return
+                    if(!test.check(panel.sectionCatalog.order.every(function(id){return named(panel,"layout-section-"+id).visible && named(panel,"section-position-"+id).enabled}) && preserve(),"all nine inline section frames remain movable when every optional section is hidden"))return
                     savedSettings=beforeAllHidden
-                    panel.settingsWindow.closeSettings();panel.open();preview.requestActivate();test.phase=8
+                    panel.saveSectionPolicy("commands","unavailable");test.phase=72
+                }else if(test.phase===72 && !panel.layoutSaveBusy && panel.sectionPolicy("commands")==="unavailable"){
+                    if(!test.check(panel.sectionAvailability("commands")==="unavailable" && panel.sectionVisible("commands"),"When unavailable shows a known unsupported capability"))return
+                    panel.saveSectionPolicy("commands","available");test.phase=73
+                }else if(test.phase===73 && !panel.layoutSaveBusy && panel.sectionPolicy("commands")==="available"){
+                    if(!test.check(!panel.sectionVisible("commands"),"When available excludes a known unsupported capability"))return
+                    panel.saveSectionPolicy("commands","show");test.phase=74
+                }else if(test.phase===74 && !panel.layoutSaveBusy && panel.sectionPolicy("commands")==="show"){
+                    if(!test.check(panel.sectionVisible("commands"),"Show retains the section when its capability is unavailable"))return
+                    panel.saveSectionPolicy("commands","hide");test.phase=75
+                }else if(test.phase===75 && !panel.layoutSaveBusy && panel.sectionPolicy("commands")==="hide"){
+                    if(!test.check(!panel.sectionVisible("commands") && named(panel,"layout-section-commands").visible,"Hide removes the daily section but keeps its inline editor recoverable"))return
+                    service.scanning=true
+                    patchSettings({sectionVisibility:'{"commands":"unavailable"}'});test.phase=76
+                }else if(test.phase===76){
+                    if(!test.check(panel.sectionAvailability("commands")==="checking" && !panel.sectionVisible("commands"),"a scan is checking, not unavailable"))return
+                    patchSettings({sectionVisibility:'{"commands":"available"}'});test.phase=77
+                }else if(test.phase===77){
+                    if(!test.check(!panel.sectionVisible("commands"),"checking data is not available either"))return
+                    if(!test.check(panel.sectionAvailability("addresses")==="available","saved-address readiness is independent of device scanning"))return
+                    patchSettings({quickActionsOrder:"plus-settings"})
+                    if(!test.check(panel.sectionAvailability("actions")==="available" && panel.sectionAvailabilityText("actions").indexOf("local shortcut")>=0,"local global shortcut stays available during scanning with an accurate reason"))return
+                    patchSettings({quickActionsOrder:"file,text,clipboard"})
+                    service.scanning=false
+                    patchSettings({sectionVisibility:"{}"})
+                    panel.setLayoutEditing(false);test.phase=9010
+                }else if(test.phase===9010){
+                    captureLayout("layout-normal.png",9011)
+                }else if(test.phase===9011){
+                    panel.setLayoutEditing(true);test.phase=9012
+                }else if(test.phase===9012){
+                    captureLayout("layout-edit.png",9013)
+                }else if(test.phase===9013){
+                    find(panel,function(item){return "contentWidth" in item && "anchorItem" in item},[]).contentWidth=320;test.phase=9014
+                }else if(test.phase===9014){
+                    captureLayout("layout-edit-narrow.png",9015)
+                }else if(test.phase===9015){
+                    languageWriter.language="ar";languageWriter.running=true;test.phase=9016
+                }else if(test.phase===9016 && Commons.I18n.rightToLeft){
+                    captureLayout("layout-edit-narrow-rtl.png",9017)
+                }else if(test.phase===9017){
+                    languageWriter.language="en";languageWriter.running=true;test.phase=9018
+                }else if(test.phase===9018 && !Commons.I18n.rightToLeft){
+                    find(panel,function(item){return "contentWidth" in item && "anchorItem" in item},[]).contentWidth=380
+                    panel.setLayoutEditing(false);test.phase=8
                 }else if(test.phase===8){
                     named(panel,"section-toggle-addresses").Accessible.pressAction();test.phase=9
                 }else if(test.phase===9){

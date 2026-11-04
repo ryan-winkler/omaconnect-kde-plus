@@ -9,6 +9,7 @@ Column {
     id: root
     required property var panel
     property bool detailsExpanded: true
+    property bool showDetails: true
     signal detailsToggleRequested()
 
     width: parent ? parent.width : 0
@@ -251,7 +252,7 @@ Column {
     // One region for everything about the selected device, styled like the other sections.
     DailySection {
         sectionId: "devices"
-        visible: !!root.device
+        visible: root.showDetails && !!root.device
         title: "Device details"
         description: "Battery, network, ID and pairing for the selected device. Rows the device does not report are hidden."
         expanded: root.detailsExpanded

@@ -107,9 +107,7 @@ Choose a preset, alias or installed icon, then preview before Apply.
 
 ![Device appearance dialog with example device alias, icon presets and preview](screenshots/icons.png)
 
-Move complete sections with Up and Down. Hidden sections retain their position.
-
-![Appearance settings scrolled to daily section ordering controls](screenshots/section-order.png)
+To change section visibility or order, open **Devices → Edit layout**. Edit the actual sections there. Appearance links to that editor.
 
 </details>
 
@@ -148,12 +146,25 @@ a draft reminder names its recipient. Activity shows pending or uncertain
 submission state even when its shortcut is hidden. Accepted requests do not
 confirm delivery.
 
-Each daily section has an Expand or Collapse control. In **Plus settings →
-Appearance → Daily section order**, use **Up** and **Down** to move any complete
-section. Hidden sections keep their position. **Use default section order** resets
-only the order. These display choices apply to all devices on this computer.
+Each daily section has an Expand or Collapse control. Select **Devices → Edit
+layout** to change the actual sections in place. All sections appear while editing,
+including hidden sections. **Visibility** offers **Show**, **Hide**, **When
+available** and **When unavailable**. Loading or unknown data matches neither
+condition. Availability describes reported capability or configured local tools;
+it does not confirm delivery, playback or a VPN connection.
 
-Choose **Show in Devices** and **Start expanded** in the section's settings domain:
+Use a section's **Move to** menu to select its position. This works with a pointer
+or keyboard. Hidden sections keep their positions. **Use default section order**
+resets order only. Select **Done** to return to the daily view. Changes apply to
+all devices on this computer. The device selector always stays available.
+
+Choices save when selected. Controls show saved configuration after readback.
+While a save is pending, another layout edit is not submitted. A missing readback
+shows recovery text; follow it before making another change. Save status and failures stay beside the section you edited. Leaving edit mode
+does not discard a submitted save. Layout editing does not change native modules,
+VPN modes or accepted file operations, and preserves file and text drafts.
+
+**Start expanded** remains on each section's settings page:
 
 | Settings domain | Daily sections |
 | --- | --- |
@@ -250,6 +261,24 @@ Each action shows its description and selected-device availability.
 
 If the Quick Share window does not appear after launch, check its tray icon.
 See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare#installation).
+
+## Browse phone files
+
+In Devices, expand **File sharing** and select **Browse phone files**. You can
+also add **Browse phone files** in Quick actions settings. KDE Connect prepares
+the phone's shared storage, then Plus asks your default file manager to open it.
+One advertised folder opens directly. If the phone shares several folders,
+select one from the list. Plus uses the advertised folders; it does not guess
+Photos or Downloads paths.
+
+The phone must be paired, reachable and permit **Filesystem expose** in KDE
+Connect. **Phone file settings in KDE** opens the native settings fallback.
+A launch request does not confirm that a file-manager window appeared. If it
+fails, check the default file manager and the native KDE storage settings.
+Switching devices or closing the popup cancels pending browsing. A file manager
+that has already started opening can still appear. Browsing does not change the
+recipient or files in a Send draft. Copying, moving or deleting files in the file
+manager remains a separate action owned by that application.
 
 ## Device features
 
@@ -367,6 +396,25 @@ that has not exited. A lost final
 acknowledgement stays **Cancellation unconfirmed**. Cancellation after a native
 invocation does not prove that the transfer stopped.
 
+**Task notices:** In **Plus settings → Quick actions**, **Show task notices**
+controls desktop notices after a file operation. Plus suppresses these notices
+while its popup or Send window is open. It reports request evidence, not receipt.
+The **Activity** button opens current Activity. It never retries or restores an
+old task. Desktop Do Not Disturb and notification history apply.
+
+**Include device name in task notices** is off by default. Enable it only if you
+want the reviewed device name on desktop cards and in their history. File names,
+paths, device IDs and message content stay excluded. Changing this preference
+does not remove earlier desktop history. If desktop notices fail, Activity keeps
+the submission result and shows a short notice-status message. Plus does not
+retry the file request. Notice text currently ships in English and uses the
+native plugin translation fallback.
+
+KDE Connect owns phone notification forwarding, its native actions and phone
+permissions. Open **Native KDE Connect settings** in **Device features** for
+those controls. The Plus task-notice preferences do not grant phone permissions
+or collect phone notifications.
+
 For an accepted **LAN** transfer, select **Cancel** in KDE Connect's native transfer
 progress window or job notification. The native job can contain other submissions
 to the same device. The public sharing API returns no transfer ID or cancel method,
@@ -397,7 +445,7 @@ Text, Ping, Clipboard and remote-command success messages also report request ac
 
 ## Syncthing identity note
 
-Enable **Show in Devices** for **Syncthing identity note** in **Settings → Connections**. Select a
+In **Devices → Edit layout**, set **Syncthing identity note** to **Show** or **When available**, then select **Done**. Select a
 device, expand its note and compare the names and full identities in both owner
 apps. Paste the full Syncthing ID and select **Save local identity note**. This
 helps when a machine has different names in the two apps. Changing the selected

@@ -97,9 +97,11 @@ print(json.dumps({"state":"observed","peerId":peer,"enabled":values,"error":""})
             home = fixture/'home'; home.mkdir()
             (home/'.local/bin').mkdir(parents=True)
             (home/'.local/bin/remote-access-mode').symlink_to(fake_bin/'remote-access-mode')
+            language_dir = home/'.config/omarchy'; language_dir.mkdir(parents=True, exist_ok=True)
+            (language_dir/'language').write_text('en\n')
             runtime = fixture/'runtime'; runtime.mkdir(mode=0o700)
             self.configure_fixture(fixture, plugin, home, fake_bin)
-            env = {'PATH':str(fake_bin), 'HOME':str(home), 'XDG_CONFIG_HOME':str(home/'.config'), 'XDG_CACHE_HOME':str(home/'.cache'), 'XDG_DATA_HOME':str(home/'.local/share'), 'XDG_STATE_HOME':str(home/'.local/state'), 'XDG_RUNTIME_DIR':str(runtime), 'QT_QPA_PLATFORM':'offscreen', 'QT_QUICK_BACKEND':'software', 'LANG':'C.UTF-8', 'NATIVE_COMMAND_LOG':str(fixture/'commands.jsonl'), 'DBUS_SYSTEM_BUS_ADDRESS':'unix:path='+str(fixture/'no-system-bus')}
+            env = {'PATH':str(fake_bin), 'HOME':str(home), 'OMARCHY_PATH':'/usr/share/omarchy', 'XDG_CONFIG_HOME':str(home/'.config'), 'XDG_CACHE_HOME':str(home/'.cache'), 'XDG_DATA_HOME':str(home/'.local/share'), 'XDG_STATE_HOME':str(home/'.local/state'), 'XDG_RUNTIME_DIR':str(runtime), 'QT_QPA_PLATFORM':'offscreen', 'QT_QUICK_BACKEND':'software', 'LANG':'C.UTF-8', 'NATIVE_COMMAND_LOG':str(fixture/'commands.jsonl'), 'DBUS_SYSTEM_BUS_ADDRESS':'unix:path='+str(fixture/'no-system-bus')}
             if desktop:
                 env.pop('QT_QUICK_BACKEND',None)
                 env.update(QT_QPA_PLATFORM='wayland', QSG_RHI_BACKEND='opengl', WAYLAND_DISPLAY='validation-wayland', OMACONNECT_DESKTOP_VALIDATION='1')

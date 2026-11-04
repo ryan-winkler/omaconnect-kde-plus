@@ -6,7 +6,8 @@
     "expandedKey": "devicesStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": true,
-    "settingsPage": "Device features"
+    "settingsPage": "Device features",
+    "defaultPolicy": "show"
   },
   {
     "id": "actions",
@@ -16,17 +17,19 @@
     "defaultVisible": true,
     "defaultExpanded": true,
     "settingsPage": "Quick actions",
-    "visibilityKey": "showQuickActions"
+    "visibilityKey": "showQuickActions",
+    "defaultPolicy": "available"
   },
   {
     "id": "drop",
     "label": "File sharing",
-    "description": "Choose or drop local files, then review the fixed recipient and select Send. Hiding this section does not clear a draft.",
+    "description": "Choose local files to send, or drop files for review. Enable Review files before Send to review chooser selections. Hiding this section preserves the draft.",
     "expandedKey": "inlineSendStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": false,
     "settingsPage": "Quick actions",
-    "visibilityKey": "showInlineSend"
+    "visibilityKey": "showInlineSend",
+    "defaultPolicy": "show"
   },
   {
     "id": "native",
@@ -36,7 +39,8 @@
     "defaultVisible": true,
     "defaultExpanded": false,
     "settingsPage": "Device features",
-    "visibilityKey": "showNativeFeatures"
+    "visibilityKey": "showNativeFeatures",
+    "defaultPolicy": "show"
   },
   {
     "id": "media",
@@ -46,7 +50,8 @@
     "defaultVisible": true,
     "defaultExpanded": false,
     "settingsPage": "Device features",
-    "visibilityKey": "showMediaPlayer"
+    "visibilityKey": "showMediaPlayer",
+    "defaultPolicy": "available"
   },
   {
     "id": "commands",
@@ -56,7 +61,8 @@
     "defaultVisible": true,
     "defaultExpanded": false,
     "settingsPage": "Device features",
-    "visibilityKey": "showRemoteCommands"
+    "visibilityKey": "showRemoteCommands",
+    "defaultPolicy": "available"
   },
   {
     "id": "connections",
@@ -66,7 +72,8 @@
     "defaultVisible": true,
     "defaultExpanded": false,
     "settingsPage": "Connections",
-    "visibilityKey": "showNetworkControls"
+    "visibilityKey": "showNetworkControls",
+    "defaultPolicy": "available"
   },
   {
     "id": "addresses",
@@ -76,7 +83,8 @@
     "defaultVisible": true,
     "defaultExpanded": false,
     "settingsPage": "Connections",
-    "visibilityKey": "showSavedAddresses"
+    "visibilityKey": "showSavedAddresses",
+    "defaultPolicy": "show"
   },
   {
     "id": "syncthing",
@@ -86,6 +94,7 @@
     "defaultVisible": false,
     "defaultExpanded": false,
     "settingsPage": "Connections",
-    "visibilityKey": "showSyncthingLinks"
+    "visibilityKey": "showSyncthingLinks",
+    "defaultPolicy": "show"
   }
 ]

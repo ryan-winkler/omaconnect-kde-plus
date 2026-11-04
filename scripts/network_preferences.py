@@ -8,14 +8,15 @@ import sys
 import time
 
 from manage_addresses import AddressError, bounded_command
-from section_order import BOOL_DEFAULTS, normalized_value
+from section_order import BOOL_DEFAULTS, normalized_value, normalized_visibility
 
 KEYS = frozenset(("networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled",
                   "showBatteryStats", "showBarBattery", "showNetworkStats"))
 KEYS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
 KEYS |= frozenset(("useDesktopFileChooser", "reviewFilesBeforeSend"))
+KEYS |= frozenset(("taskNotificationsEnabled", "taskNotificationDeviceName"))
 KEYS |= frozenset(BOOL_DEFAULTS)
-STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder"))
+STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder", "sectionVisibility"))
 ACTION_IDS = frozenset(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock', 'external-monitor'))
 MAX_REQUEST = 32768
 
@@ -33,6 +34,8 @@ def setting_value(request):
         raise ValueError()
     if key == "sectionOrder":
         return normalized_value(value)
+    if key == "sectionVisibility":
+        return normalized_visibility(value)
     if key == "quickActionsOrder":
         values = value.split(",") if value else []
         if len(value) > 512 or len(values) > len(ACTION_IDS) or len(set(values)) != len(values) or any(item not in ACTION_IDS for item in values):
