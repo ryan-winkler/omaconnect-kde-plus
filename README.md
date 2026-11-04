@@ -5,7 +5,11 @@ run your own quick actions and choose how your devices look. It is a fork of
 [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect), built
 on [KDE Connect](https://kdeconnect.kde.org/).
 
-![Native settings with invented sample device data](preview.png)
+<img src="preview.png" width="428" alt="Omaconnect bar icon and daily Devices panel with an example phone">
+
+Example devices, files and media are used in the screenshots.
+See the [screenshot gallery](docs/HELP.md#screenshots) for the open device dropdown,
+Send, cancellation, activity, media and all four settings domains.
 
 [![Functional checks](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml/badge.svg)](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml)
 [![CodeQL](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml/badge.svg)](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml)
@@ -62,6 +66,19 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
   panel.
 
 Read the [task guide](docs/HELP.md) for every control.
+
+## Screenshots
+
+Select an image to view it at full size. The [complete gallery](docs/HELP.md#screenshots)
+also covers appearance, icon choices, section ordering, connections and native features.
+
+| Open device dropdown | File review and persistent Send window |
+| --- | --- |
+| [![Bar icon and opened device dropdown showing connected, offline and unpaired example devices](docs/screenshots/bar-dropdown.png)](docs/screenshots/bar-dropdown.png) | [![Persistent Send window reviewing two example files for the captured recipient](docs/screenshots/send-review.png)](docs/screenshots/send-review.png) |
+
+| Pending submission and Cancel | Quick actions sharing preferences |
+| --- | --- |
+| [![In-progress file submission with Cancel and the persistent Cancel pending files control](docs/screenshots/pending-cancel.png)](docs/screenshots/pending-cancel.png) | [![Quick actions settings scrolled to desktop chooser and review-before-Send preferences](docs/screenshots/sharing-preferences.png)](docs/screenshots/sharing-preferences.png) |
 
 ## Why Plus?
 

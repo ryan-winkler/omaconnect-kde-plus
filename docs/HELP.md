@@ -30,6 +30,93 @@ exact device in Plus. Collapse **Device details** to keep the switcher compact.
 Pairing warnings and an active unpair confirmation remain visible. Use **Native
 KDE Connect settings** inside Plus for KDE Connect's full settings and permissions.
 
+## Screenshots
+
+These screenshots show the current UI with example devices, files and media.
+Select an image to view its full size. Your theme, installed native modules and
+reported device features can change the available controls.
+
+<details>
+<summary>Bar, Devices and the open device dropdown</summary>
+
+The bar icon and battery appear above the daily panel. Device details can collapse
+without hiding the device selector.
+
+![Bar icon and daily Devices panel with example device details and quick actions](../preview.png)
+
+The open dropdown keeps connected, offline and unpaired devices in one list.
+
+![Opened device dropdown with three example device states](screenshots/bar-dropdown.png)
+
+</details>
+
+<details>
+<summary>File review, pending Cancel and submission activity</summary>
+
+The persistent Send window keeps the recipient and reviewed files visible while
+you use a file manager.
+
+![Persistent Send window reviewing two example files and showing Send and Cancel](screenshots/send-review.png)
+
+A pending submission shows its acceptance count and delivery status. **Cancel**
+and **Cancel pending files** stop Plus work. See [Send files](#send-files-and-read-activity)
+for the native transfer limits.
+
+![Pending file submission with visible local and global Cancel controls and delivery unknown](screenshots/pending-cancel.png)
+
+Activity distinguishes request acceptance from delivery.
+
+![Activity with two accepted example requests and delivery still unknown](screenshots/activity.png)
+
+</details>
+
+<details>
+<summary>Media controls and remote commands</summary>
+
+Expand reported media controls to select a player or use playback actions.
+Configured remote commands remain explicit actions.
+
+![Expanded sample media player with playback controls and a configured remote command](screenshots/media-commands.png)
+
+</details>
+
+<details>
+<summary>Appearance, icons and daily section order</summary>
+
+Appearance holds bar and device identity choices and daily navigation preferences.
+
+![Appearance settings with icon actions and popup navigation preferences](screenshots/appearance.png)
+
+Choose a preset, alias or installed icon, then preview before Apply.
+
+![Device appearance dialog with example device alias, icon presets and preview](screenshots/icons.png)
+
+Move complete sections with Up and Down. Hidden sections retain their position.
+
+![Appearance settings scrolled to daily section ordering controls](screenshots/section-order.png)
+
+</details>
+
+<details>
+<summary>Connections, sharing preferences and native device features</summary>
+
+Connections exposes the existing provider integrations. Its switches show or hide
+their controls; they do not connect a VPN.
+
+![Connections settings with optional Tailscale, Back to Home and WireGuard visibility controls](screenshots/connections.png)
+
+Quick actions sharing preferences are shown here scrolled to **Use desktop file
+chooser** and **Review files before Send**. The settings are independent.
+
+![Quick actions settings scrolled to the two file-picker and review preferences](screenshots/sharing-preferences.png)
+
+Device features lists installed native modules and their observed state, with
+Configure links to the native settings owner.
+
+![Device features settings with native module search, On or Off values and Configure links](screenshots/device-features.png)
+
+</details>
+
 ## Daily popup
 
 The **View: Devices** menu also opens **Send**, **Activity** and **Plus settings**.
