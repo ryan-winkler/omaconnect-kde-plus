@@ -13,6 +13,7 @@ Item {
     property string discoveryState: "starting"
     property string discoveryMessage: "Checking KDE Connect"
     property int generation: 0
+    property int ownerGeneration: 0
     property bool scanQueued: false
 
     property string selectedDeviceId: ""
@@ -301,6 +302,37 @@ Item {
         scanProcess.running = true
     }
 
+    function providerOwnerChanged() {
+        // Both loss and acquisition invalidate the old snapshot. The profile
+        // monitor omits signal arguments, so a read-only scan resolves either event.
+        ownerGeneration += 1
+        generation += 1
+        actionGeneration += 1
+        scanQueued = false
+        daemonAvailable = false
+        discoveryState = "unavailable"
+        discoveryMessage = "KDE Connect unavailable"
+        customAddressesReady = false
+        customAddresses = []
+        devices = []
+        remoteCommands = []
+        commandsLoading = false
+        mediaState = emptyMediaState()
+        mediaLoading = false
+        mediaRefreshPending = false
+        pendingPairing = ({})
+        pairingRequestTimes = ({})
+        pairingWatchdogTimer.stop()
+        mediaDebounceTimer.stop()
+        if (actionProcess.running || pairProcess.running || pairResponseProcess.running || addressProcess.running) {
+            actionState = "unknown"
+            actionMessage = ""
+            actionError = "KDE Connect changed while an action was pending. Check its result before retrying."
+        }
+        if (scanProcess.running) scanProcess.running = false
+        dbusDebounceTimer.restart()
+    }
+
     function parseScanLine(line) {
         var cleanLine = String(line || "").trim()
         var parts = cleanLine.split("\t")
@@ -382,7 +414,7 @@ Item {
         customAddressesReady = addressesReady
         if (addressesReady) customAddresses = nextAddresses
         if (!next.length) {
-            selectedDeviceId = ""
+            // Keep the selected ID through daemon loss and empty snapshots.
             remoteCommands = []
             commandsLoading = false
             mediaState = emptyMediaState()
@@ -449,7 +481,7 @@ Item {
                     }
                 }
                 selectDevice((preferred || next[0]).id)
-            } else {
+            } else if (actionState !== "unknown") {
                 clearActionState()
             }
         }
@@ -611,6 +643,7 @@ Item {
         commandsProcess.command = withDeadline(commandsDeadlineSeconds, ["bash", "-c",
             "set -o pipefail; kdeconnect-cli -d \"$1\" --list-commands 2>/dev/null | head -c " + (maxRemoteCommandOutput + 1),
             "list-commands", String(id)])
+        commandsProcess.targetOwnerGeneration = ownerGeneration
         commandsProcess.running = true
         return true
     }
@@ -723,6 +756,7 @@ Item {
         if (!pairingWatchdogTimer.running) pairingWatchdogTimer.start()
         pairProcess.targetDeviceId = String(id)
         pairProcess.command = ["kdeconnect-cli", "-d", String(id), "--pair"]
+        pairProcess.targetOwnerGeneration = ownerGeneration
         pairProcess.running = true
         return true
     }
@@ -743,6 +777,7 @@ Item {
         actionState = "running"
         actionMessage = accept ? "Accepting pairing request" : "Rejecting pairing request"
         actionError = ""
+        pairResponseProcess.targetOwnerGeneration = ownerGeneration
         pairResponseProcess.running = true
         return true
     }
@@ -764,6 +799,7 @@ Item {
         actionError = ""
         pairProcess.targetDeviceId = String(id)
         pairProcess.command = ["kdeconnect-cli", "-d", String(id), "--unpair"]
+        pairProcess.targetOwnerGeneration = ownerGeneration
         pairProcess.running = true
         return true
     }
@@ -780,6 +816,7 @@ Item {
         mediaRefreshPending = false
         mediaStatusProcess.targetDeviceId = String(devId)
         mediaStatusProcess.command = withDeadline(mediaStatusDeadlineSeconds, ["bash", getMediaScriptPath(), "status", String(devId)])
+        mediaStatusProcess.targetOwnerGeneration = ownerGeneration
         mediaStatusProcess.running = true
         return true
     }
@@ -791,6 +828,7 @@ Item {
         if (mediaActionProcess.running) return false
         mediaActionProcess.targetDeviceId = String(devId)
         mediaActionProcess.command = ["bash", getMediaScriptPath(), "action", String(devId), String(actionName)]
+        mediaActionProcess.targetOwnerGeneration = ownerGeneration
         mediaActionProcess.running = true
         return true
     }
@@ -827,6 +865,7 @@ Item {
         if (mediaPlayerProcess.running) return false
         mediaPlayerProcess.targetDeviceId = String(devId)
         mediaPlayerProcess.command = ["bash", getMediaScriptPath(), "request_players", String(devId)]
+        mediaPlayerProcess.targetOwnerGeneration = ownerGeneration
         mediaPlayerProcess.running = true
         return true
     }
@@ -838,6 +877,7 @@ Item {
         if (mediaPlayerProcess.running) return false
         mediaPlayerProcess.targetDeviceId = String(devId)
         mediaPlayerProcess.command = ["bash", getMediaScriptPath(), "player", String(devId), String(playerName)]
+        mediaPlayerProcess.targetOwnerGeneration = ownerGeneration
         mediaPlayerProcess.running = true
         return true
     }
@@ -980,6 +1020,7 @@ Item {
         actionState = "running"
         actionMessage = removal ? "Removing saved address" : "Saving address"
         actionError = ""
+        addressProcess.targetOwnerGeneration = ownerGeneration
         addressProcess.running = true
         return true
     }
@@ -1080,6 +1121,11 @@ Item {
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
             exitCode = code
+            // An owner change can stop a scan after the debounce timer fired.
+            if (targetGeneration !== root.generation) {
+                if (!dbusDebounceTimer.running) dbusDebounceTimer.restart()
+                return
+            }
             // Only a complete scan is applied; a failed or stopped scan shows no devices.
             root.applyScan(code === 0 ? stdout.text : "", targetGeneration)
         }
@@ -1087,10 +1133,12 @@ Item {
 
     Process {
         id: commandsProcess
+        property int targetOwnerGeneration: 0
         property string targetDeviceId: ""
         stdout: StdioCollector { waitForEnd: true }
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
+            if (targetOwnerGeneration !== root.ownerGeneration) return
             root.commandsLoading = false
             if (targetDeviceId !== root.selectedDeviceId) return
             root.remoteCommands = code === 0 ? root.parseRemoteCommands(stdout.text) : []
@@ -1133,9 +1181,11 @@ Item {
 
     Process {
         id: pairProcess
+        property int targetOwnerGeneration: 0
         property string targetDeviceId: ""
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
+            if (targetOwnerGeneration !== root.ownerGeneration) return
             var isPair = pairProcess.command && pairProcess.command.indexOf("--pair") !== -1
             var op = isPair ? "pairing" : "unpairing"
             if (isPair) {
@@ -1174,10 +1224,12 @@ Item {
 
     Process {
         id: pairResponseProcess
+        property int targetOwnerGeneration: 0
         property string targetDeviceId: ""
         property bool accepting: false
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
+            if (targetOwnerGeneration !== root.ownerGeneration) return
             root.setPendingPairing(targetDeviceId, "")
             if (targetDeviceId !== root.selectedDeviceId) {
                 root.refresh()
@@ -1199,7 +1251,8 @@ Item {
             "type='signal',sender='org.kde.kdeconnect',interface='org.kde.kdeconnect.device.battery'",
             "type='signal',sender='org.kde.kdeconnect',interface='org.kde.kdeconnect.device.connectivity_report'",
             "type='signal',sender='org.kde.kdeconnect',interface='org.kde.kdeconnect.device.mprisremote'",
-            "type='signal',sender='org.kde.kdeconnect',interface='org.freedesktop.DBus.Properties'"
+            "type='signal',sender='org.kde.kdeconnect',interface='org.freedesktop.DBus.Properties'",
+            "type='signal',sender='org.freedesktop.DBus',path='/org/freedesktop/DBus',interface='org.freedesktop.DBus',member='NameOwnerChanged',arg0='org.kde.kdeconnect'"
         ]
         onRunningChanged: {
             if (running) monitorStabilityTimer.restart()
@@ -1211,6 +1264,13 @@ Item {
                 if (!value) return
                 var isSignal = value.indexOf("sig\t") === 0 || value.indexOf("signal ") === 0
                 if (!isSignal) return
+                var profile = value.split("\t")
+                if (profile[0] === "sig" && profile[3] === "org.freedesktop.DBus"
+                        && profile[5] === "/org/freedesktop/DBus"
+                        && profile[6] === "org.freedesktop.DBus" && profile[7] === "NameOwnerChanged") {
+                    root.providerOwnerChanged()
+                    return
+                }
 
                 if (value.indexOf("/mprisremote") !== -1 || value.indexOf("org.kde.kdeconnect.device.mprisremote") !== -1) {
                     mediaDebounceTimer.restart()
@@ -1279,11 +1339,13 @@ Item {
 
     Process {
         id: addressProcess
+        property int targetOwnerGeneration: 0
         property string targetAddress: ""
         property bool removal: false
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
             root.addressBusy = false
+            if (targetOwnerGeneration !== root.ownerGeneration) return
             if (code === 0) {
                 root.actionState = "accepted"
                 root.actionMessage = removal ? "Saved address removed" : "Address saved; discovering devices"
@@ -1312,12 +1374,14 @@ Item {
 
     Process {
         id: mediaStatusProcess
+        property int targetOwnerGeneration: 0
         property string targetDeviceId: ""
         stdout: StdioCollector { waitForEnd: true }
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
             var currentDevice = root.deviceById(targetDeviceId)
-            var isCurrent = targetDeviceId === root.selectedDeviceId
+            var isCurrent = targetOwnerGeneration === root.ownerGeneration
+                && targetDeviceId === root.selectedDeviceId
                 && currentDevice
                 && root.canAct(targetDeviceId)
                 && currentDevice.capabilities
@@ -1359,16 +1423,20 @@ Item {
 
     Process {
         id: mediaActionProcess
+        property int targetOwnerGeneration: 0
         property string targetDeviceId: ""
         onExited: function(code) {
+            if (targetOwnerGeneration !== root.ownerGeneration) return
             root.handleMediaProcessExit(code, targetDeviceId)
         }
     }
 
     Process {
         id: mediaPlayerProcess
+        property int targetOwnerGeneration: 0
         property string targetDeviceId: ""
         onExited: function(code) {
+            if (targetOwnerGeneration !== root.ownerGeneration) return
             root.handleMediaProcessExit(code, targetDeviceId)
         }
     }

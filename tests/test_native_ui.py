@@ -14,6 +14,7 @@ OMARCHY_ROOT = Path(os.environ.get('OMARCHY_PATH', '/usr/share/omarchy')).resolv
 class NativeUi(unittest.TestCase):
     qml_fixture = 'native_ui.qml'
     force_offscreen = False
+    real_dbus_monitor = False
 
     def configure_fixture(self, fixture, plugin, home, fake_bin):
         """Allow another isolated scenario to replace only its temporary doubles."""
@@ -80,7 +81,10 @@ else: raise SystemExit(99)
 ''')
             fake.chmod(0o700)
             for name in ('kdeconnect-cli','dbus-monitor','hyprctl','fc-match','remote-access-mode','omarchy-shell','nmcli'):
-                (fake_bin/name).symlink_to(fake)
+                if name == 'dbus-monitor' and self.real_dbus_monitor:
+                    (fake_bin/name).symlink_to(shutil.which(name))
+                else:
+                    (fake_bin/name).symlink_to(fake)
             (plugin/'scripts/discover_devices.sh').write_text("#!/bin/bash\nprintf '%s\\n' 'CUSTOM_ADDRESSES_READY' $'DEVICE\\tA\\tOriginal phone\\tphone\\ttrue\\ttrue\\t80\\tfalse\\tkdeconnect_share,kdeconnect_battery' $'DEVICE\\tB\\tOther phone\\tlaptop\\ttrue\\ttrue\\t65\\tfalse\\tkdeconnect_share,kdeconnect_battery'\n")
             (plugin/'scripts/manage_addresses.py').write_text('import json,sys\njson.load(sys.stdin)\nprint(json.dumps({"schema_version":1,"ok":True,"addresses":[],"custom_addresses":[]}))\n')
             (plugin/'scripts/native_settings.py').write_text('''import json,sys
@@ -122,6 +126,7 @@ print(json.dumps({"state":"observed","peerId":peer,"enabled":values,"error":""})
                         '--chdir',str(fixture),'--unshare-net','--unshare-pid',
                         '--proc','/proc','--dev','/dev','--die-with-parent']
             for name in ('omarchy-shell','nmcli','hyprctl','kdeconnect-cli','dbus-monitor'):
+                if name == 'dbus-monitor' and self.real_dbus_monitor: continue
                 path=Path('/usr/bin')/name
                 if path.exists(): command += ['--ro-bind',str(fake),str(path)]
             if desktop:

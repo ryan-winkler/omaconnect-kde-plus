@@ -35,6 +35,10 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Disable stale device actions when KDE Connect loses or changes its bus name.
+  A read-only scan restores the selected device when it returns. Interrupted
+  actions remain unconfirmed.
+
 - Retained hidden preference toggles ignore Return, Enter and Space without
   interrupting saves accepted before their window closed.
 - Retained hidden composer actions cannot send drafts. Closed popups and layout

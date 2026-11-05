@@ -374,7 +374,12 @@ less and read at most 64 KiB of each reply; a larger reply is refused. The panel
 runs a scan, a command list read and a media status read under coreutils
 `timeout` (30, 10 and 10 seconds). It signals the provider's process group, then
 sends SIGKILL 2 seconds later, also to a descendant that outlives the provider. The panel applies output only after exit 0, so a
-stopped or failed read shows the usual unavailable or empty state. The command
+stopped or failed read shows the usual unavailable or empty state. The existing
+signal monitor watches the KDE Connect bus name. A change invalidates the old
+device and address snapshot, keeps the selected ID, and schedules one debounced
+read-only scan. Late replies from the old owner cannot restore controls or
+complete a pending action. Interrupted requests report uncertainty and are
+never replayed. The command
 list read stops one byte over 64 KiB and is then refused. The list keeps at most
 100 entries. It drops a command key over 256 characters and cuts a longer label.
 
