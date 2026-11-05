@@ -114,7 +114,7 @@ class BrowseContract(unittest.TestCase):
         modes = ["single", "multiple", "remote-name", "offline", "unpaired", "unsupported", "unsupported-method",
                  "unavailable", "no-shares", "share-limit", "escape", "symlink", "nonmount", "mount-failed",
                  "remote-error", "mount-visible-late", "mount-never-visible", "mount-visibility-cancelled",
-                 "changed-advertisement", "changed-name", "stale-mount", "stale-root",
+                 "owner-replaced-during-visibility", "offline-during-visibility", "changed-advertisement", "changed-name", "stale-mount", "stale-root",
                  "owner-changed", "offline-open", "unpaired-open", "unmounted-open", "cancelled", "missing-opener",
                  "cancelled-mount", "offline-during-mount", "owner-lost-during-probe",
                  "owner-replaced-during-probe", "offline-during-probe", "timeout"]
