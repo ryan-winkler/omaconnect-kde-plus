@@ -4,6 +4,7 @@ import QtQuick.Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -37,8 +38,8 @@ Column {
         id: collapsedBar
         activeFocusOnTab: true
         Accessible.role: Accessible.Button
-        Accessible.name: "Expand media controls"
-        Accessible.description: "Control music and video playing on the selected device. If it reports more than one player, choose one."
+        Accessible.name: Locale.Strings.t("mediaPlayer.expandMediaControls")
+        Accessible.description: Locale.Strings.t("mediaPlayer.controlMusicAndVideoPlayingOn")
         Accessible.onPressAction: panel.toggleMediaExpanded()
         Keys.onReturnPressed: panel.toggleMediaExpanded()
         Keys.onEnterPressed: panel.toggleMediaExpanded()
@@ -120,10 +121,10 @@ Column {
             anchors.right: parent.right
             anchors.margins: Style.space(8)
             iconText: "󰅃"
-            tooltipText: "Collapse media controls"
+            tooltipText: Locale.Strings.t("mediaPlayer.collapseMediaControls")
             focusable: true
             Accessible.role: Accessible.Button
-            Accessible.name: "Collapse media controls"
+            Accessible.name: Locale.Strings.t("mediaPlayer.collapseMediaControls")
             Accessible.onPressAction: panel.toggleMediaExpanded()
             foreground: root.foreground
             fontFamily: root.fontFamily
@@ -197,7 +198,7 @@ Column {
                         textFormat: Text.PlainText
                         width: parent.width
                         visible: !root.hasMedia
-                        text: root.device && root.device.name ? "Open media on " + root.device.name : "No active player"
+                        text: root.device && root.device.name ? Locale.Strings.format("mediaPlayer.openOnPeer", [root.device.name]) : "No active player"
                         color: Qt.darker(root.foreground, 1.45)
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.caption
@@ -219,9 +220,9 @@ Column {
                                 readonly property bool isCurrent: modelData === root.trackPlayer
                                 objectName: "media-player-" + index
                                 width: Math.min(playerControlsRow.width, implicitWidth)
-                                text: isCurrent ? "Current: " + modelData : modelData
+                                text: isCurrent ? Locale.Strings.format("mediaPlayer.current", [modelData]) : modelData
                                 iconText: "󰐌"
-                                tooltipText: isCurrent ? "Current player" : "Choose this player"
+                                tooltipText: isCurrent ? Locale.Strings.t("mediaPlayer.currentPlayer") : Locale.Strings.t("mediaPlayer.chooseThisPlayer")
                                 selected: isCurrent
                                 focusable: true
                                 enabled: !isCurrent && root.playerList.length > 1 && !!root.service && !!root.device
@@ -231,7 +232,7 @@ Column {
                                 fontSize: Style.font.bodySmall
                                 Accessible.role: Accessible.Button
                                 Accessible.name: (isCurrent ? "Current player " : "Choose player ") + modelData
-                                Accessible.description: isCurrent ? "Current player" : "Select this reported player on the selected device."
+                                Accessible.description: isCurrent ? Locale.Strings.t("mediaPlayer.currentPlayer") : Locale.Strings.t("mediaPlayer.selectThisReportedPlayerOnThe")
                                 Accessible.onPressAction: if (enabled) clicked()
                                 onClicked: if (enabled) root.service.mediaSelectPlayer(root.device.id, modelData)
                             }
@@ -248,7 +249,7 @@ Column {
                     id: prevBtn
                     objectName: "media-transport-0"
                     iconText: "󰒮"
-                    tooltipText: "Previous track"
+                    tooltipText: Locale.Strings.t("mediaPlayer.previousTrack")
                     size: Math.max(44, Style.space(44))
                     fontSize: Style.font.title
                     focusable: true
@@ -259,7 +260,7 @@ Column {
                     fontFamily: root.fontFamily
                     Accessible.role: Accessible.Button
                     Accessible.name: tooltipText
-                    Accessible.description: "Control the selected device's active player."
+                    Accessible.description: Locale.Strings.t("mediaPlayer.controlTheSelectedDeviceSActive")
                     Accessible.onPressAction: if (enabled) clicked()
                     onHovered: function(inside) {
                         if (inside) { panel.cursorActive = true; panel.focusSection = "media"; panel.mediaControlIndex = 0 }
@@ -271,7 +272,7 @@ Column {
                     id: playPauseBtn
                     objectName: "media-transport-1"
                     iconText: root.isPlaying ? "󰏤" : "󰐊"
-                    tooltipText: root.isPlaying ? "Pause playback" : "Resume playback"
+                    tooltipText: root.isPlaying ? Locale.Strings.t("mediaPlayer.pausePlayback") : Locale.Strings.t("mediaPlayer.resumePlayback")
                     size: Math.max(44, Style.space(48))
                     fontSize: Style.font.title
                     focusable: true
@@ -282,7 +283,7 @@ Column {
                     fontFamily: root.fontFamily
                     Accessible.role: Accessible.Button
                     Accessible.name: tooltipText
-                    Accessible.description: "Control the selected device's active player."
+                    Accessible.description: Locale.Strings.t("mediaPlayer.controlTheSelectedDeviceSActive")
                     Accessible.onPressAction: if (enabled) clicked()
                     onHovered: function(inside) {
                         if (inside) { panel.cursorActive = true; panel.focusSection = "media"; panel.mediaControlIndex = 1 }
@@ -294,7 +295,7 @@ Column {
                     id: nextBtn
                     objectName: "media-transport-2"
                     iconText: "󰒭"
-                    tooltipText: "Next track"
+                    tooltipText: Locale.Strings.t("mediaPlayer.nextTrack")
                     size: Math.max(44, Style.space(44))
                     fontSize: Style.font.title
                     focusable: true
@@ -305,7 +306,7 @@ Column {
                     fontFamily: root.fontFamily
                     Accessible.role: Accessible.Button
                     Accessible.name: tooltipText
-                    Accessible.description: "Control the selected device's active player."
+                    Accessible.description: Locale.Strings.t("mediaPlayer.controlTheSelectedDeviceSActive")
                     Accessible.onPressAction: if (enabled) clicked()
                     onHovered: function(inside) {
                         if (inside) { panel.cursorActive = true; panel.focusSection = "media"; panel.mediaControlIndex = 2 }

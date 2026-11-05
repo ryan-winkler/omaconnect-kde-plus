@@ -6,6 +6,7 @@ import QtQuick.Dialogs
 import qs.Commons as Commons
 import qs.Ui as Kit
 import "../Appearance.js" as Appearance
+import "../i18n" as Locale
 
 // Browsing never changes a draft. Only a choice changes it; only Apply saves it.
 Controls.Dialog {
@@ -38,16 +39,16 @@ Controls.Dialog {
         return store ? store.safeIcon(resolved) : resolved;
     }
     readonly property string choiceLabel: {
-        if (draft.mode === "inherit") return qsTr("Automatic — use device type");
-        if (draft.mode === "automatic") return qsTr("Follow selected device");
+        if (draft.mode === "inherit") return Locale.Strings.t("iconChooser.automaticUseDeviceType");
+        if (draft.mode === "automatic") return Locale.Strings.t("iconChooser.followSelectedDevice");
         if (draft.mode === "preset") return Appearance.presets.filter(function(entry) { return entry.value === root.draft.value; })[0].label;
-        if (draft.mode === "theme") return qsTr("Installed icon: ") + String(draft.value || "");
-        if (draft.mode === "glyph") return qsTr("Symbol: ") + String(draft.value || "");
-        return qsTr("Local image");
+        if (draft.mode === "theme") return Locale.Strings.t("iconChooser.installedIcon") + String(draft.value || "");
+        if (draft.mode === "glyph") return Locale.Strings.t("iconChooser.symbol") + String(draft.value || "");
+        return Locale.Strings.t("iconChooser.localImage");
     }
     signal cancelled()
 
-    title: deviceMode ? qsTr("Device appearance") : qsTr("Bar appearance")
+    title: deviceMode ? Locale.Strings.t("iconChooser.deviceAppearance") : Locale.Strings.t("iconChooser.barAppearance")
     modal: true
     width: Math.max(260,Math.min(480,parent ? parent.width - 24 : 480))
     padding: Commons.Style.spacing.panelPadding
@@ -105,7 +106,7 @@ Controls.Dialog {
             spacing: 10
             Controls.Label {
                 visible: root.deviceMode
-                text: qsTr("Advertised name: ") + "\u2068" + root.advertisedName + "\u2069"
+                text: Locale.Strings.t("iconChooser.advertisedName") + "\u2068" + root.advertisedName + "\u2069"
                 textFormat: Text.PlainText
                 color: root.foreground
                 wrapMode: Text.Wrap
@@ -116,13 +117,13 @@ Controls.Dialog {
                 visible: root.deviceMode
                 Layout.fillWidth: true
                 maximumLength: 160
-                placeholderText: qsTr("Local alias (optional)")
-                Accessible.name: qsTr("Local alias, up to 80 characters")
+                placeholderText: Locale.Strings.t("iconChooser.localAliasOptional")
+                Accessible.name: Locale.Strings.t("iconChooser.localAliasUpTo80Characters")
                 selectByMouse: true
             }
             Controls.Label {
                 visible: root.deviceMode && Array.from(aliasField.text).length > 80
-                text: qsTr("Use at most 80 characters.")
+                text: Locale.Strings.t("iconChooser.useAtMost80Characters")
                 textFormat: Text.PlainText
                 color: root.foreground
             }
@@ -133,14 +134,14 @@ Controls.Dialog {
                 Accessible.checkable: true
                 Accessible.checked: selected
                 Layout.fillWidth: true
-                text: root.deviceMode ? qsTr("Automatic — use device type") : qsTr("Follow selected device")
+                text: root.deviceMode ? Locale.Strings.t("iconChooser.automaticUseDeviceType") : Locale.Strings.t("iconChooser.followSelectedDevice")
                 selected: root.draft.mode === "inherit" || root.draft.mode === "automatic"
                 foreground: root.foreground
                 focusable: true
                 Layout.minimumHeight: 32
                 onClicked: root.choose({mode:root.deviceMode ? "inherit" : "automatic"})
             }
-            Controls.Label { text: qsTr("Choose an icon"); textFormat: Text.PlainText; color: root.foreground }
+            Controls.Label { text: Locale.Strings.t("iconChooser.chooseAnIcon"); textFormat: Text.PlainText; color: root.foreground }
             Flow {
                 id: presets
                 Layout.fillWidth: true
@@ -180,7 +181,7 @@ Controls.Dialog {
                         width: Math.min(implicitWidth,presets.width)
                         height: Math.max(32,implicitHeight)
                         Accessible.role: Accessible.Button
-                        Accessible.name: modelData.label + qsTr(" icon")
+                        Accessible.name: modelData.label + Locale.Strings.t("iconChooser.icon")
                         Accessible.checkable: true
                         Accessible.checked: selected
                         onClicked: root.choose(modelData)
@@ -190,7 +191,7 @@ Controls.Dialog {
             Controls.Label {
                 objectName: "icon-choice-label"
                 Layout.fillWidth: true
-                text: qsTr("Choice: ") + root.choiceLabel
+                text: Locale.Strings.t("iconChooser.choice") + root.choiceLabel
                 textFormat: Text.PlainText
                 color: root.foreground
                 wrapMode: Text.Wrap
@@ -199,26 +200,26 @@ Controls.Dialog {
                 id: installedIcons
                 objectName: "installed-icon-picker"
                 Layout.fillWidth: true
-                label: qsTr("Installed icons")
+                label: Locale.Strings.t("iconChooser.installedIcons")
                 rowHeight: Math.max(32,Commons.Style.spacing.controlHeight)
                 popupRowHeight: Math.max(32,Commons.Style.spacing.popupRowHeight)
                 options: root.store ? root.store.themeIcons : []
                 value: root.draft.mode === "theme" ? root.draft.value : ""
-                triggerLabel: qsTr("Search installed icons…")
+                triggerLabel: Locale.Strings.t("iconChooser.searchInstalledIcons")
                 foreground: root.foreground
                 onChanged: function(value) { root.choose({mode:"theme",value:value,render:"symbolic"}); }
             }
             Controls.Label {
                 visible: !root.store || root.store.themeIcons.length === 0
                 Layout.fillWidth: true
-                text: root.store && root.store.busy ? qsTr("Loading installed icons…") : qsTr("No installed icons found. Use a preset or open More options.")
+                text: root.store && root.store.busy ? Locale.Strings.t("iconChooser.loadingInstalledIcons") : Locale.Strings.t("iconChooser.noInstalledIconsFoundUseA")
                 textFormat: Text.PlainText
                 color: root.foreground
                 wrapMode: Text.Wrap
             }
             Controls.Label {
                 Layout.fillWidth: true
-                text: qsTr("Preview — Apply saves your choice")
+                text: Locale.Strings.t("iconChooser.previewApplySavesYourChoice")
                 textFormat: Text.PlainText
                 color: root.foreground
                 wrapMode: Text.Wrap
@@ -246,7 +247,7 @@ Controls.Dialog {
                     ColumnLayout {
                         Layout.fillWidth: true
                         Text {
-                            text: qsTr("Current theme")
+                            text: Locale.Strings.t("iconChooser.currentTheme")
                             textFormat: Text.PlainText
                             color: root.foreground
                             font.family: root.fontFamily
@@ -255,7 +256,7 @@ Controls.Dialog {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: themePreview.sourceColours ? root.resolvedDraft.mode === "image" ? qsTr("Custom image colours") : qsTr("Installed icon colours") : qsTr("Icon colour follows your theme automatically")
+                            text: themePreview.sourceColours ? root.resolvedDraft.mode === "image" ? Locale.Strings.t("iconChooser.customImageColours") : Locale.Strings.t("iconChooser.installedIconColours") : Locale.Strings.t("iconChooser.iconColourFollowsYourThemeAutomatically")
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: root.foreground
@@ -283,10 +284,10 @@ Controls.Dialog {
                 Layout.minimumHeight: 44
                 visible: root.draft.mode === "image" || root.draft.mode === "theme"
                 enabled: !root.pendingApply
-                text: root.draft.mode === "theme" ? qsTr("Keep installed icon colours") : qsTr("Keep image colours")
+                text: root.draft.mode === "theme" ? Locale.Strings.t("iconChooser.keepInstalledIconColours") : Locale.Strings.t("iconChooser.keepImageColours")
                 checked: themePreview.sourceColours
                 Accessible.name: text
-                Accessible.description: qsTr("Clear this option to use the theme foreground. Apply saves the choice.")
+                Accessible.description: Locale.Strings.t("iconChooser.clearThisOptionToUseThe")
                 function chooseColours(keep) {
                     if (!enabled) return
                     var next = Object.assign({},root.draft)
@@ -301,7 +302,7 @@ Controls.Dialog {
             }
             SettingsButton {
                 Layout.minimumHeight: 32
-                text: root.moreOptions ? qsTr("Hide more options") : qsTr("More options")
+                text: root.moreOptions ? Locale.Strings.t("iconChooser.hideMoreOptions") : Locale.Strings.t("iconChooser.moreOptions")
                 foreground: root.foreground
                 focusable: true
                 onClicked: root.moreOptions = !root.moreOptions
@@ -310,7 +311,7 @@ Controls.Dialog {
                 visible: root.moreOptions
                 Layout.fillWidth: true
                 spacing: 8
-                Controls.Label { text: qsTr("Custom symbol"); textFormat: Text.PlainText; color: root.foreground }
+                Controls.Label { text: Locale.Strings.t("iconChooser.customSymbol"); textFormat: Text.PlainText; color: root.foreground }
                 Flow {
                     id: symbols
                     Layout.fillWidth: true
@@ -334,8 +335,8 @@ Controls.Dialog {
                     objectName: "custom-symbol-input"
                     Layout.fillWidth: true
                     maximumLength: 16
-                    placeholderText: qsTr("Type or paste a symbol (up to 8 characters)")
-                    Accessible.name: qsTr("Custom symbol, up to 8 characters")
+                    placeholderText: Locale.Strings.t("iconChooser.typeOrPasteASymbolUp")
+                    Accessible.name: Locale.Strings.t("iconChooser.customSymbolUpTo8Characters")
                     selectByMouse: true
                     onTextEdited: root.draft = {mode:"glyph",value:text,font:fontField.text,render:"symbolic"}
                 }
@@ -343,14 +344,14 @@ Controls.Dialog {
                     id: fontField
                     Layout.fillWidth: true
                     maximumLength: 128
-                    placeholderText: qsTr("Font family (optional)")
-                    Accessible.name: qsTr("Installed font family")
+                    placeholderText: Locale.Strings.t("iconChooser.fontFamilyOptional")
+                    Accessible.name: Locale.Strings.t("iconChooser.installedFontFamily")
                     selectByMouse: true
                     onTextEdited: root.draft = {mode:"glyph",value:symbolField.text,font:text,render:"symbolic"}
                 }
                 Controls.Label {
                     Layout.fillWidth: true
-                    text: fontField.text && Qt.fontFamilies().indexOf(fontField.text) < 0 ? qsTr("This font is unavailable. Phone is shown until you choose an installed font.") : qsTr("Check the preview. Font fallback can change a symbol's appearance.")
+                    text: fontField.text && Qt.fontFamilies().indexOf(fontField.text) < 0 ? Locale.Strings.t("iconChooser.thisFontIsUnavailablePhoneIs") : Locale.Strings.t("iconChooser.checkThePreviewFontFallbackCan")
                     textFormat: Text.PlainText
                     color: root.foreground
                     wrapMode: Text.Wrap
@@ -359,22 +360,22 @@ Controls.Dialog {
                     id: themeNameField
                     Layout.fillWidth: true
                     maximumLength: 128
-                    placeholderText: qsTr("Exact installed icon name (optional)")
-                    Accessible.name: qsTr("Exact installed theme icon name")
+                    placeholderText: Locale.Strings.t("iconChooser.exactInstalledIconNameOptional")
+                    Accessible.name: Locale.Strings.t("iconChooser.exactInstalledThemeIconName")
                     selectByMouse: true
                     onTextEdited: root.draft = {mode:"theme",value:text,render:"symbolic"}
                 }
                 Controls.Label {
                     visible: !!root.store && root.store.libraryTruncated === true
                     Layout.fillWidth: true
-                    text: qsTr("Some installed icons may be omitted. You can enter an icon name or use your own image.")
+                    text: Locale.Strings.t("iconChooser.someInstalledIconsMayBeOmitted")
                     textFormat: Text.PlainText
                     color: root.foreground
                     wrapMode: Text.Wrap
                 }
                 SettingsButton {
                     Layout.minimumHeight: 32
-                    text: qsTr("Choose local SVG or PNG…")
+                    text: Locale.Strings.t("iconChooser.chooseLocalSvgOrPng")
                     foreground: root.foreground
                     focusable: true
                     enabled: root.store && !root.store.busy
@@ -382,14 +383,14 @@ Controls.Dialog {
                 }
                 Controls.Label {
                     Layout.fillWidth: true
-                    text: qsTr("Up to 1 MiB and 512 × 512 pixels. Static SVG or non-interlaced PNG. The original file is kept.")
+                    text: Locale.Strings.t("iconChooser.upTo1MibAnd512")
                     textFormat: Text.PlainText
                     color: root.foreground
                     wrapMode: Text.Wrap
                 }
                 SettingsButton {
                     Layout.minimumHeight: 32
-                    text: root.deviceMode ? qsTr("Reset to Automatic") : qsTr("Use Phone")
+                    text: root.deviceMode ? Locale.Strings.t("iconChooser.resetToAutomatic") : Locale.Strings.t("iconChooser.usePhone")
                     foreground: root.foreground
                     focusable: true
                     enabled: !root.pendingApply
@@ -401,7 +402,7 @@ Controls.Dialog {
     footer: RowLayout {
         spacing: 8
         SettingsButton {
-            text: qsTr("Cancel")
+            text: Locale.Strings.t("common.cancel")
             objectName: "appearance-cancel"
             Accessible.role: Accessible.Button
             Accessible.name: text
@@ -413,7 +414,7 @@ Controls.Dialog {
             onClicked: root.reject()
         }
         SettingsButton {
-            text: root.pendingApply ? qsTr("Saving…") : qsTr("Apply")
+            text: root.pendingApply ? Locale.Strings.t("iconChooser.saving") : Locale.Strings.t("iconChooser.apply")
             objectName: "appearance-apply"
             Accessible.role: Accessible.Button
             Accessible.name: text
@@ -427,9 +428,9 @@ Controls.Dialog {
     }
     FileDialog {
         id: imageDialog
-        title: qsTr("Choose a local icon")
+        title: Locale.Strings.t("iconChooser.chooseALocalIcon")
         fileMode: FileDialog.OpenFile
-        nameFilters: [qsTr("SVG or PNG images (*.svg *.png)"),qsTr("All files (*)")]
+        nameFilters: [Locale.Strings.t("iconChooser.svgOrPngImagesSvgPng"),Locale.Strings.t("iconChooser.allFiles")]
         onAccepted: if (root.store && !root.store.busy) root.pendingImport = root.store.importImage(selectedFile)
     }
     Connections {

@@ -4,6 +4,7 @@ import QtQuick.Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -69,7 +70,7 @@ Column {
                 }
 
                 PanelSectionHeader {
-                    text: "NETWORK DISCOVERY"
+                    text: Locale.Strings.t("network.networkDiscovery")
                     foreground: root.foreground
                     fontFamily: root.fontFamily
                     anchors.verticalCenter: parent.verticalCenter
@@ -95,7 +96,7 @@ Column {
             id: refreshNetBtn
             visible: panel.networkExpanded
             iconText: "󰑐"
-            tooltipText: "Refresh Tailscale peers"
+            tooltipText: Locale.Strings.t("network.refreshTailscalePeers")
             foreground: root.foreground
             fontFamily: root.fontFamily
             enabled: !!(root.service && !root.service.tailscaleLoading)
@@ -112,7 +113,7 @@ Column {
             textFormat: Text.PlainText
             visible: !!(root.service && root.service.localTailscaleAddress)
             width: parent.width
-            text: "This computer: " + (root.service ? root.service.localTailscaleAddress : "")
+            text: Locale.Strings.format("network.thisComputerAddress", [root.service ? root.service.localTailscaleAddress : ""])
             color: Qt.darker(root.foreground, 1.3)
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -123,7 +124,7 @@ Column {
             textFormat: Text.PlainText
             visible: !!(root.service && !root.service.customAddressesReady && root.service.discoveryState === "ready")
             width: parent.width
-            text: "KDE Connect's saved address list is unavailable. Refresh before adding or removing addresses."
+            text: Locale.Strings.t("network.kdeConnectSSavedAddressList")
             color: Commons.Color.urgent
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -134,7 +135,7 @@ Column {
             textFormat: Text.PlainText
             visible: !!(root.service && !root.service.tailscaleLoading && !root.service.tailscaleInstalled)
             width: parent.width
-            text: "Install Tailscale on both devices for simple connections across networks, or enter another VPN IP below."
+            text: Locale.Strings.t("network.installTailscaleOnBothDevicesFor")
             color: Qt.darker(root.foreground, 1.35)
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -148,7 +149,7 @@ Column {
             TextField {
                 id: addressInput
                 width: Math.max(1, parent.width - addButton.implicitWidth - Style.space(6))
-                placeholderText: root.service && root.service.tailscaleRunning ? "Search peers or enter IP" : "Enter LAN or VPN IP"
+                placeholderText: root.service && root.service.tailscaleRunning ? Locale.Strings.t("network.searchPeersOrEnterIp") : Locale.Strings.t("network.enterLanOrVpnIp")
                 placeholderTextColor: Qt.darker(root.foreground, 1.5)
                 color: root.foreground
                 font.family: root.fontFamily
@@ -172,8 +173,8 @@ Column {
 
             Button {
                 id: addButton
-                text: "Add"
-                tooltipText: "Save this address in KDE Connect and discover devices"
+                text: Locale.Strings.t("network.add")
+                tooltipText: Locale.Strings.t("network.saveThisAddressInKdeConnect")
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 fontSize: Style.font.bodySmall
@@ -256,7 +257,7 @@ Column {
 
             Text {
                 textFormat: Text.PlainText
-                text: "SAVED ADDRESSES"
+                text: Locale.Strings.t("network.savedAddresses")
                 color: Qt.darker(root.foreground, 1.35)
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
@@ -305,7 +306,7 @@ Column {
 
                         Button {
                             id: removeButton
-                            text: "Remove"
+                            text: Locale.Strings.t("network.remove")
                             foreground: root.foreground
                             fontFamily: root.fontFamily
                             fontSize: Style.font.bodySmall

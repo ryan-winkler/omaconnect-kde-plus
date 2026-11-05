@@ -1,4 +1,5 @@
 import QtQuick
+import "plugin/i18n" as Locale
 import QtQuick.Window
 import Quickshell
 import "plugin" as Plugin
@@ -74,7 +75,7 @@ ShellRoot {
             } else if (test.phase === 3) {
                 if (!test.check(service.quickShareOpening && !service.quickShareFailed && service.quickShareMessage.indexOf("Opening RQuickShare") === 0, "launcher exposes its own pending state")) return
                 if (!test.check(!service.openQuickShare() && !Actions.ready("quick-share", null, service), "duplicate launch is disabled and guarded")) return
-                if (!test.check(Actions.availabilityText("quick-share", null, service).indexOf("Opening RQuickShare") === 0, "disabled shortcut explains its pending launch")) return
+                if (!test.check(Locale.Strings.t(Actions.availabilityKey("quick-share", null, service)).indexOf("Opening RQuickShare") === 0, "disabled shortcut explains its pending launch")) return
                 var shortcut = test.find(toolbar, "quick-share")
                 if (!test.check(shortcut && !shortcut.enabled && shortcut.Accessible.description.indexOf("Opening RQuickShare") !== -1, "native shortcut exposes its busy reason")) return
                 shortcut.Accessible.pressAction()

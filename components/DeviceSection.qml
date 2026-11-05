@@ -4,6 +4,7 @@ import QtQuick.Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -38,10 +39,10 @@ Column {
             id: refreshButton
             enabled: !!root.service && !root.service.scanning
             iconText: "󰑐"
-            tooltipText: "Refresh devices"
+            tooltipText: Locale.Strings.t("device.refreshDevices")
             focusable: true
             Accessible.role: Accessible.Button
-            Accessible.name: "Refresh devices"
+            Accessible.name: Locale.Strings.t("device.refreshDevices")
             Accessible.onPressAction: if (enabled) clicked()
             size: Math.max(44, Style.space(22))
             foreground: root.foreground
@@ -52,10 +53,10 @@ Column {
             id: settingsButton
             objectName: "selected-device-settings"
             iconText: "󰒓"
-            tooltipText: "Plus device settings"
+            tooltipText: Locale.Strings.t("device.plusDeviceSettings")
             Accessible.role: Accessible.Button
-            Accessible.name: "Plus device settings"
-            Accessible.description: "Open this device's Plus settings, with a link to native KDE Connect settings."
+            Accessible.name: Locale.Strings.t("device.plusDeviceSettings")
+            Accessible.description: Locale.Strings.t("device.openThisDeviceSPlusSettings")
             Accessible.onPressAction: if (enabled) clicked()
             focusable: true
             size: Math.max(44, Style.space(22))
@@ -108,10 +109,10 @@ Column {
             anchors.verticalCenter: parent.verticalCenter
             size: Math.max(44, Style.space(22))
             iconText: "󰅖"
-            tooltipText: "Dismiss device status"
+            tooltipText: Locale.Strings.t("device.dismissDeviceStatus")
             focusable: true
             Accessible.role: Accessible.Button
-            Accessible.name: "Dismiss device status"
+            Accessible.name: Locale.Strings.t("device.dismissDeviceStatus")
             Accessible.onPressAction: if (enabled) clicked()
             foreground: ((root.service && (root.service.actionError || root.service.fileTransferError)) || (root.panel && root.panel.composerError)) ? Commons.Color.urgent : root.foreground
             fontFamily: root.fontFamily
@@ -152,7 +153,7 @@ Column {
             Text {
                 textFormat: Text.PlainText
                 width: parent.width
-                text: (root.incomingRequest && root.incomingRequest.name) ? "Pairing request from " + root.incomingRequest.name : "Pairing request"
+                text: (root.incomingRequest && root.incomingRequest.name) ? Locale.Strings.format("device.pairingFrom", [root.incomingRequest.name]) : Locale.Strings.t("device.pairingRequest")
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.body
@@ -165,7 +166,7 @@ Column {
                 visible: !!(root.incomingRequest && root.incomingRequest.verificationKey)
                 width: parent.width
                 wrapMode: Text.WrapAnywhere
-                text: "Verify on both devices: " + ((root.incomingRequest && root.incomingRequest.verificationKey) ? (root.service ? root.service.formatVerificationKey(root.incomingRequest.verificationKey) : root.incomingRequest.verificationKey) : "")
+                text: Locale.Strings.format("device.verifyOnBoth", [root.incomingRequest && root.incomingRequest.verificationKey ? (root.service ? root.service.formatVerificationKey(root.incomingRequest.verificationKey) : root.incomingRequest.verificationKey) : ""])
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.bodySmall
@@ -177,9 +178,9 @@ Column {
                     height: Math.max(44, implicitHeight)
                     focusable: true
                     Accessible.role: Accessible.Button
-                    Accessible.name: "Accept pairing request"
+                    Accessible.name: Locale.Strings.t("device.acceptPairingRequest")
                     Accessible.onPressAction: if (enabled) clicked()
-                    text: "Accept"
+                    text: Locale.Strings.t("device.accept")
                     bordered: true
                     selected: true
                     foreground: root.foreground
@@ -191,9 +192,9 @@ Column {
                     height: Math.max(44, implicitHeight)
                     focusable: true
                     Accessible.role: Accessible.Button
-                    Accessible.name: "Reject pairing request"
+                    Accessible.name: Locale.Strings.t("device.rejectPairingRequest")
                     Accessible.onPressAction: if (enabled) clicked()
-                    text: "Reject"
+                    text: Locale.Strings.t("device.reject")
                     bordered: true
                     foreground: root.foreground
                     fontFamily: root.fontFamily
@@ -211,7 +212,7 @@ Column {
         spacing: Style.space(4)
         Text {
             width: parent.width
-            text: "Remove KDE Connect pairing? Confirm only if you want to remove trust for this device."
+            text: Locale.Strings.t("device.removeKdeConnectPairingConfirmOnly")
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.urgent
@@ -222,13 +223,13 @@ Column {
             width: parent.width
             spacing: Style.space(4)
             Button {
-                text: "Confirm unpair"
+                text: Locale.Strings.t("device.confirmUnpair")
                 bordered: true
                 height: Math.max(44, implicitHeight)
                 selected: true
                 focusable: true
                 Accessible.role: Accessible.Button
-                Accessible.name: "Confirm unpair selected device"
+                Accessible.name: Locale.Strings.t("device.confirmUnpairSelectedDevice")
                 Accessible.onPressAction: if (enabled) clicked()
                 foreground: Commons.Color.urgent
                 accent: Commons.Color.urgent
@@ -236,12 +237,12 @@ Column {
                 onClicked: if (root.device) panel.confirmUnpair(root.device.id)
             }
             Button {
-                text: "Cancel"
+                text: Locale.Strings.t("common.cancel")
                 bordered: true
                 height: Math.max(44, implicitHeight)
                 focusable: true
                 Accessible.role: Accessible.Button
-                Accessible.name: "Cancel unpair selected device"
+                Accessible.name: Locale.Strings.t("device.cancelUnpairSelectedDevice")
                 Accessible.onPressAction: if (enabled) clicked()
                 foreground: root.foreground
                 fontFamily: root.fontFamily
@@ -253,8 +254,8 @@ Column {
     DailySection {
         sectionId: "devices"
         visible: root.showDetails && !!root.device
-        title: "Device details"
-        description: "Battery, network, ID and pairing for the selected device. Rows the device does not report are hidden."
+        title: Locale.Strings.t("device.deviceDetails")
+        description: Locale.Strings.t("device.batteryNetworkIdAndPairingFor")
         expanded: root.detailsExpanded
         onToggleRequested: root.detailsToggleRequested()
         Column {
@@ -276,7 +277,7 @@ Column {
                 spacing: Style.space(4)
                 Button {
                     visible: root.pendingState === "requesting"
-                    text: "Cancel pairing request"
+                    text: Locale.Strings.t("device.cancelPairingRequest")
                     bordered: true
                     height: Math.max(44, implicitHeight)
                     focusable: true
@@ -293,7 +294,7 @@ Column {
                 Button {
                     visible: root.pendingState === "removing"
                     enabled: false
-                    text: "Unpairing…"
+                    text: Locale.Strings.t("device.unpairing")
                     bordered: true
                     height: Math.max(44, implicitHeight)
                     foreground: root.foreground
@@ -301,12 +302,12 @@ Column {
                 }
                 Button {
                     visible: !!root.device && !root.device.paired && root.pendingState === "" && !root.device.pairRequestedByPeer
-                    text: "Pair"
+                    text: Locale.Strings.t("device.pair")
                     bordered: true
                     height: Math.max(44, implicitHeight)
                     focusable: true
                     Accessible.role: Accessible.Button
-                    Accessible.name: "Pair selected device"
+                    Accessible.name: Locale.Strings.t("device.pairSelectedDevice")
                     Accessible.onPressAction: if (enabled) clicked()
                     foreground: root.foreground
                     fontFamily: root.fontFamily
@@ -314,12 +315,12 @@ Column {
                 }
                 Button {
                     visible: !!root.device && root.device.paired && !root.isUnpairConfirming && root.pendingState !== "removing"
-                    text: "Unpair"
+                    text: Locale.Strings.t("device.unpair")
                     bordered: true
                     height: Math.max(44, implicitHeight)
                     focusable: true
                     Accessible.role: Accessible.Button
-                    Accessible.name: "Unpair selected device"
+                    Accessible.name: Locale.Strings.t("device.unpairSelectedDevice")
                     Accessible.onPressAction: if (enabled) clicked()
                     foreground: Commons.Color.urgent
                     accent: Commons.Color.urgent
@@ -338,9 +339,9 @@ Column {
             textFormat: Text.PlainText
             text: {
                 if (root.service && root.service.scanning) return "Scanning..."
-                if (root.service && root.service.discoveryState === "not_installed") return "Required packages missing"
-                if (root.service && root.service.discoveryState === "unavailable") return "KDE Connect unavailable"
-                return "No devices found"
+                if (root.service && root.service.discoveryState === "not_installed") return Locale.Strings.t("device.packagesMissing")
+                if (root.service && root.service.discoveryState === "unavailable") return Locale.Strings.t("device.daemonUnavailable")
+                return Locale.Strings.t("device.noDevices")
             }
             color: Qt.darker(root.foreground, 1.4)
             font.family: root.fontFamily
@@ -350,8 +351,8 @@ Column {
         Text {
             width: parent.width
             text: root.service && root.service.discoveryState === "not_installed"
-                ? "Run this command in a terminal to install KDE Connect, then select Refresh. To copy it, focus the command and press Ctrl+C."
-                : "Pair devices in KDE Connect. The setup guide helps with connection problems."
+                ? Locale.Strings.t("device.runThisCommandInATerminal")
+                : Locale.Strings.t("device.pairDevicesInKdeConnectThe")
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: root.foreground
@@ -367,15 +368,15 @@ Column {
             readOnly: true
             selectByMouse: true
             foreground: root.foreground
-            Accessible.name: "KDE Connect install command; focus and press Control+C to copy"
+            Accessible.name: Locale.Strings.t("device.kdeConnectInstallCommandFocusAnd")
             onActiveFocusChanged: if (activeFocus) selectAll()
         }
         Button {
             height: Math.max(44, implicitHeight)
-            text: "KDE Connect setup guide ↗"
+            text: Locale.Strings.t("device.kdeConnectSetupGuide")
             bordered: true
             Accessible.role: Accessible.Button
-            Accessible.name: "Open the official KDE Connect setup guide"
+            Accessible.name: Locale.Strings.t("device.openTheOfficialKdeConnectSetup")
             Accessible.onPressAction: if (enabled) clicked()
             focusable: true
             foreground: root.foreground

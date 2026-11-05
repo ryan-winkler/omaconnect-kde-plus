@@ -43,11 +43,12 @@ class SharingPolicy(unittest.TestCase):
         script = r'''
 const vm=require('node:vm'),assert=require('node:assert/strict');
 const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const Locale={Strings:require(input.catalogFixture)};
 const model=vm.runInNewContext(input.model.replace(/^\.pragma library\s*/, '')+';({create,record,remember,status})');
 function fresh(){
  const later=[],calls=[];
  const process=()=>({running:false,signals:[],signal(n){this.signals.push(n)}});
- const ctx={operationBusy:false,fileBusy:false,selection:[],selectionBytes:0,selectionState:'idle',selectionError:'',draftTarget:null,
+ const ctx={Locale,operationBusy:false,fileBusy:false,selection:[],selectionBytes:0,selectionState:'idle',selectionError:'',draftTarget:null,
   selectionGeneration:0,chooserSubmits:false,previewCandidates:[],operationSequence:0,fileTransferGeneration:0,operations:[],activeOperation:null,
   submissionQueue:[],submissionIndex:0,cancellationRequested:false,fileTransferMessage:'',fileTransferError:'',
   fileTransferProcess:process(),filePickerProcess:process(),fileInspectProcess:process(),
@@ -69,7 +70,8 @@ const review={useDesktopFileChooser:true,reviewFilesBeforeSend:true};
 '''
         result = subprocess.run(['node', '-e', script + assertions],
                                 input=json.dumps({'functions': functions, 'panel': panel_functions,
-                                                  'model': (ROOT / 'TransferModel.js').read_text()}),
+                                                  'model': (ROOT / 'TransferModel.js').read_text(),
+                                                  'catalogFixture': str(ROOT / 'tests/english_catalog.cjs')}),
                                 text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
 
@@ -93,14 +95,17 @@ p.device=null;assert.equal(p.chooseFiles(),false);assert.equal(seen.length,1);
         self.node(r'''
 const f=fresh(),c=f.ctx,opts={...immediate};
 assert.equal(c.chooseFiles('A',opts),true);assert.equal(c.filePickerProcess.command[2],'recent');
-assert.equal(JSON.parse(c.filePickerProcess.payload).recipient,'Original phone');
+assert.deepEqual(JSON.parse(c.filePickerProcess.payload), {
+ recipient:'Original phone', title:'Select file to send to Original phone', previewLabel:'Image previews…'
+});
 assert.ok(Object.isFrozen(c.draftTarget));opts.reviewFilesBeforeSend=true;opts.useDesktopFileChooser=true;
 c.selectedDeviceId='B';c.devices[0].name='Renamed later';f.selected();
 assert.equal(f.calls.length,0,'inspection itself does not start provider');f.flush();
 assert.equal(f.calls.length,1);assert.equal(f.calls[0].peerId,'A');assert.equal(c.activeOperation.peerName,'Original phone');
 for(const options of [review,undefined,{}, {useDesktopFileChooser:false,reviewFilesBeforeSend:'false'}]){
  const g=fresh(),d=g.ctx;assert.equal(d.chooseFiles('A',options),true);
- assert.equal(d.filePickerProcess.command[0],'bash');g.selected();g.flush();
+ assert.equal(d.filePickerProcess.command[0],'bash');
+ assert.equal(d.filePickerProcess.command[2],'Select files to send');g.selected();g.flush();
  assert.equal(g.calls.length,0);assert.equal(d.selectionState,'draft');
  assert.equal(d.submitSelection(),true);g.flush();assert.equal(g.calls.length,1);
 }

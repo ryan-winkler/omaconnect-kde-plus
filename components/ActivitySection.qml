@@ -23,7 +23,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: "KDE submission activity"
+        text: Locale.Strings.t("activity.kdeSubmissionActivity")
 
         color: Commons.Color.popups.text
         font.bold: true
@@ -32,7 +32,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: "Accepted means KDE Connect took the request. Check the other device to confirm that it arrived."
+        text: Locale.Strings.t("activity.acceptedMeansKdeConnectTookThe")
 
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -46,7 +46,7 @@ Column {
             width: root.width
             text: Locale.Strings.format("files.activityDetails", [
                 modelData.peerName, modelData.peerId, Locale.Strings.fileCount(modelData.count),
-                Locale.Strings.byteSize(modelData.total), Transfers.status(modelData)
+                Locale.Strings.byteSize(modelData.total), Transfers.status(modelData, Locale.Strings)
             ])
 
             wrapMode: Text.WrapAnywhere
@@ -57,7 +57,7 @@ Column {
     }
     SettingsButton {
         width: parent.width
-        text: "Clear finished activity"
+        text: Locale.Strings.t("activity.clearFinishedActivity")
         foreground: Commons.Color.popups.text
         focusable: true
         enabled: !!root.service

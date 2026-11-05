@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 Column {
     required property var panel
@@ -9,7 +10,7 @@ Column {
     spacing: Style.space(8)
     Text {
         width: parent.width
-        text: "Daily popup navigation"
+        text: Locale.Strings.t("navigationSettings.dailyPopupNavigation")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -19,7 +20,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "To restore the default layout, turn all three options off."
+        text: Locale.Strings.t("navigationSettings.toRestoreTheDefaultLayoutTurn")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text

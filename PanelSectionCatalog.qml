@@ -33,7 +33,7 @@ QtObject {
     function entry(id) { return entries.find(function(row) { return row.id === id; }) || null }
     function title(id) {
         var row = entry(id)
-        return row ? Locale.Strings.t("section." + id + ".title", row.label) : id
+        return row ? Locale.Strings.t("section." + id + ".title", id) : id
     }
 
     function preferencesFor(page) {

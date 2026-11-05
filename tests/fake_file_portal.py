@@ -18,6 +18,7 @@ close_requests = []
 def method(connection, sender, path, interface, name, parameters, invocation):
     """Serve an owned chooser request with optional cancellation and registration races."""
     parent, title, options = parameters.unpack()
+    assert title == os.environ.get('TEST_PORTAL_TITLE', 'Select files to send')
     assert options['multiple'] is True
     assert options['directory'] is False
     assert 'filters' not in options
@@ -58,7 +59,10 @@ def method(connection, sender, path, interface, name, parameters, invocation):
 
 info = Gio.DBusNodeInfo.new_for_xml(xml).interfaces[0]
 bus.register_object('/org/freedesktop/portal/desktop', info, method, None, None)
-process = subprocess.Popen(['python3', os.environ['TEST_PICKER'], 'choose'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+command = ['python3', os.environ['TEST_PICKER'], 'choose']
+if 'TEST_PORTAL_TITLE' in os.environ:
+    command.append(os.environ['TEST_PORTAL_TITLE'])
+process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
 def done():

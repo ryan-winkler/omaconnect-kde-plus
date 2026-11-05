@@ -5,6 +5,7 @@ import QtQuick.Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -35,8 +36,8 @@ Column {
             id: commandsHeader
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
-            Accessible.name: panel.commandsExpanded ? "Collapse remote commands" : "Expand remote commands"
-            Accessible.description: "Run commands configured on the selected device. Add or edit them in that device’s KDE Connect Run commands settings."
+            Accessible.name: panel.commandsExpanded ? Locale.Strings.t("remoteCommands.collapse") : Locale.Strings.t("remoteCommands.expand")
+            Accessible.description: Locale.Strings.t("remoteCommands.runCommandsConfiguredOnTheSelected")
             Accessible.onPressAction: panel.toggleCommandsExpanded()
             Keys.onReturnPressed: panel.toggleCommandsExpanded()
             Keys.onEnterPressed: panel.toggleCommandsExpanded()
@@ -75,7 +76,7 @@ Column {
                 }
 
                 PanelSectionHeader {
-                    text: "REMOTE COMMANDS"
+                    text: Locale.Strings.t("remoteCommands.remoteCommands")
                     foreground: root.foreground
                     fontFamily: root.fontFamily
                     anchors.verticalCenter: parent.verticalCenter
@@ -87,11 +88,11 @@ Column {
             id: refreshCmdBtn
             focusable: visible && enabled
             Accessible.role: Accessible.Button
-            Accessible.name: "Refresh remote commands"
+            Accessible.name: Locale.Strings.t("remoteCommands.refreshRemoteCommands")
             Accessible.onPressAction: if (enabled) clicked()
             visible: panel.commandsExpanded
             iconText: "󰑐"
-            tooltipText: "Refresh commands"
+            tooltipText: Locale.Strings.t("remoteCommands.refreshCommands")
             foreground: root.foreground
             fontFamily: root.fontFamily
             enabled: visible && !!Window.window && Window.window.visible
@@ -115,7 +116,7 @@ Column {
         Text {
             textFormat: Text.PlainText
             visible: !!root.service && root.service.commandsLoading
-            text: "Loading commands..."
+            text: Locale.Strings.t("remoteCommands.loadingCommands")
             color: Qt.darker(root.foreground, 1.4)
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
@@ -125,7 +126,7 @@ Column {
             textFormat: Text.PlainText
             visible: !!root.service && !root.service.commandsLoading && (!root.service.remoteCommands || root.service.remoteCommands.length === 0)
             width: parent.width
-            text: "No remote commands. Add them in the device’s KDE Connect Run commands settings."
+            text: Locale.Strings.t("remoteCommands.noRemoteCommandsAddThemIn")
             wrapMode: Text.Wrap
             color: Qt.darker(root.foreground, 1.4)
             font.family: root.fontFamily
@@ -148,7 +149,7 @@ Column {
                 function run() { if (root.service && root.device && modelData) root.service.executeRemoteCommand(root.device.id, modelData.key) }
                 activeFocusOnTab: true
                 Accessible.role: Accessible.Button
-                Accessible.name: "Run remote command " + (modelData ? modelData.name : "")
+                Accessible.name: Locale.Strings.format("remoteCommands.runCommand", [modelData ? modelData.name : ""])
                 Accessible.onPressAction: run()
                 Keys.onReturnPressed: run()
                 Keys.onSpacePressed: run()

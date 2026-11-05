@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -19,7 +20,7 @@ Column {
     spacing: Style.space(6)
     Text {
         visible: root.showTitle
-        text: "Information"
+        text: Locale.Strings.t("deviceInformation.information")
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -39,7 +40,7 @@ Column {
             objectName: "device-information-" + modelData.label
             width: root.width
             visible: modelData.shown !== false && !(root.compact && (modelData.value === "Not reported" || modelData.value.indexOf("Unavailable") === 0))
-            text: modelData.label + ": " + modelData.value
+            text: Locale.Strings.format("deviceInformation.field", [modelData.label, modelData.value])
             textFormat: Text.PlainText
             wrapMode: Text.WrapAnywhere
             color: root.foreground

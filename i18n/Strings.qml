@@ -15,6 +15,8 @@ Commons.Translations {
         })
     }
 
+    function number(value) { return Commons.I18n.formatNumber(value) }
+
     function fileCount(count) {
         var text = tn("files.count", count)
         return text.indexOf("%1") >= 0 ? text.arg(Commons.I18n.formatNumber(count)) : text

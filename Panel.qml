@@ -121,14 +121,14 @@ Panel {
     }
     function sectionAvailabilityText(id) {
         var state = sectionAvailability(id)
-        if (state === "checking") return "Checking availability. Waiting for current data."
-        if (id === "connections") return state === "available" ? "Available: at least one VPN tool is enabled in Plus settings. This does not report a VPN connection." : "Unavailable: no VPN tool is enabled in Plus settings."
-        if (id === "syncthing") return state === "available" ? "Available: local identity notes can be edited for this device. No Syncthing status check is needed." : "Unavailable: select a device to edit its local identity note."
-        if (id === "devices") return "Always shown. Select a device below."
-        if (id === "actions" && state === "available" && availableActions.some(function(id) { return Actions.entry(id).scope === "global" })) return "Available: a local shortcut can be used without a device connection."
-        if (id === "addresses") return state === "available" ? "Available: the saved address list is ready, including an empty list." : "Unavailable: the native address list could not be read."
-        if (id === "native") return state === "available" ? "Available: a paired device is selected. KDE Connect owns native settings." : "Unavailable: select a paired device."
-        return state === "available" ? "Available: the selected device reports the required capability or shortcut." : "Unavailable: no paired, reachable device reports the required capability or shortcut."
+        if (state === "checking") return Locale.Strings.t("layout.availability.checkingAvailabilityWaitingForCurrentData")
+        if (id === "connections") return state === "available" ? Locale.Strings.t("layout.availability.availableAtLeastOneVpnTool") : Locale.Strings.t("layout.availability.unavailableNoVpnToolIsEnabled")
+        if (id === "syncthing") return state === "available" ? Locale.Strings.t("layout.availability.availableLocalIdentityNotesCanBe") : Locale.Strings.t("layout.availability.unavailableSelectADeviceToEdit")
+        if (id === "devices") return Locale.Strings.t("layout.availability.alwaysShownSelectADeviceBelow")
+        if (id === "actions" && state === "available" && availableActions.some(function(id) { return Actions.entry(id).scope === "global" })) return Locale.Strings.t("layout.availability.availableALocalShortcutCanBe")
+        if (id === "addresses") return state === "available" ? Locale.Strings.t("layout.availability.availableTheSavedAddressListIs") : Locale.Strings.t("layout.availability.unavailableTheNativeAddressListCould")
+        if (id === "native") return state === "available" ? Locale.Strings.t("layout.availability.availableAPairedDeviceIsSelected") : Locale.Strings.t("layout.availability.unavailableSelectAPairedDevice")
+        return state === "available" ? Locale.Strings.t("layout.availability.availableTheSelectedDeviceReportsThe") : Locale.Strings.t("layout.availability.unavailableNoPairedReachableDeviceReports")
     }
     function sectionVisible(id) {
         if (id === "devices") return true
@@ -165,7 +165,7 @@ Panel {
         layoutPending = {key: request.key, value: request.value, sectionId: sectionId || ""}
         layoutFeedbackSectionId = sectionId || ""
         layoutReadbackTimedOut = false
-        layoutGuardMessage = "Saving layout and waiting for saved readback…"
+        layoutGuardMessage = Locale.Strings.t("panel.savingLayoutAndWaitingForSaved")
         if (!layoutSaver.save(request)) { layoutPending = null; return false }
         layoutReadbackTimer.restart()
         return true
@@ -183,7 +183,7 @@ Panel {
         layoutPending = null
         layoutReadbackTimedOut = false
         layoutReadbackTimer.stop()
-        layoutGuardMessage = "Layout saved and confirmed."
+        layoutGuardMessage = Locale.Strings.t("panel.layoutSavedAndConfirmed")
     }
     onSettingsChanged: confirmLayoutReadback()
     Timer {
@@ -191,13 +191,13 @@ Panel {
         interval: 6000
         onTriggered: if (root.layoutPending) {
             root.layoutReadbackTimedOut = true
-            root.layoutGuardMessage = "Saved layout was not confirmed. Further layout changes are blocked. Use the current saved layout to recover, or wait for readback."
+            root.layoutGuardMessage = Locale.Strings.t("panel.savedLayoutWasNotConfirmedFurther")
         }
     }
     function useCurrentSavedLayout() {
         if (!layoutReadbackTimedOut || layoutSaver.busy) return false
         layoutPending = null; layoutReadbackTimedOut = false; layoutReadbackTimer.stop()
-        layoutGuardMessage = "Using the current saved layout. Check the displayed choices before editing."
+        layoutGuardMessage = Locale.Strings.t("panel.usingTheCurrentSavedLayoutCheck")
         return true
     }
     function setLayoutEditing(value) {
@@ -210,7 +210,7 @@ Panel {
         })
     }
     function sectionTitle(id) { return sectionCatalogModel.title(id) }
-    function sectionHelp(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.description : "" }
+    function sectionHelp(id) { var entry = sectionCatalogModel.entry(id); return entry ? Locale.Strings.t("section." + id + ".help") : "" }
     function reorderSections() {
         if (!sectionCatalogModel.ready) return
         var wanted = sectionCatalogModel.order
@@ -673,29 +673,29 @@ Panel {
     function openComposer(type) {
         if (type !== "ping" && type !== "text") return
         if (!service || !device || !device.paired || !device.reachable) {
-            composerError = "Device must be paired and reachable"
+            composerError = Locale.Strings.t("panel.deviceMustBePairedAndReachable")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Device must be paired and reachable"
+                service.actionError = Locale.Strings.t("panel.deviceMustBePairedAndReachable")
                 service.actionMessage = ""
             }
             return
         }
         var caps = device.capabilities || {}
         if (type === "ping" && !caps.ping) {
-            composerError = "Ping not supported by device"
+            composerError = Locale.Strings.t("panel.pingNotSupportedByDevice")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Ping not supported by device"
+                service.actionError = Locale.Strings.t("panel.pingNotSupportedByDevice")
                 service.actionMessage = ""
             }
             return
         }
         if (type === "text" && !caps.text) {
-            composerError = "Text share not supported by device"
+            composerError = Locale.Strings.t("panel.textShareNotSupportedByDevice")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Text share not supported by device"
+                service.actionError = Locale.Strings.t("panel.textShareNotSupportedByDevice")
                 service.actionMessage = ""
             }
             return
@@ -740,10 +740,10 @@ Panel {
         if (!composerCanSubmit("ping")) return false
         var val = draftPing.trim()
         if (!val) {
-            composerError = "Message cannot be empty"
+            composerError = Locale.Strings.t("panel.messageCannotBeEmpty")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Message cannot be empty"
+                service.actionError = Locale.Strings.t("panel.messageCannotBeEmpty")
                 service.actionMessage = ""
             }
             return false
@@ -758,7 +758,7 @@ Panel {
             }
             return success
         }
-        composerError = "Service unavailable"
+        composerError = Locale.Strings.t("panel.serviceUnavailable")
         return false
     }
 
@@ -766,10 +766,10 @@ Panel {
         if (!composerCanSubmit("text")) return false
         var val = draftText.trim()
         if (!val) {
-            composerError = "Message cannot be empty"
+            composerError = Locale.Strings.t("panel.messageCannotBeEmpty")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Message cannot be empty"
+                service.actionError = Locale.Strings.t("panel.messageCannotBeEmpty")
                 service.actionMessage = ""
             }
             return false
@@ -784,7 +784,7 @@ Panel {
             }
             return success
         }
-        composerError = "Service unavailable"
+        composerError = Locale.Strings.t("panel.serviceUnavailable")
         return false
     }
 
@@ -1008,7 +1008,7 @@ Panel {
                     Text {
                         width: parent.width
                         text: root.service && root.service.draftTarget ? "Reviewed recipient: " + root.service.draftTarget.peerName + "\nKDE ID: " + root.service.draftTarget.peerId
-                            : root.device ? "Selected: " + root.deviceName + "\nKDE ID: " + root.device.id : "Choose a device in Devices first."
+                            : root.device ? "Selected: " + root.deviceName + "\nKDE ID: " + root.device.id : Locale.Strings.t("panel.chooseADeviceInDevicesFirst")
                         textFormat: Text.PlainText
                         wrapMode: Text.WrapAnywhere
                         color: Commons.Color.popups.text
@@ -1016,7 +1016,7 @@ Panel {
                     SettingsButton {
                         focusable: true
                         width: parent.width
-                        text: "Choose files"
+                        text: Locale.Strings.t("files.choose")
                         Accessible.name: text
                         enabled: !!root.device && root.device.paired && root.device.reachable && root.device.capabilities && root.device.capabilities.file && root.service && !root.service.operationBusy && !root.service.selectionCancelling && root.service.selectionState !== "choosing" && root.service.selectionState !== "draft" && root.service.selectionState !== "preview"
                         onClicked: root.chooseFiles()
@@ -1031,7 +1031,7 @@ Panel {
                     SettingsButton {
                         focusable: true
                         width: parent.width
-                        text: "Open Send window"
+                        text: Locale.Strings.t("panel.openSendWindow")
                         Accessible.name: text
                         onClicked: root.openSendWindow()
                     }

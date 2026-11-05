@@ -565,7 +565,7 @@ Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
 
 `PanelSections.json` is the fixed catalogue for the daily sections. It owns
-their IDs, labels, help, legacy visibility keys, default policies, expansion defaults and settings domain.
+their IDs, legacy visibility keys, default policies, expansion defaults and settings domain. Visible titles and help use the matching section IDs in the native string catalogue.
 `PanelSectionCatalog.qml` reads this trusted local file. `SectionOrder.js` and
 `scripts/section_order.py` validate the same catalogue and bounded `sectionOrder`
 CSV. The retired `information` ID is discarded for compatibility. Unknown or repeated active IDs are rejected on save. Missing known IDs append in

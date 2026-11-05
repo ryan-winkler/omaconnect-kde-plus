@@ -238,7 +238,10 @@ class Files(unittest.TestCase):
             env = dict(os.environ, TEST_PORTAL_URIS=json.dumps([source.as_uri()]), TEST_PICKER=str(HELPER))
             fixture = ROOT / 'tests/fake_file_portal.py'
             for response, expected in [('0', 'selected'), ('1', 'cancelled')]:
-                run = subprocess.run(['dbus-run-session', '--', 'python3', str(fixture)], env=dict(env, TEST_PORTAL_RESPONSE=response), capture_output=True, text=True, timeout=15)
+                request_env = dict(env, TEST_PORTAL_RESPONSE=response)
+                if expected == 'selected':
+                    request_env['TEST_PORTAL_TITLE'] = 'اختر الملفات لإرسالها'
+                run = subprocess.run(['dbus-run-session', '--', 'python3', str(fixture)], env=request_env, capture_output=True, text=True, timeout=15)
                 self.assertEqual(run.returncode, 0, run.stderr)
                 result = json.loads(run.stdout)
                 self.assertEqual(result['state'], expected)

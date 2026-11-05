@@ -5,6 +5,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
 import "../ActionCatalog.js" as Actions
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -47,9 +48,9 @@ Column {
                 required property int index
                 readonly property var catalogEntry: Actions.entry(modelData)
                 readonly property string actionName: modelData === "file" && root.service && root.service.fileBusy
-                    ? "Stop submitting" : Actions.actionLabel(modelData, root.device)
+                    ? "Stop submitting" : Locale.Strings.t(Actions.actionLabelKey(modelData, root.device))
                 readonly property string actionTooltip: modelData === "file" && root.service && root.service.fileBusy
-                    ? "Cancel the current file submission" : catalogEntry ? catalogEntry.description + (root.actionReady(modelData) ? "" : "\n" + Actions.availabilityText(modelData,root.device,root.service)) : modelData
+                    ? "Cancel the current file submission" : catalogEntry ? Locale.Strings.t(catalogEntry.descriptionKey) + (root.actionReady(modelData) ? "" : "\n" + Locale.Strings.t(Actions.availabilityKey(modelData,root.device,root.service))) : modelData
                 readonly property string actionIcon: modelData === "file" && root.service && root.service.fileBusy
                     ? "󰅖" : catalogEntry ? catalogEntry.icon : ""
 
@@ -95,8 +96,8 @@ Column {
     Text {
         width: parent.width
         visible: root.blockedActions.length > 0
-        text: root.blockedActions.length > 0 ? Actions.availabilityText(root.blockedActions[0],root.device,root.service)
-            + (root.blockedActions.length > 1 ? " Other unavailable actions: " + root.blockedActions.slice(1).map(function(id) { return Actions.entry(id).label; }).join(", ") + "." : "") : ""
+        text: root.blockedActions.length > 0 ? Locale.Strings.t(Actions.availabilityKey(root.blockedActions[0],root.device,root.service))
+            + (root.blockedActions.length > 1 ? " Other unavailable actions: " + root.blockedActions.slice(1).map(function(id) { return Locale.Strings.t(Actions.entry(id).labelKey); }).join(", ") + "." : "") : ""
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: root.foreground

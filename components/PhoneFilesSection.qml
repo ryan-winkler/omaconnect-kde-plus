@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons as Commons
 import "../ActionCatalog.js" as Actions
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -16,18 +17,18 @@ Column {
         spacing: Commons.Style.space(6)
         SettingsButton {
             objectName: "browse-phone-files"
-            text: "Browse phone files"
+            text: Locale.Strings.t("phoneFiles.browse")
             width: Math.min(implicitWidth, parent.width)
             height: Math.max(44, implicitHeight)
             foreground: Commons.Color.popups.text
             focusable: true
             enabled: !!root.service && Actions.ready("browse-files", root.device, root.service)
-            Accessible.description: "Open shared phone folders in the default file manager. The phone's KDE Connect Filesystem expose permission is required."
+            Accessible.description: Locale.Strings.t("phoneFiles.openSharedPhoneFoldersInThe")
             onClicked: root.service.browsePhoneFiles(root.device.id)
         }
         SettingsButton {
             objectName: "cancel-phone-files"
-            text: "Cancel browse"
+            text: Locale.Strings.t("phoneFiles.cancelBrowse")
             width: Math.min(implicitWidth, parent.width)
             height: Math.max(44, implicitHeight)
             foreground: Commons.Color.popups.text
@@ -38,7 +39,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "KDE Connect mounts the phone's shared folders. Files open in your default file manager."
+        text: Locale.Strings.t("phoneFiles.kdeConnectMountsThePhoneS")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -71,20 +72,20 @@ Column {
             foreground: Commons.Color.popups.text
             focusable: true
             enabled: !!root.service && !root.service.phoneFilesBusy
-            Accessible.name: "Open shared folder " + modelData.name
-            Accessible.description: "Open this advertised shared folder in the default file manager."
+            Accessible.name: Locale.Strings.format("phoneFiles.openSharedFolder", [modelData.name])
+            Accessible.description: Locale.Strings.t("phoneFiles.openThisAdvertisedSharedFolderIn")
             onClicked: root.service.openPhoneFileLocation(index)
         }
     }
     SettingsButton {
         objectName: "phone-files-native-settings"
-        text: "Phone file settings in KDE ↗"
+        text: Locale.Strings.t("phoneFiles.phoneFileSettingsInKde")
         width: Math.min(implicitWidth, parent.width)
         height: Math.max(44, implicitHeight)
         foreground: Commons.Color.popups.text
         focusable: true
         enabled: !!root.service && !root.service.nativeAppOpening
-        Accessible.description: "Open native KDE Connect to check the Filesystem expose module and permissions."
+        Accessible.description: Locale.Strings.t("phoneFiles.openNativeKdeConnectToCheck")
         onClicked: root.service.openKdeConnectApp("kdeconnect_sftp")
     }
 }

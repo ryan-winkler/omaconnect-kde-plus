@@ -125,7 +125,7 @@ Window {
             SettingsButton {
                 id: closeButton
                 text: Locale.Strings.t("settings.close")
-                Accessible.name: "Close Plus settings"
+                Accessible.name: Locale.Strings.t("settingsPanel.closePlusSettings")
                 focusable: true
                 foreground: Commons.Color.popups.text
                 onClicked: root.closeSettings()

@@ -4,7 +4,7 @@ var MAX_ORDER_LENGTH = 512;
 var MAX_CATALOG_LENGTH = 32768;
 // Saved orders can still name sections that later releases removed.
 var RETIRED_IDS = ["information"];
-var fields = ["id", "label", "description", "visibilityKey", "expandedKey", "defaultVisible", "defaultExpanded", "settingsPage", "defaultPolicy"];
+var fields = ["id", "visibilityKey", "expandedKey", "defaultVisible", "defaultExpanded", "settingsPage", "defaultPolicy"];
 var POLICIES = ["show", "hide", "available", "unavailable"];
 var MAX_VISIBILITY_LENGTH = 2048;
 var pages = ["Appearance", "Connections", "Quick actions", "Device features"];
@@ -19,9 +19,7 @@ function parseCatalog(text) {
         var row = rows[i];
         if (!row || typeof row !== "object" || Array.isArray(row) || Object.keys(row).some(function(key) { return fields.indexOf(key) < 0; })) return [];
         if (typeof row.id !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(row.id) || ids[row.id]) return [];
-        if (typeof row.label !== "string" || !row.label.trim() || row.label.length > 128
-                || typeof row.description !== "string" || !row.description.trim() || row.description.length > 1024
-                || typeof row.defaultVisible !== "boolean" || typeof row.defaultExpanded !== "boolean"
+        if (typeof row.defaultVisible !== "boolean" || typeof row.defaultExpanded !== "boolean"
                 || POLICIES.indexOf(row.defaultPolicy) < 0
                 || (row.settingsPage !== undefined && pages.indexOf(row.settingsPage) < 0)) return [];
         var settingKeys = [row.expandedKey];

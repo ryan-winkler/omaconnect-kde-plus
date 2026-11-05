@@ -5,12 +5,13 @@ const path = require('node:path');
 const base = process.argv[2] || path.resolve(__dirname, '..');
 const model = fs.readFileSync(path.join(base, 'BthControlModel.js'), 'utf8').replace(/^\.pragma library\s*/, '');
 const M = {}; vm.createContext(M); vm.runInContext(model, M);
+const strings = require("./english_catalog.cjs");
 const good = {schema_version: 1, configured: true, profile_safe: true, control_valid: true, nm_control: true, pending: false, control_mode: 'auto', connection_state: 'inactive', error: null};
 let count = 0;
 function test(name, fn) { fn(); console.log('ok '+(++count)+' '+name); }
 function parse(change={}) { return M.parse(JSON.stringify({...good, ...change})); }
 test('inactive saved BTH remains a known Off connection in Automatic mode', () => {
- const s=parse(); assert.equal(s.known,true); assert.equal(M.stateLabel(s.connection_state),'Off'); assert.equal(M.modeLabel(s.control_mode),'Automatic');
+ const s=parse(); assert.equal(s.known,true); assert.equal(strings.t(M.stateLabel(s.connection_state)),'Off'); assert.equal(strings.t(M.modeLabel(s.control_mode)),'Automatic');
 });
 test('malformed, oversized and non-object status are unavailable', () => {
  for(const value of ['', '{', '[]', 'null', 'x'.repeat(8193)]) assert.equal(M.parse(value).known,false);
@@ -45,17 +46,17 @@ test('activation errors cannot be hidden by inconsistent otherwise-safe booleans
 });
 test('invalid saved intent is Needs review with no normal Automatic selection', () => {
  const invalid=parse({control_mode:'auto',control_valid:false,error:'invalid-control-state'});
- assert.equal(M.selectedModeLabel(invalid),'Needs review');
+ assert.equal(strings.t(M.selectedModeLabel(invalid)),'Needs review');
  for(const mode of ['auto','on','off']) assert.equal(M.isSelected(invalid,mode),false);
- assert.equal(M.isSelected(parse(),'auto'),true);assert.equal(M.selectedModeLabel(parse()),'Automatic');
- assert.equal(M.selectedModeLabel(M.unknown()),'Unknown');
+ assert.equal(M.isSelected(parse(),'auto'),true);assert.equal(strings.t(M.selectedModeLabel(parse())),'Automatic');
+ assert.equal(strings.t(M.selectedModeLabel(M.unknown())),'Unknown');
  assert.equal(M.canRun(invalid,'off',false),true);assert.equal(M.canRun(invalid,'auto',false),true);
 });
 test('queued mode never becomes an actual On result until interface active', () => {
  assert.equal(M.confirmed(parse({control_mode:'on',connection_state:'activating',pending:true}),'on'),false);
  assert.equal(M.confirmed(parse({control_mode:'on',connection_state:'inactive'}),'on'),false);
  assert.equal(M.confirmed(parse({control_mode:'on',connection_state:'active'}),'on'),true);
- assert.match(M.pendingText(parse(), 'on'),/Waiting for actual/);
+ assert.match(M.pendingText(parse(), 'on', strings),/Waiting for actual/);
 });
 test('Off and Automatic confirmations require settled NM readback', () => {
  assert.equal(M.confirmed(parse({control_mode:'off',connection_state:'deactivating',pending:true}),'off'),false);
@@ -69,16 +70,16 @@ test('Off and Automatic confirmations require settled NM readback', () => {
 test('last apply failure stays generic, has bounded age and clears on applied report', () => {
  const failed=parse({pending:true,last_report:{phase:'error',age_seconds:10,control_mode:'auto',reason:'<img src="remote">'}});
  assert.equal(failed.last_apply_failed,true);assert.equal(failed.last_report_age_seconds,10);
- assert.equal(M.pendingText(failed,'on'),'Last apply failed. Inspect status, or choose Off or Automatic.');
+ assert.equal(M.pendingText(failed,'on',strings),'Last apply failed. Inspect status, or choose Off or Automatic.');
  assert.equal('reason' in failed,false);
  const applied=parse({last_report:{phase:'applied',age_seconds:0}});assert.equal(applied.last_apply_failed,false);
- assert.equal(M.pendingText(applied,''),'');
+ assert.equal(M.pendingText(applied,'',strings),'');
  assert.equal(parse({last_report:{phase:'<img>',age_seconds:Infinity}}).last_apply_failed,false);
  assert.equal(parse({last_report:{phase:'error',age_seconds:-1}}).last_report_age_seconds,null);
 });
 test('state labels make no handshake or service-health claim', () => {
- assert.equal(M.stateLabel('active'),'On (interface active)');assert.equal(M.stateLabel('inactive'),'Off');assert.equal(M.stateLabel('activating'),'Turning on');
- for(const mode of ['active','inactive','activating','deactivating']) assert.doesNotMatch(M.stateLabel(mode),/healthy|verified|connected/i);
+ assert.equal(strings.t(M.stateLabel('active')),'On (interface active)');assert.equal(strings.t(M.stateLabel('inactive')),'Off');assert.equal(strings.t(M.stateLabel('activating')),'Turning on');
+ for(const mode of ['active','inactive','activating','deactivating']) assert.doesNotMatch(strings.t(M.stateLabel(mode)),/healthy|verified|connected/i);
 });
 const card=fs.readFileSync(path.join(base,'BthControlCard.qml'),'utf8');
 
@@ -91,7 +92,8 @@ test('fixed helper argv and bounded output keep shell and raw stderr out', () =>
 });
 test('optional card only polls while open and rejects relative helper paths', () => {
  assert.ok(card.includes('running: root.panelOpened'));
- assert.ok(card.includes('Optional BTH controller is not installed'));
+ assert.ok(card.includes('bth.optionalBthControllerIsNotInstalled'));
+ assert.match(strings.t('bth.optionalBthControllerIsNotInstalled'), /Optional BTH controller is not installed/);
  assert.ok(M.validHelperPath('/tmp/installed/remote-access-mode'));
  for (const value of ['remote-access-mode', '/tmp/../remote-access-mode', '/tmp/evil', '/tmp/remote-access-mode\n']) assert.equal(M.validHelperPath(value), false);
  assert.equal((card.match(/\bText \{/g)||[]).length,(card.match(/textFormat: Text.PlainText/g)||[]).length);

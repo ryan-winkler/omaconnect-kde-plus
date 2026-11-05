@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shlex
 import shutil
 import time
@@ -10,6 +11,14 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).parents[1]
+ENGLISH_COPY = json.loads((ROOT / "i18n/en.json").read_text())
+
+
+def english_copy(source):
+    """Follow localized copy references in source-level display contracts."""
+    return re.sub(r'Locale\.Strings\.t\("([a-zA-Z0-9.-]+)"\)',
+                  lambda match: json.dumps(ENGLISH_COPY.get(match[1], match[1]), ensure_ascii=False), source)
+
 BASH = shutil.which("bash") or "bash"
 FIXTURES = ROOT / "tests" / "fixtures"
 
@@ -2022,8 +2031,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn('set-property', address_script)
     self.assertIn('CUSTOM_ADDRESSES_READY', discovery)
     self.assertIn('CUSTOM_ADDRESS\\t%s', discovery)
-    self.assertIn('Search peers or enter IP', network_ui)
-    self.assertIn('SAVED ADDRESSES', network_ui)
+    self.assertIn('Search peers or enter IP', english_copy(network_ui))
+    self.assertIn('SAVED ADDRESSES', english_copy(network_ui))
     self.assertIn('panel.networkExpanded', network_ui)
     self.assertIn('property bool networkExpanded', panel)
     self.assertIn('function toggleNetworkExpanded', panel)
@@ -2037,7 +2046,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn('org.kde.kdeconnect.device.acceptPairing', controller)
     self.assertIn('function rejectPairing(id)', controller)
     self.assertIn('org.kde.kdeconnect.device.cancelPairing', controller)
-    self.assertIn('Verify on both devices', ui)
+    self.assertIn('Locale.Strings.format("device.verifyOnBoth"', ui)
+    self.assertEqual(ENGLISH_COPY["device.verifyOnBoth"], "Verify on both devices: %1")
 
   def test_service_forwards_all_controller_actions(self):
     service_source = (ROOT / "Service.qml").read_text()
@@ -2064,7 +2074,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("panel.openDeviceSettings(root.device.id)", device_ui)
     native_ui = (ROOT / "components" / "NativeFeaturesSection.qml").read_text()
     self.assertIn("openKdeConnectApp()", native_ui)
-    self.assertIn("Native KDE Connect settings", native_ui)
+    self.assertIn("Native KDE Connect settings", english_copy(native_ui))
     self.assertIn("kdeconnect-app", app_script)
 
   def test_scan_and_picker_lifecycle_guards(self):
@@ -2131,7 +2141,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     controller_source = controller_layer_source()
     self.assertIn('discoveryState = "not_installed"', controller_source)
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
-    self.assertIn("KDE Connect setup guide", device_section)
+    self.assertIn("KDE Connect setup guide", english_copy(device_section))
     self.assertNotIn("installDependencies", controller_source)
 
   def test_action_error_and_status_banner_contracts(self):
@@ -2254,7 +2264,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("playPauseBtn", media_section)
     self.assertIn("nextBtn", media_section)
     self.assertIn("playerControlsRow", media_section)
-    self.assertIn('text: isCurrent ? "Current: " + modelData : modelData', media_section)
+    self.assertIn('text: isCurrent ? Locale.Strings.format("mediaPlayer.current", [modelData]) : modelData', media_section)
+    self.assertEqual(ENGLISH_COPY["mediaPlayer.current"], "Current: %1")
     self.assertNotIn("id: pText", media_section)
     self.assertNotIn("source: root.albumArt", media_section)
     self.assertIn("localAlbumArtUrl", (ROOT / "scripts" / "media_control.sh").read_text())
@@ -2428,7 +2439,8 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
     self.assertIn("triggerAction", ui_source)
     self.assertIn("actionSelectedIndex", ui_source)
     self.assertIn("focusSection", ui_source)
-    catalogue = {entry["id"]: entry["label"] for entry in json.loads((ROOT / "PanelSections.json").read_text())}
+    catalogue = {entry["id"]: ENGLISH_COPY[f'section.{entry["id"]}.title']
+                 for entry in json.loads((ROOT / "PanelSections.json").read_text())}
     self.assertEqual({key: catalogue[key] for key in ("devices", "actions", "commands")},
                      {"devices": "Devices", "actions": "Quick actions", "commands": "Remote commands"})
     self.assertIn("title: root.sectionTitle(sectionId)", ui_source)
@@ -2664,10 +2676,10 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
 
   def test_device_section_offline_and_empty_states_contracts(self):
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
-    self.assertIn("Required packages missing", device_section)
-    self.assertIn("KDE Connect setup guide", device_section)
-    self.assertIn("KDE Connect unavailable", device_section)
-    self.assertIn("No devices found", device_section)
+    self.assertIn("Required packages missing", english_copy(device_section))
+    self.assertIn("KDE Connect setup guide", english_copy(device_section))
+    self.assertIn("KDE Connect unavailable", english_copy(device_section))
+    self.assertIn("No devices found", english_copy(device_section))
     self.assertNotIn("Allow in Firewall", device_section)
 
   def test_missing_kde_connect_shows_the_documented_install_line_read_only(self):
@@ -2684,7 +2696,7 @@ class PanelNavigationAndLayoutContractTests(unittest.TestCase):
   def test_settings_switches_state_on_or_off_in_words(self):
     for name in ("PreferenceControls.qml", "NetworkOptions.qml"):
       source = (ROOT / "components" / name).read_text()
-      self.assertRegex(source, r'description: .*\? "On" : "Off"', name)
+      self.assertRegex(english_copy(source), r'description: .*\? "On" : "Off"', name)
       # Screen readers get state from Accessible.checked; the name stays the bare label.
       self.assertNotIn("Accessible.name: label", source, name)
 

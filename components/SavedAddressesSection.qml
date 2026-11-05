@@ -4,6 +4,7 @@ import QtQuick.Controls as Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -32,7 +33,7 @@ Column {
         visible: root.showTitle
         textFormat: Text.PlainText
         width: root.width
-        text: "Saved LAN and VPN addresses"
+        text: Locale.Strings.t("savedAddresses.savedLanAndVpnAddresses")
 
         color: root.foreground
         font.family: root.fontFamily
@@ -42,7 +43,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: root.width
-        text: "Save an IP address that KDE Connect can use to reach this device over LAN, Back to Home, WireGuard or Tailscale. Saving an address does not pair the device."
+        text: Locale.Strings.t("savedAddresses.saveAnIpAddressThatKde")
 
         wrapMode: Text.Wrap
         color: root.foreground
@@ -51,7 +52,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "IP address"
+        text: Locale.Strings.t("savedAddresses.ipAddress")
         textFormat: Text.PlainText
         color: root.foreground
         font.family: Style.font.family
@@ -60,13 +61,13 @@ Column {
     Controls.TextField {
         id: address
         width: root.width
-        placeholderText: "Private or Tailscale IP address"
-        Accessible.name: "LAN or VPN IP address to approve"
+        placeholderText: Locale.Strings.t("savedAddresses.privateOrTailscaleIpAddress")
+        Accessible.name: Locale.Strings.t("savedAddresses.lanOrVpnIpAddressTo")
         selectByMouse: true
     }
     Text {
         width: parent.width
-        text: "Address source"
+        text: Locale.Strings.t("savedAddresses.addressSource")
         textFormat: Text.PlainText
         color: root.foreground
         font.family: Style.font.family
@@ -83,19 +84,19 @@ Column {
         ]
         textRole: "label"
         valueRole: "value"
-        Accessible.name: "Address source"
+        Accessible.name: Locale.Strings.t("savedAddresses.addressSource")
     }
     Controls.CheckBox {
         id: automatic
         width: root.width
-        text: "Allow automatic rediscovery of this address"
+        text: Locale.Strings.t("savedAddresses.allowAutomaticRediscoveryOfThisAddress")
         checked: false
         Accessible.name: text
     }
     SettingsButton {
         width: root.width
         height: Math.max(32, implicitHeight)
-        text: "Approve and save address"
+        text: Locale.Strings.t("savedAddresses.approveAndSaveAddress")
         enabled: !!root.discovery && !root.discovery.busy && root.peerId !== "" && address.text.trim() !== ""
         focusable: true
         foreground: root.foreground
@@ -104,14 +105,14 @@ Column {
     }
     Controls.CheckBox {
         width: root.width
-        text: "Rediscover approved addresses while this panel is open"
+        text: Locale.Strings.t("savedAddresses.rediscoverApprovedAddressesWhileThisPanel")
         checked: !!root.discovery && root.discovery.autoDiscoveryEnabled
         onToggled: if (root.discovery) root.discovery.autoDiscoveryEnabled = checked
         Accessible.name: text
     }
     SettingsButton {
         width: root.width
-        text: "Refresh devices and addresses"
+        text: Locale.Strings.t("savedAddresses.refreshDevicesAndAddresses")
         enabled: !!root.discovery && !root.discovery.busy
         focusable: true
         foreground: root.foreground
@@ -136,7 +137,7 @@ Column {
             Text {
                 textFormat: Text.PlainText
                 width: parent.width
-                text: modelData.address + " · " + modelData.source + (modelData.registered ? " · Saved in KDE" : " · Registration unconfirmed") + "\nKDE ID: " + modelData.peer_id
+                text: modelData.address + " · " + modelData.source + (modelData.registered ? Locale.Strings.t("savedAddresses.savedInKde") : Locale.Strings.t("savedAddresses.registrationUnconfirmed")) + "\nKDE ID: " + modelData.peer_id
 
                 wrapMode: Text.WrapAnywhere
                 color: root.foreground
@@ -145,29 +146,29 @@ Column {
             }
             Controls.CheckBox {
                 width: parent.width
-                text: "Automatic rediscovery"
+                text: Locale.Strings.t("savedAddresses.automaticRediscovery")
                 checked: modelData.auto_discover
                 enabled: !root.discovery.busy
-                Accessible.name: "Automatic rediscovery for " + modelData.address
+                Accessible.name: Locale.Strings.format("savedAddresses.rediscoverAddress", [modelData.address])
                 onToggled: root.discovery.setAutoDiscover(modelData.peer_id, modelData.address, checked, modelData.source)
             }
             SettingsButton {
                 width: parent.width
-                text: "Forget local address record"
+                text: Locale.Strings.t("savedAddresses.forgetLocalAddressRecord")
                 enabled: !root.discovery.busy
                 focusable: true
                 foreground: root.foreground
-                Accessible.name: text + " for " + modelData.address
+                Accessible.name: Locale.Strings.format("savedAddresses.addressAction", [text, modelData.address])
                 onClicked: root.discovery.removeAddress(modelData.peer_id, modelData.address, false, modelData.source)
             }
             SettingsButton {
                 width: parent.width
-                text: root.removalReview === modelData.peer_id + ":" + modelData.address ? "Confirm removal from KDE and local record" : "Review removal from KDE"
+                text: root.removalReview === modelData.peer_id + ":" + modelData.address ? Locale.Strings.t("savedAddresses.confirmRemovalFromKdeAndLocal") : Locale.Strings.t("savedAddresses.reviewRemovalFromKde")
                 visible: !modelData.manual_baseline
                 enabled: !root.discovery.busy
                 focusable: true
                 foreground: root.foreground
-                Accessible.name: text + " for " + modelData.address
+                Accessible.name: Locale.Strings.format("savedAddresses.addressAction", [text, modelData.address])
                 onClicked: {
                     var key = modelData.peer_id + ":" + modelData.address
                     if (root.removalReview === key) {
@@ -181,7 +182,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: root.width
-        text: root.discovery ? (root.discovery.error || (root.discovery.busy ? "Saving address changes…" : "Forget removes only the Plus record. Addresses you added in KDE Connect stay. When enabled, automatic rediscovery checks every 60 seconds while this panel is open.")) : "Address storage is unavailable."
+        text: root.discovery ? (root.discovery.error || (root.discovery.busy ? Locale.Strings.t("savedAddresses.savingAddressChanges") : Locale.Strings.t("savedAddresses.forgetRemovesOnlyThePlusRecord"))) : Locale.Strings.t("savedAddresses.addressStorageIsUnavailable")
 
         wrapMode: Text.Wrap
         color: root.foreground

@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Io
+import "../i18n" as Locale
 
 QtObject {
     id: root
@@ -56,7 +57,7 @@ QtObject {
         if (!ready || pluginIds.indexOf(id) < 0 || !known(id) || typeof enabled !== "boolean") return false
         if (enabledStates[id] === enabled) return false
         if (inFlight) {
-            message = "Native settings are busy. This change was not submitted. Try again after the current request finishes."
+            message = Locale.Strings.t("nativeModuleController.nativeSettingsAreBusyThisChange")
             return false
         }
         queuedRead = false

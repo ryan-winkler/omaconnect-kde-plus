@@ -4,6 +4,7 @@ import QtQuick.Window
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
 
 // The service owns the captured recipient and policy. Browsing emits no send.
 Window {
@@ -32,7 +33,7 @@ Window {
     signal cancelRequested()
     signal confirmRequested(string path)
 
-    title: "Omaconnect KDE Plus — Choose an image"
+    title: Locale.Strings.t("imagePreviewWindow.omaconnectKdePlusChooseAnImage")
     objectName: "image-preview-window"
     transientParent: null
     flags: Qt.Window
@@ -99,7 +100,7 @@ Window {
         spacing: Style.space(10)
         Text {
             width: parent.width
-            text: "Choose an image"
+            text: Locale.Strings.t("imagePreviewWindow.chooseAnImage")
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font.family: Style.font.family
@@ -109,7 +110,7 @@ Window {
         Text {
             objectName: "image-preview-recipient"
             width: parent.width
-            text: "To: \u2068" + (root.target ? root.target.peerName : "No recipient selected") + "\u2069"
+            text: Locale.Strings.format("files.previewRecipient", [root.target ? root.target.peerName : Locale.Strings.t("imagePreviewWindow.noRecipientSelected")])
             textFormat: Text.PlainText
             wrapMode: Text.WrapAnywhere
             maximumLineCount: 2
@@ -121,8 +122,8 @@ Window {
         Text {
             objectName: "image-preview-instruction"
             width: parent.width
-            text: root.sendsImmediately ? "Choose the image, then select Send image."
-                : "Choose an image to review before sending."
+            text: root.sendsImmediately ? Locale.Strings.t("imagePreviewWindow.chooseTheImageThenSelectSend")
+                : Locale.Strings.t("imagePreviewWindow.chooseAnImageToReviewBefore")
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
@@ -133,8 +134,8 @@ Window {
             id: search
             objectName: "image-preview-search"
             width: parent.width
-            placeholderText: "Search images"
-            Accessible.name: "Search images"
+            placeholderText: Locale.Strings.t("imagePreviewWindow.searchImages")
+            Accessible.name: Locale.Strings.t("imagePreviewWindow.searchImages")
             foreground: Commons.Color.popups.text
             maximumLength: 256
         }
@@ -144,7 +145,7 @@ Window {
             SettingsButton {
                 id: previous
                 objectName: "image-preview-previous"
-                text: "Previous"
+                text: Locale.Strings.t("imagePreviewWindow.previous")
                 focusable: true
                 foreground: Commons.Color.popups.text
                 enabled: root.selectedIndex > 0 && root.matches.length > 0
@@ -153,7 +154,7 @@ Window {
             Text {
                 width: Math.max(1, parent.width - previous.width - next.width - parent.spacing * 2)
                 height: previous.height
-                text: root.matches.length ? (root.selectedIndex + 1) + " of " + root.matches.length : "No matching images"
+                text: root.matches.length ? Locale.Strings.format("files.imagePosition", [Commons.I18n.formatNumber(root.selectedIndex + 1), Commons.I18n.formatNumber(root.matches.length)]) : Locale.Strings.t("imagePreviewWindow.noMatchingImages")
                 textFormat: Text.PlainText
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter
@@ -164,7 +165,7 @@ Window {
             SettingsButton {
                 id: next
                 objectName: "image-preview-next"
-                text: "Next"
+                text: Locale.Strings.t("imagePreviewWindow.next")
                 focusable: true
                 foreground: Commons.Color.popups.text
                 enabled: root.selectedIndex < root.matches.length - 1
@@ -173,7 +174,7 @@ Window {
         }
         Text {
             width: parent.width
-            text: root.selectedName || "Try another name or use Back to files."
+            text: root.selectedName || Locale.Strings.t("imagePreviewWindow.tryAnotherNameOrUseBack")
             textFormat: Text.PlainText
             elide: Text.ElideMiddle
             color: Commons.Color.popups.text
@@ -202,8 +203,8 @@ Window {
         border.color: Commons.Color.popups.border
         activeFocusOnTab: true
         Accessible.role: Accessible.Pane
-        Accessible.name: "Image preview"
-        Accessible.description: "Use Left and Right to choose a different image."
+        Accessible.name: Locale.Strings.t("imagePreviewWindow.imagePreview")
+        Accessible.description: Locale.Strings.t("imagePreviewWindow.useLeftAndRightToChoose")
         Keys.onPressed: function(event) {
             if (event.modifiers !== Qt.NoModifier) return
             var key = Util.readingKey(event)
@@ -230,9 +231,9 @@ Window {
             anchors.fill: parent
             anchors.margins: Style.space(16)
             visible: image.status !== Image.Ready
-            text: !root.selectedPath ? "No matching images. Try another name or use Back to files."
-                : image.status === Image.Error ? "This image cannot be previewed. Use Back to files to choose another file."
-                : "Loading preview…"
+            text: !root.selectedPath ? Locale.Strings.t("imagePreviewWindow.noMatchingImagesTryAnotherName")
+                : image.status === Image.Error ? Locale.Strings.t("imagePreviewWindow.thisImageCannotBePreviewedUse")
+                : Locale.Strings.t("imagePreviewWindow.loadingPreview")
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             verticalAlignment: Text.AlignVCenter
@@ -265,7 +266,7 @@ Window {
             spacing: Style.space(8)
             SettingsButton {
                 objectName: "image-preview-back"
-                text: "Back to files"
+                text: Locale.Strings.t("imagePreviewWindow.backToFiles")
                 focusable: true
                 foreground: Commons.Color.popups.text
                 enabled: root.previewActive
@@ -273,7 +274,7 @@ Window {
             }
             SettingsButton {
                 objectName: "image-preview-cancel"
-                text: "Cancel"
+                text: Locale.Strings.t("common.cancel")
                 focusable: true
                 foreground: Commons.Color.popups.text
                 enabled: root.previewActive
@@ -281,7 +282,7 @@ Window {
             }
             SettingsButton {
                 objectName: "image-preview-confirm"
-                text: root.sendsImmediately ? "Send image" : "Review image"
+                text: root.sendsImmediately ? Locale.Strings.t("imagePreviewWindow.sendImage") : Locale.Strings.t("imagePreviewWindow.reviewImage")
                 focusable: true
                 foreground: Commons.Color.popups.text
                 enabled: root.canConfirm

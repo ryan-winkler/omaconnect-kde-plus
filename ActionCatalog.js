@@ -5,31 +5,31 @@
 var DEFAULT_ORDER = "file,text,clipboard";
 var MAX_ORDER_LENGTH = 512;
 var entries = [
-    {id:"file", group:"Sharing", pluginId:"kdeconnect_share", label:"Files", description:"Choose files to send; optional review in Plus settings", icon:"󰈔", capability:"file", legacyKey:"showActionFile"},
-    {id:"text", group:"Sharing", pluginId:"kdeconnect_share", label:"Text", description:"Write and send text", icon:"󰌹", capability:"text", legacyKey:"showActionText"},
-    {id:"clipboard", group:"Sharing", pluginId:"kdeconnect_clipboard", label:"Clipboard", description:"Send the current clipboard", icon:"󰅌", capability:"clipboard", legacyKey:"showActionClipboard"},
-    {id:"quick-share", group:"Sharing", pluginId:"", label:"Quick Share", description:"Open the installed RQuickShare app to share with Android Quick Share. It is a separate app, not KDE Connect", icon:"󰒗", scope:"global", navigation:true},
-    {id:"ring", group:"Device", pluginId:"kdeconnect_findmyphone", label:"Ring", description:"Request a ring on the selected device", icon:"󰂚", capability:"ring", legacyKey:"showActionRing"},
-    {id:"sms", group:"Device", pluginId:"kdeconnect_sms", label:"SMS", description:"Open the native SMS conversation app", icon:"󰍦", capability:"sms", legacyKey:"showActionSms", handoff:true, navigation:true},
-    {id:"ping", group:"Device", pluginId:"kdeconnect_ping", label:"Ping", description:"Compose a ping notification", icon:"󰵅", capability:"ping", legacyKey:"showActionPing"},
-    {id:"media", group:"Media", pluginId:"kdeconnect_mprisremote", label:"Media controls", description:"Open the media view to choose a reported player", icon:"󰝚", capability:"media", navigation:true},
-    {id:"media-previous", group:"Media", pluginId:"kdeconnect_mprisremote", label:"Previous track", description:"Request the previous track on the selected device's active player", icon:"󰒮", capability:"media", requiresMedia:true},
-    {id:"media-play-pause", group:"Media", pluginId:"kdeconnect_mprisremote", label:"Play / Pause", description:"Request play or pause on the selected device's active player", icon:"󰐎", capability:"media", requiresMedia:true},
-    {id:"media-next", group:"Media", pluginId:"kdeconnect_mprisremote", label:"Next track", description:"Request the next track on the selected device's active player", icon:"󰒭", capability:"media", requiresMedia:true},
-    {id:"commands", group:"Device", pluginId:"kdeconnect_remotecommands", label:"Remote commands", description:"Open the command list; choose a configured command before running it", icon:"󰆍", capability:"commands", navigation:true},
-    {id:"browse-files", group:"Device", pluginId:"kdeconnect_sftp", label:"Browse phone files", description:"Open shared phone folders in the default file manager. KDE Connect owns file permissions and mounting", icon:"󰉋", capability:"browse", navigation:true},
-    {id:"native-notifications", group:"Native KDE Connect", pluginId:"kdeconnect_notifications", pluginIds:["kdeconnect_notifications","kdeconnect_sendnotifications","kdeconnect_replynotifications"], label:"Notifications in KDE", description:"Open native KDE Connect to inspect notification modules and permissions", icon:"󰂚", handoff:true, navigation:true},
-    {id:"native-volume", group:"Native KDE Connect", pluginId:"kdeconnect_remotesystemvolume", pluginIds:["kdeconnect_remotesystemvolume","kdeconnect_systemvolume"], label:"Volume in KDE", description:"Open native KDE Connect to inspect reported volume features and permissions", icon:"󰕾", handoff:true, navigation:true},
-    {id:"native-input", group:"Native KDE Connect", pluginId:"kdeconnect_remotekeyboard", pluginIds:["kdeconnect_remotekeyboard","kdeconnect_mousepad","kdeconnect_presenter","kdeconnect_shareinputdevices"], label:"Input & presentation in KDE", description:"Open native KDE Connect for input or presentation features. Available directions depend on the reported module", icon:"󰌌", handoff:true, navigation:true},
-    {id:"native-lock", group:"Native KDE Connect", pluginId:"kdeconnect_lockdevice", label:"Device locking in KDE", description:"Open native KDE Connect to inspect locking support and permissions", icon:"󰌾", handoff:true, navigation:true},
-    {id:"external-monitor", group:"Native KDE Connect", pluginId:"kdeconnect_virtualmonitor", label:"Use device as an external monitor", activeLabel:"Stop virtual monitor session", description:"Start or stop KDE Connect's native virtual display. KDE Connect owns its session and credentials", icon:"󰍹"},
-    {id:"native-features", group:"Settings", pluginId:"", label:"Native KDE Connect settings", description:"Open native KDE Connect for all features and Plugin settings", icon:"󰒓", capability:"", legacyKey:"", scope:"global", handoff:true, navigation:true},
-    {id:"plus-settings", group:"Settings", pluginId:"", label:"Plus settings", description:"Open Plus appearance, sharing and connection preferences", icon:"󰒓", scope:"global", navigation:true}
+    {id:"file", groupKey:"actions.group.sharing", pluginId:"kdeconnect_share", labelKey:"actions.file.label", descriptionKey:"actions.file.description", icon:"󰈔", capability:"file", legacyKey:"showActionFile"},
+    {id:"text", groupKey:"actions.group.sharing", pluginId:"kdeconnect_share", labelKey:"actions.text.label", descriptionKey:"actions.text.description", icon:"󰌹", capability:"text", legacyKey:"showActionText"},
+    {id:"clipboard", groupKey:"actions.group.sharing", pluginId:"kdeconnect_clipboard", labelKey:"actions.clipboard.label", descriptionKey:"actions.clipboard.description", icon:"󰅌", capability:"clipboard", legacyKey:"showActionClipboard"},
+    {id:"quick-share", groupKey:"actions.group.sharing", pluginId:"", labelKey:"actions.quick-share.label", descriptionKey:"actions.quick-share.description", icon:"󰒗", scope:"global", navigation:true},
+    {id:"ring", groupKey:"actions.group.device", pluginId:"kdeconnect_findmyphone", labelKey:"actions.ring.label", descriptionKey:"actions.ring.description", icon:"󰂚", capability:"ring", legacyKey:"showActionRing"},
+    {id:"sms", groupKey:"actions.group.device", pluginId:"kdeconnect_sms", labelKey:"actions.sms.label", descriptionKey:"actions.sms.description", icon:"󰍦", capability:"sms", legacyKey:"showActionSms", handoff:true, navigation:true},
+    {id:"ping", groupKey:"actions.group.device", pluginId:"kdeconnect_ping", labelKey:"actions.ping.label", descriptionKey:"actions.ping.description", icon:"󰵅", capability:"ping", legacyKey:"showActionPing"},
+    {id:"media", groupKey:"actions.group.media", pluginId:"kdeconnect_mprisremote", labelKey:"actions.media.label", descriptionKey:"actions.media.description", icon:"󰝚", capability:"media", navigation:true},
+    {id:"media-previous", groupKey:"actions.group.media", pluginId:"kdeconnect_mprisremote", labelKey:"actions.media-previous.label", descriptionKey:"actions.media-previous.description", icon:"󰒮", capability:"media", requiresMedia:true},
+    {id:"media-play-pause", groupKey:"actions.group.media", pluginId:"kdeconnect_mprisremote", labelKey:"actions.media-play-pause.label", descriptionKey:"actions.media-play-pause.description", icon:"󰐎", capability:"media", requiresMedia:true},
+    {id:"media-next", groupKey:"actions.group.media", pluginId:"kdeconnect_mprisremote", labelKey:"actions.media-next.label", descriptionKey:"actions.media-next.description", icon:"󰒭", capability:"media", requiresMedia:true},
+    {id:"commands", groupKey:"actions.group.device", pluginId:"kdeconnect_remotecommands", labelKey:"actions.commands.label", descriptionKey:"actions.commands.description", icon:"󰆍", capability:"commands", navigation:true},
+    {id:"browse-files", groupKey:"actions.group.device", pluginId:"kdeconnect_sftp", labelKey:"actions.browse-files.label", descriptionKey:"actions.browse-files.description", icon:"󰉋", capability:"browse", navigation:true},
+    {id:"native-notifications", groupKey:"actions.group.native-kde-connect", pluginId:"kdeconnect_notifications", pluginIds:["kdeconnect_notifications","kdeconnect_sendnotifications","kdeconnect_replynotifications"], labelKey:"actions.native-notifications.label", descriptionKey:"actions.native-notifications.description", icon:"󰂚", handoff:true, navigation:true},
+    {id:"native-volume", groupKey:"actions.group.native-kde-connect", pluginId:"kdeconnect_remotesystemvolume", pluginIds:["kdeconnect_remotesystemvolume","kdeconnect_systemvolume"], labelKey:"actions.native-volume.label", descriptionKey:"actions.native-volume.description", icon:"󰕾", handoff:true, navigation:true},
+    {id:"native-input", groupKey:"actions.group.native-kde-connect", pluginId:"kdeconnect_remotekeyboard", pluginIds:["kdeconnect_remotekeyboard","kdeconnect_mousepad","kdeconnect_presenter","kdeconnect_shareinputdevices"], labelKey:"actions.native-input.label", descriptionKey:"actions.native-input.description", icon:"󰌌", handoff:true, navigation:true},
+    {id:"native-lock", groupKey:"actions.group.native-kde-connect", pluginId:"kdeconnect_lockdevice", labelKey:"actions.native-lock.label", descriptionKey:"actions.native-lock.description", icon:"󰌾", handoff:true, navigation:true},
+    {id:"external-monitor", groupKey:"actions.group.native-kde-connect", pluginId:"kdeconnect_virtualmonitor", labelKey:"actions.external-monitor.label", activeLabelKey:"actions.external-monitor.activeLabel", descriptionKey:"actions.external-monitor.description", icon:"󰍹"},
+    {id:"native-features", groupKey:"actions.group.settings", pluginId:"", labelKey:"actions.native-features.label", descriptionKey:"actions.native-features.description", icon:"󰒓", capability:"", legacyKey:"", scope:"global", handoff:true, navigation:true},
+    {id:"plus-settings", groupKey:"actions.group.settings", pluginId:"", labelKey:"actions.plus-settings.label", descriptionKey:"actions.plus-settings.description", icon:"󰒓", scope:"global", navigation:true}
 ];
 function entry(id) { return entries.filter(function(row) { return row.id === id; })[0] || null; }
-function actionLabel(id,device) {
+function actionLabelKey(id,device) {
     var row=entry(id);
-    return row ? (id === "external-monitor" && device && device.virtualMonitor && device.virtualMonitor.active ? row.activeLabel : row.label) : id;
+    return row ? (id === "external-monitor" && device && device.virtualMonitor && device.virtualMonitor.active ? row.activeLabelKey : row.labelKey) : id;
 }
 function parse(value) {
     if (typeof value !== "string" || value.length > MAX_ORDER_LENGTH) return null;
@@ -77,26 +77,26 @@ function ready(id,device,service) {
     if (row.requiresMedia && (!hasMedia(service) || (service && service.mediaLoading))) return false;
     return !!(row.navigation || !service || service.actionState !== "running");
 }
-function availabilityText(id,device,service) {
+function availabilityKey(id,device,service) {
     var row=entry(id);
-    if (!row) return "This shortcut is unavailable.";
-    if (service === null && id !== "plus-settings") return "KDE Connect controls are unavailable. Reopen Plus or check native KDE Connect.";
-    if (id === "quick-share") return service && service.quickShareOpening ? "Opening RQuickShare. Wait for the launcher result."
-        : service && service.quickShareAvailable ? "Opens RQuickShare. Quick Share is a separate app; KDE Connect does not use it." : "Install the r-quick-share package to use Quick Share. Plus only opens it.";
-    if (row.scope === "global") return id === "plus-settings" ? "Opens Plus settings. No device connection is required." : "Opens native features and Plugin settings, including the device list when no device is connected.";
-    if (!device) return "Choose a device to check availability. Your choice stays saved.";
-    if (!device.paired || !device.reachable) return "Available when the device is paired and reachable.";
+    if (!row) return "actionAvailability.thisShortcutIsUnavailable";
+    if (service === null && id !== "plus-settings") return "actionAvailability.kdeConnectControlsAreUnavailableReopen";
+    if (id === "quick-share") return service && service.quickShareOpening ? "actionAvailability.openingRquickshareWaitForTheLauncher"
+        : service && service.quickShareAvailable ? "actionAvailability.opensRquickshareQuickShareIsA" : "actionAvailability.installTheRQuickSharePackage";
+    if (row.scope === "global") return id === "plus-settings" ? "actionAvailability.opensPlusSettingsNoDeviceConnection" : "actionAvailability.opensNativeFeaturesAndPluginSettings";
+    if (!device) return "actionAvailability.chooseADeviceToCheckAvailability";
+    if (!device.paired || !device.reachable) return "actionAvailability.availableWhenTheDeviceIsPaired";
     if (!supported(row,device))
-        return "This device does not report support. Other devices may support it.";
+        return "actionAvailability.thisDeviceDoesNotReportSupport";
     if (!locallyActive(row,device))
-        return row.label + " is not active locally. Check native KDE Connect Plugin Settings.";
-    if (id === "browse-files") return service && service.phoneFilesBusy ? "Phone storage is busy. Wait or cancel Browse."
-        : "Open the phone's shared folders. Enable Filesystem expose in the phone's KDE Connect settings.";
-    if (id === "external-monitor" && (!device.virtualMonitor || !device.virtualMonitor.known)) return "Native monitor state is unavailable. Open native KDE Connect and check Virtual Monitor.";
-    if (id === "external-monitor" && !device.virtualMonitor.active && !device.virtualMonitor.available) return "Native virtual monitor is unavailable on this computer. Check KRDP in native KDE Connect.";
+        return "actionAvailability.thisActionIsNotActiveLocally";
+    if (id === "browse-files") return service && service.phoneFilesBusy ? "actionAvailability.phoneStorageIsBusyWaitOr"
+        : "actionAvailability.openThePhoneSSharedFolders";
+    if (id === "external-monitor" && (!device.virtualMonitor || !device.virtualMonitor.known)) return "actionAvailability.nativeMonitorStateIsUnavailableOpen";
+    if (id === "external-monitor" && !device.virtualMonitor.active && !device.virtualMonitor.available) return "actionAvailability.nativeVirtualMonitorIsUnavailableOn";
     if (row.requiresMedia && (!hasMedia(service) || (service && service.mediaLoading)))
-        return "Open Media controls and choose a reported player before using transport buttons.";
-    if (row.handoff) return "Opens the selected device in native KDE Connect. Choose or configure the feature there; native permissions still apply.";
-    if (!row.navigation && service && service.actionState === "running") return "Another action is running. Wait for its result before starting this action.";
-    return "This device reports support; native permissions still apply.";
+        return "actionAvailability.openMediaControlsAndChooseA";
+    if (row.handoff) return "actionAvailability.opensTheSelectedDeviceInNative";
+    if (!row.navigation && service && service.actionState === "running") return "actionAvailability.anotherActionIsRunningWaitFor";
+    return "actionAvailability.thisDeviceReportsSupportNativePermissions";
 }

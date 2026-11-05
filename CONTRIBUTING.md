@@ -61,6 +61,15 @@ Small documentation and focused bug fixes can go directly to a PR. For a new pro
 
 The stable machine plugin ID is `omaconnect.plus`, using the Community marketplace’s required lowercase format. The display name is Omaconnect KDE Plus. Do not change the ID after this format correction: native updates do not rename stored bar/service references or the checkout directory. The [explicit migration guide](docs/INSTALL.md) preserves former development settings. Existing uppercase private-data directories stay unchanged. A second provider can justify a shared controller; hypothetical future providers do not justify a framework today.
 
+## Translate plugin copy
+
+Add visible and accessible text to `i18n/en.json` using a stable key named for its
+domain. Other catalogues fall back to English for missing keys. Use
+`Locale.Strings.format` with numbered placeholders for sentences that contain
+device or file names. Use the native plural and number helpers for quantities.
+Keep device IDs, preference values and executable arguments independent of
+the language.
+
 ## Change the version slowly
 
 The version in `manifest.json` follows [Semantic Versioning](https://semver.org/) loosely, in the form `MAJOR.MINOR.PATCH`. Change it rarely.

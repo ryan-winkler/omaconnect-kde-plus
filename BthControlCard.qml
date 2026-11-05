@@ -7,6 +7,7 @@ import qs.Commons as Commons
 import qs.Ui as Kit
 import "BthControlModel.js" as Control
 import "components" as Components
+import "i18n" as Locale
 
 Column {
     id: root
@@ -38,7 +39,7 @@ Column {
         var mode = ["auto", "on", "off"][index]
         if (!helperPathValid || !Control.canRun(status, mode, action.running)) return
         wantedMode = mode
-        feedback = "Saving " + Control.modeLabel(mode) + "…"
+        feedback = Locale.Strings.format("bth.savingMode", [Locale.Strings.t(Control.modeLabel(mode))])
         action.mode = mode
         action.running = true
     }
@@ -46,7 +47,7 @@ Column {
         status = Control.parse(raw)
         if (wantedMode && Control.confirmed(status, wantedMode)) {
             wantedMode = ""
-            feedback = "Mode saved. Actual interface state is shown below."
+            feedback = Locale.Strings.t("bth.modeSavedActualInterfaceStateIs")
         }
     }
     onPanelOpenedChanged: if (panelOpened) refreshStatus()
@@ -89,8 +90,8 @@ Column {
         onExited: function(code) {
             if (code !== 0 || oversized) {
                 root.wantedMode = ""
-                root.feedback = "The request did not finish. Refreshing the actual state."
-            } else root.feedback = "Request saved. Waiting for the actual interface state."
+                root.feedback = Locale.Strings.t("bth.theRequestDidNotFinishRefreshing")
+            } else root.feedback = Locale.Strings.t("bth.requestSavedWaitingForTheActual")
             root.refreshStatus()
         }
     }
@@ -100,7 +101,7 @@ Column {
         textFormat: Text.PlainText
         width: parent.width
 
-        text: "MikroTik Back to Home · WireGuard"
+        text: Locale.Strings.t("bthControlCard.mikrotikBackToHomeWireguard")
         color: Commons.Color.popups.text
         font.family: Style.font.family
         font.pixelSize: Style.font.body
@@ -110,7 +111,7 @@ Column {
         textFormat: Text.PlainText
         width: parent.width
 
-        text: "WireGuard: " + Control.stateLabel(root.status.connection_state) + " · Selected mode: " + Control.selectedModeLabel(root.status)
+        text: Locale.Strings.format("bth.summary", [Locale.Strings.t(Control.stateLabel(root.status.connection_state)), Locale.Strings.t(Control.selectedModeLabel(root.status))])
         color: Commons.Color.popups.text
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
@@ -120,7 +121,7 @@ Column {
         textFormat: Text.PlainText
         width: parent.width
 
-        text: root.helperMissing ? "Optional BTH controller is not installed. Install remote-access-mode with your VPN setup, then reopen the panel. This card installs nothing." : Control.errorText(root.status)
+        text: root.helperMissing ? Locale.Strings.t("bth.optionalBthControllerIsNotInstalled") : Locale.Strings.t(Control.errorText(root.status))
         visible: text !== ""
         color: Commons.Color.urgent
         font.family: Style.font.family
@@ -136,14 +137,14 @@ Column {
                 required property string modelData
                 required property int index
                 width: (root.width - Style.space(12)) / 3
-                text: Control.modeLabel(modelData)
+                text: Locale.Strings.t(Control.modeLabel(modelData))
                 selected: Control.isSelected(root.status, modelData)
                 hasCursor: root.keyboardIndex === index
                 focusable: true
                 enabled: root.helperPathValid && Control.canRun(root.status, modelData, root.busy)
-                Accessible.name: "Back To Home " + text
-                Accessible.description: modelData === "auto" ? "Off at home, on away"
-                    : modelData === "off" ? "Keep BTH off until On or Automatic is selected" : "Turn the saved WireGuard profile on manually"
+                Accessible.name: Locale.Strings.format("bth.modeAccessible", [text])
+                Accessible.description: modelData === "auto" ? Locale.Strings.t("bth.offAtHomeOnAway")
+                    : modelData === "off" ? Locale.Strings.t("bth.keepBthOffUntilOnOr") : Locale.Strings.t("bth.turnTheSavedWireguardProfileOn")
                 onClicked: root.activate(index)
                 onHovered: function(value) { if (value) root.hoveredControl(index) }
             }
@@ -153,7 +154,7 @@ Column {
         textFormat: Text.PlainText
         width: parent.width
 
-        text: Control.pendingText(root.status, root.wantedMode) || root.feedback
+        text: Control.pendingText(root.status, root.wantedMode, Locale.Strings) || root.feedback
         visible: text !== ""
         color: root.status.last_apply_failed ? Commons.Color.urgent : Commons.Color.popups.text
         font.family: Style.font.family
@@ -164,7 +165,7 @@ Column {
         textFormat: Text.PlainText
         width: parent.width
 
-        text: "Automatic: off at home, on away. Off: stays off until you choose On or Automatic. The WireGuard line shows this computer's connection only."
+        text: Locale.Strings.t("bthControlCard.automaticOffAtHomeOnAway")
         color: Commons.Color.popups.text
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall

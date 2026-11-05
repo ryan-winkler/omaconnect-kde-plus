@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -28,13 +29,13 @@ Column {
     function valueFor(key) { return !!(panel && panel.getSetting(key, false) === true) }
     function savePreference(key, enabled) {
         if (busy || !providers.some(function(p) { return p.key === key }) || typeof enabled !== "boolean") return
-        message = "Saving display setting…"
+        message = Locale.Strings.t("networkOptions.savingDisplaySetting")
         preferences.payload = JSON.stringify({key: key, enabled: enabled})
         preferences.running = true
     }
     function openOwner(owner) {
         if (busy || (owner === "tailscale" ? !tailscaleEnabled : owner === "wireguard" ? !wireguardEnabled : true)) return
-        message = "Opening the existing network manager…"
+        message = Locale.Strings.t("networkOptions.openingTheExistingNetworkManager")
         opener.command = ["/usr/bin/timeout", "5", "/usr/bin/python3", helperPath, owner]
         opener.running = true
     }
@@ -50,7 +51,7 @@ Column {
         spacing: Style.space(8)
         Text {
             width: parent.width
-            text: "Turn on the VPN tools you use. These switches only show or hide buttons in Devices. They never connect or disconnect a VPN."
+            text: Locale.Strings.t("networkOptions.turnOnTheVpnToolsYou")
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font.family: Style.font.family
@@ -66,13 +67,13 @@ Column {
                 Kit.Toggle {
                     id: providerToggle
                     width: parent.width
-                    label: "Show " + modelData.label
-                    description: root.valueFor(modelData.key) ? "On" : "Off"
+                    label: Locale.Strings.format("networkOptions.showProvider", [modelData.label])
+                    description: root.valueFor(modelData.key) ? Locale.Strings.t("common.on") : Locale.Strings.t("common.off")
                     descriptionSize: Style.font.bodySmall
                     Accessible.role: Accessible.CheckBox
                     Accessible.onToggleAction: if (providerToggle.enabled) providerToggle.clicked()
                     Accessible.onPressAction: if (providerToggle.enabled) providerToggle.clicked()
-                    Accessible.name: "Show " + modelData.label
+                    Accessible.name: Locale.Strings.format("networkOptions.showProvider", [modelData.label])
                     Accessible.checkable: true
                     Accessible.checked: checked
                     enabled: !root.busy
@@ -91,8 +92,8 @@ Column {
                 }
                 SettingsButton {
                     width: parent.width
-                    text: modelData.label + " help ↗"
-                    Accessible.name: "Open official " + modelData.label + " help in your browser"
+                    text: Locale.Strings.format("networkOptions.providerHelp", [modelData.label])
+                    Accessible.name: Locale.Strings.format("networkOptions.openProviderHelp", [modelData.label])
                     focusable: true
                     foreground: Commons.Color.popups.text
                     onClicked: Qt.openUrlExternally(modelData.help)
@@ -105,7 +106,7 @@ Column {
         visible: !root.configuration && root.tailscaleEnabled
         focusable: true
         foreground: Commons.Color.popups.text
-        text: "Open Tailscale panel"
+        text: Locale.Strings.t("networkOptions.openTailscalePanel")
         Accessible.name: text
         enabled: !root.busy
         onClicked: root.openOwner("tailscale")
@@ -115,7 +116,7 @@ Column {
         visible: !root.configuration && root.wireguardEnabled
         focusable: true
         foreground: Commons.Color.popups.text
-        text: "Open WireGuard profiles"
+        text: Locale.Strings.t("networkOptions.openWireguardProfiles")
         Accessible.name: text
         enabled: !root.busy
         onClicked: root.openOwner("wireguard")
