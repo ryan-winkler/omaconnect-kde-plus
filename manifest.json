@@ -234,6 +234,11 @@
       "default": false,
       "description": "Start Native KDE Connect expanded. This changes the daily layout only."
     },
+    "showEditLayoutShortcut": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show the Edit layout shortcut in Devices"
+    },
     "sectionVisibility": {
       "type": "string",
       "default": "{}",

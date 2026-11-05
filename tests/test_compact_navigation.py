@@ -30,9 +30,11 @@ class CompactNavigation(unittest.TestCase):
         writes=[row['args'] for row in calls if row['tool']=='omarchy-shell']
         self.assertEqual(writes, [['shell','setBarWidget','omaconnect.plus',key,value,'{}']
             for value in ('true','false')
-            for key in ('navigationAtTop','showSendShortcut','showActivityShortcut')])
+            for key in ('navigationAtTop','showSendShortcut','showActivityShortcut')]
+            + [['shell','setBarWidget','omaconnect.plus','showEditLayoutShortcut','false','{}']])
         self.assertEqual(json.loads((fixture/'preferences.json').read_text()),
-                         dict(navigationAtTop=False,showSendShortcut=False,showActivityShortcut=False))
+                         dict(navigationAtTop=False,showSendShortcut=False,showActivityShortcut=False,
+                              showEditLayoutShortcut=False))
         self.assertFalse(any(row['tool'] in ('kdeconnect-cli','nmcli','remote-access-mode') for row in calls),calls)
         self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()),[])
 

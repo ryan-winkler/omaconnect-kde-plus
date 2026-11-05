@@ -173,7 +173,7 @@ ShellRoot {
                     accessible(panel.settingsWindow,"Edit Devices layout").Accessible.pressAction()
                     preview.requestActivate();test.phase=2001
                 }else if(test.phase===2001 && panel.editingLayout){
-                    if(!test.check(named(panel,"edit-layout").activeFocus,"Appearance route enters layout editing with deliberate Done focus"))return
+                    if(!test.check(!named(panel,"daily-edit-layout").visible && named(panel,"edit-layout").activeFocus,"Appearance route works with the shortcut hidden and focuses Done"))return
                     var catcher=named(panel,"daily-key-catcher")
                     catcher.forceActiveFocus();panel.focusSection="actions";panel.actionSelectedIndex=0
                     events.keyClick(Qt.Key_Return,Qt.NoModifier,1)

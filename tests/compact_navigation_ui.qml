@@ -44,10 +44,13 @@ ShellRoot {
         property var settings: ({})
         property string currentView: "Devices"
         property bool opened: true
+        property bool editingLayout: false
+        readonly property var sectionCatalog: ({ready: true})
         property int settingsOpens: 0
         readonly property Item focusTarget: navigation.focusItem
         function getSetting(key, fallback) { return key in settings ? settings[key] : fallback }
         function openSettings() { settingsOpens++ }
+        function setLayoutEditing(value) { editingLayout = value }
         function close() { opened=false }
     }
     FileView {
@@ -64,6 +67,7 @@ ShellRoot {
         height: 840
         Components.CompactNavigation { id: navigation; y: 220; width: parent.width; panel: panel }
         Components.NavigationSettings { id: preferences; y: 340; width: parent.width; panel: panel }
+        Components.SectionOrderSettings { id: layoutPreferences; y: 640; width: parent.width; panel: panel }
         Item { TestEvent { id: events } }
     }
     Timer {
@@ -77,6 +81,15 @@ ShellRoot {
                     preview.requestActivate()
                     if(!test.check(navigation.entries.join(",")==="Devices,Send,Activity,Plus settings","all routes remain in fixed menu order"))return
                     if(!test.check(navigation.focusItem.text==="View: Devices" && navigation.focusItem.Accessible.role===Accessible.Button && navigation.focusItem.Accessible.name==="Current view: Devices. Choose a view","trigger exposes visible view and accurate accessible semantics"))return
+                    var shortcut = navigation.layoutShortcut
+                    if (!test.check(shortcut.visible && shortcut.width === shortcut.height && shortcut.width >= 44, "layout shortcut is a compact named target")) return
+                    shortcut.Accessible.pressAction()
+                    if (!test.check(panel.editingLayout && !shortcut.visible, "shortcut opens the editor and leaves room for Done")) return
+                    panel.editingLayout = false
+                    panel.settings = ({showEditLayoutShortcut: false})
+                    shortcut.Accessible.pressAction()
+                    if (!test.check(!shortcut.visible && !panel.editingLayout, "a hidden shortcut cannot open the editor through cached accessibility")) return
+                    panel.settings = ({})
                     navigation.focusItem.forceActiveFocus();test.key(Qt.Key_Space);test.phase=1
                 }else if(test.phase===1){
                     if(!test.check(navigation.menuOpen,"Space opens view menu"))return
@@ -134,6 +147,12 @@ ShellRoot {
                     if(!test.check(!test.find(preferences,"Place navigation at Top").checked && !test.find(preferences,"Show Send shortcut").checked && !test.find(preferences,"Show Activity shortcut").checked,"saved readback restores all three default switches"))return
                     if(!test.check(!test.find(navigation,"Open Send").visible && !test.find(navigation,"Open Activity").visible && navigation.entries.join(",")==="Devices,Send,Activity,Plus settings","default recovery hides shortcuts and keeps every menu route"))return
                     if(!test.check(panel.currentView===test.recoveryView && service.selectionState==="draft" && JSON.stringify(service.draftTarget)===test.recoveryDraft && navigation.draftSummary.indexOf(service.draftTarget.peerName)>=0,"default recovery preserves current view and reviewed draft reminder"))return
+                    var showLayout = test.find(layoutPreferences, "Show Edit layout in Devices")
+                    if (!test.check(showLayout.checked, "layout shortcut defaults to visible")) return
+                    showLayout.Accessible.toggleAction()
+                    test.phase=130
+                }else if(test.phase===130 && panel.getSetting("showEditLayoutShortcut",true)===false){
+                    if (!test.check(!navigation.layoutShortcut.visible && !test.find(layoutPreferences, "Show Edit layout in Devices").checked, "saved layout shortcut setting hides the pencil after host readback")) return
                     test.phase=14
                 }else if(test.phase===14){
                     if(!test.check(events.mouseClick(navigation.focusItem,navigation.focusItem.width/2,navigation.focusItem.height/2,Qt.LeftButton,Qt.NoModifier,1),"first real trigger click is delivered"))return

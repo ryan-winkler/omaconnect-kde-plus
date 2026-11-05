@@ -107,7 +107,8 @@ On Arch/Omarchy, browsing also needs KDE Connect's optional `sshfs` package; see
 
 ![Phone file controls with two example shared folders, Cancel browse and native settings](screenshots/phone-files.png)
 
-Open **Devices → Edit layout** to change visibility and position on the actual
+Select the **Edit layout** pencil beside Plus settings in **Devices** to change
+visibility and position on the actual
 sections. Hidden sections remain available in the editor. Availability rules use
 reported capability or configured local tools; they do not confirm delivery.
 
@@ -126,7 +127,8 @@ Choose a preset, alias or installed icon, then preview before Apply.
 
 ![Device appearance dialog with example device alias, icon presets and preview](screenshots/icons.png)
 
-To change section visibility or order, open **Devices → Edit layout**. Edit the actual sections there. Appearance links to that editor.
+Turn off **Show Edit layout in Devices** to hide the pencil. Use **Edit Devices
+layout** in **Appearance** to open the editor with the shortcut hidden.
 
 </details>
 

@@ -30,6 +30,7 @@ class SectionComposition(unittest.TestCase):
                        addressesStartExpanded=True,showSyncthingLinks=False,syncthingStartExpanded=False)
             if readback:
                 state["fixtureLayoutReadbackTest"]=True
+                state["showEditLayoutShortcut"]=False
                 state["fixtureLayoutSuccessMessage"]=success_message or "Setting saved."
                 (fixture/"pending-layout.json").write_text("{}")
             if catalogue_failure:

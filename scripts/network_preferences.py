@@ -12,7 +12,7 @@ from section_order import BOOL_DEFAULTS, normalized_value, normalized_visibility
 
 KEYS = frozenset(("networkTailscaleEnabled", "networkBthEnabled", "networkWireguardEnabled",
                   "showBatteryStats", "showBarBattery", "showNetworkStats"))
-KEYS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut"))
+KEYS |= frozenset(("navigationAtTop", "showSendShortcut", "showActivityShortcut", "showEditLayoutShortcut"))
 KEYS |= frozenset(("useDesktopFileChooser", "reviewFilesBeforeSend"))
 KEYS |= frozenset(("taskNotificationsEnabled", "taskNotificationDeviceName"))
 KEYS |= frozenset(BOOL_DEFAULTS)

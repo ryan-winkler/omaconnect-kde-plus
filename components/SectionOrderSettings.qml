@@ -10,7 +10,7 @@ Column {
     spacing: Style.space(8)
     Text {
         width: parent.width
-        text: "Edit section visibility and order where the sections appear. In Devices, select Edit layout. Hidden sections stay available while editing."
+        text: "Edit section visibility and order in Devices. Hidden sections stay available while editing."
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -30,5 +30,12 @@ Column {
             root.panel.open()
             root.panel.setLayoutEditing(true)
         }
+    }
+    PreferenceControls {
+        width: parent.width
+        panel: root.panel
+        preferences: [
+            {key: "showEditLayoutShortcut", label: "Show Edit layout in Devices", defaultValue: true, description: "Show the pencil beside Plus settings. You can always open the layout editor here."}
+        ]
     }
 }
