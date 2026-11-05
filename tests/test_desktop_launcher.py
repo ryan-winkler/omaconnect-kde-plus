@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import shlex
 import tempfile
 import time
 import unittest
@@ -16,8 +17,11 @@ class DesktopLauncher(unittest.TestCase):
     @patch.dict(os.environ, {"GIO_USE_VFS": "local"})
     def test_routes_and_inactive_feedback_use_fixed_arguments(self):
         """Check the three GLib routes, ignored file input, and inactive notice."""
-        with tempfile.TemporaryDirectory(prefix="plus-launcher-") as directory:
+        with tempfile.TemporaryDirectory(prefix="plus launcher ") as directory:
             fixture = Path(directory)
+            self.enterContext(patch.dict(os.environ, {
+                "PATH": os.pathsep.join((directory, os.environ.get("PATH", os.defpath))),
+            }))
             log = fixture / "calls.jsonl"
             commands = {
                 "/usr/bin/omarchy-shell": fixture / "shell",
@@ -36,13 +40,15 @@ class DesktopLauncher(unittest.TestCase):
             launcher = fixture / "omaconnect.plus.desktop"
             source = (ROOT / "launcher" / launcher.name).read_text()
             for original, executable in commands.items():
-                source = source.replace(original, str(executable))
+                source = source.replace(original, executable.name)
             launcher.write_text(source)
             app = Gio.DesktopAppInfo.new_from_filename(str(launcher))
             self.assertIsNotNone(app)
             self.assertEqual(list(app.list_actions()), ["SendFiles", "Activity"])
             unexpected = fixture / "unexpected"
-            untrusted = Gio.File.new_for_path(str(fixture / f"ignored %f; touch {unexpected.name}"))
+            untrusted = Gio.File.new_for_path(
+                f"{fixture / 'ignored %f'}; touch {shlex.quote(str(unexpected))}"
+            )
 
             def expect(count):
                 """Wait for the asynchronous desktop commands to record their arguments."""
