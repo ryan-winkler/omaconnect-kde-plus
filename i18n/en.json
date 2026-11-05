@@ -743,6 +743,7 @@
   "phoneFiles.error.peer-offline": "The phone is offline. Reconnect it and try again.",
   "phoneFiles.error.capability-unavailable": "Enable Filesystem expose in the phone's KDE Connect settings.",
   "phoneFiles.error.mount-failed": "KDE Connect could not mount phone storage. Check native KDE Connect.",
+  "phoneFiles.error.mount-not-ready": "KDE Connect reports phone storage is unmounted. Open Phone file settings in KDE or select Browse phone files again.",
   "phoneFiles.error.no-shares": "The phone shares no folders. Check its Filesystem expose settings.",
   "phoneFiles.error.share-limit": "The shared folder list is too large. Use native KDE Connect.",
   "phoneFiles.error.location-changed": "Phone storage changed. Select Browse phone files again.",
