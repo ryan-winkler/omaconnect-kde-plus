@@ -24,7 +24,9 @@ Column {
     readonly property var blockedActions: panel && panel.availableActions ? panel.availableActions.filter(function(id) { return !root.actionReady(id); }) : []
 
     function actionReady(id) {
-        return (id === "file" && service && service.fileBusy) || Actions.ready(id,device,service)
+        return (id === "file" && service && service.fileBusy)
+            || (id === "browse-files" && Actions.browsePending(service))
+            || Actions.ready(id,device,service)
     }
 
     PanelSeparator { visible: root.showSectionHeader; foreground: root.foreground }
@@ -46,13 +48,16 @@ Column {
                 required property string modelData
                 required property int index
                 readonly property var catalogEntry: Actions.entry(modelData)
-                readonly property string actionName: modelData === "file" && root.service && root.service.fileBusy
-                    ? "Stop submitting" : Actions.actionLabel(modelData, root.device)
-                readonly property string actionTooltip: modelData === "file" && root.service && root.service.fileBusy
-                    ? "Cancel the current file submission" : catalogEntry ? catalogEntry.description + (root.actionReady(modelData) ? "" : "\n" + Actions.availabilityText(modelData,root.device,root.service)) : modelData
-                readonly property string actionIcon: modelData === "file" && root.service && root.service.fileBusy
-                    ? "󰅖" : catalogEntry ? catalogEntry.icon : ""
+                readonly property bool stopSubmitting: modelData === "file" && !!root.service && root.service.fileBusy
+                readonly property bool cancelBrowse: modelData === "browse-files" && Actions.browsePending(root.service)
+                readonly property string actionName: stopSubmitting ? "Stop submitting"
+                    : cancelBrowse ? "Cancel browse" : Actions.actionLabel(modelData, root.device)
+                readonly property string actionTooltip: stopSubmitting ? "Cancel the current file submission"
+                    : cancelBrowse ? root.service.phoneFilesMessage + " Cancel the current browse."
+                    : catalogEntry ? catalogEntry.description + (root.actionReady(modelData) ? "" : "\n" + Actions.availabilityText(modelData,root.device,root.service)) : modelData
+                readonly property string actionIcon: stopSubmitting || cancelBrowse ? "󰅖" : catalogEntry ? catalogEntry.icon : ""
 
+                objectName: "quick-action-" + modelData
                 text: actionName
                 iconText: actionIcon
                 tooltipText: actionTooltip
@@ -65,7 +70,7 @@ Column {
                 fontSize: Style.font.bodySmall
                 iconSize: Style.font.caption
                 hasCursor: panel.cursorActive && panel.focusSection === "actions" && panel.actionSelectedIndex === index
-                selected: (modelData === "ping" && panel.activeComposer === "ping") || (modelData === "text" && panel.activeComposer === "text") || (modelData === "file" && !!(root.service && root.service.fileBusy))
+                selected: (modelData === "ping" && panel.activeComposer === "ping") || (modelData === "text" && panel.activeComposer === "text") || stopSubmitting || cancelBrowse
                 foreground: root.foreground
                 enabled: root.actionReady(modelData)
                 onHovered: function(isHovered) {

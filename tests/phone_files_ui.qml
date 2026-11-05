@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Window
 import Quickshell
 import "plugin" as Plugin
-import "plugin/components" as Components
 
 ShellRoot {
     id: test
@@ -37,20 +36,35 @@ ShellRoot {
         width: 500
         height: 700
         Item { id: anchor; width: 26; height: 26 }
-        Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false, showInlineSend:false}) }
-        Components.PhoneFilesSection { id: files; width: 360; service: service }
+        Plugin.Panel {
+            id: panel
+            bar: fakeBar
+            anchorItem: anchor
+            settings: ({showTailscale:false, showInlineSend:false, quickActionsOrder:"browse-files"})
+        }
     }
     function check(value, message) {
         if (!value) { console.error("NATIVE_FAIL phone files: " + message); Qt.quit(); return false }
         return true
     }
-    function find(object, name) {
-        if (!object) return null
+    function find(object, name, seen) {
+        if (!object || seen.indexOf(object) !== -1) return null
+        seen.push(object)
         if (object.objectName === name) return object
-        var children = object.children || []
-        for (var i=0;i<children.length;i++) { var found = find(children[i],name); if (found) return found }
+        for (var key of ["children", "data"]) {
+            for (var child of object[key] || []) {
+                var found = find(child, name, seen)
+                if (found) return found
+            }
+        }
+        for (var nested of ["contentItem", "item", "footer"]) {
+            var result = find(object[nested], name, seen)
+            if (result) return result
+        }
         return null
     }
+    function named(name) { return find(panel, name, []) }
+    function browseAction() { return named("quick-action-browse-files") }
     function draftIntact() {
         return service.selectionState === "draft" && service.selection.length === 2 && service.draftTarget.peerId === "A"
     }
@@ -66,23 +80,33 @@ ShellRoot {
                 panel.open()
                 test.phase = 1
             } else if (test.phase === 1 && service.selectionState === "draft") {
-                panel.triggerAction("browse-files")
-                if (!test.check(service.phoneFilesState === "preparing" && panel.dropActionRevealed && panel.inlineSendExpanded, "toolbar prepares and reveals existing File sharing section")) return
+                var browse = test.browseAction()
+                if (!test.check(browse && browse.visible && browse.enabled, "real Browse toolbar button is reachable")) return
+                browse.clicked()
+                if (!test.check(service.phoneFilesState === "preparing" && !panel.sectionVisible("drop") && !panel.inlineSendExpanded, "toolbar prepares without opening File sharing")) return
+                if (!test.check(browse.enabled && browse.Accessible.name === "Cancel browse", "pending toolbar cancellation is accessible")) return
                 if (!test.check(!service.browsePhoneFiles("A"), "duplicate prepare blocked")) return
                 test.phase = 2
             } else if (test.phase === 2 && service.phoneFilesState === "opened") {
-                if (!test.check(test.draftIntact(), "single root auto-opens without clearing Send draft")) return
-                test.find(files,"browse-phone-files").clicked()
+                if (!test.check(test.draftIntact() && !panel.inlineSendExpanded && !panel.sectionVisible("drop"), "single root auto-opens with File sharing collapsed and the Send draft intact")) return
+                test.browseAction().clicked()
                 test.phase = 3
             } else if (test.phase === 3 && service.phoneFilesState === "choosing") {
-                if (!test.check(service.phoneFileLocations.length === 2 && !service.phoneFilesBusy, "multiple roots wait for choice")) return
-                var choice = test.find(files,"phone-files-choice-1")
+                if (!test.check(service.phoneFileLocations.length === 2 && !service.phoneFilesBusy && panel.sectionBodyVisible("drop"), "multiple roots reveal File sharing and wait for choice")) return
+                if (!test.check(test.browseAction().Accessible.name === "Cancel browse" && !test.named("browse-phone-files").visible && !test.named("cancel-phone-files").visible && !service.browsePhoneFiles("A"), "one cancel action and no competing Browse during choice")) return
+                var choice = test.named("phone-files-choice-1")
                 if (!test.check(!!choice && choice.text === "<b>Second storage</b>" && choice.focusable && choice.height >= 44, "plain remote name and keyboard target")) return
                 choice.clicked()
                 if (!test.check(!service.openPhoneFileLocation(1), "duplicate open blocked")) return
                 test.phase = 4
             } else if (test.phase === 4 && service.phoneFilesState === "opened") {
-                service.browsePhoneFiles("A")
+                panel.settings = Object.assign({}, panel.settings, {showInlineSend:true})
+                if (!test.check(!test.named("browse-phone-files").visible, "inline Browse is hidden while toolbar Browse is available")) return
+                panel.settings = Object.assign({}, panel.settings, {quickActionsOrder:""})
+                var inlineBrowse = test.named("browse-phone-files")
+                if (!test.check(inlineBrowse.visible && inlineBrowse.enabled, "inline Browse returns when the shortcut is removed")) return
+                inlineBrowse.clicked()
+                if (!test.check(test.named("cancel-phone-files").visible, "inline Browse keeps its own cancel when the shortcut is removed")) return
                 test.started = test.ticks
                 test.phase = 5
             } else if (test.phase === 5 && test.ticks-test.started > 4) {
@@ -90,14 +114,16 @@ ShellRoot {
                 test.phase = 6
             } else if (test.phase === 6 && !service.phoneFilesBusy && test.ticks-test.started > 30) {
                 if (!test.check(service.phoneFilesState === "idle" && service.phoneFileLocations.length === 0 && test.draftIntact(), "late old-peer prepare is ignored and draft target stays A")) return
-                service.browsePhoneFiles("B")
+                panel.settings = Object.assign({}, panel.settings, {showInlineSend:false,quickActionsOrder:"browse-files"})
+                panel.setSectionExpanded("drop", false)
+                test.browseAction().clicked()
                 test.phase = 7
             } else if (test.phase === 7 && service.phoneFilesState === "failed") {
-                if (!test.check(service.phoneFilesMessage.indexOf("default file manager") >= 0 && test.draftIntact(), "fixed opener failure preserves draft")) return
-                service.browsePhoneFiles("B")
+                if (!test.check(service.phoneFilesMessage.indexOf("default file manager") >= 0 && test.draftIntact() && panel.sectionBodyVisible("drop"), "opener failure reveals recovery and preserves draft")) return
+                test.browseAction().clicked()
                 test.phase = 8
             } else if (test.phase === 8 && service.phoneFilesState === "choosing") {
-                test.find(files,"cancel-phone-files").clicked()
+                test.browseAction().clicked()
                 if (!test.check(service.phoneFilesState === "cancelled" && service.phoneFileLocations.length === 0 && !service.openPhoneFileLocation(0), "cancel invalidates folder choices")) return
                 service.browsePhoneFiles("B")
                 test.started = test.ticks
@@ -116,6 +142,20 @@ ShellRoot {
                 test.phase = 12
             } else if (test.phase === 12 && service.phoneFilesState === "failed" && !service.phoneFilesBusy) {
                 if (!test.check(test.draftIntact(), "oversized helper reply preserves draft")) return
+                panel.setSectionExpanded("drop", false)
+                test.browseAction().clicked()
+                test.started = test.ticks
+                test.phase = 13
+            } else if (test.phase === 13 && test.ticks-test.started > 4) {
+                if (!test.check(service.phoneFilesState === "preparing" && !panel.inlineSendExpanded, "pending quick Browse keeps File sharing collapsed")) return
+                panel.setSectionExpanded("actions", false)
+                if (!test.check(panel.sectionBodyVisible("drop") && test.named("cancel-phone-files").visible, "collapsing Quick actions reveals inline cancellation")) return
+                panel.setSectionExpanded("actions", true)
+                if (!test.check(!test.named("cancel-phone-files").visible, "only toolbar cancellation remains visible")) return
+                test.browseAction().clicked()
+                if (!test.check(service.phoneFilesState === "cancelled" && test.draftIntact(), "pending cancellation preserves the draft")) return
+                test.phase = 14
+            } else if (test.phase === 14 && !service.phoneFilesBusy) {
                 console.log("NATIVE_PASS phone files")
                 Qt.quit()
             }

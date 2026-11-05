@@ -6,6 +6,7 @@ import "../ActionCatalog.js" as Actions
 Column {
     id: root
     required property var service
+    property bool browseInToolbar: false
     readonly property var device: service ? service.selectedDevice : null
     readonly property bool supported: Actions.compatible("browse-files", device)
     width: parent ? parent.width : 0
@@ -21,6 +22,7 @@ Column {
             height: Math.max(44, implicitHeight)
             foreground: Commons.Color.popups.text
             focusable: true
+            visible: !root.browseInToolbar && !Actions.browsePending(root.service)
             enabled: !!root.service && Actions.ready("browse-files", root.device, root.service)
             Accessible.description: "Open shared phone folders in the default file manager. The phone's KDE Connect Filesystem expose permission is required."
             onClicked: root.service.browsePhoneFiles(root.device.id)
@@ -32,7 +34,7 @@ Column {
             height: Math.max(44, implicitHeight)
             foreground: Commons.Color.popups.text
             focusable: true
-            visible: !!root.service && (root.service.phoneFilesBusy || root.service.phoneFilesState === "choosing")
+            visible: !root.browseInToolbar && Actions.browsePending(root.service)
             onClicked: root.service.cancelPhoneFiles(false)
         }
     }
