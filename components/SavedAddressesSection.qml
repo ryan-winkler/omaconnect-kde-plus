@@ -8,6 +8,7 @@ import "../i18n" as Locale
 
 Column {
     id: root
+    function sourceLabel(value) { return value ? Locale.Strings.t("savedAddresses.source." + value) : "" }
     required property var discovery
     property bool showTitle: true
     property string peerId: ""
@@ -76,14 +77,15 @@ Column {
     Controls.ComboBox {
         id: source
         width: root.width
-        model: [
-            {label: "LAN / manual", value: "manual"},
-            {label: "MikroTik Back to Home", value: "bth"},
-            {label: "WireGuard", value: "wireguard"},
-            {label: "Tailscale", value: "tailscale"}
-        ]
-        textRole: "label"
-        valueRole: "value"
+        model: ["manual", "bth", "wireguard", "tailscale"]
+        displayText: root.sourceLabel(currentValue)
+        delegate: Controls.ItemDelegate {
+            required property string modelData
+            required property int index
+            width: source.width
+            text: root.sourceLabel(modelData)
+            highlighted: source.highlightedIndex === index
+        }
         Accessible.name: Locale.Strings.t("savedAddresses.addressSource")
     }
     Controls.CheckBox {

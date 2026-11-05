@@ -16,7 +16,7 @@ Window {
     required property var service
     property var device: null
     property var chooserOptions: ({useDesktopFileChooser: false, reviewFilesBeforeSend: false})
-    property string fileChoiceHint: "Selecting a file sends it to the selected recipient. To review first, use Plus settings → Quick actions. Drops always need review."
+    property string fileChoiceHint: Locale.Strings.t("files.immediateHint")
     readonly property var target: service ? service.draftTarget : null
     readonly property bool canChoose: !!(service && device && device.paired && device.reachable
         && device.capabilities && device.capabilities.file && !service.operationBusy && !service.selectionCancelling
@@ -74,7 +74,8 @@ Window {
             objectName: "send-window-recipient"
             width: parent.width
             text: root.target ? Locale.Strings.format("files.reviewedRecipient", [root.target.peerName, root.target.peerId])
-                : root.device ? "Selected recipient: \u2068" + (root.service && typeof root.service.displayName === "function" ? root.service.displayName(root.device) : root.device.name) + "\u2069\nKDE ID: \u2068" + root.device.id + "\u2069"
+                : root.device ? Locale.Strings.format("files.selectedRecipient", [
+                    root.service && typeof root.service.displayName === "function" ? root.service.displayName(root.device) : root.device.name, root.device.id])
                 : Locale.Strings.t("sendWindow.selectADeviceInDevicesFirst")
             textFormat: Text.PlainText
             wrapMode: Text.WrapAnywhere

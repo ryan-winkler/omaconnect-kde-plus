@@ -30,8 +30,8 @@ Column {
     Text {
         width: parent.width
         text: !Actions.ready("external-monitor", root.device, root.service) ? Locale.Strings.t(Actions.availabilityKey("external-monitor", root.device, root.service))
-            : root.monitor.active ? "Native virtual monitor session is active on this computer. Remote display output is not confirmed."
-            : "Uses native KDE Connect and KRDP. The other device needs an RDP client."
+            : root.monitor.active ? Locale.Strings.t("virtualMonitor.active")
+            : Locale.Strings.t("virtualMonitor.nativeHelp")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text

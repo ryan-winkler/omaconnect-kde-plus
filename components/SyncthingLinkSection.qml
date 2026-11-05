@@ -32,17 +32,17 @@ Column {
         if (!store || !peerId || busy) return false
         if (draftPeerId !== peerId) {
             rebaseDraft()
-            feedback = "Device changed. Compare both identities before saving a note."
+            feedback = Locale.Strings.live("syncthingLink.deviceChanged")
             return false
         }
         var value = remove ? "" : draft.trim()
         if (remove ? !linkedId : (!validDraft || value === linkedId)) return false
         // The request keeps its reviewed KDE identity even if selection changes.
         pending = {peerId: peerId, value: value}
-        feedback = remove ? "Removing local note…" : "Saving local note…"
+        feedback = remove ? Locale.Strings.live("syncthingLink.removing") : Locale.Strings.live("syncthingLink.saving")
         if (!store.linkSyncthing(pending.peerId, value)) {
             pending = null
-            feedback = "The request did not start. Check the saved note and try again."
+            feedback = Locale.Strings.live("syncthingLink.requestFailed")
             return false
         }
         return true
@@ -53,16 +53,16 @@ Column {
         pending = null
         var actual = String(store.deviceAppearance(request.peerId).syncthing_device_id || "")
         if (actual !== request.value) {
-            feedback = "The note was not confirmed by saved readback. Check it before trying again."
+            feedback = Locale.Strings.live("syncthingLink.readbackUnconfirmed")
             return
         }
         if (request.peerId !== peerId) {
-            feedback = "The request was applied to the previous KDE device. Select it to check its saved note."
+            feedback = Locale.Strings.live("syncthingLink.previousApplied")
             return
         }
         edited = false
         draft = actual
-        feedback = actual ? "Local identity note saved." : "Local identity note removed."
+        feedback = actual ? Locale.Strings.live("syncthingLink.saved") : Locale.Strings.live("syncthingLink.removed")
     }
     readonly property string syncState: service && service.syncthingDeviceId === linkedId ? String(service.syncthingState || "") : ""
     function readSyncState() { if (service && linkedId && visible && panelOpened) service.readSyncthingPause(linkedId) }
@@ -90,8 +90,8 @@ Column {
             var previous = root.pending.peerId !== root.peerId
             root.pending = null
             root.feedback = previous
-                ? "The previous device's note was not confirmed. Select it to check the saved note."
-                : "Local note not confirmed. " + (message || "Check the saved note before trying again.")
+                ? Locale.Strings.live("syncthingLink.previousUnconfirmed")
+                : message ? Locale.Strings.format("syncthingLink.unconfirmedWithDetail", [message]) : Locale.Strings.live("syncthingLink.unconfirmed")
         }
     }
 

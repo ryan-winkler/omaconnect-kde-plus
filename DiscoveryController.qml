@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "DiscoveryModel.js" as Model
+import "i18n" as Locale
 
 Item {
     id: root
@@ -12,7 +13,8 @@ Item {
     property var addresses: []
     property var customAddresses: []
     property bool ready: false
-    property string error: ""
+    property string errorKey: ""
+    readonly property string error: errorKey ? Locale.Strings.t(errorKey) : ""
     property var queue: []
     property double backoffUntil: 0
     property bool refreshPending: false
@@ -24,7 +26,7 @@ Item {
 
     function batch(changes, automatic) {
         if (!Array.isArray(changes) || changes.length > Model.MAX_BATCH || queue.length >= 8) {
-            error = Model.errorText("batch-limit")
+            errorKey = Model.errorKey("batch-limit")
             return false
         }
         if (automatic && (!autoDiscoveryEnabled || !panelOpened)) return false
@@ -138,14 +140,14 @@ Item {
                 root.addresses = result.addresses
                 root.customAddresses = result.customAddresses
                 root.ready = true
-                root.error = ""
+                root.errorKey = ""
                 if ((automatic && root.queue.length === 0) || root.refreshPending) {
                     if (!automatic || (root.autoDiscoveryEnabled && root.panelOpened)) root.refreshRequested()
                     root.refreshPending = false
                 }
             } else {
                 root.ready = false
-                root.error = result && !result.ok ? result.error : Model.errorText("address-timeout")
+                root.errorKey = result && !result.ok ? result.errorKey : Model.errorKey("address-timeout")
                 root.backoffUntil = Date.now() + 300000
                 root.refreshPending = false
                 root.queue = root.queue.filter(function(entry) { return !entry.automatic })

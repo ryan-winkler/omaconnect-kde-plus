@@ -158,7 +158,7 @@ Panel {
     }
     function saveLayout(request, sectionId) {
         if (layoutPending) {
-            layoutGuardMessage = layoutReadbackTimedOut ? "Saved layout was not confirmed. Use the current saved layout to recover, or wait for readback." : "Waiting for saved layout readback. This change was not submitted."
+            layoutGuardMessage = layoutReadbackTimedOut ? Locale.Strings.live("layout.guardUnconfirmed") : Locale.Strings.live("layout.guardPending")
             return false
         }
         if (layoutSaver.busy) return false
@@ -309,8 +309,8 @@ Panel {
         return {useDesktopFileChooser: valid ? desktop : true, reviewFilesBeforeSend: valid ? review : true}
     }
     readonly property string fileChoiceHint: fileChooserOptions.reviewFilesBeforeSend
-        ? "Choose files, review the recipient and files, then select Send. Drops always need review."
-        : "Selecting a file sends it to the selected recipient. To review first, use Plus settings → Quick actions. Drops always need review."
+        ? Locale.Strings.t("files.reviewHint")
+        : Locale.Strings.t("files.immediateHint")
     function chooseFiles() {
         if (!service || !device) return false
         if (!service.chooseFiles(device.id, fileChooserOptions)) return false
@@ -754,7 +754,7 @@ Panel {
                 draftPing = ""
                 closeComposer()
             } else {
-                composerError = (service && service.actionError) ? service.actionError : "Failed to send ping"
+                composerError = (service && service.actionError) ? service.actionError : Locale.Strings.live("panel.pingFailed")
             }
             return success
         }
@@ -780,7 +780,7 @@ Panel {
                 draftText = ""
                 closeComposer()
             } else {
-                composerError = (service && service.actionError) ? service.actionError : "Failed to share text"
+                composerError = (service && service.actionError) ? service.actionError : Locale.Strings.live("panel.shareTextFailed")
             }
             return success
         }
@@ -1007,8 +1007,8 @@ Panel {
                     spacing: Style.space(8)
                     Text {
                         width: parent.width
-                        text: root.service && root.service.draftTarget ? "Reviewed recipient: " + root.service.draftTarget.peerName + "\nKDE ID: " + root.service.draftTarget.peerId
-                            : root.device ? "Selected: " + root.deviceName + "\nKDE ID: " + root.device.id : Locale.Strings.t("panel.chooseADeviceInDevicesFirst")
+                        text: root.service && root.service.draftTarget ? Locale.Strings.format("files.reviewedRecipient", [root.service.draftTarget.peerName, root.service.draftTarget.peerId])
+                            : root.device ? Locale.Strings.format("files.selectedDevice", [root.deviceName, root.device.id]) : Locale.Strings.t("panel.chooseADeviceInDevicesFirst")
                         textFormat: Text.PlainText
                         wrapMode: Text.WrapAnywhere
                         color: Commons.Color.popups.text

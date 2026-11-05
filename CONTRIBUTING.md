@@ -67,8 +67,8 @@ Add visible and accessible text to `i18n/en.json` using a stable key named for i
 domain. Other catalogues fall back to English for missing keys. Use
 `Locale.Strings.format` with numbered placeholders for sentences that contain
 device or file names. Use the native plural and number helpers for quantities.
-Keep device IDs, preference values and executable arguments independent of
-the language.
+Keep device IDs, preference values and command flags independent of the
+language. Pass translated text only as display data.
 
 ## Change the version slowly
 

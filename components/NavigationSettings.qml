@@ -31,9 +31,9 @@ Column {
         width: parent.width
         panel: parent.panel
         preferences: [
-            {key: "navigationAtTop", label: "Place navigation at Top", defaultValue: false, description: "Off places navigation at Bottom, so devices come first. The position stays fixed until you change it."},
-            {key: "showSendShortcut", label: "Show Send shortcut", defaultValue: false, description: "Add Send beside the current-view menu. Send remains in the menu when this shortcut is hidden."},
-            {key: "showActivityShortcut", label: "Show Activity shortcut", defaultValue: false, description: "Add Activity beside the current-view menu. Submission state stays visible, and Activity remains in the menu when hidden."}
+            {key: "navigationAtTop", label: Locale.Strings.t("navigationSettings.atTop"), defaultValue: false, description: Locale.Strings.t("navigationSettings.atTopHelp")},
+            {key: "showSendShortcut", label: Locale.Strings.t("navigationSettings.showSend"), defaultValue: false, description: Locale.Strings.t("navigationSettings.showSendHelp")},
+            {key: "showActivityShortcut", label: Locale.Strings.t("navigationSettings.showActivity"), defaultValue: false, description: Locale.Strings.t("navigationSettings.showActivityHelp")}
         ]
     }
 }

@@ -71,7 +71,7 @@ QtObject {
         process.payload = JSON.stringify(request)
         oversized = false
         inFlight = true
-        message = request.operation === "read" ? "Reading native feature settings…" : "Updating native feature setting…"
+        message = request.operation === "read" ? Locale.Strings.live("nativeModuleController.reading") : Locale.Strings.live("nativeModuleController.updating")
         error = ""
         process.stdinEnabled = true
         process.running = true
@@ -113,10 +113,10 @@ QtObject {
             if (finished.operation === "set" && (!reply || reply.state !== "observed")) delete states[finished.pluginId]
             enabledStates = states
             error = reply ? reply.error : finished.operation === "set" ? "submission-unknown" : "provider-unavailable"
-            message = error === "submission-unknown" ? "Change unconfirmed. Refresh native settings before you try again."
-                : error === "readback-mismatch" ? "KDE Connect reports a different value. The observed setting is shown."
-                : error ? "Native settings unavailable. Refresh to read the current state."
-                : finished.operation === "set" ? "Native setting confirmed." : "Native settings are current."
+            message = error === "submission-unknown" ? Locale.Strings.live("nativeModuleController.unconfirmed")
+                : error === "readback-mismatch" ? Locale.Strings.live("nativeModuleController.mismatch")
+                : error ? Locale.Strings.live("nativeModuleController.unavailable")
+                : finished.operation === "set" ? Locale.Strings.live("nativeModuleController.confirmed") : Locale.Strings.live("nativeModuleController.current")
         }
         if (queuedRead) pump.restart()
     }

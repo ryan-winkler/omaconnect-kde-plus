@@ -22,6 +22,9 @@ bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
 loop = GLib.MainLoop()
 calls, held = [], []
 started = time.monotonic()
+if mode == 'detail':
+    request['actionLabel'] = 'النشاط'
+
 
 
 def method(connection, sender, path, interface, member, parameters, invocation):
@@ -34,7 +37,7 @@ def method(connection, sender, path, interface, member, parameters, invocation):
     assert hints['urgency'] == 1 and 'transient' not in hints
     argv = ['/usr/bin/omarchy-shell', 'omaconnect.plus', 'activity']
     assert json.loads(hints['omarchy-exec-argv']) == argv
-    assert json.loads(hints['omarchy-actions']) == [{'label': 'Activity', 'argv': argv}]
+    assert json.loads(hints['omarchy-actions']) == [{'label': request.get('actionLabel', 'Activity'), 'argv': argv}]
     assert sentinel.encode() not in Path(f'/proc/{child.pid}/cmdline').read_bytes()
     assert sentinel.encode() not in Path(f'/proc/{child.pid}/environ').read_bytes()
     if mode == 'detail':

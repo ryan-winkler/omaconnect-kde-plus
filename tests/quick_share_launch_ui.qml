@@ -2,6 +2,8 @@ import QtQuick
 import "plugin/i18n" as Locale
 import QtQuick.Window
 import Quickshell
+import Quickshell.Io
+import qs.Commons as Commons
 import "plugin" as Plugin
 import "plugin/components" as Components
 import "plugin/ActionCatalog.js" as Actions
@@ -12,6 +14,11 @@ ShellRoot {
     property int ticks: 0
     property int started: 0
     Plugin.Service { id: service }
+    Process {
+        id: languageWriter
+        property string language: "en"
+        command: ["python3", "-c", "import os,pathlib,sys; pathlib.Path(os.environ['XDG_CONFIG_HOME'],'omarchy','language').write_text(sys.argv[1]+chr(10))", language]
+    }
     QtObject {
         id: fakeBar
         property color foreground: "#ffffff"
@@ -53,7 +60,7 @@ ShellRoot {
         running: true
         repeat: true
         onTriggered: {
-            if (++test.ticks > 160) { test.check(false, "scenario finishes within deadline"); return }
+            if (++test.ticks > 240) { test.check(false, "scenario finishes within deadline"); return }
             if (test.phase === 0 && service.appearance.ready && service.devices.length === 2 && service.quickShareAvailable) {
                 service.selectDevice("A")
                 if (!test.check(service.openQuickShare(), "fixed launcher starts")) return
@@ -67,6 +74,18 @@ ShellRoot {
                 if (!test.check(status && status.visible && status.text === service.quickShareMessage && status.textFormat === Text.PlainText && status.Accessible.name === status.text, "dedicated plain-text launch feedback is visible and accessible")) return
                 test.phase = 2
             } else if (test.phase === 2 && service.actionState === "accepted") {
+                if (!test.check(service.actionMessage === "Ping request accepted. Delivery is not confirmed.", "accepted result uses English catalogue")) return
+                languageWriter.language = "ar"
+                languageWriter.running = true
+                test.phase = 21
+            } else if (test.phase === 21 && Commons.I18n.language === "ar" && !languageWriter.running) {
+                if (!test.check(service.actionMessage === "قُبل طلب اختبار الاتصال. لم يتم تأكيد وصوله.", "the same completed action relocalizes to Arabic")) return
+                if (!test.check(service.actionState === "accepted" && service.selectedDeviceId === "A", "language change preserves evidence and recipient")) return
+                languageWriter.language = "en"
+                languageWriter.running = true
+                test.phase = 22
+            } else if (test.phase === 22 && Commons.I18n.language === "en" && !languageWriter.running) {
+                if (!test.check(service.actionMessage === "Ping request accepted. Delivery is not confirmed.", "the same completed action returns to English")) return
                 service.actionState = "unknown"
                 service.actionMessage = ""
                 service.actionError = "Fixture device result is unconfirmed"

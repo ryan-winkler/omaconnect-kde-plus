@@ -3,6 +3,9 @@ const catalog = require('../i18n/en.json');
 
 module.exports = {
     t(key) { return catalog[key] ?? key; },
+    live(key, argumentKeys) {
+        return argumentKeys ? this.format(key, argumentKeys.map(argumentKey => this.t(argumentKey))) : this.t(key);
+    },
     number: String,
     format(key, values) {
         return this.t(key).replace(/%([1-9][0-9]*)/g, (match, index) => values[Number(index) - 1] ?? match);

@@ -16,7 +16,7 @@ ENGLISH_COPY = json.loads((ROOT / "i18n/en.json").read_text())
 
 def english_copy(source):
     """Follow localized copy references in source-level display contracts."""
-    return re.sub(r'Locale\.Strings\.t\("([a-zA-Z0-9.-]+)"\)',
+    return re.sub(r'Locale\.Strings\.(?:t|live)\("([a-zA-Z0-9.-]+)"\)',
                   lambda match: json.dumps(ENGLISH_COPY.get(match[1], match[1]), ensure_ascii=False), source)
 
 BASH = shutil.which("bash") or "bash"
@@ -1990,16 +1990,37 @@ class ScriptIntegrationTests(unittest.TestCase):
 
 
 
+class LocaleCatalogueTests(unittest.TestCase):
+  def test_catalogue_keys_and_translated_placeholders(self):
+    def unique_object(pairs):
+      entries = dict(pairs)
+      self.assertEqual(len(entries), len(pairs), "Catalogue keys must be unique")
+      return entries
+
+    def load(language):
+      return json.loads((ROOT / "i18n" / (language + ".json")).read_text(), object_pairs_hook=unique_object)
+
+    english = load("en")
+    for language in ("pt", "ar"):
+      for key, value in load(language).items():
+        with self.subTest(language=language, key=key):
+          self.assertIn(key, english)
+          self.assertIsInstance(value, type(english[key]))
+          if isinstance(value, str):
+            self.assertCountEqual(re.findall(r"%[1-9][0-9]*", value),
+                                  re.findall(r"%[1-9][0-9]*", english[key]))
+
+
 class QmlWiringAndContractTests(unittest.TestCase):
   def test_pairing_contracts(self):
     source = controller_layer_source()
     self.assertIn("setPendingPairing", source)
     self.assertIn("pairDevice", source)
     self.assertIn("unpairDevice", source)
-    self.assertIn('"Pair request sent"', source)
-    self.assertIn('"Device paired"', source)
-    self.assertIn('"Device unpaired"', source)
-    self.assertIn('"Pairing timed out or rejected"', source)
+    self.assertIn('"Pair request sent"', english_copy(source))
+    self.assertIn('"Device paired"', english_copy(source))
+    self.assertIn('"Device unpaired"', english_copy(source))
+    self.assertIn('"Pairing timed out or rejected"', english_copy(source))
     self.assertIn("pairingWatchdogTimer", source)
     self.assertIn("root.pairingRequestTimes[devId]", source)
     self.assertIn("now - reqTime >= 30000", source)
@@ -2158,15 +2179,20 @@ class QmlWiringAndContractTests(unittest.TestCase):
   def test_action_verbiage_and_auto_dismiss_contracts(self):
     controller_source = controller_layer_source()
     # State the evidence: command success does not establish delivery/execution.
-    self.assertIn('"Ping request accepted. Delivery is not confirmed."', controller_source)
-    self.assertIn('"Text request accepted. Delivery is not confirmed."', controller_source)
-    self.assertIn('"Ring request accepted. Audible ringing is not confirmed."', controller_source)
-    self.assertIn('"Clipboard request accepted. Delivery is not confirmed."', controller_source)
+    self.assertIn('"kde.accepted.ping"', controller_source)
+    self.assertEqual(ENGLISH_COPY["kde.accepted.ping"], "Ping request accepted. Delivery is not confirmed.")
+    self.assertIn('"kde.accepted.text"', controller_source)
+    self.assertEqual(ENGLISH_COPY["kde.accepted.text"], "Text request accepted. Delivery is not confirmed.")
+    self.assertIn('"kde.accepted.ring"', controller_source)
+    self.assertEqual(ENGLISH_COPY["kde.accepted.ring"], "Ring request accepted. Audible ringing is not confirmed.")
+    self.assertIn('"kde.accepted.clipboard"', controller_source)
+    self.assertEqual(ENGLISH_COPY["kde.accepted.clipboard"], "Clipboard request accepted. Delivery is not confirmed.")
     self.assertNotIn('"File sent"', controller_source)
     self.assertIn("TransferModel.status", controller_source)
-    self.assertIn('"Command request accepted. Execution is not confirmed."', controller_source)
-    self.assertIn('"Pair request sent"', controller_source)
-    self.assertIn('"Device unpaired"', controller_source)
+    self.assertIn('"kde.accepted.command"', controller_source)
+    self.assertEqual(ENGLISH_COPY["kde.accepted.command"], "Command request accepted. Execution is not confirmed.")
+    self.assertIn('"Pair request sent"', english_copy(controller_source))
+    self.assertIn('"Device unpaired"', english_copy(controller_source))
 
     # Ensure no generic "accepted" action messages remain
     self.assertNotIn('"Ping request accepted"', controller_source)
@@ -2201,8 +2227,9 @@ class QmlWiringAndContractTests(unittest.TestCase):
 
   def test_action_toolbar_header_unknown_type_contract(self):
     toolbar_source = (ROOT / "components" / "ActionToolbar.qml").read_text()
-    self.assertIn('"unknown"', toolbar_source)
-    self.assertNotIn('"UNKNOWN ACTIONS"', toolbar_source)
+    self.assertIn('Locale.Strings.t("actions.heading." + type, Locale.Strings.t("actions.heading"))', toolbar_source)
+    self.assertEqual(ENGLISH_COPY["actions.heading"], "ACTIONS")
+    self.assertNotIn("actions.heading.unknown", ENGLISH_COPY)
 
   def test_ui_setup_has_help_without_privileged_launchers(self):
     device_section = (ROOT / "components" / "DeviceSection.qml").read_text()
@@ -2322,7 +2349,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     # Check ActionToolbar enables quick actions while file transfer is active
     toolbar_source = (ROOT / "components" / "ActionToolbar.qml").read_text()
     self.assertIn('modelData === "file"', toolbar_source)
-    self.assertIn('"Stop submitting"', toolbar_source)
+    self.assertIn('"Stop submitting"', english_copy(toolbar_source))
 
     # Check DeviceSection status banner handles file transfer status
     device_section_source = (ROOT / "components" / "DeviceSection.qml").read_text()

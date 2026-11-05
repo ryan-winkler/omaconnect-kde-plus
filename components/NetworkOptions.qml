@@ -6,6 +6,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
 import "../i18n" as Locale
+import "PreferenceFeedback.js" as Feedback
 
 Column {
     id: root
@@ -19,9 +20,9 @@ Column {
     readonly property bool wireguardEnabled: valueFor("networkWireguardEnabled")
     readonly property string helperPath: localScript("open_network_owner.py")
     readonly property var providers: [
-        {key: "networkTailscaleEnabled", label: "Tailscale", description: "Adds an Open Tailscale panel button. Then save the other device's Tailscale IP under Saved addresses.", help: "https://tailscale.com/docs/how-to/quickstart"},
-        {key: "networkBthEnabled", label: "MikroTik Back to Home", description: "Adds Automatic, On and Off buttons when your Back to Home script is installed. Then save the other device's BTH IP under Saved addresses.", help: "https://manual.mikrotik.com/docs/network-management/cloud/back-to-home/"},
-        {key: "networkWireguardEnabled", label: "Other WireGuard profiles", description: "Adds an Open WireGuard profiles button for NetworkManager. Then save the other device's VPN IP under Saved addresses.", help: "https://www.wireguard.com/quickstart/"}
+        {key: "networkTailscaleEnabled", label: "Tailscale", description: Locale.Strings.t("networkOptions.tailscaleHelp"), help: "https://tailscale.com/docs/how-to/quickstart"},
+        {key: "networkBthEnabled", label: "MikroTik Back to Home", description: Locale.Strings.t("networkOptions.bthHelp"), help: "https://manual.mikrotik.com/docs/network-management/cloud/back-to-home/"},
+        {key: "networkWireguardEnabled", label: Locale.Strings.t("networkOptions.wireguard"), description: Locale.Strings.t("networkOptions.wireguardHelp"), help: "https://www.wireguard.com/quickstart/"}
     ]
     function localScript(name) {
         return decodeURIComponent(Qt.resolvedUrl("../scripts/" + name).toString().replace(/^file:\/\//, ""))
@@ -40,10 +41,8 @@ Column {
         opener.running = true
     }
     function feedback(code, text, oversized) {
-        var result
-        try { result = !oversized ? JSON.parse(text) : null } catch (_) { result = null }
-        return result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length < 512
-            && (code === 0) === result.ok ? result.message : "Request was not confirmed. Check the saved setting and try again."
+        var result = Feedback.parse(code, text, oversized)
+        return Feedback.display(Locale.Strings, result, "networkOptions.notConfirmed")
     }
     Column {
         width: parent.width

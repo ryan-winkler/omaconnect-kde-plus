@@ -169,7 +169,7 @@ ShellRoot {
                 if(!test.check(editor && editor.visible && editor.enabled,"connected command-capable peer has a visible explicit editor request"))return
                 editor.Accessible.pressAction()
                 if(!test.check(test.commandEditorTarget==="fixture_phone","remote editor request uses the selected peer, separate from local configuration"))return
-                var addressInfo=test.find(settings.contentItem,function(o){return o.objectName==="device-information-Addresses"},[])
+                var addressInfo=test.find(settings.contentItem,function(o){return o.objectName==="device-information-addresses"},[])
                 if(!test.check(addressInfo && addressInfo.text.indexOf("192.0.2.10:1716")!==-1,"Information shows reported native addresses"))return
                 var monitor=test.named("Use device as an external monitor")
                 if(!test.check(monitor && monitor.visible && monitor.enabled,"known native monitor state enables the visible explicit action"))return

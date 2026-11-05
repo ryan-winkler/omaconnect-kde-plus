@@ -9,10 +9,10 @@ QtObject {
     property var expectedIds: []
     property var entries: []
     property bool ready: false
-    property string loadError: ""
-    readonly property string error: loadError || (ready && expectedIds.some(function(id) { return !root.entry(id) })
-        ? "Some daily sections are unavailable. Reinstall or update Plus." : "") || (ready && SectionOrder.parse(storedOrder, entries) === null
-        ? "The saved section order is invalid. The daily panel uses its default order." : "")
+    property string loadErrorKey: ""
+    readonly property string error: loadErrorKey ? Locale.Strings.t(loadErrorKey) : (ready && expectedIds.some(function(id) { return !root.entry(id) })
+        ? Locale.Strings.t("layout.catalogue.missingSections") : "") || (ready && SectionOrder.parse(storedOrder, entries) === null
+        ? Locale.Strings.t("layout.catalogue.invalidOrder") : "")
     readonly property var order: SectionOrder.normalize(storedOrder, entries)
     readonly property FileView catalogue: FileView {
         preload: true
@@ -22,11 +22,11 @@ QtObject {
             var parsed = SectionOrder.parseCatalog(text())
             root.entries = parsed
             root.ready = parsed.length > 0
-            root.loadError = root.ready ? "" : "Section settings are unavailable. Optional daily sections are hidden. Reinstall or update Plus."
+            root.loadErrorKey = root.ready ? "" : "layout.catalogue.invalid"
         }
         onLoadFailed: {
             root.ready = false
-            root.loadError = "Section settings could not load. Optional daily sections are hidden. Reinstall or update Plus."
+            root.loadErrorKey = "layout.catalogue.missing"
         }
     }
 

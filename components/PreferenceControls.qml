@@ -7,6 +7,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
 import "../i18n" as Locale
+import "PreferenceFeedback.js" as Feedback
 
 Column {
     id: root
@@ -146,12 +147,9 @@ Column {
             onDataChanged: if (text.length > 8192) { saver.oversized = true; saver.running = false }
         }
         onExited: function(code) {
-            var result
-            try { result = !oversized ? JSON.parse(reply.text) : null } catch (_) { result = null }
-            var valid = result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length < 512
-                && (code === 0) === result.ok
-            root.lastSaveOk = !!valid && result.ok
-            root.message = valid ? result.message : "Setting was not confirmed. Check the saved value and try again."
+            var result = Feedback.parse(code, reply.text, oversized)
+            root.lastSaveOk = !!result && result.ok
+            root.message = Feedback.display(Locale.Strings, result, "preferences.notConfirmed")
             stdinEnabled = true
             root.submissionPending = false
         }

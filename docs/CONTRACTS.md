@@ -482,7 +482,9 @@ Neither the header gear nor paired-device gears launch KDE Connect implicitly.
 The explicit Native KDE Connect settings link retains the native launch boundary.
 
 The manifest's `settings` map is the source of preference names, types and
-defaults. `scripts/network_preferences.py:KEYS` and `STRING_KEYS` define the
+defaults. Settings and network-owner helpers return a stable result code with
+their existing success flag and bounded English fallback. The panel uses the
+code for live translation. `scripts/network_preferences.py:KEYS` and `STRING_KEYS` define the
 writable subset; retired/legacy display keys are not all writable. A boolean
 request has exactly `{key,enabled:boolean}`. A string request has exactly
 `{key,value:string}`. Extra request fields are rejected. Strings have at most

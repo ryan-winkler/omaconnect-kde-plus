@@ -32,7 +32,10 @@ Column {
 
     PanelSectionHeader {
         visible: root.showSectionHeader
-        text: (root.device && root.device.type && root.device.type !== "unknown") ? (root.device.type.toUpperCase() + " ACTIONS") : "ACTIONS"
+        text: {
+            var type = root.device ? root.device.type : ""
+            return Locale.Strings.t("actions.heading." + type, Locale.Strings.t("actions.heading"))
+        }
         foreground: root.foreground
         fontFamily: root.fontFamily
     }
@@ -48,9 +51,9 @@ Column {
                 required property int index
                 readonly property var catalogEntry: Actions.entry(modelData)
                 readonly property string actionName: modelData === "file" && root.service && root.service.fileBusy
-                    ? "Stop submitting" : Locale.Strings.t(Actions.actionLabelKey(modelData, root.device))
+                    ? Locale.Strings.t("actions.stopSubmitting") : Locale.Strings.t(Actions.actionLabelKey(modelData, root.device))
                 readonly property string actionTooltip: modelData === "file" && root.service && root.service.fileBusy
-                    ? "Cancel the current file submission" : catalogEntry ? Locale.Strings.t(catalogEntry.descriptionKey) + (root.actionReady(modelData) ? "" : "\n" + Locale.Strings.t(Actions.availabilityKey(modelData,root.device,root.service))) : modelData
+                    ? Locale.Strings.t("actions.cancelSubmission") : catalogEntry ? Locale.Strings.t(catalogEntry.descriptionKey) + (root.actionReady(modelData) ? "" : "\n" + Locale.Strings.t(Actions.availabilityKey(modelData,root.device,root.service))) : modelData
                 readonly property string actionIcon: modelData === "file" && root.service && root.service.fileBusy
                     ? "󰅖" : catalogEntry ? catalogEntry.icon : ""
 

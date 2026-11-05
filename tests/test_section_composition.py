@@ -25,7 +25,7 @@ class SectionComposition(unittest.TestCase):
             helper=plugin/'scripts/network_preferences.py'
             helper.write_text(helper.read_text().replace('from manage_addresses import','from composition_preference_boundary import'))
             if success_message is not None:
-                helper.write_text(helper.read_text().replace('Setting saved.',success_message))
+                helper.write_text(helper.read_text().replace('"code": "saved", ', '').replace('Setting saved.',success_message))
             state=dict(sectionOrder='',networkBthEnabled=True,networkStartExpanded=False,
                        addressesStartExpanded=True,showSyncthingLinks=False,syncthingStartExpanded=False)
             if readback:

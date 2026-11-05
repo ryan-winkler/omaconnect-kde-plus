@@ -32,6 +32,7 @@ Item {
         var payload = {
             summary: strings.t("notice." + key + ".title"),
             body: strings.t("notice." + key + ".body"),
+            actionLabel: strings.t("navigation.activity"),
             includeDeviceName: includeDeviceName,
             deviceName: includeDeviceName && typeof operation.peerName === "string" && operation.peerName !== operation.peerId
                 ? Array.from(operation.peerName).slice(0, 128).join("") : ""

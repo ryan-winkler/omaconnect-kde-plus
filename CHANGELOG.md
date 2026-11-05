@@ -8,6 +8,11 @@ All notable changes are listed here. The format follows
 
 ### Added
 
+- Daily views, Settings, file choosers and Plus feedback use Omarchy's live
+  language catalogue. Portuguese and Arabic include core navigation and file
+  controls. Entries without a translation use English. Right-to-left reading
+  order applies to the Send, Settings and image preview windows.
+
 - File-type icons in the recent-file menu and an Image previews entry for the
   image preview window with the recipient, filename, Back and Cancel.
   Browsing never sends. Explicit Send image or Review image follows the captured

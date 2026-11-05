@@ -7,6 +7,7 @@ import qs.Commons as Commons
 import qs.Ui as Kit
 import "../ActionCatalog.js" as Actions
 import "../i18n" as Locale
+import "PreferenceFeedback.js" as Feedback
 
 Column {
     id: root
@@ -68,7 +69,7 @@ Column {
         label: Locale.Strings.t("quickActionsSettings.addAction")
         options: root.addable
         value: root.selectedAction
-        triggerLabel: "Choose an action…"
+        triggerLabel: Locale.Strings.t("quickActionsSettings.choose")
         foreground: Commons.Color.popups.text
         enabled: !root.busy && root.addable.length > 0
         onChanged: function(value) { root.selectedAction = value }
@@ -199,10 +200,8 @@ Column {
             onDataChanged: if(text.length>8192){saver.oversized=true;saver.running=false}
         }
         onExited: function(code) {
-            var result
-            try { result=!oversized ? JSON.parse(reply.text) : null } catch(_){result=null}
-            root.message=result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length<512 && (code===0)===result.ok
-                ? result.message : "Quick actions were not confirmed. The saved order is still shown. Try again."
+            var result = Feedback.parse(code, reply.text, oversized)
+            root.message = Feedback.display(Locale.Strings, result, "quickActionsSettings.notConfirmed")
             stdinEnabled=true
         }
     }

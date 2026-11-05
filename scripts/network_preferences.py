@@ -54,16 +54,16 @@ def save(request):
     try:
         value = setting_value(request)
     except (ValueError, KeyError, TypeError):
-        return {"ok": False, "message": "Invalid setting. Check its value and try again."}
+        return {"ok": False, "code": "invalid-setting", "message": "Invalid setting. Check its value and try again."}
     try:
         reply = bounded_command(["/usr/bin/omarchy-shell", "shell", "setBarWidget", "omaconnect.plus",
                                  request["key"], json.dumps(value, ensure_ascii=True), "{}"],
                                 time.monotonic() + 4)
         if reply.strip() == b"ok":
-            return {"ok": True, "message": "Setting saved."}
+            return {"ok": True, "code": "saved", "message": "Setting saved."}
     except AddressError:
         pass
-    return {"ok": False, "message": "Setting was not confirmed. Controls show the saved configuration. Try again."}
+    return {"ok": False, "code": "save-unconfirmed", "message": "Setting was not confirmed. Controls show the saved configuration. Try again."}
 
 
 if __name__ == "__main__":

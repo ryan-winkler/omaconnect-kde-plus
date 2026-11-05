@@ -24,7 +24,7 @@ Column {
     readonly property var media: (service && service.mediaState) ? service.mediaState : null
     readonly property bool hasMedia: !!(media && (media.title || media.artist || media.album || media.player))
     readonly property bool isPlaying: !!(media && media.isPlaying)
-    readonly property string trackTitle: (media && media.title) ? media.title : "Nothing playing"
+    readonly property string trackTitle: (media && media.title) ? media.title : Locale.Strings.t("mediaPlayer.nothingPlaying")
     readonly property string trackArtist: (media && media.artist) ? media.artist : ""
     readonly property string trackAlbum: (media && media.album) ? media.album : ""
     readonly property string trackPlayer: (media && media.player) ? media.player : ""
@@ -198,7 +198,7 @@ Column {
                         textFormat: Text.PlainText
                         width: parent.width
                         visible: !root.hasMedia
-                        text: root.device && root.device.name ? Locale.Strings.format("mediaPlayer.openOnPeer", [root.device.name]) : "No active player"
+                        text: root.device && root.device.name ? Locale.Strings.format("mediaPlayer.openOnPeer", [root.device.name]) : Locale.Strings.t("mediaPlayer.noActivePlayer")
                         color: Qt.darker(root.foreground, 1.45)
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.caption
@@ -231,7 +231,7 @@ Column {
                                 fontFamily: root.fontFamily
                                 fontSize: Style.font.bodySmall
                                 Accessible.role: Accessible.Button
-                                Accessible.name: (isCurrent ? "Current player " : "Choose player ") + modelData
+                                Accessible.name: Locale.Strings.format(isCurrent ? "mediaPlayer.currentPlayerName" : "mediaPlayer.choosePlayer", [modelData])
                                 Accessible.description: isCurrent ? Locale.Strings.t("mediaPlayer.currentPlayer") : Locale.Strings.t("mediaPlayer.selectThisReportedPlayerOnThe")
                                 Accessible.onPressAction: if (enabled) clicked()
                                 onClicked: if (enabled) root.service.mediaSelectPlayer(root.device.id, modelData)

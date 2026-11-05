@@ -338,7 +338,7 @@ Column {
         Text {
             textFormat: Text.PlainText
             text: {
-                if (root.service && root.service.scanning) return "Scanning..."
+                if (root.service && root.service.scanning) return Locale.Strings.t("device.scanning")
                 if (root.service && root.service.discoveryState === "not_installed") return Locale.Strings.t("device.packagesMissing")
                 if (root.service && root.service.discoveryState === "unavailable") return Locale.Strings.t("device.daemonUnavailable")
                 return Locale.Strings.t("device.noDevices")

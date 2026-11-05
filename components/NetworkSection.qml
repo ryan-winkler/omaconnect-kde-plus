@@ -81,7 +81,7 @@ Column {
                     visible: !panel.networkExpanded && !!(root.service && root.service.tailscaleInstalled)
                     text: {
                         if (!root.service) return ""
-                        if (root.service.tailscaleLoading) return "Checking…"
+                        if (root.service.tailscaleLoading) return Locale.Strings.t("networkSection.checking")
                         return root.service.tailscaleStatus || ""
                     }
                     color: (root.service && root.service.tailscaleRunning) ? Commons.Color.accent : Qt.darker(root.foreground, 1.4)
@@ -238,11 +238,11 @@ Column {
 
                         Button {
                             id: peerButton
-                            text: (root.service && modelData && root.service.customAddresses && root.service.customAddresses.indexOf(modelData.address) !== -1) ? "Saved" : "Add"
+                            text: (root.service && modelData && root.service.customAddresses && root.service.customAddresses.indexOf(modelData.address) !== -1) ? Locale.Strings.t("networkSection.saved") : Locale.Strings.t("networkSection.add")
                             foreground: root.foreground
                             fontFamily: root.fontFamily
                             fontSize: Style.font.bodySmall
-                            enabled: !!(root.service && root.service.customAddressesReady && !root.service.addressBusy && peerButton.text !== "Saved")
+                            enabled: !!(root.service && root.service.customAddressesReady && !root.service.addressBusy && peerButton.text !== Locale.Strings.t("networkSection.saved"))
                             onClicked: if (root.service && modelData) root.service.addCustomAddress(modelData.address)
                         }
                     }

@@ -1,4 +1,8 @@
 {
+  "preferences.saved": "Definição guardada.",
+  "kde.action.requesting": "A pedir %1",
+  "kde.operation.ping": "ping",
+  "kde.accepted.ping": "Pedido de ping aceite. A entrega não está confirmada.",
   "files.pickerTitle": "Selecione os ficheiros a enviar",
   "files.pickerSingle": "Selecione um ficheiro para enviar",
   "files.pickerFor": "Selecione um ficheiro para enviar para %1",

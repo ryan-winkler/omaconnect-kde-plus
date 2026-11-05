@@ -4,6 +4,7 @@ import qs.Commons as Commons
 import "../TransferModel.js" as Transfers
 
 Commons.Translations {
+    id: root
     directory: Qt.resolvedUrl(".")
 
     // Replace placeholders in the catalog text once. A device name may
@@ -12,6 +13,14 @@ Commons.Translations {
         return t(key).replace(/%([1-9][0-9]*)/g, function(match, number) {
             var index = Number(number) - 1
             return index < values.length ? String(values[index]) : match
+        })
+    }
+
+    // Keep status assigned by an event bound to the current language.
+    function live(key, argumentKeys) {
+        return Qt.binding(function() {
+            return argumentKeys ? root.format(key, argumentKeys.map(function(argumentKey) { return root.t(argumentKey) }))
+                                : root.t(key)
         })
     }
 
