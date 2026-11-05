@@ -21,6 +21,7 @@ from send_text import unique_object
 MAX_INPUT = MAX_OUTPUT = 16384
 MAX_SHARES = 16
 TOTAL_SECONDS = 27
+MOUNT_VISIBILITY_SECONDS = 0.5
 SERVICE = "org.kde.kdeconnect"
 DEVICE = "org.kde.kdeconnect.device"
 SFTP = DEVICE + ".sftp"
@@ -30,6 +31,14 @@ FIELDS = {"peerId", "providerOwner", "path", "name", "mountPath",
 
 class BrowseError(Exception):
     """Only fixed public error codes may cross the helper boundary."""
+
+
+class MountNotVisible(BrowseError):
+    """A native mount was reported before the kernel exposed its mount record."""
+
+    def __init__(self, mount):
+        super().__init__("storage-unavailable")
+        self.mount = mount
 
 
 def fingerprint(value):
@@ -98,6 +107,8 @@ def mount_record(mount):
             if parts[separator + 1] != "fuse.sshfs":
                 raise BrowseError("storage-unavailable")
             records.append(parts)
+    if not records:
+        raise MountNotVisible(mount)
     if len(records) != 1:
         raise BrowseError("storage-unavailable")
     return records[0]
@@ -241,7 +252,27 @@ def execute(request, cancelled, deadline):
         if not native.call(native.path + "/sftp", SFTP, "mountAndWait", reply="(b)", timeout=20000)[0]:
             raise BrowseError("mount-failed")
         native.check_peer()
-        return {"state": "prepared", "error": "", "peerId": request["peerId"], "locations": native.locations()}
+        try:
+            locations = native.locations()
+        except MountNotVisible as missing:
+            # mountAndWait can reply before SSHFS is visible in this namespace.
+            # Wait only for the missing kernel record; never request a second mount.
+            visible_by = min(deadline, time.monotonic() + MOUNT_VISIBILITY_SECONDS)
+            while True:
+                remaining = visible_by - time.monotonic()
+                if remaining <= 0:
+                    raise
+                cancelled.wait(min(remaining, 0.05))
+                native.check_cancelled()
+                try:
+                    mount_record(missing.mount)
+                    break
+                except MountNotVisible:
+                    continue
+            native.check_owner()
+            native.check_peer()
+            locations = native.locations()
+        return {"state": "prepared", "error": "", "peerId": request["peerId"], "locations": locations}
     expected = request["location"]
     if expected["providerOwner"] != native.owner or expected not in native.locations():
         raise BrowseError("location-changed")

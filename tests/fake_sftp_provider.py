@@ -29,9 +29,32 @@ outside.mkdir()
 link = mount / "link"
 link.symlink_to(outside, target_is_directory=True)
 record = ["42", "2", "0:99", "/", str(mount), "rw", "-", "fuse.sshfs", "owned", "rw"]
-helper.mount_record = lambda path: list(record)
 opened, calls, results = [], [], []
 cancelled = threading.Event()
+mount_reads = 0
+visibility_failures = {
+    "mount-visibility-cancelled": "cancelled",
+    "owner-replaced-during-visibility": "location-changed",
+    "offline-during-visibility": "peer-offline",
+}
+
+
+def mount_record(path):
+    global mount_reads, reachable
+    mount_reads += 1
+    delay_first_probe = mode == "mount-visible-late" or mode in visibility_failures
+    if mode == "mount-never-visible" or (mount_reads == 1 and delay_first_probe):
+        if mode == "mount-visibility-cancelled":
+            cancelled.set()
+        elif mode == "owner-replaced-during-visibility":
+            change_owner(True)
+        elif mode == "offline-during-visibility":
+            reachable = False
+        raise helper.MountNotVisible(path)
+    return list(record)
+
+
+helper.mount_record = mount_record
 helper.launch_uri = lambda uri: opened.append(uri)
 paired, reachable, mounted = mode != "unpaired", mode != "offline", mode != "nonmount"
 shares = {str(root): "Shared storage"}
@@ -153,6 +176,7 @@ def run():
     error = None
     try:
         prepared = helper.execute({"peerId": PEER, "operation": "prepare"}, cancelled, started + 27)
+        assert mode not in visibility_failures, "Prepare accepted an invalidated mount"
         assert prepared["state"] == "prepared"
         locations = prepared["locations"]
         assert len(locations) == (2 if mode == "multiple" else 1)
@@ -197,6 +221,7 @@ def run():
         "timeout": "storage-timeout", "no-shares": "no-shares", "share-limit": "share-limit",
         "escape": "storage-unavailable", "symlink": "storage-unavailable", "nonmount": "storage-unavailable",
         "mount-failed": "mount-failed", "remote-error": "storage-unavailable",
+        "mount-never-visible": "storage-unavailable", **visibility_failures,
         "changed-advertisement": "location-changed", "changed-name": "location-changed",
         "stale-mount": "location-changed", "stale-root": "location-changed", "owner-changed": "location-changed",
         "offline-open": "peer-offline", "unpaired-open": "peer-unpaired", "unmounted-open": "storage-unavailable",
@@ -208,6 +233,10 @@ def run():
     passed = error == expected and (not opened if expected else len(opened) == 1)
     if mode == "timeout":
         passed = passed and 4.5 <= time.monotonic() - started < 6.5
+    if mode in ("mount-visible-late", "mount-never-visible") or mode in visibility_failures:
+        passed = passed and sum(call[2] == "mountAndWait" for call in calls) == 1
+    if mode == "mount-never-visible":
+        passed = passed and helper.MOUNT_VISIBILITY_SECONDS <= time.monotonic() - started < 2
     results.append({"passed": passed, "error": error, "mode": mode})
     GLib.idle_add(loop.quit)
 
