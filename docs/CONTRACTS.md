@@ -161,6 +161,8 @@ the size and all four identity fields; `name` is display metadata. Extra inspect
 object fields are ignored. Inspection uses at most 512 KiB input; QML also bounds
 the selection to 100 files/1 TiB. Errors are fixed values from
 `portal_files.py:main` and `recent_files.py`; raw diagnostics are never reflected.
+For a failed submission with the `source-changed` error, Activity prompts the
+user to choose the file again and shows the submission counts and delivery status.
 
 `portal_files.py submit` reads `peerId` and one inspected `file` through stdin.
 The helper rechecks file identity and holds an `O_NOFOLLOW` descriptor. It uses a

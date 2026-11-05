@@ -299,6 +299,17 @@ Each action shows its description and selected-device availability.
 If the Quick Share window does not appear after launch, check its tray icon.
 See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare#installation).
 
+## Review a saved screenshot
+
+Capture or annotate with Omarchy Screenshot and choose **Save**. Add **Review
+saved screenshot** in **Plus settings → Quick actions**. Select it in Devices to
+choose one saved `.png` file for the selected device. The desktop chooser
+suggests the screenshots folder when it exists. If you saved to a custom
+Omasnap output directory, navigate to that folder.
+Check the filename and recipient, then select **Send**. Cancel leaves the
+saved image in place and sends nothing. If Activity reports that the selected
+file changed, choose the screenshot again and review it before sending.
+
 ## Browse phone files
 
 In Devices, select **Browse phone files** in **Quick actions**. You can add the

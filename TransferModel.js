@@ -44,8 +44,10 @@ function status(operation, strings) {
     var evidence = strings.format("files.status.evidence", [strings.number(operation.accepted), strings.number(operation.count)])
     if (operation.state === "submission_failed") {
         var failure = strings.format("files.status.failed", [strings.fileCount(operation.failed)])
-        var prepare = operation.error === "source-preparation-failed" ? strings.t("files.couldNotPrepareAPrivateCopy") + " " : ""
-        return failure + " " + prepare + evidence
+        var detail = ""
+        if (operation.error === "source-preparation-failed") detail = strings.t("files.couldNotPrepareAPrivateCopy") + " "
+        else if (operation.error === "source-changed") detail = strings.t("files.aSelectedFileChangedChooseThe") + " "
+        return failure + " " + detail + evidence
     }
     if (operation.state === "cancelled_before_submit")
         return strings.format("files.status.cancelled", [strings.fileCount(operation.cancelled), evidence])

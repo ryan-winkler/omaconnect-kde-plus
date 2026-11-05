@@ -15,13 +15,16 @@ requests = []
 
 def method(connection, sender, path, interface, name, parameters, invocation):
     parent, title, options = parameters.unpack()
-    if options.get('multiple') is not True or options.get('directory') is not False or 'filters' in options:
-        invocation.return_dbus_error('org.test.InvalidOptions', 'Expected all-file multiselect')
+    screenshot = title == 'Choose a screenshot to review'
+    valid_mode = (options.get('multiple') is False and options.get('filters') == [('PNG', [(1, 'image/png')])]
+                  if screenshot else options.get('multiple') is True and 'filters' not in options)
+    if not valid_mode or options.get('directory') is not False:
+        invocation.return_dbus_error('org.test.InvalidOptions', 'Unexpected file chooser options')
         return
-    requests.append({'multiple': True, 'directory': False})
+    requests.append({'multiple': not screenshot, 'directory': False})
     handle = '/org/freedesktop/portal/desktop/request/' + sender[1:].replace('.', '_') + '/' + options['handle_token']
     invocation.return_value(GLib.Variant('(o)', (handle,)))
-    names = ['one', 'two'] if len(requests) == 1 else ['slow']
+    names = ['owned-shot.png'] if screenshot else (['one', 'two'] if len(requests) == 1 else ['slow'])
     uris = [(fixture / name).as_uri() for name in names]
     def respond():
         connection.emit_signal(sender, handle, 'org.freedesktop.portal.Request', 'Response', GLib.Variant('(ua{sv})', (0, {'uris': GLib.Variant('as', uris)})))

@@ -71,12 +71,12 @@ Item {
         // Calls without typed options keep the previous portal/review contract.
         var typed = options && typeof options.useDesktopFileChooser === "boolean"
             && typeof options.reviewFilesBeforeSend === "boolean"
-        chooserSubmits = !!typed && !options.reviewFilesBeforeSend
-        chooserUsesNativeMenu = !!typed && !options.useDesktopFileChooser
-        return launchChooser(chooserUsesNativeMenu)
+        var screenshotOnly = !!options && options.screenshotOnly === true
+        chooserSubmits = !screenshotOnly && !!typed && !options.reviewFilesBeforeSend
+        return launchChooser(!screenshotOnly && !!typed && !options.useDesktopFileChooser, screenshotOnly)
     }
 
-    function launchChooser(nativeMenu) {
+    function launchChooser(nativeMenu, screenshotOnly) {
         if (!draftTarget || operationBusy || fileTransferProcess.running || filePickerProcess.running || fileInspectProcess.running) return false
         selectionGeneration += 1
         chooserUsesNativeMenu = nativeMenu === true
@@ -85,9 +85,14 @@ Item {
         previewCandidates = []
         selectionState = "choosing"
         selectionError = ""
-        filePickerProcess.command = chooserUsesNativeMenu
-            ? ["python3", controller.scriptPath("scripts/portal_files.py"), "recent"]
-            : ["bash", controller.getPickerScriptPath(), Locale.Strings.t("files.pickerTitle")]
+        if (screenshotOnly) {
+            filePickerProcess.command = ["python3", controller.scriptPath("scripts/portal_files.py"),
+                                         "choose-screenshot", Locale.Strings.t("files.screenshotPickerTitle")]
+        } else {
+            filePickerProcess.command = chooserUsesNativeMenu
+                ? ["python3", controller.scriptPath("scripts/portal_files.py"), "recent"]
+                : ["bash", controller.getPickerScriptPath(), Locale.Strings.t("files.pickerTitle")]
+        }
         var recipient = draftTarget.peerName.slice(0, 80)
         filePickerProcess.payload = chooserUsesNativeMenu ? JSON.stringify({
             recipient: recipient,
