@@ -380,6 +380,14 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
 - **Remote commands:** Expand Remote commands in Devices. Commands run on the
   selected device. Add or edit them in that device’s KDE Connect Run commands settings.
 
+## Launch from the application menu
+
+The [optional launcher](INSTALL.md#optional-application-launcher) opens the
+existing Plus panel. Desktop action menus can also open **Send files** or
+**Activity**. If no device is ready, use **Back to devices** to choose or
+reconnect one. If Plus is disabled or absent from the bar, the entry reports
+that it could not open Plus.
+
 ## Send files and read activity
 
 1. Select a paired, reachable device. Expand **File sharing** in Devices, or open **Send**.

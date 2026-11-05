@@ -8,6 +8,8 @@ All notable changes are listed here. The format follows
 
 ### Added
 
+- Optional desktop entry for the Plus panel, Send files and Activity.
+
 - File-type icons in the recent-file menu and an Image previews entry for the
   image preview window with the recipient, filename, Back and Cancel.
   Browsing never sends. Explicit Send image or Review image follows the captured
