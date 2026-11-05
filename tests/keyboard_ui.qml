@@ -278,6 +278,29 @@ ShellRoot {
                     test.phase = 29
                 }
             } else if (test.phase === 29) {
+                service.discoveryState="ready"
+                service.devices=[{id:"B",name:"Fixture phone",paired:true,reachable:true,capabilities:{ping:true,text:true,file:true}}]
+                service.selectDevice("B")
+                for (var mode of ["ping", "text"]) {
+                    panel.activeComposer=mode
+                    panel.draftPing="Retained ping";panel.draftText="Retained text"
+                    panel.composerError="Retained feedback"
+                    for (var state of ["closed", "editing", "view", "inactive"]) {
+                        if(state==="closed") panel.close(); else panel.open()
+                        panel.editingLayout=state==="editing"
+                        panel.currentView=state==="view" ? "Activity" : "Devices"
+                        panel.activeComposer=state==="inactive" ? "none" : mode
+                        var result=mode==="ping" ? panel.submitPing() : panel.submitText()
+                        if(!test.check(result===false && panel.draftPing==="Retained ping" && panel.draftText==="Retained text" && panel.composerError==="Retained feedback",mode+" submission refuses "+state+" owner without changing retained draft or feedback"))return
+                    }
+                }
+                panel.activeComposer="none";panel.editingLayout=false;panel.open()
+                service.selectDevice("B")
+                for (var activeMode of ["ping", "text"]) {
+                    panel.activeComposer=activeMode
+                    if(!test.check(panel.composerCanSubmit(activeMode),activeMode+" current visible composer remains ready"))return
+                }
+                panel.activeComposer="none"
                 console.log("KEYBOARD_PASS " + JSON.stringify(test.outcomes))
                 console.log("NATIVE_PASS keyboard")
                 Qt.quit()

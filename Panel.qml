@@ -723,7 +723,15 @@ Panel {
         composerError = ""
     }
 
+    function composerCanSubmit(type) {
+        return opened && currentView === "Devices" && !editingLayout && activeComposer === type
+            && sectionBodyVisible("actions") && !!composerSection && composerSection.visible
+            && !!service && !!device && device.paired && device.reachable
+            && !!device.capabilities && !!device.capabilities[type]
+    }
+
     function submitPing() {
+        if (!composerCanSubmit("ping")) return false
         var val = draftPing.trim()
         if (!val) {
             composerError = "Message cannot be empty"
@@ -749,6 +757,7 @@ Panel {
     }
 
     function submitText() {
+        if (!composerCanSubmit("text")) return false
         var val = draftText.trim()
         if (!val) {
             composerError = "Message cannot be empty"

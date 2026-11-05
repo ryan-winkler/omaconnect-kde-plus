@@ -115,6 +115,13 @@ ShellRoot {
                 if(!test.check(test.named("Change selected device icon and alias").Accessible.role===Accessible.Button,"settings actions expose a native button role"))return
                 if(!test.check(sectionCatalogModel.entries.length===9 && test.named("Edit Devices layout").visible,"Appearance routes to actual Devices layout editing"))return
                 var appearanceRoute=test.named("Settings: Appearance"),quickRoute=test.named("Settings: Quick actions")
+                var navigationHost=quickRoute.parent
+                navigationHost.visible=false;quickRoute.Accessible.toggleAction();quickRoute.Accessible.pressAction()
+                if(!test.check(settings.currentPage==="Appearance","hidden navigation ancestor blocks retained radio Toggle and Press"))return
+                navigationHost.visible=true;settings.closeSettings()
+                quickRoute.Accessible.toggleAction();quickRoute.Accessible.pressAction()
+                if(!test.check(settings.currentPage==="Appearance" && !settings.visible,"closed Settings window blocks retained radio Toggle and Press"))return
+                settings.openSettings("Appearance")
                 quickRoute.Accessible.toggleAction()
                 if(!test.check(settings.currentPage==="Quick actions" && quickRoute.Accessible.role===Accessible.RadioButton
                     && quickRoute.Accessible.checked && !appearanceRoute.Accessible.checked && test.preference("taskNotificationsEnabled").visible,

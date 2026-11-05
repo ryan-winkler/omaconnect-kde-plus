@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import Quickshell
 import "plugin/components" as Components
 
@@ -30,7 +31,9 @@ ShellRoot {
         property var settings: ({})
         function getSetting(key, fallback) { return key in settings ? settings[key] : fallback }
     }
-    Item {
+    Window {
+        id: preview
+        visible: true
         width: 400; height: 700
         Components.PreferenceControls { id: preferences; width: 220; panel: fakePanel; preferences: [{key:"showRemoteCommands",label:"A long settings label that must not hide state",defaultValue:false}] }
         Components.NetworkOptions { id: options; width: parent.width; panel: fakePanel; configuration: true }
@@ -68,10 +71,23 @@ ShellRoot {
             } else if (test.phase === 4) {
                 if (!test.check(options.bthEnabled && !options.tailscaleEnabled && !options.wireguardEnabled, "provider preferences remain independent")) return
                 if (!test.check(test.find(options, "Open official MikroTik Back to Home help in your browser") !== null, "official help is discoverable")) return
-                test.find(preferences,"A long settings label that must not hide state").Accessible.toggleAction()
+                var preference=test.find(preferences,"A long settings label that must not hide state")
+                var messageBefore=preferences.message
+                preference.enabled=false;preference.Accessible.toggleAction();preference.Accessible.pressAction()
+                if(!test.check(!preferences.busy && preferences.message===messageBefore,"disabled preference refuses Toggle and Press"))return
+                preference.enabled=true;preferences.visible=false
+                preference.Accessible.toggleAction();preference.Accessible.pressAction()
+                if(!test.check(!preferences.busy && preferences.message===messageBefore,"hidden ancestor prevents retained preference writes"))return
+                preferences.visible=true;preview.visible=false
+                preference.Accessible.toggleAction();preference.Accessible.pressAction()
+                if(!test.check(!preferences.busy && preferences.message===messageBefore,"hidden window prevents retained preference writes"))return
+                preview.visible=true;preference.Accessible.toggleAction()
+                preview.visible=false
                 test.phase = 5
             } else if (test.phase === 5 && !preferences.busy && preferences.message.indexOf("Setting saved.") === 0) {
                 if (!test.check(!test.find(preferences,"A long settings label that must not hide state").checked,"AT toggle waits for saved config readback")) return
+                if(!test.check(!preview.visible && preferences.lastSaveOk,"accepted preference save completes after its window is hidden"))return
+                preview.visible=true
                 fakePanel.settings = ({networkBthEnabled:true,showRemoteCommands:true})
                 test.phase=6
             } else if (test.phase === 6) {

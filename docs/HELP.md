@@ -253,6 +253,12 @@ or `Space` to activate. Press `r` to refresh, `p` to pair the selected device,
 moves into the normal control order. The View menu supports Enter or Space to
 open, Up or Down to choose, and Enter or Space to select. Escape closes the menu
 and returns focus to its trigger. Choosing Devices returns to device navigation.
+Active Plus buttons expose named accessibility actions. The guarded Settings
+buttons, preference toggles, composer actions and Refresh control reject
+retained accessibility actions while hidden. Guarded Settings buttons also
+ignore Return and Space after their view hides. Closing the popup,
+changing views or editing layout blocks composer submission and keeps unsent
+drafts. Collapsing Remote commands returns Refresh focus to its section header.
 
 ## Quick actions
 

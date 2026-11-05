@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Window
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -54,8 +55,9 @@ Column {
                 checked: root.valueFor(row.modelData) === true
                 foreground: Commons.Color.popups.text
                 Accessible.role: Accessible.CheckBox
-                Accessible.onToggleAction: if (preferenceToggle.enabled) preferenceToggle.clicked()
-                Accessible.onPressAction: if (preferenceToggle.enabled) preferenceToggle.clicked()
+                readonly property bool actionAvailable: enabled && visible && !!Window.window && Window.window.visible
+                Accessible.onToggleAction: if (preferenceToggle.actionAvailable) preferenceToggle.clicked()
+                Accessible.onPressAction: if (preferenceToggle.actionAvailable) preferenceToggle.clicked()
                 Accessible.name: row.modelData.accessibleName || row.modelData.label
                 Accessible.checkable: true
                 Accessible.checked: checked
