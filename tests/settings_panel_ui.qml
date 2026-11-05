@@ -114,6 +114,18 @@ ShellRoot {
                 if(!test.check(test.named("Settings: Appearance").activeFocus,"opening settings focuses domain navigation"))return
                 if(!test.check(test.named("Change selected device icon and alias").Accessible.role===Accessible.Button,"settings actions expose a native button role"))return
                 if(!test.check(sectionCatalogModel.entries.length===9 && test.named("Edit Devices layout").visible,"Appearance routes to actual Devices layout editing"))return
+                var appearanceRoute=test.named("Settings: Appearance"),quickRoute=test.named("Settings: Quick actions")
+                quickRoute.Accessible.toggleAction()
+                if(!test.check(settings.currentPage==="Quick actions" && quickRoute.Accessible.role===Accessible.RadioButton
+                    && quickRoute.Accessible.checked && !appearanceRoute.Accessible.checked && test.preference("taskNotificationsEnabled").visible,
+                    "accessible radio Toggle selects Quick actions and its visible content"))return
+                quickRoute.Accessible.toggleAction()
+                if(!test.check(settings.currentPage==="Quick actions" && quickRoute.Accessible.checked,
+                    "toggling the selected radio keeps its page selected"))return
+                appearanceRoute.Accessible.toggleAction();quickRoute.enabled=false;quickRoute.Accessible.toggleAction()
+                if(!test.check(settings.currentPage==="Appearance" && appearanceRoute.Accessible.checked && !quickRoute.Accessible.checked,
+                    "disabled radio Toggle cannot change the selected page"))return
+                quickRoute.enabled=true
                 test.named("Settings: Connections").clicked();test.phase=2
             } else if(test.phase===2) {
                 if(!test.check(settings.currentPage==="Connections" && test.named("Show MikroTik Back to Home")!==null,"domain navigation exposes connection preferences"))return
