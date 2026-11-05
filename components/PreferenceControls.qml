@@ -11,6 +11,7 @@ Column {
     required property var panel
     property var preferences: []
     property string message: ""
+    property bool lastSaveOk: false
     property bool submissionPending: false
     readonly property bool busy: submissionPending || saver.running
     readonly property string helperPath: decodeURIComponent(Qt.resolvedUrl("../scripts/network_preferences.py").toString().replace(/^file:\/\//, ""))
@@ -22,6 +23,7 @@ Column {
             message = "A setting is already saving. This change was not submitted. Wait for its result, then try again."
             return false
         }
+        lastSaveOk = false
         submissionPending = true
         message = "Saving setting…"
         saver.payload = JSON.stringify(request)
@@ -142,8 +144,10 @@ Column {
         onExited: function(code) {
             var result
             try { result = !oversized ? JSON.parse(reply.text) : null } catch (_) { result = null }
-            root.message = result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length < 512
-                && (code === 0) === result.ok ? result.message : "Setting was not confirmed. Check the saved value and try again."
+            var valid = result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length < 512
+                && (code === 0) === result.ok
+            root.lastSaveOk = !!valid && result.ok
+            root.message = valid ? result.message : "Setting was not confirmed. Check the saved value and try again."
             stdinEnabled = true
             root.submissionPending = false
         }

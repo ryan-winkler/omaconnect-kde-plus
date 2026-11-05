@@ -17,7 +17,7 @@ var entries = [
     {id:"media-play-pause", group:"Media", pluginId:"kdeconnect_mprisremote", label:"Play / Pause", description:"Request play or pause on the selected device's active player", icon:"󰐎", capability:"media", requiresMedia:true},
     {id:"media-next", group:"Media", pluginId:"kdeconnect_mprisremote", label:"Next track", description:"Request the next track on the selected device's active player", icon:"󰒭", capability:"media", requiresMedia:true},
     {id:"commands", group:"Device", pluginId:"kdeconnect_remotecommands", label:"Remote commands", description:"Open the command list; choose a configured command before running it", icon:"󰆍", capability:"commands", navigation:true},
-    {id:"browse-files", group:"Native KDE Connect", pluginId:"kdeconnect_sftp", label:"Browse files in KDE", description:"Open KDE Connect, then choose Browse files. The other device must permit file access", icon:"󰉋", capability:"browse", handoff:true, navigation:true},
+    {id:"browse-files", group:"Device", pluginId:"kdeconnect_sftp", label:"Browse phone files", description:"Open shared phone folders in the default file manager. KDE Connect owns file permissions and mounting", icon:"󰉋", capability:"browse", navigation:true},
     {id:"native-notifications", group:"Native KDE Connect", pluginId:"kdeconnect_notifications", pluginIds:["kdeconnect_notifications","kdeconnect_sendnotifications","kdeconnect_replynotifications"], label:"Notifications in KDE", description:"Open native KDE Connect to inspect notification modules and permissions", icon:"󰂚", handoff:true, navigation:true},
     {id:"native-volume", group:"Native KDE Connect", pluginId:"kdeconnect_remotesystemvolume", pluginIds:["kdeconnect_remotesystemvolume","kdeconnect_systemvolume"], label:"Volume in KDE", description:"Open native KDE Connect to inspect reported volume features and permissions", icon:"󰕾", handoff:true, navigation:true},
     {id:"native-input", group:"Native KDE Connect", pluginId:"kdeconnect_remotekeyboard", pluginIds:["kdeconnect_remotekeyboard","kdeconnect_mousepad","kdeconnect_presenter","kdeconnect_shareinputdevices"], label:"Input & presentation in KDE", description:"Open native KDE Connect for input or presentation features. Available directions depend on the reported module", icon:"󰌌", handoff:true, navigation:true},
@@ -71,6 +71,7 @@ function ready(id,device,service) {
     if (id === "plus-settings") return true;
     if (service === null) return false;
     if (id === "quick-share") return !!service.quickShareAvailable && !service.quickShareOpening;
+    if (id === "browse-files" && service && service.phoneFilesBusy) return false;
     if (!locallyActive(row,device)) return false;
     if (id === "external-monitor" && (!device.virtualMonitor || !device.virtualMonitor.known || (!device.virtualMonitor.active && !device.virtualMonitor.available))) return false;
     if (row.requiresMedia && (!hasMedia(service) || (service && service.mediaLoading))) return false;
@@ -89,6 +90,8 @@ function availabilityText(id,device,service) {
         return "This device does not report support. Other devices may support it.";
     if (!locallyActive(row,device))
         return row.label + " is not active locally. Check native KDE Connect Plugin Settings.";
+    if (id === "browse-files") return service && service.phoneFilesBusy ? "Phone storage is busy. Wait or cancel Browse."
+        : "Open the phone's shared folders. Enable Filesystem expose in the phone's KDE Connect settings.";
     if (id === "external-monitor" && (!device.virtualMonitor || !device.virtualMonitor.known)) return "Native monitor state is unavailable. Open native KDE Connect and check Virtual Monitor.";
     if (id === "external-monitor" && !device.virtualMonitor.active && !device.virtualMonitor.available) return "Native virtual monitor is unavailable on this computer. Check KRDP in native KDE Connect.";
     if (row.requiresMedia && (!hasMedia(service) || (service && service.mediaLoading)))

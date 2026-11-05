@@ -51,7 +51,7 @@ function fresh(){
   selectionGeneration:0,chooserSubmits:false,previewCandidates:[],operationSequence:0,fileTransferGeneration:0,operations:[],activeOperation:null,
   submissionQueue:[],submissionIndex:0,cancellationRequested:false,fileTransferMessage:'',fileTransferError:'',
   fileTransferProcess:process(),filePickerProcess:process(),fileInspectProcess:process(),
-  selectionCancellationTimer:{restart(){},stop(){}},cancellationTimer:{restart(){this.started=true}},TransferModel:model,Qt:{callLater(fn){later.push(fn)}},
+  selectionCancellationTimer:{restart(){},stop(){}},cancellationTimer:{restart(){this.started=true}},operationFinished(){},TransferModel:model,Qt:{callLater(fn){later.push(fn)}},
   devices:[{id:'A',name:'Original phone',paired:true,reachable:true,capabilities:{file:true}},
            {id:'B',name:'Other phone',paired:true,reachable:true,capabilities:{file:true}}]};
  ctx.deviceById=id=>ctx.devices.find(d=>d.id===id);ctx.canAct=id=>{const d=ctx.deviceById(id);return !!d&&d.paired&&d.reachable};

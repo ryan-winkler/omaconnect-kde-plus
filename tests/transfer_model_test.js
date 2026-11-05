@@ -40,6 +40,7 @@ const context = {
  mediaState:{}, mediaLoading:false, mediaRefreshPending:false,
  mediaStatusProcess:{running:false},mediaActionProcess:{running:false},mediaPlayerProcess:{running:false},actionProcess:{running:false},commandsProcess:{running:false},
  fileTransferProcess:{running:true},filePickerProcess:{running:false},
+ operationFinished:()=>{}, // QML signal; exact-once behavior has its own notice test.
  deviceById:id => ({id, paired:false}), emptyMediaState:()=>({})
 };
 vm.createContext(context);

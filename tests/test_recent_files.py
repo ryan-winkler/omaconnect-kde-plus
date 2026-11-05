@@ -306,7 +306,11 @@ class RecentFiles(unittest.TestCase):
         pid = int(child_pid.read_text())
         for _ in range(100):
             status = Path(f'/proc/{pid}/stat')
-            if not status.exists() or status.read_text().split()[2] == 'Z':
+            try:
+                state = status.read_text().split()[2]
+            except FileNotFoundError:
+                break  # The descendant can exit between the probe and read.
+            if state == 'Z':
                 break
             time.sleep(.01)
         else:

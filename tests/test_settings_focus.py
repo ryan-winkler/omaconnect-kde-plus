@@ -53,7 +53,7 @@ class SettingsFocusTests(unittest.TestCase):
         self.run_domain(2, 'Quick actions', 'quickActionsOrder')
 
     def test_device_features_tab_and_backtab_reveal_without_moving_focus(self):
-        self.run_domain(3, 'Device features', 'showRemoteCommands')
+        self.run_domain(3, 'Device features', 'commandsStartExpanded')
 
 
 if __name__ == '__main__':

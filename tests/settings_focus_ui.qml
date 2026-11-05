@@ -80,13 +80,13 @@ ShellRoot {
                 {key:"showBarBattery", name:"Show battery beside the bar icon"},
                 {name:"Show Other WireGuard profiles"},
                 {name:"Use default actions"},
-                {key:"showRemoteCommands", name:"Show Remote commands"}
+                {key:"commandsStartExpanded", name:"Start Remote commands expanded"}
             ]
             var target=activationTargets[test.page]
             var matches=focus && (target.key ? focus.objectName==="preference-"+target.key : focus.Accessible.name===target.name)
             if(!test.activated && matches) {
                 if(focus.Accessible.name!==target.name) {test.fail("full semantic AT name missing for "+target.key);return}
-                if(target.key==="showRemoteCommands" && focus.label!=="Show in Devices") {test.fail("compact section checkbox lost its visible label");return}
+                if(target.key==="commandsStartExpanded" && focus.label!=="Start expanded") {test.fail("compact section checkbox lost its visible label");return}
                 test.activated=true
                 settings.contentItem.grabToImage(function(result) {result.saveToFile(Qt.resolvedUrl("focus-"+test.page+".png").toString().replace("file://",""))})
                 events.keyClick(Qt.Key_Space,Qt.NoModifier,1)

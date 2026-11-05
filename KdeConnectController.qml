@@ -45,6 +45,7 @@ Item {
     property alias operations: fileController.operations
     property alias activeOperation: fileController.activeOperation
     property alias operationBusy: fileController.operationBusy
+    signal operationFinished(var operation)
     property alias submissionQueue: fileController.submissionQueue
     property alias submissionIndex: fileController.submissionIndex
     property alias operationSequence: fileController.operationSequence
@@ -112,7 +113,11 @@ Item {
         }
     }
 
-    FileTransferController { id: fileController; controller: root }
+    FileTransferController {
+        id: fileController
+        controller: root
+        onOperationFinished: function(operation) { root.operationFinished(operation) }
+    }
 
     // File state and processes live in controller/FileTransferController.qml.
     function startFileSelection(id, options) { return fileController.chooseFiles(id, options) }

@@ -1,12 +1,43 @@
 import QtQuick
 import Quickshell.Io
 import "bridge" as OmaconnectBridge
+import "controller"
 
 Item {
     id: root
 
     property bool panelOpened: false
+    property var taskNoticeVisibleSurfaces: []
+    readonly property bool sendWindowOpened: taskNoticeVisibleSurfaces.some(function(entry) { return entry.kind === "send" })
+    function setTaskNoticeSurfaceVisible(owner, kind, visible) {
+        if (!owner || (kind !== "popup" && kind !== "send" && kind !== "preview")) return
+        var surfaces = taskNoticeVisibleSurfaces.filter(function(entry) { return entry.owner !== owner })
+        if (visible === true) surfaces.push({owner: owner, kind: kind})
+        taskNoticeVisibleSurfaces = surfaces
+    }
+    property bool taskNotificationsEnabled: true
+    property bool taskNotificationDeviceName: false
+    readonly property string taskNotificationMessage: taskNotices.message
+    TaskNotificationController {
+        id: taskNotices
+        enabled: root.taskNotificationsEnabled
+        includeDeviceName: root.taskNotificationDeviceName
+        panelOpened: root.taskNoticeVisibleSurfaces.length > 0
+        sendWindowOpened: root.sendWindowOpened
+    }
     property var appearance: appearanceStore
+    property alias phoneFilesBusy: phoneFiles.busy
+    property alias phoneFilesState: phoneFiles.state
+    property alias phoneFilesMessage: phoneFiles.message
+    property alias phoneFileLocations: phoneFiles.locations
+    function browsePhoneFiles(id) { return phoneFiles.browse(id || controller.selectedDeviceId) }
+    function openPhoneFileLocation(index) { return phoneFiles.choose(index) }
+    function cancelPhoneFiles(silent) { phoneFiles.cancel(silent === undefined ? true : silent) }
+    PhoneFilesController {
+        id: phoneFiles
+        selectedPeerId: controller.selectedDeviceId
+        device: controller.selectedDevice
+    }
     property var discovery: discoveryController
     property string ownerPanelMessage: ""
     AppearanceStore { id: appearanceStore }
@@ -160,6 +191,7 @@ Item {
 
     KdeConnectController {
         id: controller
+        onOperationFinished: function(operation) { taskNotices.notify(operation) }
     }
 
     property alias daemonAvailable: controller.daemonAvailable

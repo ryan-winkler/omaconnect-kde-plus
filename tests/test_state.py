@@ -2201,6 +2201,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertNotIn("configureFirewall", device_section)
 
   def test_media_player_qml_contracts_and_components(self):
+    """Check media controller wiring and catalogue-backed visibility without invoking providers."""
     controller_source = controller_layer_source()
     self.assertIn("function fetchMediaStatus(id)", controller_source)
     self.assertIn("function requestPlayerList(id)", controller_source)
@@ -2236,7 +2237,9 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("mediaPlayerVisible", panel_source)
     self.assertIn("mediaExpanded", panel_source)
     self.assertIn("toggleMediaExpanded", panel_source)
-    self.assertIn("showMediaPlayer", panel_source)
+    media_entry = next(row for row in json.loads((ROOT / "PanelSections.json").read_text()) if row["id"] == "media")
+    self.assertEqual(media_entry["visibilityKey"], "showMediaPlayer")
+    self.assertIn('sectionPolicy("media")', panel_source)
     self.assertIn("MediaPlayerSection", panel_source)
 
     media_section = (ROOT / "components" / "MediaPlayerSection.qml").read_text()

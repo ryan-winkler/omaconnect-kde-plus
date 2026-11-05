@@ -1,9 +1,17 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
+import qs.Commons as Commons
 import "plugin/components" as Components
 
 ShellRoot {
     id: test
+    // The native language command writes from another process; only this private HOME is reachable.
+    Process {
+        id: languageWriter
+        property string language: "en"
+        command: ["python3", "-c", "import os,pathlib,sys; pathlib.Path(os.environ['XDG_CONFIG_HOME'],'omarchy','language').write_text(sys.argv[1]+chr(10))", language]
+    }
     property int phase: 0
     property int ticks: 0
     property int returns: 0
@@ -29,10 +37,11 @@ ShellRoot {
         property int selectionBytes: 0
         property var operations: []
         property var dropCalls: []
+        property var chooseCalls: []
         function stageDroppedFiles(id, urls) { dropCalls=dropCalls.concat([{id:id,urls:urls}]);return true }
         function submitSelection() { test.check(false,"no implicit send") }
         function cancelDraft() { test.check(false,"window close does not cancel draft") }
-        function chooseFiles(id) {}
+        function chooseFiles(id) { chooseCalls=chooseCalls.concat([id]);return true }
         function clearOperations() {}
         function cancelOperation() {}
     }
@@ -51,6 +60,17 @@ ShellRoot {
                 send.openSend();test.phase=1
             }else if(test.phase===1 && send.visible){
                 if(!test.check(send.minimumWidth===480 && send.minimumHeight===360,"send window is resizable with usable minimum bounds"))return
+                var choose=test.find(send.contentItem,"send-window-choose-files")
+                var back=test.find(send.contentItem,"send-window-back-to-devices")
+                if(!test.check(choose && back && choose.Accessible.role===Accessible.Button && back.Accessible.role===Accessible.Button
+                    && choose.Accessible.name==="Choose files" && back.Accessible.name==="Back to devices",
+                    "both persistent window controls expose named accessible button roles"))return
+                choose.Accessible.pressAction()
+                if(!test.check(fakeService.chooseCalls.length===1 && fakeService.chooseCalls[0]==="A",
+                    "accessible Choose files dispatches once to the selected fake peer"))return
+                fakeService.operationBusy=true;choose.Accessible.pressAction()
+                if(!test.check(fakeService.chooseCalls.length===1,"disabled accessible Choose files cannot dispatch"))return
+                fakeService.operationBusy=false
                 var zone=test.find(send.contentItem,"send-window-drop-zone")
                 var drop={hasUrls:true,urls:["file:///tmp/a"],supportedActions:Qt.CopyAction|Qt.MoveAction,accepted:false,action:Qt.IgnoreAction,accept:function(action){this.action=action;this.accepted=true}}
                 if(!test.check(zone && zone.acceptFiles(drop) && drop.action===Qt.CopyAction && fakeService.dropCalls[0].id==="A","persistent send window reuses copy-only review drop zone"))return
@@ -66,9 +86,16 @@ ShellRoot {
                 if(!test.check(fakeService.draftTarget.peerId==="A" && fakeService.selection.length===1,"closing window preserves service draft"))return
                 send.openSend();test.phase=4
             }else if(test.phase===4 && send.visible){
-                send.returnToDevices();test.phase=5
+                test.find(send.contentItem,"send-window-back-to-devices").Accessible.pressAction();test.phase=5
             }else if(test.phase===5 && !send.visible){
                 if(!test.check(test.returns===1 && fakeService.draftTarget.peerId==="A","back to devices returns once without cancel or send"))return
+                if (!test.check(!send.contentItem.LayoutMirroring.enabled, "managed window starts left to right")) return
+                languageWriter.language="ar"; languageWriter.running=true; test.phase=9000
+            } else if (test.phase===9000 && Commons.I18n.rightToLeft && !languageWriter.running) {
+                if (!test.check(send.contentItem.LayoutMirroring.enabled && send.contentItem.LayoutMirroring.childrenInherit, "managed window follows live native RTL")) return
+                languageWriter.language="en"; languageWriter.running=true; test.phase=9001
+            } else if (test.phase===9001 && !Commons.I18n.rightToLeft && !languageWriter.running) {
+                if (!test.check(!send.contentItem.LayoutMirroring.enabled, "managed window returns live to LTR")) return
                 console.log("SEND_WINDOW_PASS "+JSON.stringify(test.checks));console.log("NATIVE_PASS send window");Qt.quit()
             }
         }

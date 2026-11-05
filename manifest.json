@@ -4,7 +4,7 @@
   "name": "Omaconnect KDE Plus",
   "version": "0.1.5",
   "author": "Ryan Winkler; based on Jitendra Dara’s OmaConnect",
-  "description": "KDE Connect in the Omarchy bar: device actions, file sharing, media controls, custom icons and optional home-access integrations.",
+  "description": "KDE Connect in the Omarchy bar: file sharing, phone folders, media controls, editable layout, custom icons and optional home-access integrations.",
   "license": "MIT",
   "homepage": "https://github.com/ryan-winkler/omaconnect-kde-plus",
   "repository": "https://github.com/ryan-winkler/omaconnect-kde-plus",
@@ -24,6 +24,16 @@
     "defaultSection": "right"
   },
   "settings": {
+    "taskNotificationsEnabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show native desktop notices for final file request outcomes while the Plus popup and Send window are closed. Delivery remains unknown."
+    },
+    "taskNotificationDeviceName": {
+      "type": "boolean",
+      "default": false,
+      "description": "Include the reviewed device name in task notices and desktop notification history. Off excludes device names."
+    },
     "useDesktopFileChooser": {
       "type": "boolean",
       "default": false,
@@ -223,6 +233,11 @@
       "type": "boolean",
       "default": false,
       "description": "Start Native KDE Connect expanded. This changes the daily layout only."
+    },
+    "sectionVisibility": {
+      "type": "string",
+      "default": "{}",
+      "description": "Visibility rules set with Edit layout in Devices"
     },
     "sectionOrder": {
       "type": "string",

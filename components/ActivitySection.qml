@@ -10,6 +10,17 @@ Column {
     required property var service
     spacing: Style.space(8)
     Text {
+        objectName: "task-notification-status"
+        width: parent.width
+        visible: text !== ""
+        text: root.service && "taskNotificationMessage" in root.service ? root.service.taskNotificationMessage : ""
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: Commons.Color.popups.text
+        font.pixelSize: Style.font.bodySmall
+        Accessible.name: text
+    }
+    Text {
         textFormat: Text.PlainText
         width: parent.width
         text: "KDE submission activity"

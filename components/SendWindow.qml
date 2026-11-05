@@ -10,6 +10,8 @@ import qs.Ui as Kit
 // All draft/transfer state belongs to the existing service, not this window.
 Window {
     id: root
+    LayoutMirroring.enabled: Commons.I18n.rightToLeft
+    LayoutMirroring.childrenInherit: true
     required property var service
     property var device: null
     property var chooserOptions: ({useDesktopFileChooser: false, reviewFilesBeforeSend: false})
@@ -30,6 +32,18 @@ Window {
     minimumHeight: 360
     color: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     visible: false
+    property var noticeSurfaceService: null
+    function syncTaskNoticeSurface() {
+        if (noticeSurfaceService && noticeSurfaceService !== service && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
+            noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "send", false)
+        noticeSurfaceService = service
+        if (service && typeof service.setTaskNoticeSurfaceVisible === "function")
+            service.setTaskNoticeSurfaceVisible(root, "send", visible)
+    }
+    onServiceChanged: syncTaskNoticeSurface()
+    onVisibleChanged: syncTaskNoticeSurface()
+    Component.onDestruction: if (noticeSurfaceService && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
+        noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "send", false)
 
     function openSend() { show(); raise(); requestActivate() }
     function chooseFiles() {
@@ -71,14 +85,16 @@ Window {
             id: actions
             width: parent.width
             spacing: Style.space(8)
-            Kit.Button {
+            SettingsButton {
+                objectName: "send-window-back-to-devices"
                 text: "Back to devices"
                 Accessible.name: text
                 focusable: true
                 foreground: Commons.Color.popups.text
                 onClicked: root.returnToDevices()
             }
-            Kit.Button {
+            SettingsButton {
+                objectName: "send-window-choose-files"
                 text: "Choose files"
                 Accessible.name: text
                 focusable: true

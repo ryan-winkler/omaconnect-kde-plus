@@ -11,6 +11,7 @@ import qs.Ui
 import "./components"
 import "bridge" as OmaconnectBridge
 import "ActionCatalog.js" as Actions
+import "SectionOrder.js" as SectionOrder
 
 Panel {
     id: root
@@ -21,18 +22,40 @@ Panel {
     property var anchorItem: hostWidget && hostWidget.button ? hostWidget.button : null
     property var hostWidget: null
     readonly property var barIdentity: hostWidget || root
-    readonly property Item focusTarget: keyCatcher
+    readonly property Item focusTarget: editingLayout ? editLayoutButton : keyCatcher
 
     // hostWidget.service already carries the bridge fallback (see
     // BarWidget.qml); the bridge here covers standalone instantiation with
     // no host widget. See bridge/Bridge.qml.
     readonly property var service: hostWidget && hostWidget.service ? hostWidget.service : (bar && bar.shell && typeof bar.shell.serviceFor === "function" ? (bar.shell.serviceFor("omaconnect.plus") || OmaconnectBridge.Bridge.service) : OmaconnectBridge.Bridge.service)
+    property var noticeSurfaceService: null
+    function syncTaskNoticeSurface() {
+        if (noticeSurfaceService && noticeSurfaceService !== service && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
+            noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "popup", false)
+        noticeSurfaceService = service
+        if (service && typeof service.setTaskNoticeSurfaceVisible === "function")
+            service.setTaskNoticeSurfaceVisible(root, "popup", opened)
+    }
+    onServiceChanged: syncTaskNoticeSurface()
+    Component.onDestruction: {
+        if (noticeSurfaceService && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
+            noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "popup", false)
+        releasePreview()
+    }
     readonly property var device: service ? service.selectedDevice : null
     property int previewGeneration: -1
     readonly property bool ownsPreview: !!service && previewGeneration === service.selectionGeneration
     readonly property string deviceName: service ? service.displayName(device) : "KDE Connect"
     readonly property var incomingRequest: service ? service.incomingPairRequest : null
     readonly property var sectionCatalog: sectionCatalogModel
+    property bool editingLayout: false
+    property var layoutPending: null
+    property bool layoutReadbackTimedOut: false
+    property string layoutGuardMessage: ""
+    property string layoutFeedbackSectionId: ""
+    readonly property bool layoutSaveBusy: !!layoutPending || layoutSaver.busy
+    readonly property string layoutMessage: layoutGuardMessage || layoutSaver.message
+    readonly property var sectionVisibility: SectionOrder.parseVisibility(getSetting("sectionVisibility", "{}"), sectionCatalogModel.entries)
     property bool deviceDetailsExpanded: getSetting("devicesStartExpanded", true)
     property bool actionsExpanded: getSetting("actionsStartExpanded", true)
     property bool inlineSendExpanded: getSetting("inlineSendStartExpanded", false)
@@ -68,21 +91,118 @@ Panel {
     }
     function sectionFlag(id) {
         var entry = sectionCatalogModel.entry(id)
-        // Missing metadata must not reveal optional controls or start providers.
         if (!entry) return id === "devices"
         if (!entry.visibilityKey) return true
         var value = getSetting(entry.visibilityKey, entry.defaultVisible)
         return typeof value === "boolean" ? value : entry.defaultVisible
     }
+    function sectionPolicy(id) {
+        return SectionOrder.policy(sectionCatalogModel.entry(id), sectionVisibility, sectionFlag(id))
+    }
+    function sectionAvailability(id) {
+        if (id === "devices") return "available"
+        if (!sectionCatalogModel.entry(id)) return "checking"
+        if (id === "connections") return networkOptions.tailscaleEnabled || networkOptions.bthEnabled || networkOptions.wireguardEnabled ? "available" : "unavailable"
+        if (!service) return "checking"
+        if (id === "syncthing") return !service.appearance || !service.appearance.ready ? "checking" : device ? "available" : "unavailable"
+        if (id === "addresses") return service.customAddressesReady ? "available" : "checking"
+        if (id === "actions" && availableActions.some(function(id) { return Actions.entry(id).scope === "global" })) return "available"
+        if (service.scanning || ["starting", "checking"].indexOf(service.discoveryState) >= 0) return "checking"
+        if (service.discoveryState !== "ready") return "unavailable"
+        if (id === "actions") return availableActions.length > 0 ? "available" : "unavailable"
+        if (!device || !device.paired) return "unavailable"
+        if (id === "native") return "available"
+        if (!device.reachable) return "unavailable"
+        var capability = id === "drop" ? "file" : id === "media" ? "media" : id === "commands" ? "commands" : ""
+        if (id === "drop" && Actions.compatible("browse-files", device)) return "available"
+        if (!device.capabilities || typeof device.capabilities[capability] !== "boolean") return "checking"
+        return device.capabilities[capability] ? "available" : "unavailable"
+    }
+    function sectionAvailabilityText(id) {
+        var state = sectionAvailability(id)
+        if (state === "checking") return "Checking availability. Waiting for current data."
+        if (id === "connections") return state === "available" ? "Available: at least one VPN tool is enabled in Plus settings. This does not report a VPN connection." : "Unavailable: no VPN tool is enabled in Plus settings."
+        if (id === "syncthing") return state === "available" ? "Available: local identity notes can be edited for this device. No Syncthing status check is needed." : "Unavailable: select a device to edit its local identity note."
+        if (id === "devices") return "Always shown. Select a device below."
+        if (id === "actions" && state === "available" && availableActions.some(function(id) { return Actions.entry(id).scope === "global" })) return "Available: a local shortcut can be used without a device connection."
+        if (id === "addresses") return state === "available" ? "Available: the saved address list is ready, including an empty list." : "Unavailable: the native address list could not be read."
+        if (id === "native") return state === "available" ? "Available: a paired device is selected. KDE Connect owns native settings." : "Unavailable: select a paired device."
+        return state === "available" ? "Available: the selected device reports the required capability or shortcut." : "Unavailable: no paired, reachable device reports the required capability or shortcut."
+    }
     function sectionVisible(id) {
-        if (!sectionFlag(id) && !(id === "drop" && dropActionRevealed) && !(id === "actions" && activeComposer !== "none") && !(id === "media" && mediaActionRevealed) && !(id === "commands" && commandsActionRevealed)) return false
-        if (id === "actions") return availableActions.length > 0 || activeComposer !== "none"
+        if (id === "devices") return true
+        if (!sectionCatalogModel.entry(id)) return false
+        if ((id === "drop" && dropActionRevealed) || (id === "actions" && activeComposer !== "none") || (id === "media" && mediaActionRevealed) || (id === "commands" && commandsActionRevealed)) return true
+        if (sectionVisibility && Object.prototype.hasOwnProperty.call(sectionVisibility, id)) return SectionOrder.matches(sectionVisibility[id], sectionAvailability(id))
+        if (!sectionFlag(id)) return false
+        // Missing override retains the earlier boolean/capability behavior.
+        if (id === "actions") return availableActions.length > 0
         if (id === "media") return mediaPlayerVisible
         if (id === "commands") return remoteCommandsVisible
         if (id === "connections") return networkControlsVisible
         return true
     }
-    function sectionBodyVisible(id) { return sectionVisible(id) && (sectionExpanded(id) || (id === "actions" && activeComposer !== "none")) }
+    function sectionBodyVisible(id) { return !editingLayout && sectionVisible(id) && sectionAvailability(id) === "available" && (sectionExpanded(id) || (id === "actions" && activeComposer !== "none")) }
+    function saveSectionPolicy(id, policy) {
+        var entry = sectionCatalogModel.entry(id)
+        if (!editingLayout || !entry || !entry.visibilityKey || SectionOrder.POLICIES.indexOf(policy) < 0) return false
+        var next = Object.assign({}, sectionVisibility || {})
+        next[id] = policy
+        return saveLayout({key: "sectionVisibility", value: JSON.stringify(next)}, id)
+    }
+    function moveSectionTo(id, position) {
+        if (!editingLayout || !sectionCatalogModel.ready) return false
+        var next = SectionOrder.moveTo(sectionCatalogModel.order, id, position)
+        return next ? saveLayout({key: "sectionOrder", value: next.join(",")}, id) : false
+    }
+    function saveLayout(request, sectionId) {
+        if (layoutPending) {
+            layoutGuardMessage = layoutReadbackTimedOut ? "Saved layout was not confirmed. Use the current saved layout to recover, or wait for readback." : "Waiting for saved layout readback. This change was not submitted."
+            return false
+        }
+        if (layoutSaver.busy) return false
+        layoutPending = {key: request.key, value: request.value, sectionId: sectionId || ""}
+        layoutFeedbackSectionId = sectionId || ""
+        layoutReadbackTimedOut = false
+        layoutGuardMessage = "Saving layout and waiting for saved readback…"
+        if (!layoutSaver.save(request)) { layoutPending = null; return false }
+        layoutReadbackTimer.restart()
+        return true
+    }
+    function confirmLayoutReadback() {
+        if (!layoutPending) return
+        var current = getSetting(layoutPending.key, layoutPending.key === "sectionOrder" ? "" : "{}")
+        var matches = current === layoutPending.value
+        if (layoutPending.key === "sectionVisibility") {
+            var actual = SectionOrder.parseVisibility(current, sectionCatalog.entries)
+            var expected = SectionOrder.parseVisibility(layoutPending.value, sectionCatalog.entries)
+            matches = !!actual && !!expected && Object.keys(actual).length === Object.keys(expected).length && Object.keys(expected).every(function(id) { return actual[id] === expected[id] })
+        }
+        if (!matches) return
+        layoutPending = null
+        layoutReadbackTimedOut = false
+        layoutReadbackTimer.stop()
+        layoutGuardMessage = "Layout saved and confirmed."
+    }
+    onSettingsChanged: confirmLayoutReadback()
+    Timer {
+        id: layoutReadbackTimer
+        interval: 6000
+        onTriggered: if (root.layoutPending) {
+            root.layoutReadbackTimedOut = true
+            root.layoutGuardMessage = "Saved layout was not confirmed. Further layout changes are blocked. Use the current saved layout to recover, or wait for readback."
+        }
+    }
+    function useCurrentSavedLayout() {
+        if (!layoutReadbackTimedOut || layoutSaver.busy) return false
+        layoutPending = null; layoutReadbackTimedOut = false; layoutReadbackTimer.stop()
+        layoutGuardMessage = "Using the current saved layout. Check the displayed choices before editing."
+        return true
+    }
+    function setLayoutEditing(value) {
+        editingLayout = value === true
+        Qt.callLater(function() { editLayoutButton.forceActiveFocus() })
+    }
     function sectionTitle(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.label : id }
     function sectionHelp(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.description : "" }
     function reorderSections() {
@@ -118,12 +238,17 @@ Panel {
         target: scrollView.Window.window
         function onActiveFocusItemChanged() { Qt.callLater(root.revealDailyFocus) }
     }
+    function settleSectionLayout(item) {
+        var children = item.children || []
+        for (var index = 0; index < children.length; index++) settleSectionLayout(children[index])
+        if (typeof item.forceLayout === "function") item.forceLayout()
+    }
     function scrollSectionIntoView(id) {
         // Reveal and ObjectModel moves can arrive before the positioners' next
         // polish. Settle their geometry before using the viewport's limits.
         for (var layoutIndex = 0; layoutIndex < sectionItems.count; layoutIndex++) {
             var section = sectionItems.get(layoutIndex)
-            if (typeof section.forceLayout === "function") section.forceLayout()
+            settleSectionLayout(section)
         }
         deviceGroups.forceLayout()
         contentColumn.forceLayout()
@@ -147,8 +272,8 @@ Panel {
 
     property bool commandsActionRevealed: false
     property bool mediaActionRevealed: false
-    readonly property bool remoteCommandsVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.commands && (commandsActionRevealed || getSetting("showRemoteCommands", true)))
-    readonly property bool mediaPlayerVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.media && (mediaActionRevealed || getSetting("showMediaPlayer", true)))
+    readonly property bool remoteCommandsVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.commands && (commandsActionRevealed || sectionPolicy("commands") !== "hide"))
+    readonly property bool mediaPlayerVisible: !!(device && device.paired && device.reachable && device.capabilities && device.capabilities.media && (mediaActionRevealed || sectionPolicy("media") !== "hide"))
     readonly property bool networkVisible: false
 
     readonly property bool savedAddressesVisible: getSetting("showSavedAddresses", true)
@@ -195,10 +320,13 @@ Panel {
         if (service && previewGeneration === service.selectionGeneration && !service.operationBusy
                 && (service.selectionState === "choosing" || service.selectionState === "preview")) service.cancelFileTransfer()
     }
-    Component.onDestruction: releasePreview()
     onOpenedChanged: {
+        root.syncTaskNoticeSurface()
         if (service) service.panelOpened = opened
-        if (!opened) { dailyNavigation.closeMenu(); dropActionRevealed = false }
+        if (!opened) {
+            dailyNavigation.closeMenu(); dropActionRevealed = false; editingLayout = false
+            if (service && typeof service.cancelPhoneFiles === "function") service.cancelPhoneFiles()
+        }
         if (opened) {
             root.restoreSectionExpansion()
             mediaActionRevealed = false
@@ -433,6 +561,7 @@ Panel {
     }
 
     function triggerAction(actionId) {
+        if (editingLayout) return
         if (!(actionId === "file" && service && service.fileBusy) && !Actions.ready(actionId, device, service)) return
         if (actionId === "plus-settings") { openSettings(); return }
         if (actionId === "quick-share") { service.openQuickShare(); return }
@@ -442,6 +571,13 @@ Panel {
             return
         }
         if (!service || !device) return
+        if (actionId === "browse-files") {
+            currentView = "Devices"; editingLayout = false; dropActionRevealed = true
+            setSectionExpanded("drop", true)
+            Qt.callLater(function() { root.scrollSectionIntoView("drop") })
+            service.browsePhoneFiles(device.id)
+            return
+        }
         if (actionId === "external-monitor") { service.toggleVirtualMonitor(device.id); return }
         if (actionId === "ring") service.ringDevice(device.id)
         else if (actionId === "clipboard") service.sendClipboard(device.id)
@@ -668,6 +804,7 @@ Panel {
     }
 
     function activate() {
+        if (editingLayout) return
         if (focusSection === "devices") {
             var list = service ? service.devices : []
             var dev = list[selectedIndex]
@@ -748,15 +885,16 @@ Panel {
         owner: root.barIdentity
         bar: root.bar
         open: root.opened
-        focusTarget: root.currentView === "Devices" ? keyCatcher : dailyNavigation.focusItem
+        focusTarget: root.editingLayout ? editLayoutButton : root.currentView === "Devices" ? keyCatcher : dailyNavigation.focusItem
         contentWidth: panel.fittedContentWidth(Style.space(380))
         contentHeight: panel.fittedContentHeight(contentColumn.implicitHeight + dailyNavigation.implicitHeight + Style.space(8))
 
         PanelKeyCatcher {
             id: keyCatcher
+            objectName: "daily-key-catcher"
             anchors.fill: parent
 
-            blocked: !keyCatcher.activeFocus || dailyNavigation.menuOpen || root.currentView !== "Devices" || root.activeComposer !== "none" || !!(composerSection && ((composerSection.pingInput && composerSection.pingInput.activeFocus) || (composerSection.textInput && composerSection.textInput.activeFocus))) || !!(networkSection && networkSection.addressInput && networkSection.addressInput.activeFocus)
+            blocked: root.editingLayout || !keyCatcher.activeFocus || dailyNavigation.menuOpen || root.currentView !== "Devices" || root.activeComposer !== "none" || !!(composerSection && ((composerSection.pingInput && composerSection.pingInput.activeFocus) || (composerSection.textInput && composerSection.textInput.activeFocus))) || !!(networkSection && networkSection.addressInput && networkSection.addressInput.activeFocus)
             onMoveRequested: function(dx, dy) {
                 if (root.activeComposer !== "none") return
                 if (!root.cursorActive) {
@@ -900,6 +1038,97 @@ Panel {
                     Accessible.name: text
                 }
                 Column {
+                    width: parent.width
+                    visible: root.currentView === "Devices"
+                    spacing: Style.space(6)
+                    SettingsButton {
+                        id: editLayoutButton
+                        objectName: "edit-layout"
+                        width: parent.width
+                        height: Math.max(44, implicitHeight)
+                        text: root.editingLayout ? "Done" : "Edit layout"
+                        Accessible.name: root.editingLayout ? "Finish editing layout" : "Edit Devices layout"
+                        focusable: true
+                        foreground: Commons.Color.popups.text
+                        enabled: root.sectionCatalog.ready
+                        onClicked: root.setLayoutEditing(!root.editingLayout)
+                    }
+                    Text {
+                        width: parent.width
+                        visible: root.editingLayout
+                        text: "Set visibility or move each section below. All sections stay available here. Changes apply to every device. Loading data matches neither availability condition."
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        color: Commons.Color.popups.text
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.bodySmall
+                    }
+                    SettingsButton {
+                        width: parent.width
+                        height: Math.max(44, implicitHeight)
+                        visible: root.editingLayout
+                        text: "Use default section order"
+                        enabled: !root.layoutSaveBusy || activeFocus
+                        Accessible.name: text
+                        Accessible.description: "Reset order only. Keep visibility and expansion preferences."
+                        focusable: true
+                        foreground: Commons.Color.popups.text
+                        onClicked: root.saveLayout({key: "sectionOrder", value: ""})
+                    }
+                    Text {
+                        width: parent.width
+                        visible: root.sectionVisibility === null
+                        text: "Saved section visibility is invalid. Earlier visibility choices are in use. Edit layout to save a valid choice."
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        color: Commons.Color.popups.text
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.bodySmall
+                    }
+                    Text {
+                        width: parent.width
+                        visible: text !== ""
+                        id: layoutStatus
+                        objectName: "layout-message"
+                        text: root.layoutMessage ? "Status: " + root.layoutMessage : ""
+                        font.bold: true
+                        Accessible.role: Accessible.StaticText
+                        Accessible.name: text
+                        onTextChanged: if (text !== "") Accessible.announce(text, Accessible.Polite)
+                        textFormat: Text.PlainText
+                        wrapMode: Text.Wrap
+                        color: Commons.Color.popups.text
+                        font.family: Style.font.family
+                        font.pixelSize: Style.font.bodySmall
+                    }
+                    SettingsButton {
+                        width: parent.width
+                        visible: root.layoutReadbackTimedOut
+                        text: "Use current saved layout"
+                        Accessible.name: text
+                        Accessible.description: "Stop waiting for the previous request. Use the currently displayed host settings before making another change."
+                        focusable: true
+                        foreground: Commons.Color.popups.text
+                        onClicked: root.useCurrentSavedLayout()
+                    }
+                    PreferenceControls {
+                        id: layoutSaver
+                        objectName: "layout-preference-saver"
+                        width: parent.width
+                        panel: root
+                        visible: false
+                        onBusyChanged: Qt.callLater(function() {
+                            if (layoutSaver.busy || !root.layoutPending) return
+                            if (layoutSaver.lastSaveOk) root.confirmLayoutReadback()
+                            else {
+                                root.layoutPending = null
+                                layoutReadbackTimer.stop()
+                                root.layoutGuardMessage = layoutSaver.message
+                            }
+                        })
+                    }
+                }
+                Column {
                     id: deviceGroups
                     objectName: "device-sections"
                     width: parent.width
@@ -908,112 +1137,138 @@ Panel {
                     Repeater { model: sectionItems }
                     Models.ObjectModel {
                         id: sectionItems
-                        DeviceSection {
-                            id: deviceSection
-                            property string sectionId: "devices"
-                            visible: root.sectionVisible(sectionId)
+                        LayoutSection {
+                            sectionId: "devices"
                             panel: root
-                            detailsExpanded: root.deviceDetailsExpanded
-                            onDetailsToggleRequested: root.toggleSection("devices")
-                        }
-                        DailySection {
-                            sectionId: "actions"
-                            title: root.sectionTitle(sectionId)
-                            description: root.sectionHelp(sectionId)
-                            visible: root.sectionVisible(sectionId)
-                            expanded: root.actionsExpanded || root.activeComposer !== "none"
-                            onToggleRequested: {
-                                var wasExpanded = expanded
-                                if (root.activeComposer !== "none") root.closeComposer(false)
-                                root.setSectionExpanded(sectionId, !wasExpanded)
-                            }
-                            ActionToolbar { id: actionToolbar; panel: root; showSectionHeader: false }
-                            ComposerSection { id: composerSection; panel: root }
-                        }
-                        DailySection {
-                            sectionId: "drop"
-                            title: root.sectionTitle(sectionId)
-                            description: root.sectionHelp(sectionId)
-                            visible: root.sectionVisible(sectionId)
-                            expanded: root.inlineSendExpanded
-                            onToggleRequested: root.toggleSection(sectionId)
-                            InlineSendSection {
-                                id: inlineSendSection
+                            DeviceSection {
+                                id: deviceSection
                                 panel: root
-                                onFilesStaged: {
-                                    root.dropActionRevealed = true
-                                    root.setSectionExpanded("drop", true)
-                                    Qt.callLater(function() { root.scrollSectionIntoView("drop") })
+                                showDetails: !root.editingLayout
+                                detailsExpanded: root.deviceDetailsExpanded
+                                onDetailsToggleRequested: root.toggleSection("devices")
+                            }
+                        }
+                        LayoutSection {
+                            sectionId: "actions"
+                            panel: root
+                            DailySection {
+                                sectionId: "actions"
+                                title: root.sectionTitle(sectionId)
+                                description: root.sectionHelp(sectionId)
+                                expanded: root.actionsExpanded || root.activeComposer !== "none"
+                                onToggleRequested: {
+                                    var wasExpanded = expanded
+                                    if (root.activeComposer !== "none") root.closeComposer(false)
+                                    root.setSectionExpanded(sectionId, !wasExpanded)
+                                }
+                                ActionToolbar { id: actionToolbar; panel: root; showSectionHeader: false }
+                                ComposerSection { id: composerSection; panel: root }
+                            }
+                        }
+                        LayoutSection {
+                            sectionId: "drop"
+                            panel: root
+                            DailySection {
+                                sectionId: "drop"
+                                title: root.sectionTitle(sectionId)
+                                description: root.sectionHelp(sectionId)
+                                expanded: root.inlineSendExpanded
+                                onToggleRequested: root.toggleSection(sectionId)
+                                PhoneFilesSection { width: parent.width; service: root.service }
+                                InlineSendSection {
+                                    id: inlineSendSection
+                                    panel: root
+                                    onFilesStaged: {
+                                        root.dropActionRevealed = true
+                                        root.setSectionExpanded("drop", true)
+                                        Qt.callLater(function() { root.scrollSectionIntoView("drop") })
+                                    }
                                 }
                             }
                         }
-                        DailySection {
+                        LayoutSection {
                             sectionId: "native"
-                            title: root.sectionTitle(sectionId)
-                            description: root.sectionHelp(sectionId)
-                            visible: root.sectionVisible(sectionId)
-                            expanded: root.nativeFeaturesExpanded
-                            onToggleRequested: root.toggleSection(sectionId)
-                            NativeFeaturesSection { width: parent.width; service: root.service }
-                        }
-                        MediaPlayerSection {
-                            id: mediaPlayerSection
-                            property string sectionId: "media"
-                            visible: root.sectionVisible(sectionId)
                             panel: root
+                            DailySection {
+                                sectionId: "native"
+                                title: root.sectionTitle(sectionId)
+                                description: root.sectionHelp(sectionId)
+                                expanded: root.nativeFeaturesExpanded
+                                onToggleRequested: root.toggleSection(sectionId)
+                                NativeFeaturesSection { width: parent.width; service: root.service }
+                            }
                         }
-                        RemoteCommandsSection {
-                            id: remoteCommandsSection
-                            property string sectionId: "commands"
-                            visible: root.sectionVisible(sectionId)
+                        LayoutSection {
+                            sectionId: "media"
                             panel: root
+                            MediaPlayerSection {
+                                id: mediaPlayerSection
+                                panel: root
+                            }
                         }
-                        DailySection {
+                        LayoutSection {
+                            sectionId: "commands"
+                            panel: root
+                            RemoteCommandsSection {
+                                id: remoteCommandsSection
+                                panel: root
+                            }
+                        }
+                        LayoutSection {
                             sectionId: "connections"
-                            title: root.sectionTitle(sectionId)
-                            description: root.sectionHelp(sectionId)
-                            visible: root.sectionVisible(sectionId)
-                            expanded: root.networkControlsExpanded
-                            onToggleRequested: root.toggleSection(sectionId)
-                            NetworkOptions { id: networkOptions; width: parent.width; panel: root }
-                            BthControlCard {
-                                width: parent.width
-                                visible: networkOptions.bthEnabled
-                                panelOpened: root.opened && root.currentView === "Devices" && root.sectionBodyVisible("connections") && networkOptions.bthEnabled
-                                helperPath: root.getSetting("bthHelperPath", "") || (Quickshell.env("HOME") + "/.local/bin/remote-access-mode")
-                                property string lastRouteStatus: ""
-                                onStatusChanged: {
-                                    var current = JSON.stringify(status)
-                                    if (current !== lastRouteStatus && root.service) root.service.discovery.routeChanged()
-                                    lastRouteStatus = current
+                            panel: root
+                            DailySection {
+                                sectionId: "connections"
+                                title: root.sectionTitle(sectionId)
+                                description: root.sectionHelp(sectionId)
+                                expanded: root.networkControlsExpanded
+                                onToggleRequested: root.toggleSection(sectionId)
+                                NetworkOptions { id: networkOptions; width: parent.width; panel: root }
+                                BthControlCard {
+                                    width: parent.width
+                                    visible: networkOptions.bthEnabled
+                                    panelOpened: root.opened && root.currentView === "Devices" && root.sectionBodyVisible("connections") && networkOptions.bthEnabled
+                                    helperPath: root.getSetting("bthHelperPath", "") || (Quickshell.env("HOME") + "/.local/bin/remote-access-mode")
+                                    property string lastRouteStatus: ""
+                                    onStatusChanged: {
+                                        var current = JSON.stringify(status)
+                                        if (current !== lastRouteStatus && root.service) root.service.discovery.routeChanged()
+                                        lastRouteStatus = current
+                                    }
                                 }
                             }
                         }
-                        DailySection {
+                        LayoutSection {
                             sectionId: "addresses"
-                            title: root.sectionTitle(sectionId)
-                            description: root.sectionHelp(sectionId)
-                            visible: root.sectionVisible(sectionId)
-                            expanded: root.addressesExpanded
-                            onToggleRequested: root.toggleSection(sectionId)
-                            SavedAddressesSection {
-                                width: parent.width
-                                showTitle: false
-                                discovery: root.service ? root.service.discovery : null
-                                peerId: root.device ? root.device.id : ""
+                            panel: root
+                            DailySection {
+                                sectionId: "addresses"
+                                title: root.sectionTitle(sectionId)
+                                description: root.sectionHelp(sectionId)
+                                expanded: root.addressesExpanded
+                                onToggleRequested: root.toggleSection(sectionId)
+                                SavedAddressesSection {
+                                    width: parent.width
+                                    showTitle: false
+                                    discovery: root.service ? root.service.discovery : null
+                                    peerId: root.device ? root.device.id : ""
+                                }
                             }
                         }
-                        DailySection {
+                        LayoutSection {
                             sectionId: "syncthing"
-                            title: root.sectionTitle(sectionId)
-                            description: root.sectionHelp(sectionId)
-                            visible: root.sectionVisible(sectionId)
-                            expanded: root.syncthingExpanded
-                            onToggleRequested: root.toggleSection(sectionId)
-                            SyncthingLinkSection {
-                                panelOpened: root.opened && root.currentView === "Devices" && root.sectionBodyVisible("syncthing")
-                                width: parent.width
-                                service: root.service
+                            panel: root
+                            DailySection {
+                                sectionId: "syncthing"
+                                title: root.sectionTitle(sectionId)
+                                description: root.sectionHelp(sectionId)
+                                expanded: root.syncthingExpanded
+                                onToggleRequested: root.toggleSection(sectionId)
+                                SyncthingLinkSection {
+                                    panelOpened: root.opened && root.currentView === "Devices" && root.sectionBodyVisible("syncthing")
+                                    width: parent.width
+                                    service: root.service
+                                }
                             }
                         }
                     }

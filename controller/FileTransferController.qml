@@ -22,6 +22,7 @@ Item {
     property var operations: []
     property var activeOperation: null
     property bool operationBusy: false
+    signal operationFinished(var operation)
     property var submissionQueue: []
     property int submissionIndex: 0
     property int operationSequence: 0
@@ -257,6 +258,7 @@ Item {
     }
 
     function finishOperation() {
+        if (!operationBusy || !activeOperation) return
         var done = Object.assign({}, activeOperation)
         done.cancellable = false
         done.observedAt = Date.now()
@@ -264,6 +266,7 @@ Item {
         operationBusy = false
         fileBusy = false
         submissionQueue = []
+        operationFinished(Object.assign({}, done))
     }
 
     function cancelRemaining() {

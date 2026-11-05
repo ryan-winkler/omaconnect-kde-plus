@@ -23,7 +23,15 @@ else:
 
 
 class SectionOrderTests(unittest.TestCase):
+    INVALID_VISIBILITY = (
+        None, [], '', '[]', 'null', '{"devices":"hide"}', '{"unknown":"show"}',
+        '{"media":true}', '{"media":"sometimes"}', '{"media":"show","media":"hide"}',
+        '{"media":{"policy":"show"}}', 'x'*2049,
+        r'{"media":"show","\u006dedia":"hide"}', r'{"\u006dedia":"hide"}',
+    )
+
     def test_canonical_ids_flags_and_native_manifest_match(self):
+        """Keep catalogue defaults consistent with manifest, saves and migration."""
         self.assertEqual(sections.IDS, ('devices', 'actions', 'drop', 'native', 'media', 'commands', 'connections', 'addresses', 'syncthing'))
         self.assertNotIn('visibilityKey', sections.CATALOG[0])
         saved = 'actions,devices,drop,native,information,media,commands,connections,addresses,syncthing'
@@ -42,6 +50,7 @@ class SectionOrderTests(unittest.TestCase):
                     preferences.setting_value({'key': key, 'enabled': value})
 
     def test_order_validation_is_shared_by_saves_and_migration(self):
+        """Reject malformed order data at every Python settings boundary."""
         self.assertEqual(sections.order_ids(''), list(sections.IDS))
         expected = ['syncthing'] + list(sections.IDS[:-1])
         self.assertEqual(sections.order_ids('syncthing'), expected)
@@ -58,6 +67,7 @@ class SectionOrderTests(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which('node'), 'Node runtime absent')
     def test_actual_js_and_python_share_catalogue_and_rejection_cases(self):
+        """Compare production JavaScript catalogue parsing with Python rejection cases."""
         invalid = []
         for field, value in [('id', '../devices'), ('defaultVisible', 'true'), ('defaultExpanded', 1), ('expandedKey', 'command;run'), ('settingsPage', 'Unknown'), ('command', 'anything')]:
             rows = copy.deepcopy(sections.CATALOG)
@@ -91,12 +101,46 @@ assert.equal(api.move(ids,'actions',-1).slice(0,2).join(','),'actions,devices');
             text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_visibility_policy_validation_and_legacy_defaults(self):
+        """Reject malformed policies at Python save and migration boundaries."""
+        self.assertEqual(sections.normalized_visibility('{}'), '{}')
+        for policy in ('show', 'hide', 'available', 'unavailable'):
+            value=json.dumps({'commands':policy})
+            self.assertEqual(json.loads(preferences.setting_value({'key':'sectionVisibility','value':value})), {'commands':policy})
+            self.assertEqual(migration.settings({'id':'omaconnect.plus','sectionVisibility':value})['sectionVisibility'], value)
+
+        for value in self.INVALID_VISIBILITY:
+            with self.subTest(value=value),self.assertRaises(ValueError): sections.normalized_visibility(value)
+            with self.subTest(save=value),self.assertRaises(ValueError): preferences.setting_value({'key':'sectionVisibility','value':value})
+            with self.subTest(migrate=value),self.assertRaises(migration.MigrationError): migration.settings({'id':'omaconnect.plus','sectionVisibility':value})
+
+    @unittest.skipUnless(shutil.which('node'), 'Node runtime absent')
+    def test_actual_js_visibility_parser_matches_python_policy(self):
+        """Check JavaScript visibility and moves with the shared rejection cases."""
+        code=r'''const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const api=vm.createContext({});vm.runInContext(fs.readFileSync(process.argv[1],'utf8').replace(/^\.pragma library\s*/,''),api);
+const input=JSON.parse(fs.readFileSync(0,'utf8')), entries=api.parseCatalog(input.catalog);
+for(const value of input.invalid)assert.equal(api.parseVisibility(value,entries),null);
+for(const policy of ['show','hide','available','unavailable'])assert.equal(api.parseVisibility(JSON.stringify({commands:policy}),entries).commands,policy);
+assert.equal(api.policy(entries.find(e=>e.id==='commands'),{},true),'available');
+assert.equal(api.policy(entries.find(e=>e.id==='drop'),{},true),'show');
+assert.equal(api.policy(entries.find(e=>e.id==='syncthing'),{},false),'hide');
+for(const policy of ['available','unavailable'])assert.equal(api.matches(policy,'checking'),false);
+assert.equal(api.matches('show','checking'),true);assert.equal(api.matches('hide','available'),false);
+const order=entries.map(e=>e.id);assert.equal(api.moveTo(order,'actions',8)[8],'actions');assert.equal(order[1],'actions');
+assert.equal(api.moveTo(order,'actions',9),null);assert.equal(api.moveTo(order,'unknown',1),null);
+'''
+        result=subprocess.run(['node','-e',code,str(ROOT/'SectionOrder.js')],input=json.dumps({'catalog':(ROOT/'PanelSections.json').read_text(),'invalid':self.INVALID_VISIBILITY}),text=True,capture_output=True,timeout=5)
+        self.assertEqual(result.returncode,0,result.stderr)
+
     def test_native_order_editor_waits_for_readback_and_preserves_failed_save(self):
+        """Keep section edits guarded until private host readback confirms the save."""
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'section_order_ui.qml'
         runner.force_offscreen = True
 
         def configure(fixture, plugin, home, fake_bin):
+            """Keep settings requests behind a fixture-owned save gate."""
             (fixture / 'save-gate').write_text('hold')
             (fixture / 'request-started').write_text('')
             shutil.copyfile(ROOT / 'scripts/manage_addresses.py', plugin / 'scripts/section_order_boundary.py')
@@ -111,6 +155,7 @@ assert.equal(api.move(ids,'actions',-1).slice(0,2).join(','),'actions,devices');
                 " print('unknown' if any(',syncthing,addresses' in a for a in sys.argv) else 'ok')"))
 
         def assert_editor(fixture, home, output, calls):
+            """Check exact setting writes and preserve failed-save feedback."""
             self.assertIn('NATIVE_PASS section order', output)
             writes = [row['args'] for row in calls if row['tool'] == 'omarchy-shell']
             self.assertEqual(len(writes), 4, writes)
@@ -132,6 +177,7 @@ assert.equal(api.move(ids,'actions',-1).slice(0,2).join(','),'actions,devices');
         runner.force_offscreen = True
 
         def configure(fixture, plugin, home, fake_bin):
+            """Point only the private preference saver at a missing launcher."""
             helper = plugin / 'components/PreferenceControls.qml'
             helper.write_text(helper.read_text().replace('"/usr/bin/timeout"', '"/nonexistent-setting-launcher"'))
             (fixture / 'commands.jsonl').write_text('')

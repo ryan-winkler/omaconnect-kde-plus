@@ -2,11 +2,19 @@ import QtQuick
 import QtQuick.Window
 import QtTest
 import Quickshell
+import Quickshell.Io
+import qs.Commons as Commons
 import "plugin" as Plugin
 import "plugin/components" as Components
 
 ShellRoot {
     id: test
+    // The native language command writes from another process; only this private HOME is reachable.
+    Process {
+        id: languageWriter
+        property string language: "en"
+        command: ["python3", "-c", "import os,pathlib,sys; pathlib.Path(os.environ['XDG_CONFIG_HOME'],'omarchy','language').write_text(sys.argv[1]+chr(10))", language]
+    }
     property int phase: 0
     property int ticks: 0
     property var checks: []
@@ -105,13 +113,11 @@ ShellRoot {
                 if(!test.check(settings.transientParent===null,"settings remains independent of the bar popup"))return
                 if(!test.check(test.named("Settings: Appearance").activeFocus,"opening settings focuses domain navigation"))return
                 if(!test.check(test.named("Change selected device icon and alias").Accessible.role===Accessible.Button,"settings actions expose a native button role"))return
-                if(!test.check(sectionCatalogModel.entries.length===9 && test.named("Use default section order").visible,"Appearance exposes order controls from the real nine-section catalogue"))return
+                if(!test.check(sectionCatalogModel.entries.length===9 && test.named("Edit Devices layout").visible,"Appearance routes to actual Devices layout editing"))return
                 test.named("Settings: Connections").clicked();test.phase=2
             } else if(test.phase===2) {
                 if(!test.check(settings.currentPage==="Connections" && test.named("Show MikroTik Back to Home")!==null,"domain navigation exposes connection preferences"))return
                 if(!test.check(panel.getSetting("networkBthEnabled",false) === true && test.named("Show MikroTik Back to Home").checked,"saved BTH preference reaches the real native toggle"))return
-                if(!test.checkSectionPreference("showSyncthingLinks", "Show Syncthing identity note", "Show in Devices"))return
-                if(!test.checkSectionPreference("showSavedAddresses", "Show Saved addresses", "Show in Devices"))return
                 if(!test.checkSectionPreference("networkStartExpanded", "Start Connection controls expanded", "Start expanded"))return
                 var scroll=test.find(settings.contentItem,function(o){return o.objectName === "settings-page-scroll"},[])
                 if(!test.check(scroll && scroll.contentHeight > scroll.availableHeight,"long domain content uses a bounded scrolling region"))return
@@ -123,12 +129,9 @@ ShellRoot {
                 test.named("Settings: Quick actions").clicked();test.phase=3
             } else if(test.phase===3) {
                 if(!test.check(test.named("Settings: Quick actions")!==null,"quick actions have an explicit domain"))return
-                if(!test.checkSectionPreference("showQuickActions", "Show Quick actions", "Show in Devices"))return
-                if(!test.checkSectionPreference("showInlineSend", "Show File sharing", "Show in Devices"))return
                 test.named("Settings: Device features").clicked();test.phase=4
             } else if(test.phase===4) {
                 if(!test.checkSectionPreference("mediaStartExpanded", "Start Media controls expanded", "Start expanded"))return
-                if(!test.checkSectionPreference("showRemoteCommands", "Show Remote commands", "Show in Devices"))return
                 var features=test.find(settings.contentItem,function(o){return "filteredPluginIds" in o && o.configuration===true},[])
                 if(!test.check(features && features.pluginIds.length===5,"complete reported inventory is present in settings"))return
                 if (features.installedModules.length === 0) {
@@ -275,6 +278,15 @@ ShellRoot {
                     test.capturing=false;test.phase-=1999
                 })
             } else if(test.phase===2000+test.captures.length) {
+                if (!test.check(!settings.contentItem.LayoutMirroring.enabled, "managed window starts left to right")) return
+                languageWriter.language="ar"; languageWriter.running=true; test.phase=9000
+            } else if (test.phase===9000 && Commons.I18n.rightToLeft && !languageWriter.running) {
+                if (!test.check(settings.visible && settings.contentItem.LayoutMirroring.enabled && settings.contentItem.LayoutMirroring.childrenInherit, "visible managed window follows live native RTL")) return
+                var mirroredPage=test.find(settings.contentItem,function(o){return o.objectName==="settings-page-scroll"},[])
+                if (!test.check(mirroredPage.width > 0 && mirroredPage.x >= 0 && mirroredPage.x + mirroredPage.width <= mirroredPage.parent.width + 1, "mirrored settings content stays inside its row")) return
+                languageWriter.language="en"; languageWriter.running=true; test.phase=9001
+            } else if (test.phase===9001 && !Commons.I18n.rightToLeft && !languageWriter.running) {
+                if (!test.check(!settings.contentItem.LayoutMirroring.enabled, "managed window returns live to LTR")) return
                 console.log("SETTINGS_PASS "+JSON.stringify(test.checks));console.log("NATIVE_PASS settings");Qt.quit()
             }
         }

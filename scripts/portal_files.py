@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""One-shot portal chooser and KDE submission boundary. No payload bytes or history.
+"""One-shot portal chooser and KDE submission boundary. No persistent history.
 
 Modes: choose, inspect, submit, and sweep (expired share copies, at plugin start).
+Shared sources can use private descriptor-backed snapshots during submission.
 """
 import json
 import os

@@ -31,6 +31,18 @@ BarWidget {
     readonly property Item button: buttonItem
     readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
     readonly property bool popoutSwitchClosing: panelLoader.item ? panelLoader.item.popoutSwitchClosing === true : false
+    Binding {
+        target: root.service && "taskNotificationsEnabled" in root.service ? root.service : null
+        property: "taskNotificationsEnabled"
+        value: root.settings && typeof root.settings.taskNotificationsEnabled === "boolean" ? root.settings.taskNotificationsEnabled : true
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+    Binding {
+        target: root.service && "taskNotificationDeviceName" in root.service ? root.service : null
+        property: "taskNotificationDeviceName"
+        value: root.settings && typeof root.settings.taskNotificationDeviceName === "boolean" ? root.settings.taskNotificationDeviceName : false
+        restoreMode: Binding.RestoreBindingOrValue
+    }
 
     implicitWidth: buttonItem.implicitWidth
     implicitHeight: barSize
@@ -61,6 +73,13 @@ BarWidget {
 
     function openSettings() {
         if (panelLoader.item && panelLoader.item.openSettings) panelLoader.item.openSettings()
+    }
+    function openActivity() {
+        var target = panelLoader.item
+        if (target && target.open) {
+            target.currentView = "Activity"
+            target.open()
+        }
     }
     function openSendWindow() {
         if (panelLoader.item && panelLoader.item.openSendWindow) panelLoader.item.openSendWindow()
@@ -126,7 +145,7 @@ BarWidget {
         }
     }
 
-    IpcHandler {
+    Commons.ShellIpc {
         target: "omaconnect.plus"
 
         function open(): void { root.open() }
@@ -137,6 +156,7 @@ BarWidget {
         function refresh(): void { if (root.service) root.service.refresh(true) }
         function configure(): void { root.openSettings() }
         function sendWindow(): void { root.openSendWindow() }
+        function activity(): void { root.openActivity() }
     }
 
     Loader {

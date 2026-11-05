@@ -14,16 +14,24 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 class SectionComposition(unittest.TestCase):
-    def run_composition(self,catalogue_failure=None):
+    def run_composition(self,catalogue_failure=None,readback=False,success_message=None):
+        """Run isolated layout scenarios with catalogue failures or delayed saved-setting readback."""
         runner=native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture='section_composition_ui.qml'
         runner.force_offscreen=True
         def configure(fixture,plugin,home,fake_bin):
+            """Prepare temporary layout state and fake launchers, including optional delayed readback."""
             shutil.copyfile(ROOT/'scripts/manage_addresses.py',plugin/'scripts/composition_preference_boundary.py')
             helper=plugin/'scripts/network_preferences.py'
             helper.write_text(helper.read_text().replace('from manage_addresses import','from composition_preference_boundary import'))
+            if success_message is not None:
+                helper.write_text(helper.read_text().replace('Setting saved.',success_message))
             state=dict(sectionOrder='',networkBthEnabled=True,networkStartExpanded=False,
                        addressesStartExpanded=True,showSyncthingLinks=False,syncthingStartExpanded=False)
+            if readback:
+                state["fixtureLayoutReadbackTest"]=True
+                state["fixtureLayoutSuccessMessage"]=success_message or "Setting saved."
+                (fixture/"pending-layout.json").write_text("{}")
             if catalogue_failure:
                 state.update(fixtureCatalogFailure=catalogue_failure,showSyncthingLinks=False,syncthingStartExpanded=True)
                 catalogue=plugin/'PanelSections.json'
@@ -41,23 +49,42 @@ class SectionComposition(unittest.TestCase):
             fake=fake_bin/'fake'
             fake.write_text(fake.read_text().replace("elif name == 'omarchy-shell': raise SystemExit(0)",'''elif name == 'omarchy-shell':
  state=Path(os.environ['NATIVE_COMMAND_LOG']).with_name('composition-settings.json')
- values=json.loads(state.read_text());values[sys.argv[4]]=json.loads(sys.argv[5])
- pending=state.with_suffix('.next');pending.write_text(json.dumps(values));pending.replace(state);print('ok')'''))
-            (plugin/'scripts/open_quick_share.py').write_text('import sys,time\nif sys.argv[1:] == ["--check"]: raise SystemExit(0)\nif sys.argv[1:] != ["--open"]: raise SystemExit(99)\ntime.sleep(.5)\n')
-            (plugin/'scripts/open_app.sh').write_text("#!/bin/bash\nexec /usr/bin/python3 -c 'import time; time.sleep(.5)'\n")
+ values=json.loads(state.read_text())
+ if values.get('fixtureLayoutReadbackTest'):
+  state.with_name('pending-layout.json').write_text(json.dumps({'key':sys.argv[4],'value':json.loads(sys.argv[5])}));print('ok')
+ else:
+  values[sys.argv[4]]=json.loads(sys.argv[5])
+  pending=state.with_suffix('.next');pending.write_text(json.dumps(values));pending.replace(state);print('ok')'''))
+            # Keep pending feedback observable until QML checks it, even under load.
+            launch_wait='''import time
+from pathlib import Path
+released=Path.home()/'composition-launches-released'
+deadline=time.monotonic()+3
+while not released.exists() and time.monotonic()<deadline: time.sleep(.01)
+raise SystemExit(0 if released.exists() else 98)
+'''
+            (plugin/'scripts/open_quick_share.py').write_text('import sys\nif sys.argv[1:] == ["--check"]: raise SystemExit(0)\nif sys.argv[1:] != ["--open"]: raise SystemExit(99)\n'+launch_wait)
+            (plugin/'scripts/open_app.sh').write_text("#!/bin/bash\nexec /usr/bin/python3 - <<'PY'\n"+launch_wait+"PY\n")
             (fake_bin/'busctl').symlink_to(fake)
             (fake_bin/'syncthing').symlink_to(fake)
         def checked(fixture,home,output,calls):
-            self.assertIn('COLD_CATALOG_PASS' if catalogue_failure else 'SECTION_COMPOSITION_PASS',output)
+            """Verify expected layout writes without provider commands or file submissions."""
+            self.assertIn('LAYOUT_READBACK_PASS' if readback else 'COLD_CATALOG_PASS' if catalogue_failure else 'SECTION_COMPOSITION_PASS',output)
             writes=[row['args'] for row in calls if row['tool']=='omarchy-shell']
             if catalogue_failure:
                 self.assertEqual(writes,[],writes)
-            else:
+            elif readback:
                 self.assertEqual(len(writes),3,writes)
-                self.assertTrue(all(row[:4]==['shell','setBarWidget','omaconnect.plus','sectionOrder'] and row[-1]=='{}' for row in writes),writes)
+                self.assertEqual([json.loads(json.loads(row[-2])) for row in writes],[{'commands':'unavailable'},{'commands':'show'},{'commands':'hide'}])
+            else:
+                self.assertTrue((home/'composition-launches-released').exists())
+                self.assertEqual(len(writes),7,writes)
+                self.assertTrue(all(row[:4]==['shell','setBarWidget','omaconnect.plus','sectionOrder'] and row[-1]=='{}' for row in writes[:3]),writes)
                 self.assertEqual(json.loads(writes[0][-2]).split(',')[:3],['devices','drop','actions'])
                 self.assertEqual(json.loads(writes[1][-2]).split(',')[:3],['devices','actions','drop'])
                 self.assertEqual(json.loads(writes[2][-2]).split(',')[-2:],['syncthing','addresses'])
+                self.assertEqual([json.loads(json.loads(row[-2])) for row in writes[3:]], [{'commands': policy} for policy in ('unavailable','available','show','hide')])
+                self.assertTrue(all(row[:4]==['shell','setBarWidget','omaconnect.plus','sectionVisibility'] and row[-1]=='{}' for row in writes[3:]),writes)
             self.assertFalse(any(row['tool'] in ('kdeconnect-cli','nmcli','remote-access-mode','syncthing') for row in calls),calls)
             self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()),[])
             self.assertEqual((fixture/'one').read_bytes(),b'abc')
@@ -80,3 +107,9 @@ class SectionComposition(unittest.TestCase):
 
     def test_missing_optional_catalog_entry_keeps_hidden_provider_stopped(self):
         self.run_composition('missing-syncthing')
+
+    def test_layout_waits_for_readback_and_timeout_requires_recovery(self):
+        self.run_composition(readback=True)
+
+    def test_alternate_success_message_keeps_layout_locked_until_readback(self):
+        self.run_composition(readback=True,success_message="Saved successfully.")

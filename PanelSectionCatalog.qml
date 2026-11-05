@@ -34,7 +34,6 @@ QtObject {
     function preferencesFor(page) {
         var result = []
         entries.filter(function(row) { return (row.settingsPage || "Appearance") === page; }).forEach(function(row) {
-            if (row.visibilityKey) result.push({key: row.visibilityKey, label: "Show " + row.label, defaultValue: row.defaultVisible, description: row.description})
             result.push({key: row.expandedKey, label: "Start " + row.label + " expanded", defaultValue: row.defaultExpanded,
                 description: "Sets the initial state when Devices opens. You can expand or collapse this section without changing its saved visibility."})
         })
