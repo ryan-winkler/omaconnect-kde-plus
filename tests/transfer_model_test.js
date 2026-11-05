@@ -34,6 +34,7 @@ function extract(name) {
  return qml.slice(start, end);
 }
 const context = {
+ Locale: {Strings: require("./english_catalog.cjs")},
  selectedDeviceId:'A', devices:[{id:'A'}, {id:'B'}], activeOperation:{id:'one',peerId:'A'}, operationBusy:true,
  fileBusy:true, fileTransferState:'submitting', fileTransferMessage:'Submitting', fileTransferError:'',
  actionState:'', actionMessage:'', actionError:'', actionGeneration:0, remoteCommands:[], commandsLoading:false,

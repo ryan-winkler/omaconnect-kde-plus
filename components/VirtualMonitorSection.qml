@@ -3,6 +3,7 @@ import QtQuick
 import qs.Commons
 import qs.Commons as Commons
 import "../ActionCatalog.js" as Actions
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -18,9 +19,9 @@ Column {
         objectName: "virtual-monitor-action"
         width: parent.width
         height: Math.max(44, implicitHeight)
-        text: Actions.actionLabel("external-monitor", root.device)
+        text: Locale.Strings.t(Actions.actionLabelKey("external-monitor", root.device))
         Accessible.name: text
-        Accessible.description: "Use KDE Connect's native virtual display. KDE Connect handles its session and credentials."
+        Accessible.description: Locale.Strings.t("virtualMonitor.useKdeConnectSNativeVirtual")
         focusable: true
         enabled: Actions.ready("external-monitor", root.device, root.service)
         foreground: Commons.Color.popups.text
@@ -28,9 +29,9 @@ Column {
     }
     Text {
         width: parent.width
-        text: !Actions.ready("external-monitor", root.device, root.service) ? Actions.availabilityText("external-monitor", root.device, root.service)
-            : root.monitor.active ? "Native virtual monitor session is active on this computer. Remote display output is not confirmed."
-            : "Uses native KDE Connect and KRDP. The other device needs an RDP client."
+        text: !Actions.ready("external-monitor", root.device, root.service) ? Locale.Strings.t(Actions.availabilityKey("external-monitor", root.device, root.service))
+            : root.monitor.active ? Locale.Strings.t("virtualMonitor.active")
+            : Locale.Strings.t("virtualMonitor.nativeHelp")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -40,7 +41,7 @@ Column {
     Text {
         width: parent.width
         visible: text !== ""
-        text: root.service && (root.service.actionError || root.service.actionMessage) ? "Latest device action: " + (root.service.actionError || root.service.actionMessage) : ""
+        text: root.service && (root.service.actionError || root.service.actionMessage) ? Locale.Strings.format("nativeFeatures.latestAction", [root.service.actionError || root.service.actionMessage]) : ""
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text

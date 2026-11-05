@@ -26,6 +26,7 @@ class ActivityPrivacy(unittest.TestCase):
      hits.clear();fixture=Path(temporary)
      for name in ("Commons","Ui"):(fixture/name).symlink_to(OMARCHY_SHELL/name)
      (fixture/"components").symlink_to(ROOT/"components");(fixture/"TransferModel.js").symlink_to(ROOT/"TransferModel.js")
+     (fixture/"i18n").symlink_to(ROOT/"i18n")
      (fixture/"runtime").mkdir(mode=0o700);shutil.copyfile(FIXTURE,fixture/"shell.qml")
      uri=f"http://127.0.0.1:{server.server_port}/owned-activity-image?token=OWNED-ACTIVITY-SENTINEL"
      peer=f'<img src="{uri}">Owned peer' if hostile else "Owned peer"

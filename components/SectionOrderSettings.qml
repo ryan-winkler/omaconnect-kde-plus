@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -10,7 +11,7 @@ Column {
     spacing: Style.space(8)
     Text {
         width: parent.width
-        text: "Edit section visibility and order in Devices. Hidden sections stay available while editing."
+        text: Locale.Strings.t("layout.settingsHelp")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -19,7 +20,7 @@ Column {
     }
     SettingsButton {
         width: parent.width
-        text: "Edit Devices layout"
+        text: Locale.Strings.t("layout.editDevices")
         Accessible.name: text
         focusable: true
         foreground: Commons.Color.popups.text
@@ -35,7 +36,7 @@ Column {
         width: parent.width
         panel: root.panel
         preferences: [
-            {key: "showEditLayoutShortcut", label: "Show Edit layout in Devices", defaultValue: true, description: "Show the pencil beside Plus settings. You can always open the layout editor here."}
+            {key: "showEditLayoutShortcut", label: Locale.Strings.t("layout.showShortcut"), defaultValue: true, description: Locale.Strings.t("layout.shortcutHelp")}
         ]
     }
 }

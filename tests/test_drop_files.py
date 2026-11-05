@@ -37,7 +37,8 @@ class DropFiles(unittest.TestCase):
             self.assertEqual([item['size'] for item in result['files']], [3, 0])
             script = r'''const vm=require('node:vm'), assert=require('node:assert/strict');
 const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
-const ctx={operationBusy:false, fileTransferProcess:{running:false},filePickerProcess:{running:false,signal(){}},selectionCancellationTimer:{restart(){}},fileInspectProcess:{running:false,signal(){}},
+const Locale={Strings:require(input.catalogFixture)};
+const ctx={Locale,operationBusy:false, fileTransferProcess:{running:false},filePickerProcess:{running:false,signal(){}},selectionCancellationTimer:{restart(){}},fileInspectProcess:{running:false,signal(){}},
  selectionState:'idle',selection:[],selectionBytes:0,selectionError:'',selectionGeneration:0,draftTarget:null,
  devices:[{id:'A',name:'Reviewed phone',paired:true,reachable:true,capabilities:{file:true}},{id:'B',name:'Another phone',paired:true,reachable:true,capabilities:{file:true}}]};
 ctx.deviceById=id=>ctx.devices.find(d=>d.id===id);ctx.canAct=id=>!!ctx.deviceById(id);ctx.controller=ctx;vm.createContext(ctx);vm.runInContext(input.functions,ctx);
@@ -60,7 +61,7 @@ assert.equal(ctx.selectionState,'idle');assert.equal(ctx.stageDroppedFiles('B',i
 const newTarget=ctx.draftTarget;ctx.applySelection(JSON.stringify(input.result),0,generation);assert.equal(ctx.draftTarget,newTarget);assert.equal(ctx.selection.length,0,'stale inspection is ignored');
 '''
             functions = '\n'.join(extract(n) for n in ('stageDroppedFiles', 'validPreviewPaths', 'applySelection', 'selectionErrorText', 'cancelDraft'))
-            check = subprocess.run(['node', '-e', script], input=json.dumps({'functions':functions,'uris':uris,'result':result}), text=True, capture_output=True, timeout=5)
+            check = subprocess.run(['node', '-e', script], input=json.dumps({'functions':functions,'uris':uris,'result':result,'catalogFixture':str(ROOT/'tests/english_catalog.cjs')}), text=True, capture_output=True, timeout=5)
             self.assertEqual(check.returncode, 0, check.stderr)
 
     def test_actual_inspector_rejects_remote_urls_folders_and_symlinks(self):

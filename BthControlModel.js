@@ -39,24 +39,24 @@ function command(mode) {
     return mode === "auto" ? "auto" : mode === "on" ? "bth-on" : mode === "off" ? "bth-off" : ""
 }
 function modeLabel(mode) {
-    return mode === "auto" ? "Automatic" : mode === "on" ? "On" : mode === "off" ? "Off" : "Unknown"
+    return mode === "auto" ? "bth.automatic" : mode === "on" ? "common.on" : mode === "off" ? "common.off" : "common.unknown"
 }
 function selectedModeLabel(status) {
-    return !status.known ? "Unknown" : status.control_valid ? modeLabel(status.control_mode) : "Needs review"
+    return !status.known ? "common.unknown" : status.control_valid ? modeLabel(status.control_mode) : "bth.needsReview"
 }
 function isSelected(status, mode) {
     return status.known && status.control_valid && command(mode) !== "" && status.control_mode === mode
 }
 function stateLabel(state) {
-    return state === "active" ? "On (interface active)" : state === "inactive" ? "Off"
-        : state === "activating" ? "Turning on" : state === "deactivating" ? "Turning off" : "Unknown"
+    return state === "active" ? "bth.onInterfaceActive" : state === "inactive" ? "common.off"
+        : state === "activating" ? "bth.turningOn" : state === "deactivating" ? "bth.turningOff" : "common.unknown"
 }
 function errorText(status) {
-    if (!status.known) return "Status is unavailable. The connection state is not confirmed."
-    if (!status.configured || status.error === "not-configured") return "The saved bth-home profile is missing or cannot be identified."
-    if (!status.nm_control || status.error === "not-preauthorized") return "NetworkManager control is not authorized. Use the normal system approval."
-    if (!status.profile_safe || status.error === "unsafe-profile") return "The saved profile needs review. On and Automatic are unavailable; Off can stop this exact profile."
-    if (!status.control_valid || status.error === "invalid-control-state") return "The saved control mode is invalid. Choose Off or Automatic to replace it."
+    if (!status.known) return "bth.statusIsUnavailableTheConnectionState"
+    if (!status.configured || status.error === "not-configured") return "bth.theSavedBthHomeProfileIs"
+    if (!status.nm_control || status.error === "not-preauthorized") return "bth.networkmanagerControlIsNotAuthorizedUse"
+    if (!status.profile_safe || status.error === "unsafe-profile") return "bth.theSavedProfileNeedsReviewOn"
+    if (!status.control_valid || status.error === "invalid-control-state") return "bth.theSavedControlModeIsInvalid"
     return ""
 }
 function canRun(status, mode, busy) {
@@ -70,10 +70,11 @@ function confirmed(status, wanted) {
     return wanted === "on" ? status.connection_state === "active"
         : wanted === "off" ? status.connection_state === "inactive" : wanted === "auto" && (status.connection_state === "active" || status.connection_state === "inactive")
 }
-function pendingText(status, wanted) {
-    if (status.last_apply_failed) return "Last apply failed. Inspect status, or choose Off or Automatic."
-    if (wanted && !confirmed(status, wanted)) return "Requested " + modeLabel(wanted) + ". Waiting for actual NetworkManager state."
-    return status.pending ? "The saved mode is pending. Actual interface state is shown separately." : ""
+function pendingText(status, wanted, strings) {
+    if (status.last_apply_failed) return strings.t("bth.lastApplyFailedInspectStatus")
+    if (wanted && !confirmed(status, wanted))
+        return strings.format("bth.requestedMode", [strings.t(modeLabel(wanted))])
+    return status.pending ? strings.t("bth.savedModePending") : ""
 }
 
 /*

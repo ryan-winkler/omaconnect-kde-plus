@@ -5,6 +5,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
 import "../TransferModel.js" as TransferModel
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -26,7 +27,7 @@ Column {
         visible: root.showHeading
         textFormat: Text.PlainText
         width: parent.width
-        text: "SEND FILES"
+        text: Locale.Strings.t("files.sendHeading")
 
         color: root.foreground
         font.family: root.fontFamily
@@ -38,7 +39,8 @@ Column {
         textFormat: Text.PlainText
         visible: !!root.target
         width: parent.width
-        text: root.target ? "To: \u2068" + root.target.peerName + "\u2069\nKDE Connect · \u2068" + root.target.peerId + "\u2069" : ""
+        text: root.target ? Locale.Strings.format("files.recipient",
+            ["\u2068" + root.target.peerName + "\u2069", "\u2068" + root.target.peerId + "\u2069"]) : ""
 
         wrapMode: Text.WrapAnywhere
         color: root.foreground
@@ -50,9 +52,10 @@ Column {
         textFormat: Text.PlainText
         visible: !!root.target
         width: parent.width
-        text: root.service && root.service.selectionState === "choosing" ? "Choose files in the file picker. Cancel below stops this selection."
-            : root.service && root.service.selectionState === "preview" ? "Choose your image in the preview window. Back to files returns to the list; Cancel clears this selection."
-            : root.files.length + " file(s) · " + TransferModel.formatBytes(root.service ? root.service.selectionBytes : 0) + "\nReview the recipient and files, then select Send."
+        text: root.service && root.service.selectionState === "choosing" ? Locale.Strings.t("files.chooseHelp")
+            : root.service && root.service.selectionState === "preview" ? Locale.Strings.t("files.previewHelp")
+            : Locale.Strings.t("files.reviewSummary").arg(Locale.Strings.fileCount(root.files.length))
+                .arg(Locale.Strings.byteSize(root.service ? root.service.selectionBytes : 0))
 
         wrapMode: Text.Wrap
         color: root.foreground
@@ -64,7 +67,7 @@ Column {
         textFormat: Text.PlainText
         visible: root.files.length > 0
         width: parent.width
-        text: "Files in shared locations can need a private cache copy. Copies become eligible for cleanup after 24 hours. Cleanup is attempted later when the cache is safe and available. See Help → Send files."
+        text: Locale.Strings.t("send.filesInSharedLocationsCanNeed")
         wrapMode: Text.Wrap
         color: root.foreground
         font.family: root.fontFamily
@@ -87,7 +90,7 @@ Column {
                     textFormat: Text.PlainText
                     required property var modelData
                     width: selectionList.width
-                    text: "\u2068" + modelData.name + "\u2069 · " + TransferModel.formatBytes(modelData.size)
+                    text: "\u2068" + modelData.name + "\u2069 · " + Locale.Strings.byteSize(modelData.size)
 
                     wrapMode: Text.WrapAnywhere
                     color: root.foreground
@@ -117,7 +120,7 @@ Column {
         SettingsButton {
             bordered: false
             focusable: true
-            text: "Send files"
+            text: Locale.Strings.t("files.send")
             implicitHeight: Math.max(44, Style.space(44))
             enabled: root.service && root.service.selectionState === "draft" && root.files.length > 0 && !root.service.operationBusy
             foreground: root.foreground
@@ -129,8 +132,8 @@ Column {
             bordered: false
             focusable: true
             objectName: "cancel-file-selection"
-            text: "Cancel"
-            Accessible.description: "Cancel this file selection before submission."
+            text: Locale.Strings.t("common.cancel")
+            Accessible.description: Locale.Strings.t("send.cancelThisFileSelectionBeforeSubmission")
             implicitHeight: Math.max(44, Style.space(44))
             foreground: root.foreground
             fontFamily: root.fontFamily
@@ -142,7 +145,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         visible: root.activity.length > 0
-        text: "RECENT SUBMISSIONS"
+        text: Locale.Strings.t("send.recentSubmissions")
 
         color: root.foreground
         font.family: root.fontFamily
@@ -160,7 +163,8 @@ Column {
             Text {
                 textFormat: Text.PlainText
                 width: parent.width
-                text: "\u2068" + operationRow.modelData.peerName + "\u2069 · KDE Connect · " + operationRow.modelData.count + " file(s) · " + TransferModel.formatBytes(operationRow.modelData.total)
+                text: "\u2068" + operationRow.modelData.peerName + "\u2069 · KDE Connect · "
+                    + Locale.Strings.fileCount(operationRow.modelData.count) + " · " + Locale.Strings.byteSize(operationRow.modelData.total)
 
                 wrapMode: Text.WrapAnywhere
                 color: root.foreground
@@ -170,7 +174,7 @@ Column {
             Text {
                 textFormat: Text.PlainText
                 width: parent.width
-                text: TransferModel.status(operationRow.modelData)
+                text: TransferModel.status(operationRow.modelData, Locale.Strings)
 
                 wrapMode: Text.Wrap
                 color: root.foreground
@@ -189,9 +193,9 @@ Column {
             focusable: true
             visible: root.service && root.service.operationBusy
             objectName: "cancel-file-submission"
-            text: root.service && root.service.cancellationRequested === true ? "Cancelling…" : "Cancel"
+            text: root.service && root.service.cancellationRequested === true ? Locale.Strings.t("files.cancelling") : Locale.Strings.t("common.cancel")
             enabled: !!root.service && root.service.cancellationRequested !== true
-            Accessible.description: "Stop pending submissions. For an accepted LAN transfer, use KDE Connect's progress Cancel. Bluetooth cancellation is not available here."
+            Accessible.description: Locale.Strings.t("send.stopPendingSubmissionsForAnAccepted")
             implicitHeight: Math.max(44, Style.space(44))
             foreground: root.foreground
             fontFamily: root.fontFamily
@@ -202,7 +206,7 @@ Column {
             bordered: false
             focusable: true
             visible: root.activity.length > 5
-            text: root.showAllActivity ? "Show recent 5" : "Show all " + root.activity.length
+            text: root.showAllActivity ? Locale.Strings.format("files.showRecent", [Commons.I18n.formatNumber(5)]) : Locale.Strings.format("files.showAll", [Commons.I18n.formatNumber(root.activity.length)])
             implicitHeight: Math.max(32, Style.space(32))
             foreground: root.foreground
             fontFamily: root.fontFamily
@@ -212,7 +216,7 @@ Column {
         SettingsButton {
             bordered: false
             focusable: true
-            text: "Clear history"
+            text: Locale.Strings.t("send.clearHistory")
             implicitHeight: Math.max(32, Style.space(32))
             foreground: root.foreground
             fontFamily: root.fontFamily
@@ -223,7 +227,7 @@ Column {
     Text {
         width: parent.width
         visible: root.activity.length > 0
-        text: "Cancel stops pending submissions. For an accepted LAN transfer, use Cancel in KDE Connect's transfer progress. Bluetooth cancellation is not available here. Cancellation cannot recall a received file."
+        text: Locale.Strings.t("send.cancelStopsPendingSubmissionsForAn")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: root.foreground

@@ -19,25 +19,27 @@ class QuickActions(unittest.TestCase):
     def test_actual_catalog_bounds_order_and_capability_filtering(self):
         code=r'''const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const api=vm.createContext({});vm.runInContext(fs.readFileSync(process.argv[1],'utf8').replace(/^\.pragma library\s*/,''),api);
+const strings=JSON.parse(fs.readFileSync(require('node:path').join(require('node:path').dirname(process.argv[1]),'i18n/en.json')));
+const availability=(...args)=>strings[api.availabilityKey(...args)];
 assert.equal(api.DEFAULT_ORDER,'file,text,clipboard');assert.ok(!api.order(api.DEFAULT_ORDER).includes('ring'));
 assert.equal(new Set(api.entries.map(row=>row.id)).size,api.entries.length);
 assert.equal(api.parse('').length,0);assert.equal(api.parse('ring,file').join(','),'ring,file');
 for(const value of [null,{},['ring'],'ring,ring','file,unknown',' ring','file,','ring;id','x'.repeat(513)])assert.equal(api.parse(value),null);
 assert.equal(api.order('invalid').join(','),api.DEFAULT_ORDER);
 const every=api.entries.map(row=>row.id).join(',');assert.ok(every.length>128 && every.length<=512);assert.equal(api.parse(every).length,api.entries.length);
-for(const row of api.entries){assert.ok(row.label && row.description && row.group);assert.ok(row.description.length<200)}
+for(const row of api.entries){assert.ok(strings[row.labelKey] && strings[row.descriptionKey] && strings[row.groupKey]);assert.ok(strings[row.descriptionKey].length<200)}
 const phone={paired:true,reachable:true,capabilities:{file:true,ring:true},loadedKnown:true,loadedPluginIds:[]};
 assert.equal(api.available('ring,text,file,native-features',phone).join(','),'ring,file,native-features');
-assert.match(api.availabilityText('ring',phone),/not active locally/);assert.match(api.availabilityText('text',phone),/does not report/);
-phone.reachable=false;assert.equal(api.available('file,ring',phone).length,0);assert.match(api.availabilityText('ring',phone),/reachable/);
-assert.match(api.availabilityText('file',null),/Choose a device/);
+assert.match(availability('ring',phone),/not active locally/);assert.match(availability('text',phone),/does not report/);
+phone.reachable=false;assert.equal(api.available('file,ring',phone).length,0);assert.match(availability('ring',phone),/reachable/);
+assert.match(availability('file',null),/Choose a device/);
 assert.equal(api.available('plus-settings,native-features,file',null).join(','),'plus-settings,native-features');
 assert.equal(api.ready('plus-settings',null,null),true);assert.equal(api.ready('native-features',null,null),false);
 const service={actionState:'idle',mediaLoading:false,mediaState:{}};
 assert.equal(api.ready('native-features',null,service),true);
-assert.equal(api.ready('quick-share',null,service),false,'Quick Share needs the installed app');assert.match(api.availabilityText('quick-share',null,service),/Install the r-quick-share/);
-service.quickShareAvailable=true;assert.equal(api.ready('quick-share',null,service),true);assert.match(api.availabilityText('quick-share',null,service),/separate app/);
-service.quickShareOpening=true;assert.equal(api.ready('quick-share',null,service),false);assert.match(api.availabilityText('quick-share',null,service),/Opening RQuickShare/);
+assert.equal(api.ready('quick-share',null,service),false,'Quick Share needs the installed app');assert.match(availability('quick-share',null,service),/Install the r-quick-share/);
+service.quickShareAvailable=true;assert.equal(api.ready('quick-share',null,service),true);assert.match(availability('quick-share',null,service),/separate app/);
+service.quickShareOpening=true;assert.equal(api.ready('quick-share',null,service),false);assert.match(availability('quick-share',null,service),/Opening RQuickShare/);
 const sharing={paired:true,reachable:true,capabilities:{file:true}};
 assert.equal(api.ready('file',sharing,service),true,'Quick Share opening does not block a device action');
 service.quickShareOpening=false;service.actionState='running';assert.equal(api.ready('quick-share',null,service),true,'a device action does not block Quick Share');service.actionState='idle';
@@ -51,15 +53,15 @@ assert.equal(api.ready('browse-files',media,service),true,'direct storage is ava
 service.phoneFilesBusy=true;assert.equal(api.ready('browse-files',media,service),false,'avoid duplicate storage requests');service.phoneFilesBusy=false;
 assert.equal(api.compatible('native-volume',media),true);assert.equal(api.compatible('native-lock',media),false);
 assert.equal(api.ready('media',media,service),true);assert.equal(api.ready('media-next',media,service),false);
-assert.match(api.availabilityText('media-next',media,service),/choose a reported player/);
+assert.match(availability('media-next',media,service),/choose a reported player/);
 service.mediaState={player:'Owned player'};assert.equal(api.ready('media-next',media,service),true);
 service.actionState='running';assert.equal(api.ready('media-next',media,service),false);assert.equal(api.ready('media',media,service),true);assert.equal(api.ready('native-features',null,service),true);
-assert.match(api.availabilityText('native-volume',media,service),/native KDE Connect/);
+assert.match(availability('native-volume',media,service),/native KDE Connect/);
 assert.equal(api.entry('unfamiliar_native_plugin'),null,'unknown module IDs are native inventory, never generated commands');
 const monitor={paired:true,reachable:true,pluginIds:['kdeconnect_virtualmonitor'],loadedKnown:true,loadedPluginIds:['kdeconnect_virtualmonitor'],virtualMonitor:{known:true,active:false,available:true}};
 service.actionState='idle';assert.equal(api.ready('external-monitor',monitor,service),true);
-monitor.virtualMonitor.active=true;monitor.virtualMonitor.available=false;assert.equal(api.ready('external-monitor',monitor,service),true);assert.equal(api.actionLabel('external-monitor',monitor),'Stop virtual monitor session');
-monitor.virtualMonitor.known=false;assert.equal(api.ready('external-monitor',monitor,service),false);assert.match(api.availabilityText('external-monitor',monitor,service),/state is unavailable/);
+monitor.virtualMonitor.active=true;monitor.virtualMonitor.available=false;assert.equal(api.ready('external-monitor',monitor,service),true);assert.equal(strings[api.actionLabelKey('external-monitor',monitor)],'Stop virtual monitor session');
+monitor.virtualMonitor.known=false;assert.equal(api.ready('external-monitor',monitor,service),false);assert.match(availability('external-monitor',monitor,service),/state is unavailable/);
 '''
         result=subprocess.run([shutil.which('node'),'-e',code,str(ROOT/'ActionCatalog.js')],text=True,capture_output=True,timeout=5)
         self.assertEqual(result.returncode,0,result.stderr)

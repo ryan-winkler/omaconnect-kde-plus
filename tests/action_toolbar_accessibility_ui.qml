@@ -1,4 +1,5 @@
 import QtQuick
+import "plugin/i18n" as Locale
 import QtQuick.Window
 import QtTest
 import Quickshell
@@ -39,8 +40,8 @@ ShellRoot {
         if (!check(!!item, id + " delegate exists")) return false
         var entry = Actions.entry(id)
         return check(item.Accessible.role === Accessible.Button, id + " exposes button role")
-            && check(item.Accessible.name === entry.label, id + " exposes the visible action name")
-            && check(item.Accessible.description === entry.description, id + " exposes contextual help")
+            && check(item.Accessible.name === Locale.Strings.t(entry.labelKey), id + " exposes the visible action name")
+            && check(item.Accessible.description === Locale.Strings.t(entry.descriptionKey), id + " exposes contextual help")
             && check(item.activeFocusOnTab, id + " participates in ordinary Tab focus")
     }
     function key(code) {

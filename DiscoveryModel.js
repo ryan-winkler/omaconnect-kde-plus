@@ -4,30 +4,30 @@ var MAX_BYTES = 262144
 var MAX_CANDIDATES = 256
 var MAX_BATCH = 32
 var ERRORS = {
-    "address-invalid": "Enter one LAN or VPN IP address. Subnets and hostnames are not accepted.",
-    "address-not-private": "Use a private IP, or select Tailscale for its 100.64.0.0/10 addresses.",
-    "bth-ipv6-disabled": "BTH IPv6 addresses are disabled by the current policy.",
-    "approval-required": "Approve this address before registration.",
-    "peer-invalid": "Select the KDE device identity for this local address record.",
-    "address-conflict": "Another writer changed the saved KDE addresses. Refresh and review them.",
-    "address-timeout": "The address action timed out. Refresh before retrying.",
-    "address-busy": "Another address action is busy. Retry after it stops.",
-    "metadata-invalid": "Address metadata is invalid. The file was preserved. Review it before changing addresses.",
-    "metadata-permissions": "Address metadata needs private owner permissions.",
-    "metadata-missing": "This address record no longer exists. Refresh the list.",
-    "candidate-limit": "The address list is full (256 entries).",
-    "batch-limit": "Change at most 32 registrations in one batch.",
-    "provider-missing": "The KDE address tool is not installed.",
-    "provider-unavailable": "KDE Connect address storage is unavailable. Start KDE Connect, then refresh."
+    "address-invalid": "discovery.address-invalid",
+    "address-not-private": "discovery.address-not-private",
+    "bth-ipv6-disabled": "discovery.bth-ipv6-disabled",
+    "approval-required": "discovery.approval-required",
+    "peer-invalid": "discovery.peer-invalid",
+    "address-conflict": "discovery.address-conflict",
+    "address-timeout": "discovery.address-timeout",
+    "address-busy": "discovery.address-busy",
+    "metadata-invalid": "discovery.metadata-invalid",
+    "metadata-permissions": "discovery.metadata-permissions",
+    "metadata-missing": "discovery.metadata-missing",
+    "candidate-limit": "discovery.candidate-limit",
+    "batch-limit": "discovery.batch-limit",
+    "provider-missing": "discovery.provider-missing",
+    "provider-unavailable": "discovery.provider-unavailable"
 }
 
-function errorText(code) { return ERRORS[code] || "Address storage is unavailable. Refresh and review the saved addresses." }
+function errorKey(code) { return Object.prototype.hasOwnProperty.call(ERRORS, code) ? ERRORS[code] : "discovery.address-unavailable" }
 function parse(raw) {
     if (typeof raw !== "string" || raw.length > MAX_BYTES) return null
     var data
     try { data = JSON.parse(raw) } catch (_) { return null }
     if (!data || data.schema_version !== 1 || typeof data.ok !== "boolean") return null
-    if (!data.ok) return {ok: false, error: errorText(data.error)}
+    if (!data.ok) return {ok: false, errorKey: errorKey(data.error)}
     if (!Array.isArray(data.addresses) || data.addresses.length > MAX_CANDIDATES
         || !Array.isArray(data.custom_addresses) || data.custom_addresses.length > MAX_CANDIDATES) return null
     var rows = []

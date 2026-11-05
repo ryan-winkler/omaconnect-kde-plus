@@ -5,6 +5,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
 import "../ActionCatalog.js" as Actions
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -33,7 +34,10 @@ Column {
 
     PanelSectionHeader {
         visible: root.showSectionHeader
-        text: (root.device && root.device.type && root.device.type !== "unknown") ? (root.device.type.toUpperCase() + " ACTIONS") : "ACTIONS"
+        text: {
+            var type = root.device ? root.device.type : ""
+            return Locale.Strings.t("actions.heading." + type, Locale.Strings.t("actions.heading"))
+        }
         foreground: root.foreground
         fontFamily: root.fontFamily
     }
@@ -50,11 +54,13 @@ Column {
                 readonly property var catalogEntry: Actions.entry(modelData)
                 readonly property bool stopSubmitting: modelData === "file" && !!root.service && root.service.fileBusy
                 readonly property bool cancelBrowse: modelData === "browse-files" && Actions.browsePending(root.service)
-                readonly property string actionName: stopSubmitting ? "Stop submitting"
-                    : cancelBrowse ? "Cancel browse" : Actions.actionLabel(modelData, root.device)
-                readonly property string actionTooltip: stopSubmitting ? "Cancel the current file submission"
-                    : cancelBrowse ? root.service.phoneFilesMessage + " Cancel the current browse."
-                    : catalogEntry ? catalogEntry.description + (root.actionReady(modelData) ? "" : "\n" + Actions.availabilityText(modelData,root.device,root.service)) : modelData
+                readonly property string actionName: stopSubmitting ? Locale.Strings.t("actions.stopSubmitting")
+                    : cancelBrowse ? Locale.Strings.t("phoneFiles.cancelBrowse")
+                    : Locale.Strings.t(Actions.actionLabelKey(modelData, root.device))
+                readonly property string actionTooltip: stopSubmitting ? Locale.Strings.t("actions.cancelSubmission")
+                    : cancelBrowse ? root.service.phoneFilesMessage
+                    : catalogEntry ? Locale.Strings.t(catalogEntry.descriptionKey)
+                        + (root.actionReady(modelData) ? "" : "\n" + Locale.Strings.t(Actions.availabilityKey(modelData, root.device, root.service))) : modelData
                 readonly property string actionIcon: stopSubmitting || cancelBrowse ? "󰅖" : catalogEntry ? catalogEntry.icon : ""
 
                 objectName: "quick-action-" + modelData
@@ -100,8 +106,10 @@ Column {
     Text {
         width: parent.width
         visible: root.blockedActions.length > 0
-        text: root.blockedActions.length > 0 ? Actions.availabilityText(root.blockedActions[0],root.device,root.service)
-            + (root.blockedActions.length > 1 ? " Other unavailable actions: " + root.blockedActions.slice(1).map(function(id) { return Actions.entry(id).label; }).join(", ") + "." : "") : ""
+        text: root.blockedActions.length > 0 ? Locale.Strings.t(Actions.availabilityKey(root.blockedActions[0],root.device,root.service))
+            + (root.blockedActions.length > 1 ? " " + Locale.Strings.format("actions.otherUnavailable", [
+                root.blockedActions.slice(1).map(function(id) { return Locale.Strings.t(Actions.entry(id).labelKey) }).join(", ")
+            ]) : "") : ""
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: root.foreground

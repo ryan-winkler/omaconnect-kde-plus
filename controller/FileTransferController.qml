@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Io
 import "../TransferModel.js" as TransferModel
+import "../i18n" as Locale
 
 // File selection review and batch submission. The recipient is fixed when a
 // draft starts; KdeConnectController forwards the file API here.
@@ -58,11 +59,11 @@ Item {
         var device = controller.deviceById(id)
         if (operationBusy || fileTransferProcess.running || filePickerProcess.running || fileInspectProcess.running) return false
         if (selectionState === "draft" || selectionState === "preview" || selection.length) {
-            selectionError = "Review or clear the current file selection before choosing more files."
+            selectionError = Locale.Strings.t("files.reviewOrClearTheCurrentFile")
             return false
         }
         if (!device || !controller.canAct(id) || !device.capabilities || !device.capabilities.file) {
-            selectionError = "Select a paired, reachable device that supports files"
+            selectionError = Locale.Strings.t("files.selectAPairedReachableDeviceThat")
             return false
         }
         // The recipient belongs to this draft. Later navigation cannot change it.
@@ -86,8 +87,14 @@ Item {
         selectionError = ""
         filePickerProcess.command = chooserUsesNativeMenu
             ? ["python3", controller.scriptPath("scripts/portal_files.py"), "recent"]
-            : ["bash", controller.getPickerScriptPath()]
-        filePickerProcess.payload = JSON.stringify({recipient: draftTarget.peerName.slice(0, 256)}) + "\n"
+            : ["bash", controller.getPickerScriptPath(), Locale.Strings.t("files.pickerTitle")]
+        var recipient = draftTarget.peerName.slice(0, 80)
+        filePickerProcess.payload = chooserUsesNativeMenu ? JSON.stringify({
+            recipient: recipient,
+            title: recipient ? Locale.Strings.format("files.pickerFor", [recipient]).slice(0, 160)
+                             : Locale.Strings.t("files.pickerSingle").slice(0, 160),
+            previewLabel: Locale.Strings.t("files.pickerPreviews").slice(0, 80)
+        }) + "\n" : ""
         filePickerProcess.targetGeneration = selectionGeneration
         filePickerProcess.running = true
         return true
@@ -121,7 +128,7 @@ Item {
                 || operationBusy || filePickerProcess.running || fileInspectProcess.running) return false
         var device = controller.deviceById(draftTarget.peerId)
         if (!device || !controller.canAct(draftTarget.peerId) || !device.capabilities || !device.capabilities.file) {
-            selectionError = "The original recipient is no longer paired and reachable"
+            selectionError = Locale.Strings.t("files.theOriginalRecipientIsNoLonger")
             return false
         }
         selectionGeneration += 1
@@ -141,7 +148,7 @@ Item {
         try { result = JSON.parse(output) } catch (error) { result = null }
         if (code === 0 && result && result.state === "preview") {
             if (!chooserUsesNativeMenu || !draftTarget || !validPreviewPaths(result.paths)) {
-                selectionError = "The image list could not be checked. Choose files again."
+                selectionError = Locale.Strings.t("files.theImageListCouldNotBe")
                 return
             }
             previewCandidates = result.paths.slice()
@@ -164,13 +171,13 @@ Item {
             var item = result.files[i]
             if (!item || typeof item.path !== "string" || item.path.charAt(0) !== "/"
                     || typeof item.size !== "number" || item.size < 0 || !isFinite(item.size)) {
-                selectionError = "The selected files could not be checked"
+                selectionError = Locale.Strings.t("files.theSelectedFilesCouldNotBe")
                 return
             }
             total += item.size
         }
         if (total > Math.pow(2, 40)) {
-            selectionError = "Select up to 100 files and 1 TiB in total"
+            selectionError = Locale.Strings.t("files.selectUpTo100FilesAnd")
             return
         }
         selection = result.files
@@ -188,14 +195,14 @@ Item {
     }
 
     function selectionErrorText(code) {
-        if (code === "selection-limit") return "Select up to 100 files and 1 TiB in total"
-        if (code === "portal-unavailable") return "The desktop file chooser is unavailable. Check the desktop portal and Python Gio support."
-        if (code === "source-preparation-failed") return "Could not prepare a private copy. Check cache access and free space, then choose again."
-        if (code === "source-changed") return "A selected file changed. Choose the files again."
-        if (code === "recent-files-empty") return "No supported recent files found. Use the desktop chooser in Plus settings → Quick actions."
-        if (code === "recent-files-timeout") return "The file menu timed out. If still visible, press Escape. Use the desktop chooser to try again."
-        if (code === "recent-files-unavailable") return "The Omarchy file picker is unavailable. Use the desktop chooser in Plus settings → Quick actions."
-        return "Select readable local regular files. Folders and other locations are not supported."
+        if (code === "selection-limit") return Locale.Strings.t("files.selectUpTo100FilesAnd")
+        if (code === "portal-unavailable") return Locale.Strings.t("files.theDesktopFileChooserIsUnavailable")
+        if (code === "source-preparation-failed") return Locale.Strings.t("files.couldNotPrepareAPrivateCopy")
+        if (code === "source-changed") return Locale.Strings.t("files.aSelectedFileChangedChooseThe")
+        if (code === "recent-files-empty") return Locale.Strings.t("files.noSupportedRecentFilesFoundUse")
+        if (code === "recent-files-timeout") return Locale.Strings.t("files.theFileMenuTimedOutIf")
+        if (code === "recent-files-unavailable") return Locale.Strings.t("files.theOmarchyFilePickerIsUnavailable")
+        return Locale.Strings.t("files.selectReadableLocalRegularFilesFolders")
     }
 
     function cancelDraft() {
@@ -210,7 +217,7 @@ Item {
         selection = []
         selectionBytes = 0
         selectionState = "idle"
-        selectionError = nativeMenuMayRemain ? "Selection cancelled. If the file menu is still visible, press Escape. A later choice from that cancelled picker will not send." : ""
+        selectionError = nativeMenuMayRemain ? Locale.Strings.t("files.selectionCancelledIfTheFileMenu") : ""
         draftTarget = null
         return true
     }
@@ -227,7 +234,7 @@ Item {
         var target = Object.assign({}, draftTarget)
         var device = controller.deviceById(target.peerId)
         if (!device || !controller.canAct(target.peerId) || !device.capabilities || !device.capabilities.file) {
-            selectionError = "The reviewed recipient is no longer paired and reachable"
+            selectionError = Locale.Strings.t("files.theReviewedRecipientIsNoLonger")
             return false
         }
         operationSequence += 1
@@ -242,7 +249,7 @@ Item {
         fileBusy = true
         cancelDraft()
         fileTransferState = "queued"
-        fileTransferMessage = TransferModel.status(activeOperation)
+        fileTransferMessage = TransferModel.status(activeOperation, Locale.Strings)
         fileTransferError = ""
         // Let an explicit cancel happen while still queued, before any CLI call.
         Qt.callLater(function() { root.submitNextFile(id) })
@@ -253,7 +260,7 @@ Item {
         activeOperation = operation
         operations = TransferModel.remember(operations, operation)
         fileTransferState = operation.state
-        fileTransferMessage = TransferModel.status(operation)
+        fileTransferMessage = TransferModel.status(operation, Locale.Strings)
         fileTransferError = ""
     }
 
@@ -351,7 +358,7 @@ Item {
             fileTransferProcess.signal(15)
             cancellationTimer.operationId = activeOperation.id
             cancellationTimer.restart()
-            fileTransferMessage = "Stopping submission. Any request already submitted can still be delivered."
+            fileTransferMessage = Locale.Strings.t("files.stoppingSubmissionAnyRequestAlreadySubmitted")
         } else cancelRemaining()
         return true
     }
@@ -367,20 +374,20 @@ Item {
 
     function stageDroppedFiles(id, urls) {
         if (operationBusy || fileTransferProcess.running || filePickerProcess.running || fileInspectProcess.running) {
-            selectionError = "Wait for the current file action, then drop the files again."
+            selectionError = Locale.Strings.t("files.waitForTheCurrentFileAction")
             return false
         }
         if (selectionState === "draft" || selectionState === "preview" || selection.length) {
-            selectionError = "Review or clear the current file selection before dropping more files."
+            selectionError = Locale.Strings.t("files.reviewOrClearTheCurrentFile2")
             return false
         }
         var device = controller.deviceById(id)
         if (!device || !controller.canAct(id) || !device.capabilities || !device.capabilities.file) {
-            selectionError = "Select a paired, reachable device that supports files"
+            selectionError = Locale.Strings.t("files.selectAPairedReachableDeviceThat")
             return false
         }
         if (!Array.isArray(urls) || urls.length < 1 || urls.length > 100) {
-            selectionError = "Drop up to 100 local files. Folders and links are not supported."
+            selectionError = Locale.Strings.t("files.dropUpTo100LocalFiles")
             return false
         }
         var values = []
@@ -390,13 +397,13 @@ Item {
             if (typeof value !== "string" || value.length > 16384
                     || !/^file:\/\/(?:localhost)?\//.test(value)
                     || /[\u0000-\u001f\u007f]/.test(value)) {
-                selectionError = "Drop readable local files. Folders and links are not supported."
+                selectionError = Locale.Strings.t("files.dropReadableLocalFilesFoldersAnd")
                 return false
             }
             units += value.length
             // Bound UTF-8 stdin below the helper's 512 KiB input limit.
             if (units > 128 * 1024) {
-                selectionError = "The dropped file list is too large. Choose fewer files."
+                selectionError = Locale.Strings.t("files.theDroppedFileListIsToo")
                 return false
             }
             values.push(value)

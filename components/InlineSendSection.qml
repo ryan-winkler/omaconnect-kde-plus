@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 // Daily Devices content; transfer review and submission keep their existing owner.
 Column {
@@ -26,7 +27,7 @@ Column {
         spacing: Style.space(8)
         SettingsButton {
             objectName: "inline-send-choose-files"
-            text: "Choose files"
+            text: Locale.Strings.t("files.choose")
             foreground: Commons.Color.popups.text
             focusable: true
             enabled: dropZone.ready
@@ -34,8 +35,8 @@ Column {
         }
         SettingsButton {
             objectName: "inline-send-open-window"
-            text: "Keep Send window open"
-            tooltipText: "Switching to your file manager can close this popup. This window stays open as a drop target while you review."
+            text: Locale.Strings.t("inlineSend.keepSendWindowOpen")
+            tooltipText: Locale.Strings.t("inlineSend.switchingToYourFileManagerCan")
             foreground: Commons.Color.popups.text
             focusable: true
             enabled: !!root.panel && typeof root.panel.openSendWindow === "function"
