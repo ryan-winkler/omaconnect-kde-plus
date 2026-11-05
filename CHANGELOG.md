@@ -35,6 +35,10 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- The persistent Send window exposes Back and Choose files as named accessible
+  button actions. Disabled Choose files cannot dispatch through accessibility.
+- Opted-in task notices keep complete Unicode characters when a long device name
+  reaches the display limit.
 - Phone-file browsing rechecks current KDE Connect ownership and peer state after
   slow storage probes, before requesting the file-manager handoff.
 - Layout saves use the structured helper result, so a valid success message

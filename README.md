@@ -1,7 +1,7 @@
 # Omaconnect KDE Plus
 
 A KDE Connect companion for the [Omarchy](https://omarchy.org/) bar: send files,
-run your own quick actions and choose how your devices look. It is a fork of
+browse shared phone folders, run your own quick actions and arrange your daily controls. It is a fork of
 [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect), built
 on [KDE Connect](https://kdeconnect.kde.org/).
 
@@ -9,7 +9,8 @@ on [KDE Connect](https://kdeconnect.kde.org/).
 
 Example devices, files and media are used in the screenshots.
 See the [screenshot gallery](docs/HELP.md#screenshots) for the open device dropdown,
-Send, cancellation, activity, media and all four settings domains.
+phone folders, the layout editor, Send, cancellation, activity, media and all four
+settings domains.
 
 [![Functional checks](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml/badge.svg)](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml)
 [![CodeQL](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml/badge.svg)](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml)
@@ -38,18 +39,25 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
   → Quick actions**, enable **Review files before Send** for an explicit review,
   or **Use desktop file chooser** for any local file and batches of up to 100.
   Drops on Devices, the bar icon or Send window always require review and use Copy.
+- **Phone folders:** select **Browse phone files** to open folders shared by KDE
+  Connect in your default file manager. Several advertised folders show a choice.
+  Phone storage access stays with KDE Connect.
 - **Cancel:** stop pending file work from any daily view or the Send window.
   After native acceptance, use KDE Connect's LAN transfer progress Cancel.
   Bluetooth cancellation is not exposed by the current native sharing API.
 - **Honest activity:** “Request accepted” means KDE accepted the transfer;
   delivery stays unknown. A batch keeps its reviewed recipient.
+- **Desktop notices:** see final file-request outcomes while Plus is closed.
+  Device names are omitted by default; enable them separately in Quick actions
+  settings. Native notification history and Do Not Disturb remain with Omarchy.
 - **Quick actions:** add, remove and reorder reviewed shortcuts, including media
   transport, native KDE Connect routes and an optional Quick Share shortcut.
 - **Appearance:** choose a phone, computer, theme icon, symbol or local PNG/SVG,
   and an alias per device. Preview before Apply.
 - **Daily layout:** a compact View menu, top or bottom placement, and optional
   Send and Activity shortcuts. Switch devices in one dropdown. Collapse daily
-  sections and move every section up or down from Settings. Every view stays available.
+  sections. Open **Devices → Edit layout** to change visibility and position on
+  the actual sections, including hidden ones. Every view stays available.
 - **Settings:** Appearance, Connections, Quick actions and Device features, with
   short help next to each control. Sections can be hidden or collapsed.
 - **Device features:** search installed native modules, change their local On/Off

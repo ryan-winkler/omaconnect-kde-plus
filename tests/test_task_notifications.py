@@ -95,6 +95,29 @@ print('{"ok":true}')
         self.assertLessEqual(len(notice.plain_name('x'*1000)), 128)
 
     @unittest.skipUnless(shutil.which('node'), 'Node absent')
+    def test_opted_in_names_keep_complete_unicode_at_the_length_limit(self):
+        source = (ROOT/'controller/TaskNotificationController.qml').read_text()
+        function = block(source, '    function notify(')
+        names = ['a'*127 + '\U0001f4f1', '\U0001f4f1'*129, 'a'*129]
+        script = """const vm=require('node:vm');
+const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const context={suppressed:false,includeDeviceName:true,pending:[],
+ strings:{t:key=>key},Qt:{callLater:()=>{}},root:{}};
+vm.createContext(context);vm.runInContext(input.function,context);
+for(const name of input.names) context.notify({state:'request_accepted',peerName:name,peerId:'fixture'});
+process.stdout.write(JSON.stringify(context.pending));
+"""
+        result = subprocess.run(['node', '-e', script], input=json.dumps({'function': function, 'names': names}),
+                                text=True, capture_output=True, timeout=3)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payloads = json.loads(result.stdout)
+        self.assertEqual(len(payloads), len(names))
+        for payload, name in zip(payloads, names):
+            with self.subTest(name=name):
+                validated = notice.read_request(io.BytesIO(json.dumps(payload).encode()))
+                self.assertEqual(validated['deviceName'], name[:128])
+
+    @unittest.skipUnless(shutil.which('node'), 'Node absent')
     def test_finish_emits_once_after_final_state_and_preserves_evidence(self):
         source = (ROOT/'controller/FileTransferController.qml').read_text()
         function = block(source, '    function finishOperation(')

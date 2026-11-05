@@ -34,7 +34,7 @@ Item {
             body: strings.t("notice." + key + ".body"),
             includeDeviceName: includeDeviceName,
             deviceName: includeDeviceName && typeof operation.peerName === "string" && operation.peerName !== operation.peerId
-                ? operation.peerName.slice(0, 128) : ""
+                ? Array.from(operation.peerName).slice(0, 128).join("") : ""
         }
         // ponytail: keep only the latest three waiting outcomes; Activity keeps all 50.
         pending = pending.concat([payload]).slice(-3)

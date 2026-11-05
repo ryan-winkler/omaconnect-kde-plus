@@ -85,14 +85,16 @@ Window {
             id: actions
             width: parent.width
             spacing: Style.space(8)
-            Kit.Button {
+            SettingsButton {
+                objectName: "send-window-back-to-devices"
                 text: "Back to devices"
                 Accessible.name: text
                 focusable: true
                 foreground: Commons.Color.popups.text
                 onClicked: root.returnToDevices()
             }
-            Kit.Button {
+            SettingsButton {
+                objectName: "send-window-choose-files"
                 text: "Choose files"
                 Accessible.name: text
                 focusable: true

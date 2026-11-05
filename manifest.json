@@ -4,7 +4,7 @@
   "name": "Omaconnect KDE Plus",
   "version": "0.1.5",
   "author": "Ryan Winkler; based on Jitendra Dara’s OmaConnect",
-  "description": "KDE Connect in the Omarchy bar: device actions, file sharing, media controls, custom icons and optional home-access integrations.",
+  "description": "KDE Connect in the Omarchy bar: file sharing, phone folders, media controls, editable layout, custom icons and optional home-access integrations.",
   "license": "MIT",
   "homepage": "https://github.com/ryan-winkler/omaconnect-kde-plus",
   "repository": "https://github.com/ryan-winkler/omaconnect-kde-plus",

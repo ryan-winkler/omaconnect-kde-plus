@@ -257,7 +257,7 @@ its existing 50-operation limit independently of desktop history.
 `summary` (nonempty, at most 256 characters), `body` (nonempty, at most 1024),
 `includeDeviceName` (boolean) and `deviceName` (at most 256). All strings must be
 valid UTF-8 without NUL. False opt-in requires an empty name; QML sends at most
-128 name characters. The helper strips control/bidi formatting from an opted-in
+128 Unicode code points without splitting a surrogate pair. The helper strips control/bidi formatting from an opted-in
 name and substitutes visible angle/ampersand/colon characters so native entity
 decoding cannot revive markup or clickable URLs. Names never enter argv, logs
 or helper output. No IDs, paths, filenames, user messages or provider errors are

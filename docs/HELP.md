@@ -97,7 +97,24 @@ Configured remote commands remain explicit actions.
 </details>
 
 <details>
-<summary>Appearance, icons and daily section order</summary>
+<summary>Phone folders and direct layout editing</summary>
+
+Select **Browse phone files** to open folders advertised by KDE Connect. If the
+phone exposes several folders, choose one. **Cancel browse** clears the pending
+choice; phone permissions remain in KDE Connect.
+
+![Phone file controls with two example shared folders, Cancel browse and native settings](screenshots/phone-files.png)
+
+Open **Devices → Edit layout** to change visibility and position on the actual
+sections. Hidden sections remain available in the editor. Availability rules use
+reported capability or configured local tools; they do not confirm delivery.
+
+![Devices in Edit layout mode with visibility policies and position controls](screenshots/edit-layout.png)
+
+</details>
+
+<details>
+<summary>Appearance and icons</summary>
 
 Appearance holds bar and device identity choices and daily navigation preferences.
 
@@ -120,9 +137,11 @@ their controls; they do not connect a VPN.
 ![Connections settings with optional Tailscale, Back to Home and WireGuard visibility controls](screenshots/connections.png)
 
 Quick actions sharing preferences are shown here scrolled to **Use desktop file
-chooser** and **Review files before Send**. The settings are independent.
+chooser**, **Review files before Send**, and task-notice preferences. These
+settings are independent. Device names are excluded from desktop notices by
+default; enable that option only if you want names in native notification history.
 
-![Quick actions settings scrolled to the two file-picker and review preferences](screenshots/sharing-preferences.png)
+![Quick actions sharing, file-review, task-notice and device-name privacy preferences](screenshots/sharing-preferences.png)
 
 Device features lists installed native modules and their observed state, with
 Configure links to the native settings owner.

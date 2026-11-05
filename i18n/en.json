@@ -11,7 +11,7 @@
   "notice.unconfirmed.body": "Files can still arrive. Check Activity and native KDE Connect progress.",
   "notice.unavailable": "Desktop notice unavailable. Check the submission activity below.",
   "notice.enabled.label": "Show task notices",
-  "notice.enabled.help": "Show a desktop notice after a file operation when the Plus popup and Send window are closed. Desktop Do Not Disturb and notification history apply. Acceptance does not confirm delivery.",
+  "notice.enabled.help": "Show a desktop notice after a file operation when the Plus popup, Send window and image preview are closed. Desktop Do Not Disturb and notification history apply. Acceptance does not confirm delivery.",
   "notice.deviceName.label": "Include device name in task notices",
   "notice.deviceName.help": "Off by default. On adds the reviewed device name to desktop notices and their history. File names and message content stay excluded. KDE Connect owns phone notification forwarding and permissions."
 }
