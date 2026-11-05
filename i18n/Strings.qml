@@ -3,9 +3,32 @@ import QtQuick
 import qs.Commons as Commons
 import "../TransferModel.js" as Transfers
 
-Commons.Translations {
+QtObject {
     id: root
-    directory: decodeURIComponent(Qt.resolvedUrl(".").toString().replace(/^file:\/\//, ""))
+
+    readonly property Commons.Translations catalogue: Commons.Translations {
+        directory: decodeURIComponent(Qt.resolvedUrl(".").toString().replace(/^file:\/\//, ""))
+    }
+
+    // Reuse host copy only where the same label has the same meaning.
+    readonly property var nativeLabels: ({
+        "common.cancel": "common.cancel",
+        "iconChooser.apply": "common.apply",
+        "device.pair": "bluetooth.pair",
+        "deviceInformation.battery": "power.battery",
+        "deviceSwitcher.connected": "bluetooth.connectedStatus",
+        "imagePreviewWindow.previous": "media.previous",
+        "imagePreviewWindow.next": "media.next",
+        "mediaPlayer.nothingPlaying": "media.nothingPlaying"
+    })
+
+    function t(key, fallback) {
+        var nativeKey = nativeLabels[key]
+        var pluginText = catalogue.t(key, fallback)
+        if (typeof nativeKey === "string" && !catalogue.languageStrings[key] && !catalogue.baseStrings[key])
+            return Commons.I18n.t(nativeKey, pluginText)
+        return pluginText
+    }
 
     // Replace placeholders in the catalog text once. A device name may
     // itself contain %1 or %2 and must be displayed unchanged.
@@ -27,7 +50,7 @@ Commons.Translations {
     function number(value) { return Commons.I18n.formatNumber(value) }
 
     function fileCount(count) {
-        var text = tn("files.count", count)
+        var text = catalogue.tn("files.count", count)
         return text.indexOf("%1") >= 0 ? text.arg(Commons.I18n.formatNumber(count)) : text
     }
 

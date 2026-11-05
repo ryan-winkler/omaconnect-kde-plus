@@ -158,6 +158,11 @@ Configure links to the native settings owner.
 
 ## Daily popup
 
+Plus follows **Setup → Language** in Omarchy. Shared controls use the
+desktop’s translations. Arabic, German, French, Mexican Spanish and
+Portuguese include partial Plus translations. Other Plus text uses
+English when a matching translation is unavailable.
+
 The **View: Devices** menu also opens **Send**, **Activity** and **Plus settings**.
 Navigation stays at **Bottom** by default, so devices come first. In
 **Plus settings → Appearance**, enable **Place navigation at Top** to move the

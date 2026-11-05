@@ -9,8 +9,9 @@ All notable changes are listed here. The format follows
 ### Added
 
 - Daily views, Settings, file choosers and Plus feedback use Omarchy's live
-  language catalogue. Portuguese and Arabic include core navigation and file
-  controls. Entries without a translation use English. Right-to-left reading
+  language catalogue. Shared controls use Omarchy translations when Plus has no
+  matching entry. Arabic, German, French, Mexican Spanish and Portuguese include
+  partial Plus translations. Other missing Plus copy uses English. Right-to-left reading
   order applies to the Send, Settings and image preview windows.
 
 - File-type icons in the recent-file menu and an Image previews entry for the

@@ -64,7 +64,10 @@ The stable machine plugin ID is `omaconnect.plus`, using the Community marketpla
 ## Translate plugin copy
 
 Add visible and accessible text to `i18n/en.json` using a stable key named for its
-domain. Other catalogues fall back to English for missing keys. Use
+domain. Plus follows the language selected in Omarchy. Ship any supported
+locale as `i18n/<code>.json`. A regional catalogue falls back to its base
+language. A small set of shared labels then uses Omarchy’s own catalogue.
+Other untranslated text uses Plus English. Use
 `Locale.Strings.format` with numbered placeholders for sentences that contain
 device or file names. Use the native plural and number helpers for quantities.
 Keep device IDs, preference values and command flags independent of the
