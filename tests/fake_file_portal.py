@@ -13,15 +13,20 @@ process = None
 delayed_cancel = os.environ.get("TEST_PORTAL_DELAYED_CANCEL") == "1"
 late_registration = os.environ.get("TEST_PORTAL_LATE_REGISTRATION") == "1"
 close_requests = []
+screenshot_only = os.environ.get("TEST_PORTAL_SCREENSHOT") == "1"
 
 
 def method(connection, sender, path, interface, name, parameters, invocation):
     """Serve an owned chooser request with optional cancellation and registration races."""
     parent, title, options = parameters.unpack()
     assert title == os.environ.get('TEST_PORTAL_TITLE', 'Select files to send')
-    assert options['multiple'] is True
+    assert options['multiple'] is not screenshot_only
     assert options['directory'] is False
-    assert 'filters' not in options
+    if screenshot_only:
+        assert options['filters'] == [('PNG', [(1, 'image/png')])]
+        assert bytes(options['current_folder']) == os.fsencode(os.environ['OMASNAP_SCREENSHOT_DIR']) + b'\0'
+    else:
+        assert 'filters' not in options
     handle = '/org/freedesktop/portal/desktop/request/' + sender[1:].replace('.', '_') + '/' + options['handle_token']
     if late_registration:
         handle += '_registered'
@@ -59,7 +64,7 @@ def method(connection, sender, path, interface, name, parameters, invocation):
 
 info = Gio.DBusNodeInfo.new_for_xml(xml).interfaces[0]
 bus.register_object('/org/freedesktop/portal/desktop', info, method, None, None)
-command = ['python3', os.environ['TEST_PICKER'], 'choose']
+command = ['python3', os.environ['TEST_PICKER'], 'choose-screenshot' if screenshot_only else 'choose']
 if 'TEST_PORTAL_TITLE' in os.environ:
     command.append(os.environ['TEST_PORTAL_TITLE'])
 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

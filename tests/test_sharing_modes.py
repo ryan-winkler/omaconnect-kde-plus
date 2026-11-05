@@ -114,6 +114,22 @@ const h=fresh();h.ctx.chooseFiles('A',immediate);h.selected();h.ctx.devices[0].r
 assert.equal(h.calls.length,0);assert.equal(h.ctx.selectionState,'draft');
 ''')
 
+    def test_screenshot_mode_always_reviews_for_the_captured_recipient(self):
+        self.node(r'''
+const f=fresh(),c=f.ctx;
+assert.equal(c.chooseFiles('A',{...immediate,screenshotOnly:true}),true);
+assert.equal(c.filePickerProcess.command[2],'choose-screenshot');
+assert.equal(c.filePickerProcess.command[3],'Choose a screenshot to review');
+c.selectedDeviceId='B';
+f.selected();f.flush();
+assert.equal(c.selectionState,'draft');assert.equal(c.draftTarget.peerId,'A');assert.equal(f.calls.length,0);
+assert.equal(c.submitSelection(),true);f.flush();assert.equal(f.calls[0].peerId,'A');
+const g=fresh();g.ctx.chooseFiles('A',{...immediate,screenshotOnly:true});
+g.ctx.filePickerProcess.running=false;
+g.ctx.applySelection('{"state":"cancelled","files":[]}',0,g.ctx.selectionGeneration);
+g.flush();assert.equal(g.calls.length,0);
+''')
+
     def test_stale_cancelled_drop_and_queued_results_never_start_provider(self):
         """Keep stale, cancelled, dropped and stopped queued selections from implicit submission."""
         self.node(r'''
@@ -294,6 +310,8 @@ print('Image previews…')
             downloads = home / 'Downloads'
             downloads.mkdir()
             (downloads / 'example.txt').write_bytes(b'owned menu fixture')
+            (fixture / 'owned-shot.png').write_bytes(b'owned screenshot fixture')
+            (fixture / 'owned-shot.png.replacement').write_bytes(b'different screenshot fixture')
             menu = fake_bin / 'omarchy-menu-select'
             menu.write_text('''#!/usr/bin/python3
 import json,os,sys,time
@@ -314,7 +332,9 @@ print(sys.argv[2].split('\\t',1)[-1])
             self.assertEqual(len(submissions), 4, calls)
             self.assertTrue(all(row['args'][0] == 'A' for row in submissions), submissions)
             self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()),
-                             [{'multiple': True, 'directory': False}] * 2)
+                             [{'multiple': True, 'directory': False}] * 2
+                             + [{'multiple': False, 'directory': False}] * 2)
+            self.assertEqual((fixture / 'owned-shot.png').read_bytes(), b'different screenshot fixture')
             self.assertFalse(any(row['tool']=='kdeconnect-cli' for row in calls), calls)
             self.assertEqual((home/'Downloads/example.txt').read_bytes(), b'owned menu fixture')
 

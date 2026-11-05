@@ -325,9 +325,9 @@ Panel {
     readonly property string fileChoiceHint: fileChooserOptions.reviewFilesBeforeSend
         ? Locale.Strings.t("files.reviewHint")
         : Locale.Strings.t("files.immediateHint")
-    function chooseFiles() {
+    function chooseFiles(options) {
         if (!service || !device) return false
-        if (!service.chooseFiles(device.id, fileChooserOptions)) return false
+        if (!service.chooseFiles(device.id, options || fileChooserOptions)) return false
         previewGeneration = service.selectionGeneration
         return true
     }
@@ -603,6 +603,10 @@ Panel {
         else if (actionId === "file") {
             if (service.fileBusy) service.cancelFileTransfer()
             else { root.currentView = "Send"; root.chooseFiles() }
+        }
+        else if (actionId === "review-screenshot") {
+            root.currentView = "Send"
+            root.chooseFiles({useDesktopFileChooser: true, reviewFilesBeforeSend: true, screenshotOnly: true})
         }
         else if (actionId === "sms") service.openSmsApp(device.id)
         else if (actionId === "ping") {
@@ -1036,6 +1040,7 @@ Panel {
                     }
                     Text {
                         width: parent.width
+                        visible: !root.service || !root.service.draftTarget
                         text: root.fileChoiceHint
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap

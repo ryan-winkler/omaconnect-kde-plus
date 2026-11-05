@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-shot portal chooser and KDE submission boundary. No persistent history.
 
-Modes: choose, inspect, submit, and sweep (expired share copies, at plugin start).
+Modes: choose, choose-screenshot, inspect, submit, and sweep (expired share copies at startup).
 Shared sources can use private descriptor-backed snapshots during submission.
 """
 import json
@@ -84,7 +84,7 @@ def validate_file(expected):
     return actual
 
 
-def choose(title='Select files to send'):
+def choose(title='Select files to send', screenshot_only=False):
     """Return one portal result and close a cancelled request after registration."""
     from gi.repository import Gio, GLib
     bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
@@ -109,7 +109,10 @@ def choose(title='Select files to send'):
             result.update(state='failed', error='portal-unavailable')
         else:
             try:
-                result.update(state='selected', files=inspect_uris(values.get('uris')))
+                files = inspect_uris(values.get('uris'))
+                if screenshot_only and (len(files) != 1 or Path(files[0]['name']).suffix.lower() != '.png'):
+                    raise ValueError('source-path-rejected')
+                result.update(state='selected', files=files)
             except (ValueError, TypeError) as error:
                 result.update(state='failed', error=str(error))
         loop.quit()
@@ -160,7 +163,24 @@ def choose(title='Select files to send'):
     previous_signal = signal.signal(signal.SIGTERM, close_request)
     try:
         if not resolved:
-            reply = bus.call_sync('org.freedesktop.portal.Desktop', '/org/freedesktop/portal/desktop', 'org.freedesktop.portal.FileChooser', 'OpenFile', GLib.Variant('(ssa{sv})', ('', title, {'handle_token': GLib.Variant('s', token), 'multiple': GLib.Variant('b', True), 'directory': GLib.Variant('b', False), 'modal': GLib.Variant('b', True)})), GLib.VariantType.new('(o)'), Gio.DBusCallFlags.NONE, 5000, None)
+            options = {
+                'handle_token': GLib.Variant('s', token),
+                'multiple': GLib.Variant('b', not screenshot_only),
+                'directory': GLib.Variant('b', False),
+                'modal': GLib.Variant('b', True),
+            }
+            if screenshot_only:
+                options['filters'] = GLib.Variant('a(sa(us))', [('PNG', [(1, 'image/png')])])
+                pictures = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES)
+                default_folder = Path(pictures or Path.home() / 'Pictures') / 'Screenshots'
+                folder = (os.environ.get('OMASNAP_SCREENSHOT_DIR')
+                          or os.environ.get('OMARCHY_SCREENSHOT_DIR') or str(default_folder))
+                if os.path.isabs(folder) and os.path.isdir(folder) and len(os.fsencode(folder)) <= 4096:
+                    options['current_folder'] = GLib.Variant('ay', os.fsencode(folder) + b'\0')
+            reply = bus.call_sync('org.freedesktop.portal.Desktop', '/org/freedesktop/portal/desktop',
+                                  'org.freedesktop.portal.FileChooser', 'OpenFile',
+                                  GLib.Variant('(ssa{sv})', ('', title, options)),
+                                  GLib.VariantType.new('(o)'), Gio.DBusCallFlags.NONE, 5000, None)
             request_path = reply.unpack()[0]
             request_opened = True
             # SIGTERM during OpenFile is deferred until the real handle exists.
@@ -240,11 +260,11 @@ def main():
     args = sys.argv[1:]
     mode = args[0] if args else ''
     try:
-        if mode == 'choose':
-            if len(args) == 1:
+        if mode in ('choose', 'choose-screenshot'):
+            if len(args) == 1 and mode == 'choose':
                 choose()
             elif len(args) == 2 and 0 < len(args[1]) <= 160 and args[1].isprintable():
-                choose(args[1])
+                choose(args[1], screenshot_only=mode == 'choose-screenshot')
             else:
                 raise ValueError('source-path-rejected')
         elif len(args) != 1:
@@ -279,10 +299,10 @@ def main():
         return 1
     except (OSError, ImportError, TypeError, KeyError):
         # No remote strings, filenames, stderr, or exception details cross out.
-        emit({'state': 'failed', 'error': 'source-path-rejected' if mode != 'choose' else 'portal-unavailable'})
+        emit({'state': 'failed', 'error': 'source-path-rejected' if mode not in ('choose', 'choose-screenshot') else 'portal-unavailable'})
         return 1
     except Exception:
-        emit({'state': 'failed', 'error': 'portal-unavailable' if mode == 'choose' else 'submission-unknown'})
+        emit({'state': 'failed', 'error': 'portal-unavailable' if mode in ('choose', 'choose-screenshot') else 'submission-unknown'})
         return 1
     return 0
 

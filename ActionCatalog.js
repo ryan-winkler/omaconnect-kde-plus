@@ -6,6 +6,7 @@ var DEFAULT_ORDER = "file,text,clipboard";
 var MAX_ORDER_LENGTH = 512;
 var entries = [
     {id:"file", groupKey:"actions.group.sharing", pluginId:"kdeconnect_share", labelKey:"actions.file.label", descriptionKey:"actions.file.description", icon:"󰈔", capability:"file", legacyKey:"showActionFile"},
+    {id:"review-screenshot", groupKey:"actions.group.sharing", pluginId:"kdeconnect_share", labelKey:"actions.review-screenshot.label", descriptionKey:"actions.review-screenshot.description", icon:"󰹑", capability:"file", navigation:true},
     {id:"text", groupKey:"actions.group.sharing", pluginId:"kdeconnect_share", labelKey:"actions.text.label", descriptionKey:"actions.text.description", icon:"󰌹", capability:"text", legacyKey:"showActionText"},
     {id:"clipboard", groupKey:"actions.group.sharing", pluginId:"kdeconnect_clipboard", labelKey:"actions.clipboard.label", descriptionKey:"actions.clipboard.description", icon:"󰅌", capability:"clipboard", legacyKey:"showActionClipboard"},
     {id:"quick-share", groupKey:"actions.group.sharing", pluginId:"", labelKey:"actions.quick-share.label", descriptionKey:"actions.quick-share.description", icon:"󰒗", scope:"global", navigation:true},
