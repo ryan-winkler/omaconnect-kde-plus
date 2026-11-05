@@ -75,6 +75,8 @@ Window {
             text: root.target ? "Reviewed recipient: \u2068" + root.target.peerName + "\u2069\nKDE ID: \u2068" + root.target.peerId + "\u2069"
                 : root.device ? "Selected recipient: \u2068" + (root.service && typeof root.service.displayName === "function" ? root.service.displayName(root.device) : root.device.name) + "\u2069\nKDE ID: \u2068" + root.device.id + "\u2069"
                 : "Select a device in Devices first."
+            Accessible.role: Accessible.StaticText
+            Accessible.name: text
             textFormat: Text.PlainText
             wrapMode: Text.WrapAnywhere
             color: Commons.Color.popups.text
