@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-SHELL = Path('/usr/share/omarchy/shell')
+SHELL = Path(os.environ.get('OMARCHY_PATH', '/usr/share/omarchy')) / 'shell'
 
 
 class SyncthingNote(unittest.TestCase):

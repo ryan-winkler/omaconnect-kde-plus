@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+OMARCHY_ROOT = Path(os.environ.get('OMARCHY_PATH', '/usr/share/omarchy')).resolve()
 
 
 class NativeUi(unittest.TestCase):
@@ -27,9 +28,10 @@ class NativeUi(unittest.TestCase):
             if desktop and not wayland.is_socket(): self.fail('Current Wayland socket is unavailable')
             plugin = fixture / 'plugin'
             shutil.copytree(ROOT, plugin, ignore=shutil.ignore_patterns('.git','__pycache__'))
-            (fixture / 'Commons').symlink_to('/usr/share/omarchy/shell/Commons')
+            native_shell = OMARCHY_ROOT / 'shell'
+            (fixture / 'Commons').symlink_to(native_shell / 'Commons')
             ui = fixture/'Ui'; ui.mkdir()
-            for native in Path('/usr/share/omarchy/shell/Ui').iterdir():
+            for native in (native_shell / 'Ui').iterdir():
                 if native.name != 'KeyboardPanel.qml': (ui/native.name).symlink_to(native)
             # Qt's offscreen plugin has no Quickshell PanelWindow backend.
             # Substitute this hosting boundary only; product UI stays unchanged.
@@ -50,7 +52,7 @@ Item {
 ''')
             if desktop:
                 (ui/'KeyboardPanel.qml').unlink()
-                (ui/'KeyboardPanel.qml').symlink_to('/usr/share/omarchy/shell/Ui/KeyboardPanel.qml')
+                (ui/'KeyboardPanel.qml').symlink_to(native_shell / 'Ui/KeyboardPanel.qml')
             shutil.copy(ROOT / 'tests' / self.qml_fixture, fixture / 'shell.qml')
             shutil.copy(ROOT / 'tests/native_ui_session.py', fixture / 'session.py')
             for name, content in [('one', b'abc'), ('two', b'defg'), ('slow', b'delay')]:
@@ -101,7 +103,7 @@ print(json.dumps({"state":"observed","peerId":peer,"enabled":values,"error":""})
             (language_dir/'language').write_text('en\n')
             runtime = fixture/'runtime'; runtime.mkdir(mode=0o700)
             self.configure_fixture(fixture, plugin, home, fake_bin)
-            env = {'PATH':str(fake_bin), 'HOME':str(home), 'OMARCHY_PATH':'/usr/share/omarchy', 'XDG_CONFIG_HOME':str(home/'.config'), 'XDG_CACHE_HOME':str(home/'.cache'), 'XDG_DATA_HOME':str(home/'.local/share'), 'XDG_STATE_HOME':str(home/'.local/state'), 'XDG_RUNTIME_DIR':str(runtime), 'QT_QPA_PLATFORM':'offscreen', 'QT_QUICK_BACKEND':'software', 'LANG':'C.UTF-8', 'NATIVE_COMMAND_LOG':str(fixture/'commands.jsonl'), 'DBUS_SYSTEM_BUS_ADDRESS':'unix:path='+str(fixture/'no-system-bus')}
+            env = {'PATH':str(fake_bin), 'HOME':str(home), 'OMARCHY_PATH':str(OMARCHY_ROOT), 'XDG_CONFIG_HOME':str(home/'.config'), 'XDG_CACHE_HOME':str(home/'.cache'), 'XDG_DATA_HOME':str(home/'.local/share'), 'XDG_STATE_HOME':str(home/'.local/state'), 'XDG_RUNTIME_DIR':str(runtime), 'QT_QPA_PLATFORM':'offscreen', 'QT_QUICK_BACKEND':'software', 'LANG':'C.UTF-8', 'NATIVE_COMMAND_LOG':str(fixture/'commands.jsonl'), 'DBUS_SYSTEM_BUS_ADDRESS':'unix:path='+str(fixture/'no-system-bus')}
             if desktop:
                 env.pop('QT_QUICK_BACKEND',None)
                 env.update(QT_QPA_PLATFORM='wayland', QSG_RHI_BACKEND='opengl', WAYLAND_DISPLAY='validation-wayland', OMACONNECT_DESKTOP_VALIDATION='1')
@@ -115,7 +117,8 @@ print(json.dumps({"state":"observed","peerId":peer,"enabled":values,"error":""})
                        '--ro-bind','/etc','/etc','--symlink','usr/bin','/bin',
                        '--symlink','usr/bin','/sbin','--symlink','usr/lib','/lib']
             if Path('/lib64').exists(): command += ['--symlink','usr/lib','/lib64']
-            command += ['--dir','/tmp','--bind',str(fixture),str(fixture),
+            command += ['--dir','/tmp','--ro-bind',str(OMARCHY_ROOT),str(OMARCHY_ROOT),
+                        '--bind',str(fixture),str(fixture),
                         '--chdir',str(fixture),'--unshare-net','--unshare-pid',
                         '--proc','/proc','--dev','/dev','--die-with-parent']
             for name in ('omarchy-shell','nmcli','hyprctl','kdeconnect-cli','dbus-monitor'):

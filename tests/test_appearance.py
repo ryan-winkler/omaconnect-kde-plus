@@ -221,7 +221,7 @@ Window {
             self.assertNotIn(error, output, output)
 
     def native_env(self):
-        shell = Path('/usr/share/omarchy/shell')
+        shell = Path(os.environ.get('OMARCHY_PATH', '/usr/share/omarchy')) / 'shell'
         if not (shell/'Ui/SearchableDropdown.qml').is_file():
             self.skipTest('Native Omarchy UI kit is unavailable')
         for name in ('Commons','Ui'):

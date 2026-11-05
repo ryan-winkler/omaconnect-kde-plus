@@ -14,6 +14,20 @@ The image-preview keyboard fixture also needs the QtTest QML module, provided
 by Omarchy's Qt Declarative package. This is native test tooling, not a plugin
 runtime dependency.
 
+For the Omarchy 4.5 contract gate, check out Omarchy
+`ac2690cd7be4f47e4a255f5e2e78d904d436b068` ([v4.5.0](https://github.com/omacom/omarchy/releases/tag/v4.5.0))
+and run:
+
+```sh
+OMARCHY_PATH=/path/to/omarchy-v4.5.0 OMACONNECT_REQUIRE_NATIVE=1 ./scripts/validate.sh
+```
+
+The fixture imports and validator use that checkout. This mode fails if a
+fixture skips or the validator is missing. The hosted functional job pins the
+same release for its manifest validator and reports native runtime skips.
+These checks use private providers and do not cover installed desktop or phone
+acceptance.
+
 ## Isolation
 
 Bubblewrap gives the run private process and network namespaces, a read-only host
