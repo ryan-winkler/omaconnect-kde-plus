@@ -46,6 +46,11 @@ ShellRoot {
     function key(code) {
         return check(events.keyClick(code, Qt.NoModifier, 1), "actual Qt key event delivered")
     }
+    function namedButton(item,label) {
+        if (typeof item.clicked === "function" && item.visible && (item.text === label || item.tooltipText === label)) return item
+        for (var i=0;i<item.children.length;i++) { var found=namedButton(item.children[i],label);if(found)return found }
+        return null
+    }
     QtObject {
         id: fakeBar
         property color foreground: "#ffffff"
@@ -56,6 +61,13 @@ ShellRoot {
         property bool fileBusy: false
         property string actionState: "idle"
         property var mediaState: ({})
+        property var operations: []
+        property int clearCalls: 0
+        function clearOperations() { clearCalls++;operations=[] }
+        property bool commandsLoading: false
+        property var remoteCommands: []
+        property var commandReads: []
+        function fetchRemoteCommands(id) { commandReads=commandReads.concat([id]) }
     }
     QtObject {
         id: fakePanel
@@ -67,8 +79,38 @@ ShellRoot {
         property string focusSection: ""
         property int actionSelectedIndex: -1
         property string activeComposer: ""
+        property string deviceName: "Fixture phone"
+        property string draftPing: "Unsent Ping"
+        property string draftText: "Unsent text"
+        property string composerError: ""
+        property int composerCloses: 0
+        property var submissions: []
+        property bool commandsExpanded: true
+        property bool remoteCommandsVisible: true
+        property bool mediaPlayerVisible: false
+        property int commandSelectedIndex: 0
+        function toggleCommandsExpanded() { commandsExpanded=!commandsExpanded }
+        function closeComposer() { composerCloses++;activeComposer="none" }
+        function submitPing() { submissions=submissions.concat(["ping"]) }
+        function submitText() { submissions=submissions.concat(["text"]) }
         property var dispatches: []
         function triggerAction(id) { dispatches = dispatches.concat([id]) }
+    }
+    QtObject {
+        id: fakeTransfer
+        property var draftTarget: ({peerId:"fixture",peerName:"Fixture phone"})
+        property var selection: [{name:"Owned file.txt",size:89}]
+        property int selectionBytes: 89
+        property string selectionState: "draft"
+        property string selectionError: ""
+        property var operations: []
+        property bool operationBusy: false
+        property bool cancellationRequested: false
+        property int submissions: 0
+        function submitSelection() { submissions++ }
+        function cancelDraft() {}
+        function cancelOperation() {}
+        function clearOperations() {}
     }
     Window {
         id: preview
@@ -76,6 +118,15 @@ ShellRoot {
         width: 500
         height: 300
         Components.ActionToolbar { id: toolbar; panel: fakePanel; width: parent.width }
+        Components.ActivitySection { id: activity; service:fakeService; width:parent.width;visible:test.phase===12 }
+        Components.ComposerSection { id:composer;panel:fakePanel;width:parent.width;visible:test.phase===13 }
+        Components.RemoteCommandsSection { id:commands;panel:fakePanel;width:parent.width;visible:test.phase===14 }
+        Item {
+            id: sendHost
+            width: parent.width
+            visible: test.phase===15
+            Components.SendSection { id:sendSection;service:fakeTransfer;width:parent.width }
+        }
         Item { TestEvent { id: events } }
     }
     Timer {
@@ -159,6 +210,81 @@ ShellRoot {
                     test.phase = 11
                 } else if (test.phase === 11) {
                     if (!test.check(!test.findAction(toolbar,"media-next").enabled && test.findAction(toolbar,"media").enabled && test.findAction(toolbar,"native-features").enabled, "busy state blocks transport while navigation and native configuration remain usable")) return
+                    test.phase=12
+                } else if (test.phase === 12) {
+                    var clear=namedButton(activity,"Clear finished activity")
+                    if(!check(clear && clear.Accessible.role===Accessible.Button && clear.Accessible.name===clear.text,"Clear activity exposes a named native button"))return
+                    fakeService.operations=[{peerName:"Fixture",peerId:"fixture",count:1,total:3,state:"request_accepted",accepted:1,delivery:"unknown"}]
+                    clear.Accessible.pressAction()
+                    if(!check(fakeService.clearCalls===1 && fakeService.operations.length===0,"accessible Clear activity reaches the existing service action once"))return
+                    activity.service=null;clear.Accessible.pressAction()
+                    if(!check(!clear.enabled && fakeService.clearCalls===1,"disabled Clear activity cannot dispatch"))return
+                    fakePanel.device=({id:"fixture",paired:true,reachable:true,capabilities:{ping:true,text:true}});test.phase=13
+                } else if (test.phase === 13) {
+                    for(var mode of ["ping","text"]) {
+                        fakePanel.activeComposer=mode
+                        var send=namedButton(composer,"Send"),cancel=namedButton(composer,"Cancel")
+                        if(!check(send && cancel && send.Accessible.role===Accessible.Button && cancel.Accessible.role===Accessible.Button
+                            && send.Accessible.name==="Send" && cancel.Accessible.name==="Cancel" && send.activeFocusOnTab && cancel.activeFocusOnTab,mode+" composer actions expose named keyboard-accessible buttons"))return
+                        send.enabled=false;cancel.enabled=false;send.Accessible.pressAction();cancel.Accessible.pressAction()
+                        if(!check(fakePanel.activeComposer===mode && fakePanel.submissions.length===fakePanel.composerCloses,"disabled composer actions cannot dispatch"))return
+                        send.enabled=true;cancel.enabled=true
+                        var sentBefore=fakePanel.submissions.length,closedBefore=fakePanel.composerCloses
+                        fakePanel.activeComposer="none"
+                        send.Accessible.pressAction();cancel.Accessible.pressAction()
+                        if(!check(fakePanel.submissions.length===sentBefore && fakePanel.composerCloses===closedBefore,"retained hidden composer actions cannot dispatch"))return
+                        fakePanel.activeComposer=mode
+                        send.forceActiveFocus();composer.visible=false
+                        test.key(Qt.Key_Return);test.key(Qt.Key_Space)
+                        if(!check(fakePanel.submissions.length===sentBefore && fakePanel.composerCloses===closedBefore,"hidden focused composer rejects native Return and Space"))return
+                        send.Accessible.pressAction();cancel.Accessible.pressAction()
+                        if(!check(fakePanel.submissions.length===sentBefore && fakePanel.composerCloses===closedBefore,"hidden ancestor blocks retained composer actions"))return
+                        composer.visible=true;preview.visible=false
+                        send.Accessible.pressAction();cancel.Accessible.pressAction()
+                        if(!check(fakePanel.submissions.length===sentBefore && fakePanel.composerCloses===closedBefore,"hidden containing window blocks retained composer actions"))return
+                        preview.visible=true
+                        send.Accessible.pressAction();cancel.Accessible.pressAction()
+                        if(!check(fakePanel.activeComposer==="none" && fakePanel.submissions[fakePanel.submissions.length-1]===mode,"accessible composer Send and Cancel use their existing routes"))return
+                    }
+                    if(!check(fakePanel.composerCloses===2 && fakePanel.draftPing==="Unsent Ping" && fakePanel.draftText==="Unsent text","composer cancellation leaves unsent draft values intact"))return
+                    test.phase=14
+                } else if (test.phase === 14) {
+                    var refresh=namedButton(commands,"Refresh commands")
+                    if(!check(refresh && refresh.Accessible.role===Accessible.Button && refresh.Accessible.name==="Refresh remote commands" && refresh.activeFocusOnTab,"remote-command Refresh exposes named keyboard-accessible Button metadata"))return
+                    fakeService.commandsLoading=true;refresh.Accessible.pressAction()
+                    if(!check(!refresh.enabled && fakeService.commandReads.length===0,"disabled remote-command Refresh cannot dispatch"))return
+                    fakeService.commandsLoading=false;refresh.Accessible.pressAction()
+                    if(!check(fakeService.commandReads.join(",")==="fixture","accessible remote-command Refresh preserves the selected-device route"))return
+                    refresh.forceActiveFocus()
+                    fakePanel.commandsExpanded=false
+                    test.key(Qt.Key_Return)
+                    if(!check(fakeService.commandReads.length===1,"Enter on collapsed Refresh cannot fetch commands"))return
+                    if(!check(fakePanel.commandsExpanded && preview.activeFocusItem && preview.activeFocusItem.Accessible.name==="Collapse remote commands","collapse returns focus to the header and Enter reopens it"))return
+                    fakePanel.commandsExpanded=false;refresh.Accessible.pressAction()
+                    if(!check(!refresh.enabled && fakeService.commandReads.length===1,"collapsed Refresh refuses a retained accessible action"))return
+                    fakePanel.commandsExpanded=true;commands.visible=false;refresh.Accessible.pressAction()
+                    if(!check(!refresh.enabled && fakeService.commandReads.length===1,"hidden commands refuse a retained accessible Refresh action"))return
+                    commands.visible=true;preview.visible=false;refresh.Accessible.pressAction()
+                    if(!check(!refresh.enabled && fakeService.commandReads.length===1,"hidden containing window refuses a retained accessible Refresh action"))return
+                    preview.visible=true;refresh.Accessible.pressAction()
+                    if(!check(fakeService.commandReads.length===2,"visible Refresh works again after restoring its window"))return
+                    test.phase=15
+                } else if (test.phase === 15) {
+                    var submit=namedButton(sendSection,"Send files")
+                    if(!check(submit && submit.Accessible.role===Accessible.Button && submit.Accessible.name==="Send files","file review Send exposes its named Button action"))return
+                    var retainedSelection=JSON.stringify(fakeTransfer.selection),retainedTarget=JSON.stringify(fakeTransfer.draftTarget)
+                    submit.Accessible.pressAction()
+                    if(!check(fakeTransfer.submissions===1,"visible ready file review Send reaches the fake service once"))return
+                    submit.forceActiveFocus();sendHost.visible=false
+                    test.key(Qt.Key_Return);test.key(Qt.Key_Space);submit.Accessible.pressAction()
+                    if(!check(fakeTransfer.submissions===1,"hidden file review ancestor blocks a retained Send action"))return
+                    sendHost.visible=true;preview.visible=false;submit.Accessible.pressAction()
+                    if(!check(fakeTransfer.submissions===1,"closed file review window blocks a retained Send action"))return
+                    preview.visible=true;fakeTransfer.operationBusy=true;submit.Accessible.pressAction()
+                    if(!check(!submit.enabled && fakeTransfer.submissions===1,"disabled file review Send cannot submit"))return
+                    if(!check(JSON.stringify(fakeTransfer.selection)===retainedSelection && JSON.stringify(fakeTransfer.draftTarget)===retainedTarget && fakeTransfer.selectionState==="draft","blocked file review actions preserve selected files and recipient"))return
+                    fakeTransfer.operationBusy=false;submit.Accessible.pressAction()
+                    if(!check(fakeTransfer.submissions===2,"file review Send works again when visible and ready"))return
                     console.log("ACTION_TOOLBAR_ACCESSIBILITY_PASS " + JSON.stringify(test.checks))
                     console.log("NATIVE_PASS action toolbar accessibility")
                     Qt.quit()

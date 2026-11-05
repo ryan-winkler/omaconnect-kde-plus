@@ -150,7 +150,7 @@ Column {
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
     }
-    Kit.Button {
+    SettingsButton {
         objectName: "syncthing-refresh"
         width: parent.width
         visible: !!root.linkedId
@@ -160,7 +160,7 @@ Column {
         enabled: !!root.service && !root.service.syncthingBusy
         onClicked: root.readSyncState()
     }
-    Kit.Button {
+    SettingsButton {
         objectName: "syncthing-pause"
         width: parent.width
         visible: !!root.linkedId
@@ -209,7 +209,7 @@ Column {
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
     }
-    Kit.Button {
+    SettingsButton {
         objectName: "syncthing-save"
         width: parent.width
         text: "Save local identity note"
@@ -219,7 +219,7 @@ Column {
         Accessible.name: text
         onClicked: root.requestLink(false)
     }
-    Kit.Button {
+    SettingsButton {
         objectName: "syncthing-remove"
         width: parent.width
         text: "Remove local note"
@@ -240,7 +240,7 @@ Column {
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
     }
-    Kit.Button {
+    SettingsButton {
         objectName: "syncthing-owner"
         width: parent.width
         text: "Open existing Syncthing panel"
@@ -270,7 +270,7 @@ Column {
         font.family: Style.font.family
         font.pixelSize: Style.font.bodySmall
     }
-    Kit.Button {
+    SettingsButton {
         width: parent.width
         text: "Syncthing device setup help ↗"
         Accessible.name: "Open official Syncthing device setup help"

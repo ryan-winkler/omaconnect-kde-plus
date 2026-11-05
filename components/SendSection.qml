@@ -114,11 +114,9 @@ Column {
         width: parent.width
         visible: !!root.target
         spacing: Style.space(8)
-        Button {
+        SettingsButton {
+            bordered: false
             focusable: true
-            Accessible.role: Accessible.Button
-            Accessible.name: text
-            Accessible.onPressAction: clicked()
             text: "Send files"
             implicitHeight: Math.max(44, Style.space(44))
             enabled: root.service && root.service.selectionState === "draft" && root.files.length > 0 && !root.service.operationBusy
@@ -127,11 +125,9 @@ Column {
             fontSize: Style.font.bodySmall
             onClicked: root.service.submitSelection()
         }
-        Button {
+        SettingsButton {
+            bordered: false
             focusable: true
-            Accessible.role: Accessible.Button
-            Accessible.name: text
-            Accessible.onPressAction: clicked()
             objectName: "cancel-file-selection"
             text: "Cancel"
             Accessible.description: "Cancel this file selection before submission."
@@ -188,11 +184,9 @@ Column {
         width: parent.width
         visible: root.activity.length > 0
         spacing: Style.space(8)
-        Button {
+        SettingsButton {
+            bordered: false
             focusable: true
-            Accessible.role: Accessible.Button
-            Accessible.name: text
-            Accessible.onPressAction: clicked()
             visible: root.service && root.service.operationBusy
             objectName: "cancel-file-submission"
             text: root.service && root.service.cancellationRequested === true ? "Cancelling…" : "Cancel"
@@ -204,11 +198,9 @@ Column {
             fontSize: Style.font.bodySmall
             onClicked: root.service.cancelOperation()
         }
-        Button {
+        SettingsButton {
+            bordered: false
             focusable: true
-            Accessible.role: Accessible.Button
-            Accessible.name: text
-            Accessible.onPressAction: clicked()
             visible: root.activity.length > 5
             text: root.showAllActivity ? "Show recent 5" : "Show all " + root.activity.length
             implicitHeight: Math.max(32, Style.space(32))
@@ -217,11 +209,9 @@ Column {
             fontSize: Style.font.bodySmall
             onClicked: root.showAllActivity = !root.showAllActivity
         }
-        Button {
+        SettingsButton {
+            bordered: false
             focusable: true
-            Accessible.role: Accessible.Button
-            Accessible.name: text
-            Accessible.onPressAction: clicked()
             text: "Clear history"
             implicitHeight: Math.max(32, Style.space(32))
             foreground: root.foreground

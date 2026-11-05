@@ -67,8 +67,9 @@ Column {
                 Keys.onEscapePressed: panel.closeComposer()
             }
 
-            Button {
+            SettingsButton {
                 id: sendPing
+                focusable: true
                 text: "Send"
                 selected: true
                 foreground: root.foreground
@@ -77,8 +78,9 @@ Column {
                 onClicked: panel.submitPing()
             }
 
-            Button {
+            SettingsButton {
                 id: cancelPing
+                focusable: true
                 text: "Cancel"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
@@ -142,8 +144,9 @@ Column {
                 Keys.onEscapePressed: panel.closeComposer()
             }
 
-            Button {
+            SettingsButton {
                 id: sendText
+                focusable: true
                 text: "Send"
                 selected: true
                 foreground: root.foreground
@@ -152,8 +155,9 @@ Column {
                 onClicked: panel.submitText()
             }
 
-            Button {
+            SettingsButton {
                 id: cancelText
+                focusable: true
                 text: "Cancel"
                 foreground: root.foreground
                 fontFamily: root.fontFamily

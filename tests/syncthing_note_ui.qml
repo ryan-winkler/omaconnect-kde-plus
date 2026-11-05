@@ -31,7 +31,7 @@ ShellRoot {
         // would remove its QML binding and would not represent ordinary editing.
         editor.clear();editor.insert(0,value);editor.textEdited()
     }
-    function click(item) { if (item && item.enabled) item.clicked() }
+    function click(item) { if (item && item.enabled) item.Accessible.pressAction() }
     QtObject {
         id: store
         property bool busy: false
@@ -81,6 +81,13 @@ ShellRoot {
                 test.save=test.button("syncthing-save","Confirm these two identities")
                 test.remove=test.button("syncthing-remove","Remove local link")
                 if (!test.check(!!test.editor && !!test.save && !!test.remove,"native note controls load"))return
+                for(var label of ["syncthing-refresh","syncthing-pause","syncthing-save","syncthing-remove","syncthing-owner","Syncthing device setup help ↗"]) {
+                    var action=test.button(label,label)
+                    if(!test.check(action && action.Accessible.role===Accessible.Button && action.Accessible.name.length>0,
+                        "Syncthing action exposes named Button metadata: "+label))return
+                }
+                test.save.Accessible.pressAction()
+                if(!test.check(!test.save.enabled && store.calls.length===0,"disabled unchanged-note Save cannot dispatch"))return
                 test.initialPrefill=test.editor.text===test.idA
                 test.typeId(test.idC);service.selectedDevice={id:"B",name:"Laptop B"};test.phase++
             } else if(test.phase===1) {
@@ -132,6 +139,13 @@ ShellRoot {
                 if(!test.check(service.pauseCalls.length===1 && service.pauseCalls[0].id===test.idA && service.pauseCalls[0].paused && pause.text==="Resume in Syncthing","pause targets only the linked ID and offers resume"))return
                 service.syncthingState="unknown"
                 if(!test.check(!pause.enabled && state.text.indexOf("unknown")>=0,"unknown Syncthing state disables pause"))return
+                pause.Accessible.pressAction()
+                if(!test.check(service.pauseCalls.length===1,"disabled unknown-state pause cannot dispatch through accessibility"))return
+                var refresh=test.button("syncthing-refresh","Refresh Syncthing state"),readBefore=service.readCalls
+                service.syncthingBusy=true;refresh.Accessible.pressAction()
+                if(!test.check(!refresh.enabled && service.readCalls===readBefore,"busy Refresh cannot dispatch through accessibility"))return
+                service.syncthingBusy=false;refresh.Accessible.pressAction()
+                if(!test.check(service.readCalls===readBefore+1,"accessible Refresh uses the linked-device read route"))return
                 var reads=service.readCalls
                 section.panelOpened=false;section.readSyncState()
                 if(!test.check(service.readCalls===reads,"closed panel never starts a state read"))return

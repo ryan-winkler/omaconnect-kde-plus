@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Window
 import QtQuick.Controls
 import qs.Commons
 import qs.Commons as Commons
@@ -31,6 +32,7 @@ Column {
         spacing: Style.space(6)
 
         CursorSurface {
+            id: commandsHeader
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
             Accessible.name: panel.commandsExpanded ? "Collapse remote commands" : "Expand remote commands"
@@ -83,13 +85,25 @@ Column {
 
         PanelActionButton {
             id: refreshCmdBtn
+            focusable: visible && enabled
+            Accessible.role: Accessible.Button
+            Accessible.name: "Refresh remote commands"
+            Accessible.onPressAction: if (enabled) clicked()
             visible: panel.commandsExpanded
             iconText: "󰑐"
             tooltipText: "Refresh commands"
             foreground: root.foreground
             fontFamily: root.fontFamily
-            enabled: !!(root.service && !root.service.commandsLoading)
-            onClicked: if (root.service && root.device) root.service.fetchRemoteCommands(root.device.id)
+            enabled: visible && !!Window.window && Window.window.visible
+                && !!(root.service && root.device && !root.service.commandsLoading)
+            onVisibleChanged: {
+                if (!visible && focus) {
+                    focus = false
+                    if (commandsHeader.visible && Window.window && Window.window.visible)
+                        commandsHeader.forceActiveFocus()
+                }
+            }
+            onClicked: if (enabled) root.service.fetchRemoteCommands(root.device.id)
         }
     }
 
