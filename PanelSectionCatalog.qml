@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Io
 import "SectionOrder.js" as SectionOrder
+import "i18n" as Locale
 
 QtObject {
     id: root
@@ -30,12 +31,16 @@ QtObject {
     }
 
     function entry(id) { return entries.find(function(row) { return row.id === id; }) || null }
+    function title(id) {
+        var row = entry(id)
+        return row ? Locale.Strings.t("section." + id + ".title", row.label) : id
+    }
 
     function preferencesFor(page) {
         var result = []
         entries.filter(function(row) { return (row.settingsPage || "Appearance") === page; }).forEach(function(row) {
-            result.push({key: row.expandedKey, label: "Start " + row.label + " expanded", defaultValue: row.defaultExpanded,
-                description: "Sets the initial state when Devices opens. You can expand or collapse this section without changing its saved visibility."})
+            result.push({key: row.expandedKey, label: Locale.Strings.t("layout.startSectionExpanded").arg(root.title(row.id)),
+                defaultValue: row.defaultExpanded, description: Locale.Strings.t("layout.startExpandedHelp")})
         })
         return result
     }

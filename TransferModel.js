@@ -32,10 +32,11 @@ function remember(history, operation) {
     return [Object.assign({}, operation)].concat(history.filter(function(item) { return item.id !== operation.id })).slice(0, 50)
 }
 
-function formatBytes(value) {
+function formatBytes(value, formatNumber) {
     var units = ["B", "KiB", "MiB", "GiB", "TiB"], index = 0
     while (value >= 1024 && index < units.length - 1) { value /= 1024; index++ }
-    return (index ? value.toFixed(2) : String(value)) + " " + units[index]
+    var text = formatNumber ? formatNumber(value, index ? 2 : 0) : index ? value.toFixed(2) : String(value)
+    return text + " " + units[index]
 }
 
 function status(operation) {

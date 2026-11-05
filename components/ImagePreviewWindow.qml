@@ -84,7 +84,7 @@ Window {
         onActivated: root.cancelRequested()
     }
     Shortcut {
-        sequence: "Alt+Left"
+        sequence: Commons.I18n.rightToLeft ? "Alt+Right" : "Alt+Left"
         context: Qt.WindowShortcut
         enabled: root.previewActive
         onActivated: root.backRequested()
@@ -204,8 +204,13 @@ Window {
         Accessible.role: Accessible.Pane
         Accessible.name: "Image preview"
         Accessible.description: "Use Left and Right to choose a different image."
-        Keys.onLeftPressed: root.move(-1)
-        Keys.onRightPressed: root.move(1)
+        Keys.onPressed: function(event) {
+            if (event.modifiers !== Qt.NoModifier) return
+            var key = Util.readingKey(event)
+            if (key !== Qt.Key_Left && key !== Qt.Key_Right) return
+            root.move(key === Qt.Key_Left ? -1 : 1)
+            event.accepted = true
+        }
         Image {
             id: image
             objectName: "image-preview-image"

@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons as Commons
 import "plugin" as Plugin
+import "plugin/i18n" as Locale
 
 ShellRoot {
     id:test
@@ -29,6 +30,7 @@ ShellRoot {
     property var focusAfterPendingTab:null
     property int readbackWaitTicks:0
     property string fileDraft:""
+    property string localeOrder:""
     property var defaults:[]
     property var beforeAllHidden:({})
     readonly property string linkedId:Array(8).fill("AAAAAAA").join("-")
@@ -320,8 +322,34 @@ ShellRoot {
                 }else if(test.phase===9014){
                     captureLayout("layout-edit-narrow.png",9015)
                 }else if(test.phase===9015){
+                    test.localeOrder=order()
+                    languageWriter.language="pt-BR";languageWriter.running=true;test.phase=90151
+                }else if(test.phase===90151 && Commons.I18n.language==="pt-BR" && !languageWriter.running){
+                    var ptVisibility=named(panel,"section-visibility-drop")
+                    var ptPosition=named(panel,"section-position-drop")
+                    var dropPosition=panel.sectionCatalog.order.indexOf("drop")
+                    if(!test.check(ptVisibility.Accessible.name==="Visibilidade de Partilha de ficheiros"
+                        && ptVisibility.displayText==="Visibilidade: Mostrar" && Locale.Strings.fileCount(1)==="1 ficheiro"
+                        && Locale.Strings.fileCount(2)==="2 ficheiros" && Locale.Strings.byteSize(1536)==="1,50 KiB"
+                        && ptPosition.currentIndex===dropPosition && ptPosition.displayText==="Mover para: Posição "+(dropPosition+1)
+                        && order()===localeOrder,
+                        "regional fallback updates the open editor and plural counts without changing section order"))return
+                    if(!test.check(Locale.Strings.t("layout.resetOrder")==="Use default section order",
+                        "a missing regional/base entry falls back to English"))return
                     languageWriter.language="ar";languageWriter.running=true;test.phase=9016
                 }else if(test.phase===9016 && Commons.I18n.rightToLeft && !languageWriter.running){
+                    var arVisibility=named(panel,"section-visibility-drop")
+                    var arPosition=named(panel,"section-position-drop")
+                    var arDropPosition=panel.sectionCatalog.order.indexOf("drop")
+                    if(!test.check(arVisibility.Accessible.name==="ظهور مشاركة الملفات"
+                        && arVisibility.displayText==="الظهور: إظهار" && arVisibility.LayoutMirroring.enabled
+                        && Locale.Strings.fileCount(2)==="ملفان" && panel.sectionPolicy("drop")==="show"
+                        && arPosition.currentIndex===arDropPosition && arPosition.displayText==="نقل إلى: الموضع "+(arDropPosition+1)
+                        && order()===localeOrder && preserve(),
+                        "Arabic mirrors the same live editor and preserves order, policy and drafts"))return
+                    var peer="Fixture <tag> %2"
+                    if(!test.check(Locale.Strings.format("files.recipient",[peer,"peer-id"])==="To: "+peer+"\nKDE Connect · peer-id",
+                        "interpolation preserves a remote name with markup and placeholder-like text"))return
                     captureLayout("layout-edit-narrow-rtl.png",9017)
                 }else if(test.phase===9017){
                     languageWriter.language="en";languageWriter.running=true;test.phase=9018

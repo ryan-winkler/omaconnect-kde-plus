@@ -4,6 +4,7 @@ import QtQuick.Controls as Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
 
 // Daily routes only. Provider actions remain in their owning domain.
 Column {
@@ -19,8 +20,14 @@ Column {
         + (sendShortcut.visible ? sendShortcut.width + navigationControls.spacing : 0)
         + (activityShortcut.visible ? activityShortcut.width + navigationControls.spacing : 0) > width
     readonly property var entries: ["Devices", "Send", "Activity", "Plus settings"]
+    readonly property var viewKeys: ({
+        "Devices": "navigation.devices",
+        "Send": "navigation.send",
+        "Activity": "navigation.activity",
+        "Plus settings": "navigation.settings"
+    })
     readonly property string draftSummary: panel.service && panel.service.selectionState === "draft" && panel.service.draftTarget
-        ? "Draft for " + panel.service.draftTarget.peerName + " · Open Send to review." : ""
+        ? Locale.Strings.t("navigation.draft").arg(panel.service.draftTarget.peerName) : ""
     readonly property string activitySummary: {
         var operations = panel.service ? panel.service.operations : []
         var pending = false
@@ -28,10 +35,11 @@ Column {
         for (var i = 0; i < operations.length; i++) {
             var state = operations[i].state
             if (operations[i].accepted > 0) hasAccepted = true
-            if (["submission_failed", "submission_unknown", "cancellation_unconfirmed"].indexOf(state) >= 0) return "Needs review"
+            if (["submission_failed", "submission_unknown", "cancellation_unconfirmed"].indexOf(state) >= 0) return Locale.Strings.t("navigation.needsReview")
             if (["queued", "preparing", "submitting"].indexOf(state) >= 0) pending = true
         }
-        return pending ? "In progress" : hasAccepted ? "Submission recorded · delivery unknown" : ""
+        return pending ? Locale.Strings.t("navigation.pending")
+            : hasAccepted ? Locale.Strings.t("navigation.submissionRecorded") : ""
     }
     spacing: Style.space(4)
     objectName: "daily-navigation"
@@ -41,14 +49,15 @@ Column {
         width: parent.width
         implicitHeight: Math.max(44, Style.space(44))
         visible: !!root.panel.service && (root.panel.service.operationBusy || root.panel.service.selectionState === "choosing" || root.panel.service.selectionState === "preview" || root.panel.service.selectionCancelling === true)
-        text: root.panel.service && (root.panel.service.selectionCancelling === true || (root.panel.service.operationBusy && root.panel.service.cancellationRequested === true)) ? "Cancelling pending files…" : "Cancel pending files"
+        text: root.panel.service && (root.panel.service.selectionCancelling === true || (root.panel.service.operationBusy && root.panel.service.cancellationRequested === true))
+            ? Locale.Strings.t("navigation.cancelling") : Locale.Strings.t("navigation.cancel")
         enabled: !!root.panel.service && root.panel.service.selectionCancelling !== true && (!root.panel.service.operationBusy || root.panel.service.cancellationRequested !== true)
         foreground: Commons.Color.popups.text
         focusable: true
         Accessible.role: Accessible.Button
         Accessible.onPressAction: if (enabled) clicked()
         Accessible.name: text
-        Accessible.description: "Stops the Plus queue and active submission. An accepted LAN transfer must be cancelled in KDE Connect's transfer progress. Bluetooth cancellation is not available here."
+        Accessible.description: Locale.Strings.t("navigation.cancelHelp")
         onClicked: {
             if (root.panel.service.operationBusy) root.panel.service.cancelOperation()
             else root.panel.service.cancelDraft()
@@ -92,16 +101,16 @@ Column {
                 - (!root.shortcutsWrapped && sendShortcut.visible ? sendShortcut.width + parent.spacing : 0)
                 - (!root.shortcutsWrapped && activityShortcut.visible ? activityShortcut.width + parent.spacing : 0))
             implicitHeight: Math.max(44, Style.spacing.controlHeight)
-            text: "View: " + root.panel.currentView
+            text: Locale.Strings.t("navigation.currentView").arg(Locale.Strings.t(root.viewKeys[root.panel.currentView]))
             iconText: "󰅀"
             leftAlign: true
             fontSize: Style.font.bodySmall
             foreground: Commons.Color.popups.text
             focusable: true
-            tooltipText: "Choose Devices, Send, Activity or Plus settings."
+            tooltipText: Locale.Strings.t("navigation.choose")
             Accessible.role: Accessible.Button
-            Accessible.name: "Current view: " + root.panel.currentView + ". Choose a view"
-            Accessible.description: "Opens the daily view menu. Use arrows to choose, Enter to open, or Escape to return."
+            Accessible.name: Locale.Strings.t("navigation.currentViewAccessible").arg(Locale.Strings.t(root.viewKeys[root.panel.currentView]))
+            Accessible.description: Locale.Strings.t("navigation.keyboardHelp")
             Accessible.onPressAction: clicked()
             onClicked: viewMenu.opened ? viewMenu.close() : viewMenu.open()
             Keys.onDownPressed: viewMenu.open()
@@ -114,9 +123,9 @@ Column {
             iconText: "󰒓"
             foreground: Commons.Color.popups.text
             focusable: true
-            tooltipText: "Plus settings: appearance, connections and device features."
+            tooltipText: Locale.Strings.t("navigation.settingsHelp")
             Accessible.role: Accessible.Button
-            Accessible.name: "Open Plus settings"
+            Accessible.name: Locale.Strings.t("navigation.openSettings")
             Accessible.onPressAction: clicked()
             onClicked: root.panel.openSettings()
         }
@@ -132,22 +141,22 @@ Column {
             iconText: "󰏫"
             foreground: Commons.Color.popups.text
             focusable: true
-            tooltipText: "Edit layout"
-            Accessible.name: "Edit Devices layout"
+            tooltipText: Locale.Strings.t("layout.edit")
+            Accessible.name: Locale.Strings.t("layout.editDevices")
             onClicked: root.panel.setLayoutEditing(true)
         }
         Kit.Button {
             id: sendShortcut
             objectName: "daily-send-shortcut"
             visible: root.panel.getSetting("showSendShortcut", false) === true
-            text: "Send"
+            text: Locale.Strings.t("navigation.send")
             implicitHeight: viewButton.implicitHeight
             fontSize: Style.font.bodySmall
             foreground: Commons.Color.popups.text
             focusable: true
-            tooltipText: "Review files or text for the selected device."
+            tooltipText: Locale.Strings.t("navigation.sendHelp")
             Accessible.role: Accessible.Button
-            Accessible.name: "Open Send"
+            Accessible.name: Locale.Strings.t("navigation.openSend")
             Accessible.onPressAction: clicked()
             onClicked: root.choose("Send")
         }
@@ -155,14 +164,14 @@ Column {
             id: activityShortcut
             objectName: "daily-activity-shortcut"
             visible: root.panel.getSetting("showActivityShortcut", false) === true
-            text: "Activity"
+            text: Locale.Strings.t("navigation.activity")
             implicitHeight: viewButton.implicitHeight
             fontSize: Style.font.bodySmall
             foreground: Commons.Color.popups.text
             focusable: true
-            tooltipText: "Review KDE submission results. Delivery remains unknown."
+            tooltipText: Locale.Strings.t("navigation.activityHelp")
             Accessible.role: Accessible.Button
-            Accessible.name: "Open Activity"
+            Accessible.name: Locale.Strings.t("navigation.openActivity")
             Accessible.onPressAction: clicked()
             onClicked: root.choose("Activity")
         }
@@ -182,7 +191,7 @@ Column {
     Text {
         width: parent.width
         visible: root.activitySummary !== "" && root.panel.currentView !== "Activity"
-        text: "Activity: " + root.activitySummary
+        text: Locale.Strings.t("navigation.activitySummary").arg(root.activitySummary)
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -227,13 +236,13 @@ Column {
                         objectName: "daily-route-" + index
                         width: parent.width
                         implicitHeight: Math.max(44, Style.spacing.controlHeight)
-                        text: modelData
+                        text: Locale.Strings.t(root.viewKeys[modelData])
                         leftAlign: true
                         selected: root.panel.currentView === modelData
                         foreground: Commons.Color.popups.text
                         focusable: true
                         Accessible.role: Accessible.MenuItem
-                        Accessible.name: text + (selected ? ", current view" : "")
+                        Accessible.name: selected ? Locale.Strings.t("navigation.selectedRoute").arg(text) : text
                         Accessible.checkable: modelData !== "Plus settings"
                         Accessible.checked: selected
                         Accessible.onPressAction: clicked()

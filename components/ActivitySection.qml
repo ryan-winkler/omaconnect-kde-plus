@@ -3,6 +3,7 @@ import QtQuick
 import qs.Commons
 import qs.Commons as Commons
 import "../TransferModel.js" as Transfers
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -43,7 +44,10 @@ Column {
             textFormat: Text.PlainText
             required property var modelData
             width: root.width
-            text: modelData.peerName + "\nKDE ID: " + modelData.peerId + "\n" + modelData.count + " file(s), " + Transfers.formatBytes(modelData.total) + "\n" + Transfers.status(modelData)
+            text: Locale.Strings.format("files.activityDetails", [
+                modelData.peerName, modelData.peerId, Locale.Strings.fileCount(modelData.count),
+                Locale.Strings.byteSize(modelData.total), Transfers.status(modelData)
+            ])
 
             wrapMode: Text.WrapAnywhere
             color: Commons.Color.popups.text

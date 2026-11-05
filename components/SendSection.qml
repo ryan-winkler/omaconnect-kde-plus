@@ -5,6 +5,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
 import "../TransferModel.js" as TransferModel
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -26,7 +27,7 @@ Column {
         visible: root.showHeading
         textFormat: Text.PlainText
         width: parent.width
-        text: "SEND FILES"
+        text: Locale.Strings.t("files.sendHeading")
 
         color: root.foreground
         font.family: root.fontFamily
@@ -38,7 +39,8 @@ Column {
         textFormat: Text.PlainText
         visible: !!root.target
         width: parent.width
-        text: root.target ? "To: \u2068" + root.target.peerName + "\u2069\nKDE Connect · \u2068" + root.target.peerId + "\u2069" : ""
+        text: root.target ? Locale.Strings.format("files.recipient",
+            ["\u2068" + root.target.peerName + "\u2069", "\u2068" + root.target.peerId + "\u2069"]) : ""
 
         wrapMode: Text.WrapAnywhere
         color: root.foreground
@@ -50,9 +52,10 @@ Column {
         textFormat: Text.PlainText
         visible: !!root.target
         width: parent.width
-        text: root.service && root.service.selectionState === "choosing" ? "Choose files in the file picker. Cancel below stops this selection."
-            : root.service && root.service.selectionState === "preview" ? "Choose your image in the preview window. Back to files returns to the list; Cancel clears this selection."
-            : root.files.length + " file(s) · " + TransferModel.formatBytes(root.service ? root.service.selectionBytes : 0) + "\nReview the recipient and files, then select Send."
+        text: root.service && root.service.selectionState === "choosing" ? Locale.Strings.t("files.chooseHelp")
+            : root.service && root.service.selectionState === "preview" ? Locale.Strings.t("files.previewHelp")
+            : Locale.Strings.t("files.reviewSummary").arg(Locale.Strings.fileCount(root.files.length))
+                .arg(Locale.Strings.byteSize(root.service ? root.service.selectionBytes : 0))
 
         wrapMode: Text.Wrap
         color: root.foreground
@@ -87,7 +90,7 @@ Column {
                     textFormat: Text.PlainText
                     required property var modelData
                     width: selectionList.width
-                    text: "\u2068" + modelData.name + "\u2069 · " + TransferModel.formatBytes(modelData.size)
+                    text: "\u2068" + modelData.name + "\u2069 · " + Locale.Strings.byteSize(modelData.size)
 
                     wrapMode: Text.WrapAnywhere
                     color: root.foreground
@@ -160,7 +163,8 @@ Column {
             Text {
                 textFormat: Text.PlainText
                 width: parent.width
-                text: "\u2068" + operationRow.modelData.peerName + "\u2069 · KDE Connect · " + operationRow.modelData.count + " file(s) · " + TransferModel.formatBytes(operationRow.modelData.total)
+                text: "\u2068" + operationRow.modelData.peerName + "\u2069 · KDE Connect · "
+                    + Locale.Strings.fileCount(operationRow.modelData.count) + " · " + Locale.Strings.byteSize(operationRow.modelData.total)
 
                 wrapMode: Text.WrapAnywhere
                 color: root.foreground

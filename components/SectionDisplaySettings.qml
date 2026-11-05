@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -12,7 +13,7 @@ Column {
     spacing: Style.space(12)
     Text {
         width: parent.width
-        text: "Devices view"
+        text: Locale.Strings.t("layout.devicesView")
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -21,7 +22,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "These defaults apply when Devices opens. To change visibility or order, select Edit layout in Devices."
+        text: Locale.Strings.t("layout.defaultsHelp")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -36,7 +37,7 @@ Column {
             spacing: Style.space(6)
             Text {
                 width: parent.width
-                text: modelData.label
+                text: root.catalog.title(modelData.id)
                 textFormat: Text.PlainText
                 wrapMode: Text.Wrap
                 color: Commons.Color.popups.text
@@ -55,7 +56,7 @@ Column {
                     return fields.map(function(row) {
                         var result = Object.assign({}, row)
                         result.accessibleName = row.label
-                        result.label = "Start expanded"
+                        result.label = Locale.Strings.t("layout.startExpanded")
                         return result
                     })
                 }

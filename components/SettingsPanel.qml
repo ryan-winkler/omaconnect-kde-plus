@@ -4,10 +4,10 @@ import QtQuick.Window
 import QtQuick.Controls as Controls
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 Window {
     id: root
-    Commons.Translations { id: noticeStrings; directory: Qt.resolvedUrl("../i18n") }
     LayoutMirroring.enabled: Commons.I18n.rightToLeft
     LayoutMirroring.childrenInherit: true
     required property var panel
@@ -16,10 +16,18 @@ Window {
     readonly property var devices: service ? service.devices : []
     readonly property var deviceOptions: deviceSelector.deviceOptions
     readonly property string deviceStatus: deviceSelector.deviceStatus
-    readonly property string selectedName: device ? (service && typeof service.displayName === "function" ? service.displayName(device) : device.name) : "No device selected"
+    readonly property string selectedName: device ? (service && typeof service.displayName === "function" ? service.displayName(device) : device.name) : Locale.Strings.t("settings.noDevice")
     readonly property string selectedId: device ? device.id : ""
     onSelectedIdChanged: if (iconChooser) iconChooser.close()
     readonly property var pages: ["Appearance", "Connections", "Quick actions", "Device features"]
+    readonly property var pageKeys: ({
+        "Appearance": "appearance",
+        "Connections": "connections",
+        "Quick actions": "quickActions",
+        "Device features": "deviceFeatures"
+    })
+    function pageTitle(page) { return Locale.Strings.t("settings.page." + pageKeys[page]) }
+
     FontMetrics {
         id: navigationMetrics
         font.family: Style.font.family
@@ -30,7 +38,7 @@ Window {
     signal returnToPanelRequested()
     signal closed()
 
-    title: "Omaconnect KDE Plus Settings"
+    title: Locale.Strings.t("settings.title")
     objectName: "omaconnect-settings-window"
     width: 720
     height: 640
@@ -106,7 +114,7 @@ Window {
             spacing: Style.space(12)
             Text {
                 width: parent.width - closeButton.width - parent.spacing
-                text: "Omaconnect KDE Plus Settings"
+                text: Locale.Strings.t("settings.title")
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
@@ -116,7 +124,7 @@ Window {
             }
             SettingsButton {
                 id: closeButton
-                text: "Close"
+                text: Locale.Strings.t("settings.close")
                 Accessible.name: "Close Plus settings"
                 focusable: true
                 foreground: Commons.Color.popups.text
@@ -128,7 +136,7 @@ Window {
             width: parent.width
             spacing: Style.space(4)
             Text {
-                text: "Device"
+                text: Locale.Strings.t("settings.device")
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
@@ -165,9 +173,10 @@ Window {
                     var font = navigationMetrics.font
                     var minimum = root.width >= 620 ? 160 : 128
                     if (!font.family || font.pixelSize <= 0) return minimum + rightPadding
-                    return Math.max(minimum, Math.ceil(root.pages.reduce(function(widest, label) {
-                        return Math.max(widest, navigationMetrics.advanceWidth(label))
-                    }, 0) + Style.space(8) * 2 + Style.normalBorderWidth * 2)) + rightPadding
+                    var measured = Math.ceil(root.pages.reduce(function(widest, page) {
+                        return Math.max(widest, navigationMetrics.advanceWidth(root.pageTitle(page)))
+                    }, 0) + Style.space(8) * 2 + Style.normalBorderWidth * 2)
+                    return Math.min(Math.max(minimum, measured), root.width * 0.45) + rightPadding
                 }
                 height: parent.height
                 rightPadding: Style.space(12)
@@ -184,8 +193,8 @@ Window {
                             required property string modelData
                             width: parent.width
                             height: Math.max(44, implicitHeight)
-                            text: modelData
-                            Accessible.name: "Settings: " + modelData
+                            text: root.pageTitle(modelData)
+                            Accessible.name: Locale.Strings.t("settings.pageAccessible").arg(text)
                             Accessible.role: Accessible.RadioButton
                             Accessible.checkable: true
                             Accessible.checked: selected
@@ -222,7 +231,7 @@ Window {
                     spacing: Style.space(12)
                     Text {
                         width: parent.width
-                        text: root.currentPage
+                        text: root.pageTitle(root.currentPage)
                         visible: root.currentPage !== "Device features"
                         textFormat: Text.PlainText
                         color: Commons.Color.popups.text
@@ -232,7 +241,7 @@ Window {
                     }
                     Text {
                         width: parent.width
-                        text: "Plus preferences apply to this computer only."
+                        text: Locale.Strings.t("settings.scope")
                         visible: root.currentPage !== "Device features"
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
@@ -246,7 +255,7 @@ Window {
                         spacing: Style.space(8)
                         Text {
                             width: parent.width
-                            text: "Icons, names and section order change how Plus looks. Pairing stays the same."
+                            text: Locale.Strings.t("settings.appearanceHelp")
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text
@@ -255,7 +264,7 @@ Window {
                         }
                         Text {
                             width: parent.width
-                            text: "To change this computer’s KDE Connect name, open Native KDE Connect settings in Device features, then choose Settings in the native app menu."
+                            text: Locale.Strings.t("settings.renameHostHelp")
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text
@@ -264,7 +273,7 @@ Window {
                         }
                         SettingsButton {
                             width: parent.width
-                            text: "Change bar icon"
+                            text: Locale.Strings.t("settings.barIcon")
                             Accessible.name: text
                             focusable: true
                             foreground: Commons.Color.popups.text
@@ -272,7 +281,7 @@ Window {
                         }
                         SettingsButton {
                             width: parent.width
-                            text: "Change selected device icon and alias"
+                            text: Locale.Strings.t("settings.deviceIcon")
                             Accessible.name: text
                             focusable: true
                             foreground: Commons.Color.popups.text
@@ -282,7 +291,7 @@ Window {
                         Text {
                             width: parent.width
                             visible: !root.device
-                            text: "Choose a device above to change its icon or local name."
+                            text: Locale.Strings.t("settings.chooseDevice")
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text
@@ -291,8 +300,8 @@ Window {
                         }
                         SettingsButton {
                             width: parent.width
-                            text: "Icon and contribution guide ↗"
-                            Accessible.name: "Open the local icon and contribution guide"
+                            text: Locale.Strings.t("settings.iconsGuide")
+                            Accessible.name: Locale.Strings.t("settings.iconsGuideAccessible")
                             focusable: true
                             foreground: Commons.Color.popups.text
                             onClicked: Qt.openUrlExternally(Qt.resolvedUrl("../docs/ICONS.md"))
@@ -303,7 +312,7 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
-                                {key: "showBarBattery", label: "Show battery beside the bar icon", defaultValue: false, description: "Shows the selected device's charge next to the bar icon when the device reports it."},
+                                {key: "showBarBattery", label: Locale.Strings.t("settings.batteryIcon"), defaultValue: false, description: Locale.Strings.t("settings.batteryIconHelp")},
                             ]
                         }
                     }
@@ -313,7 +322,7 @@ Window {
                         spacing: Style.space(12)
                         Text {
                             width: parent.width
-                            text: "These Plus switches only show or hide controls. To enable KDE Connect connection providers, open Native KDE Connect settings in Device features, then choose Settings in the native app menu."
+                            text: Locale.Strings.t("settings.connectionsHelp")
                             textFormat: Text.PlainText
                             wrapMode: Text.Wrap
                             color: Commons.Color.popups.text
@@ -325,7 +334,7 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
-                                {key: "bthHelperPath", label: "BTH helper path", defaultValue: "", type: "string", description: "Optional. Use the full path to your Back to Home script, ending in /remote-access-mode. Leave empty to use ~/.local/bin/remote-access-mode."}
+                                {key: "bthHelperPath", label: Locale.Strings.t("settings.bthPath"), defaultValue: "", type: "string", description: Locale.Strings.t("settings.bthPathHelp")}
                             ]
                         }
                         SectionDisplaySettings { width: parent.width; panel: root.panel; page: "Connections" }
@@ -339,11 +348,11 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
-                                {key: "useDesktopFileChooser", label: "Use desktop file chooser", defaultValue: false, description: "Off uses the Omarchy recent-file menu with file icons and Image previews. On opens the desktop chooser for any local file and multiple selections."},
-                                {key: "reviewFilesBeforeSend", label: "Review files before Send", defaultValue: false, description: "Off sends files when you select them in the chooser. On shows a recipient and file review with a Send button. Drops always need review. Cancel pending work in Send. After acceptance, use KDE Connect's LAN progress Cancel; Bluetooth cancellation is unavailable here."},
-                                {key: "taskNotificationsEnabled", label: noticeStrings.t("notice.enabled.label"), defaultValue: true, description: noticeStrings.t("notice.enabled.help")},
-                                {key: "taskNotificationDeviceName", label: noticeStrings.t("notice.deviceName.label"), defaultValue: false, description: noticeStrings.t("notice.deviceName.help")},
-                                {key: "defaultPingMessage", label: "Default ping message", defaultValue: "", type: "string", description: "Fills in a new Ping message. You can edit it before you send."}
+                                {key: "useDesktopFileChooser", label: Locale.Strings.t("settings.desktopChooser"), defaultValue: false, description: Locale.Strings.t("settings.desktopChooserHelp")},
+                                {key: "reviewFilesBeforeSend", label: Locale.Strings.t("settings.reviewFiles"), defaultValue: false, description: Locale.Strings.t("settings.reviewFilesHelp")},
+                                {key: "taskNotificationsEnabled", label: Locale.Strings.t("notice.enabled.label"), defaultValue: true, description: Locale.Strings.t("notice.enabled.help")},
+                                {key: "taskNotificationDeviceName", label: Locale.Strings.t("notice.deviceName.label"), defaultValue: false, description: Locale.Strings.t("notice.deviceName.help")},
+                                {key: "defaultPingMessage", label: Locale.Strings.t("settings.pingDefault"), defaultValue: "", type: "string", description: Locale.Strings.t("settings.pingDefaultHelp")}
                             ]
                         }
                         SectionDisplaySettings { width: parent.width; panel: root.panel; page: "Quick actions" }
@@ -357,17 +366,17 @@ Window {
                             width: parent.width
                             panel: root.panel
                             preferences: [
-                                {key: "showBatteryStats", label: "Show battery details", defaultValue: true, description: "Shows charge and charging state when the device reports them."},
-                                {key: "showNetworkStats", label: "Show cellular connection details", defaultValue: true, description: "Shows the phone's mobile network type and signal, not Wi-Fi or VPN."},
+                                {key: "showBatteryStats", label: Locale.Strings.t("settings.battery"), defaultValue: true, description: Locale.Strings.t("settings.batteryHelp")},
+                                {key: "showNetworkStats", label: Locale.Strings.t("settings.mobileNetwork"), defaultValue: true, description: Locale.Strings.t("settings.mobileNetworkHelp")},
                             ]
                         }
                         SectionDisplaySettings { width: parent.width; panel: root.panel; page: "Device features" }
                     }
                     SettingsButton {
                         width: parent.width
-                        text: "Help with " + root.currentPage.toLowerCase() + " ↗"
-                        Accessible.name: "Open the installed task guide for " + root.currentPage.toLowerCase()
-                        Accessible.description: "Opens local documentation in your default viewer."
+                        text: Locale.Strings.t("settings.help." + root.pageKeys[root.currentPage])
+                        Accessible.name: Locale.Strings.t("settings.helpAccessible." + root.pageKeys[root.currentPage])
+                        Accessible.description: Locale.Strings.t("settings.helpViewer")
                         focusable: true
                         foreground: Commons.Color.popups.text
                         onClicked: Qt.openUrlExternally(Qt.resolvedUrl("../docs/HELP.md"))
@@ -379,7 +388,7 @@ Window {
         SettingsButton {
             id: returnButton
             width: parent.width
-            text: "Back to devices"
+            text: Locale.Strings.t("settings.back")
             Accessible.name: text
             focusable: true
             foreground: Commons.Color.popups.text

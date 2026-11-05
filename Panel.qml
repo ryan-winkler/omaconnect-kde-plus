@@ -12,6 +12,7 @@ import "./components"
 import "bridge" as OmaconnectBridge
 import "ActionCatalog.js" as Actions
 import "SectionOrder.js" as SectionOrder
+import "i18n" as Locale
 
 Panel {
     id: root
@@ -208,7 +209,7 @@ Panel {
             else keyCatcher.forceActiveFocus()
         })
     }
-    function sectionTitle(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.label : id }
+    function sectionTitle(id) { return sectionCatalogModel.title(id) }
     function sectionHelp(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.description : "" }
     function reorderSections() {
         if (!sectionCatalogModel.ready) return
@@ -1060,8 +1061,8 @@ Panel {
                         objectName: "edit-layout"
                         visible: root.editingLayout
                         height: Math.max(44, implicitHeight)
-                        text: "Done"
-                        Accessible.name: "Finish editing layout"
+                        text: Locale.Strings.t("layout.done")
+                        Accessible.name: Locale.Strings.t("layout.finish")
                         focusable: true
                         foreground: Commons.Color.popups.text
                         enabled: root.sectionCatalog.ready
@@ -1070,7 +1071,7 @@ Panel {
                     Text {
                         width: parent.width
                         visible: root.editingLayout
-                        text: "Set visibility or move each section below. All sections stay available here. Changes apply to every device. Loading data matches neither availability condition."
+                        text: Locale.Strings.t("layout.editorHelp")
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
                         color: Commons.Color.popups.text
@@ -1081,10 +1082,10 @@ Panel {
                         width: parent.width
                         height: Math.max(44, implicitHeight)
                         visible: root.editingLayout
-                        text: "Use default section order"
+                        text: Locale.Strings.t("layout.resetOrder")
                         enabled: !root.layoutSaveBusy || activeFocus
                         Accessible.name: text
-                        Accessible.description: "Reset order only. Keep visibility and expansion preferences."
+                        Accessible.description: Locale.Strings.t("layout.resetOrderHelp")
                         focusable: true
                         foreground: Commons.Color.popups.text
                         onClicked: root.saveLayout({key: "sectionOrder", value: ""})
@@ -1092,7 +1093,7 @@ Panel {
                     Text {
                         width: parent.width
                         visible: root.sectionVisibility === null
-                        text: "Saved section visibility is invalid. Earlier visibility choices are in use. Edit layout to save a valid choice."
+                        text: Locale.Strings.t("layout.invalidVisibility")
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
                         color: Commons.Color.popups.text
@@ -1104,7 +1105,7 @@ Panel {
                         visible: text !== ""
                         id: layoutStatus
                         objectName: "layout-message"
-                        text: root.layoutMessage ? "Status: " + root.layoutMessage : ""
+                        text: root.layoutMessage ? Locale.Strings.t("layout.status").arg(root.layoutMessage) : ""
                         font.bold: true
                         Accessible.role: Accessible.StaticText
                         Accessible.name: text
@@ -1118,9 +1119,9 @@ Panel {
                     SettingsButton {
                         width: parent.width
                         visible: root.layoutReadbackTimedOut
-                        text: "Use current saved layout"
+                        text: Locale.Strings.t("layout.useSaved")
                         Accessible.name: text
-                        Accessible.description: "Stop waiting for the previous request. Use the currently displayed host settings before making another change."
+                        Accessible.description: Locale.Strings.t("layout.useSavedHelp")
                         focusable: true
                         foreground: Commons.Color.popups.text
                         onClicked: root.useCurrentSavedLayout()
