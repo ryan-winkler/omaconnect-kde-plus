@@ -265,9 +265,11 @@ sent. Host notification history can retain the optional name after opt-out.
 
 Gio calls `org.freedesktop.Notifications.Notify` with app name
 `Omaconnect KDE Plus`, normal urgency, no transient hint and no service autostart.
-The fixed Omarchy `omarchy-exec-argv` and `omarchy-actions` hints contain only
-`["/usr/bin/omarchy-shell", "omaconnect.plus", "activity"]`. This harmless current
-Activity action remains valid when replayed from history; it does not retain a
+The fixed `omarchy-exec-argv` hint is a JSON string encoding the argv array
+`["/usr/bin/omarchy-shell", "omaconnect.plus", "activity"]`. The `omarchy-actions`
+hint is a JSON string encoding an array with one action object: `label` is
+`"Activity"` and `argv` is that same argv array. This current Activity action
+remains valid when replayed from history; it does not retain a
 task ID, recipient or retry command. The host owns cards, actions, DND and history.
 The helper's Gio call has a 3500 ms deadline; the process has a five-second total
 deadline and one-second kill grace. Each output stream has a 2 KiB cap. Failures

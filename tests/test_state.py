@@ -2201,6 +2201,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertNotIn("configureFirewall", device_section)
 
   def test_media_player_qml_contracts_and_components(self):
+    """Check media controller wiring and catalogue-backed visibility without invoking providers."""
     controller_source = controller_layer_source()
     self.assertIn("function fetchMediaStatus(id)", controller_source)
     self.assertIn("function requestPlayerList(id)", controller_source)

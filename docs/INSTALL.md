@@ -31,6 +31,11 @@ run a repository install script. Optional integrations start hidden. Existing
 Tailscale, Back to Home, WireGuard and Syncshell tools keep their policy, keys
 and profiles; Plus does not install or configure them.
 
+**Optional phone-folder browsing:** on Arch/Omarchy, KDE Connect uses its optional
+`sshfs` package (`omarchy pkg add sshfs`). Grant shared-folder access in the
+phone's KDE Connect settings. KDE Connect owns the mount; ordinary file sending
+does not require this browsing dependency.
+
 If a firewall blocks discovery, use its owner tool to allow KDE Connect ports
 **1714–1764 TCP and UDP** for the intended trusted network. See the
 [official troubleshooting guide](https://userbase.kde.org/KDEConnect/en#Troubleshooting).

@@ -15,10 +15,12 @@ ROOT=Path(__file__).resolve().parents[1]
 
 class SectionComposition(unittest.TestCase):
     def run_composition(self,catalogue_failure=None,readback=False,success_message=None):
+        """Run isolated layout scenarios with catalogue failures or delayed saved-setting readback."""
         runner=native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture='section_composition_ui.qml'
         runner.force_offscreen=True
         def configure(fixture,plugin,home,fake_bin):
+            """Prepare temporary layout state and fake launchers, including optional delayed readback."""
             shutil.copyfile(ROOT/'scripts/manage_addresses.py',plugin/'scripts/composition_preference_boundary.py')
             helper=plugin/'scripts/network_preferences.py'
             helper.write_text(helper.read_text().replace('from manage_addresses import','from composition_preference_boundary import'))
@@ -66,6 +68,7 @@ raise SystemExit(0 if released.exists() else 98)
             (fake_bin/'busctl').symlink_to(fake)
             (fake_bin/'syncthing').symlink_to(fake)
         def checked(fixture,home,output,calls):
+            """Verify expected layout writes without provider commands or file submissions."""
             self.assertIn('LAYOUT_READBACK_PASS' if readback else 'COLD_CATALOG_PASS' if catalogue_failure else 'SECTION_COMPOSITION_PASS',output)
             writes=[row['args'] for row in calls if row['tool']=='omarchy-shell']
             if catalogue_failure:

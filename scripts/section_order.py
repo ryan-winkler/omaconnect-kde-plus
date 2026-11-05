@@ -14,6 +14,7 @@ PAGES = {"Appearance", "Connections", "Quick actions", "Device features"}
 
 
 def validate_catalog(rows):
+    """Validate bounded section metadata, unique preference keys and visibility policies."""
     if not isinstance(rows, list) or not 1 <= len(rows) <= 32:
         raise ValueError("invalid-section-catalogue")
     ids, keys = set(), set()
@@ -76,6 +77,7 @@ def normalized_value(value):
 def normalized_visibility(value):
     """Validate optional section policies; preserve legacy flags outside this map."""
     def unique(pairs):
+        """Reject duplicate section keys before validating their policies."""
         result = {}
         for key, policy in pairs:
             if key in result:

@@ -22,6 +22,7 @@ MAX_REQUEST = 32768
 
 
 def setting_value(request):
+    """Return one allowlisted, typed preference value or raise ValueError."""
     if not isinstance(request, dict) or not isinstance(request.get("key"), str):
         raise ValueError()
     key = request["key"]

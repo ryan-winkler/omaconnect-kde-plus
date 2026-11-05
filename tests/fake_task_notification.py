@@ -25,6 +25,7 @@ started = time.monotonic()
 
 
 def method(connection, sender, path, interface, member, parameters, invocation):
+    """Check notice fields and private-data boundaries, then reply, reject or hold the private-bus call."""
     app, replace, icon, summary, body, actions, hints, expire = parameters.unpack()
     calls.append(True)
     assert (path, interface, member, parameters.get_type_string()) == (
@@ -62,6 +63,7 @@ child.stdin.close(); child.stdin = None
 
 
 def done():
+    """Poll helper completion and verify fixed output, bounded timeout and absence of private-data leaks."""
     if child.poll() is None:
         return True
     output, error = child.communicate()

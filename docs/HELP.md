@@ -102,6 +102,8 @@ Configured remote commands remain explicit actions.
 Select **Browse phone files** to open folders advertised by KDE Connect. If the
 phone exposes several folders, choose one. **Cancel browse** clears the pending
 choice; phone permissions remain in KDE Connect.
+On Arch/Omarchy, browsing also needs KDE Connect's optional `sshfs` package; see
+[installation prerequisites](INSTALL.md#install).
 
 ![Phone file controls with two example shared folders, Cancel browse and native settings](screenshots/phone-files.png)
 

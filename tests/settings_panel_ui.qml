@@ -280,12 +280,12 @@ ShellRoot {
             } else if(test.phase===2000+test.captures.length) {
                 if (!test.check(!settings.contentItem.LayoutMirroring.enabled, "managed window starts left to right")) return
                 languageWriter.language="ar"; languageWriter.running=true; test.phase=9000
-            } else if (test.phase===9000 && Commons.I18n.rightToLeft) {
+            } else if (test.phase===9000 && Commons.I18n.rightToLeft && !languageWriter.running) {
                 if (!test.check(settings.visible && settings.contentItem.LayoutMirroring.enabled && settings.contentItem.LayoutMirroring.childrenInherit, "visible managed window follows live native RTL")) return
                 var mirroredPage=test.find(settings.contentItem,function(o){return o.objectName==="settings-page-scroll"},[])
                 if (!test.check(mirroredPage.width > 0 && mirroredPage.x >= 0 && mirroredPage.x + mirroredPage.width <= mirroredPage.parent.width + 1, "mirrored settings content stays inside its row")) return
                 languageWriter.language="en"; languageWriter.running=true; test.phase=9001
-            } else if (test.phase===9001 && !Commons.I18n.rightToLeft) {
+            } else if (test.phase===9001 && !Commons.I18n.rightToLeft && !languageWriter.running) {
                 if (!test.check(!settings.contentItem.LayoutMirroring.enabled, "managed window returns live to LTR")) return
                 console.log("SETTINGS_PASS "+JSON.stringify(test.checks));console.log("NATIVE_PASS settings");Qt.quit()
             }

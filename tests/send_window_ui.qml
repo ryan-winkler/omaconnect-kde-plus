@@ -91,10 +91,10 @@ ShellRoot {
                 if(!test.check(test.returns===1 && fakeService.draftTarget.peerId==="A","back to devices returns once without cancel or send"))return
                 if (!test.check(!send.contentItem.LayoutMirroring.enabled, "managed window starts left to right")) return
                 languageWriter.language="ar"; languageWriter.running=true; test.phase=9000
-            } else if (test.phase===9000 && Commons.I18n.rightToLeft) {
+            } else if (test.phase===9000 && Commons.I18n.rightToLeft && !languageWriter.running) {
                 if (!test.check(send.contentItem.LayoutMirroring.enabled && send.contentItem.LayoutMirroring.childrenInherit, "managed window follows live native RTL")) return
                 languageWriter.language="en"; languageWriter.running=true; test.phase=9001
-            } else if (test.phase===9001 && !Commons.I18n.rightToLeft) {
+            } else if (test.phase===9001 && !Commons.I18n.rightToLeft && !languageWriter.running) {
                 if (!test.check(!send.contentItem.LayoutMirroring.enabled, "managed window returns live to LTR")) return
                 console.log("SEND_WINDOW_PASS "+JSON.stringify(test.checks));console.log("NATIVE_PASS send window");Qt.quit()
             }

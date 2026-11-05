@@ -54,6 +54,7 @@ held = []
 
 
 def change_owner(replacement):
+    """Release or replace the private-bus provider name while retaining the old connection."""
     bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "ReleaseName",
                   GLib.Variant("(s)", (helper.SERVICE,)), GLib.VariantType.new("(u)"),
                   Gio.DBusCallFlags.NO_AUTO_START, 1000, None)
@@ -82,6 +83,7 @@ probe_count = 0
 
 
 def inspect_and_change_state(mount_path, roots):
+    """Inject owner or reachability changes after the final blocking path probe."""
     global probe_count, reachable
     result = inspect_paths(mount_path, roots)
     probe_count += 1
@@ -100,6 +102,7 @@ helper.inspect_paths = inspect_and_change_state
 
 
 def method(connection, sender, path, interface, member, parameters, invocation):
+    """Serve fake native storage methods and inject bounded timeout, cancellation and error cases."""
     global reachable
     calls.append((path, interface, member))
     if mode == "timeout" and member == "loadedPlugins":
@@ -126,6 +129,7 @@ def method(connection, sender, path, interface, member, parameters, invocation):
 
 
 def prop(connection, sender, path, interface, name):
+    """Report the fixture's mutable pairing or reachability state to native property reads."""
     return GLib.Variant("b", paired if name == "isPaired" else reachable)
 
 
@@ -143,6 +147,7 @@ if mode != "unavailable":
 
 
 def run():
+    """Exercise prepare then open against temporary roots and verify each injected mode's exact outcome."""
     global paired, reachable, mounted, shares
     started = time.monotonic()
     error = None

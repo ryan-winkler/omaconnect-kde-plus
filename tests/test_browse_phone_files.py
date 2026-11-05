@@ -19,6 +19,7 @@ import browse_phone_files as helper
 
 class BrowseContract(unittest.TestCase):
     def test_request_boundary(self):
+        """Accept a prepare request and reject malformed, duplicate, oversized or unsupported input."""
         good = {"peerId": "Owned_123", "operation": "prepare"}
         self.assertEqual(helper.read_request(io.BytesIO(json.dumps(good).encode())), good)
         bad = [b'', b'[]', b'{"peerId":"a","peerId":"b","operation":"prepare"}',
@@ -33,6 +34,7 @@ class BrowseContract(unittest.TestCase):
                 helper.read_request(io.BytesIO(raw))
 
     def test_filesystem_boundary(self):
+        """Use temporary roots to reject escapes, symlinks, missing paths and unverified mounts."""
         with tempfile.TemporaryDirectory() as temporary:
             mount = Path(temporary) / "mount"
             mount.mkdir()
@@ -50,6 +52,7 @@ class BrowseContract(unittest.TestCase):
                 helper.inspect_paths(str(mount), [str(root)])
 
     def test_mountinfo_boundary(self):
+        """Decode mount escapes and reject non-SSHFS, duplicate, missing or oversized mount records."""
         record = '42 2 0:99 / /owned\\040mount rw - fuse.sshfs owned rw\n'
         with patch("builtins.open", return_value=io.StringIO(record)):
             self.assertEqual(helper.mount_record("/owned mount")[0], "42")
@@ -58,6 +61,7 @@ class BrowseContract(unittest.TestCase):
                 helper.mount_record("/owned mount")
 
     def test_fixed_cli_errors_and_no_bus_autolaunch(self):
+        """Verify fixed CLI failures with no session-bus address and no remote diagnostic output."""
         for args, request, expected in [([], b'{}\n', "invalid-input"), (["unexpected"], b'', "invalid-input"),
                                         ([], b'{"peerId":"Owned_1","operation":"prepare"}\n', "provider-unavailable")]:
             env = dict(os.environ)
@@ -106,6 +110,7 @@ class BrowseContract(unittest.TestCase):
             self.assertEqual(json.loads(output.call_args.args[0]), {"state": "failed", "error": "share-limit"})
 
     def test_private_bus_contract(self):
+        """Run each storage failure mode on a private bus with temporary home and runtime state."""
         modes = ["single", "multiple", "remote-name", "offline", "unpaired", "unsupported", "unsupported-method",
                  "unavailable", "no-shares", "share-limit", "escape", "symlink", "nonmount", "mount-failed",
                  "remote-error", "changed-advertisement", "changed-name", "stale-mount", "stale-root",

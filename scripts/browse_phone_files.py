@@ -38,12 +38,14 @@ def fingerprint(value):
 
 
 def valid_path(value):
+    """Accept only bounded, normalized absolute paths without C0 controls or surrogates."""
     return (isinstance(value, str) and value.startswith("/") and len(value) <= 4096
             and not any(ord(c) < 32 or 0xD800 <= ord(c) <= 0xDFFF for c in value)
             and os.path.normpath(value) == value and "//" not in value)
 
 
 def validate_location(value, peer):
+    """Validate a captured location for this peer or raise invalid-input."""
     if (not isinstance(value, dict) or set(value) != FIELDS
             or value["peerId"] != peer
             or not isinstance(value["providerOwner"], str)
@@ -58,6 +60,7 @@ def validate_location(value, peer):
 
 
 def read_request(stream):
+    """Read one bounded prepare/open request or raise invalid-input."""
     raw = stream.readline(MAX_INPUT + 1)
     try:
         if not raw or len(raw) > MAX_INPUT:
@@ -134,6 +137,7 @@ def inspect_paths(mount, roots):
 
 class NativeStorage:
     def __init__(self, peer, cancelled, deadline):
+        """Capture the existing session-bus provider owner for this peer."""
         if not os.environ.get("DBUS_SESSION_BUS_ADDRESS"):
             raise BrowseError("provider-unavailable")
         from gi.repository import Gio, GLib
@@ -145,6 +149,7 @@ class NativeStorage:
                                "(s)", (SERVICE,), "(s)", destination="org.freedesktop.DBus")[0]
 
     def check_cancelled(self):
+        """Reject work after cancellation or the shared monotonic deadline."""
         if self.cancelled.is_set():
             raise BrowseError("cancelled")
         if time.monotonic() >= self.deadline:
@@ -152,6 +157,7 @@ class NativeStorage:
 
     def call(self, path, interface, member, signature=None, values=(), reply="()",
              timeout=5000, destination=None):
+        """Call the captured owner or explicit bus target with bounded public errors."""
         self.check_cancelled()
         Gio, GLib = self.Gio, self.GLib
         try:
@@ -175,12 +181,14 @@ class NativeStorage:
             raise BrowseError(code) from None
 
     def check_owner(self):
+        """Reject a lost or replaced well-known provider before handoff."""
         owner = self.call("/org/freedesktop/DBus", "org.freedesktop.DBus", "GetNameOwner",
                           "(s)", (SERVICE,), "(s)", destination="org.freedesktop.DBus")[0]
         if owner != self.owner:
             raise BrowseError("location-changed")
 
     def check_peer(self):
+        """Require the captured peer to be paired, reachable and SFTP-enabled."""
         properties = self.call(self.path, "org.freedesktop.DBus.Properties", "GetAll",
                                "(s)", (DEVICE,), "(a{sv})")[0]
         if properties.get("isPaired") is not True:
@@ -192,6 +200,7 @@ class NativeStorage:
             raise BrowseError("capability-unavailable")
 
     def locations(self):
+        """Return advertised roots with verified native mount and filesystem identities."""
         path = self.path + "/sftp"
         if self.call(path, SFTP, "isMounted", reply="(b)")[0] is not True:
             raise BrowseError("storage-unavailable")
@@ -213,6 +222,7 @@ class NativeStorage:
 
 
 def launch_uri(uri):
+    """Request the default file manager or raise opener-unavailable."""
     from gi.repository import Gio, GLib
     try:
         if Gio.AppInfo.get_default_for_type("inode/directory", False) is None:
@@ -224,6 +234,7 @@ def launch_uri(uri):
 
 
 def execute(request, cancelled, deadline):
+    """Prepare native shares or revalidate a captured root before requesting its launch."""
     native = NativeStorage(request["peerId"], cancelled, deadline)
     native.check_peer()
     if request["operation"] == "prepare":
@@ -249,6 +260,7 @@ def execute(request, cancelled, deadline):
 
 
 def emit(value):
+    """Write one size-limited JSON result and return its success/failure exit code."""
     encoded = json.dumps(value, ensure_ascii=True, separators=(",", ":"))
     if len(encoded) > MAX_OUTPUT:
         value = {"state": "failed", "error": "share-limit"}
@@ -258,6 +270,7 @@ def emit(value):
 
 
 def main():
+    """Supervise one worker so stalled probes cannot outlive cancellation or the deadline."""
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     cancelled, done = threading.Event(), threading.Event()
     signal.signal(signal.SIGTERM, lambda *unused: cancelled.set())
@@ -266,6 +279,7 @@ def main():
     deadline = time.monotonic() + TOTAL_SECONDS
 
     def run():
+        """Capture one fixed result and signal completion to the deadline supervisor."""
         try:
             if len(sys.argv) != 1:
                 raise BrowseError("invalid-input")

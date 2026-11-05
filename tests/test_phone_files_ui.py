@@ -11,6 +11,7 @@ else:
 
 class PhoneFilesUi(unittest.TestCase):
     def test_native_capture_choices_late_results_cancel_and_draft_preservation(self):
+        """Run product QML with a fake storage helper and check capture, cancellation and draft preservation."""
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'phone_files_ui.qml'
         runner.force_offscreen = True
@@ -47,6 +48,7 @@ raise SystemExit(1 if result['state']=='failed' else 0)
 ''')
 
         def check(fixture, home, output, calls):
+            """Verify selected-folder requests and reject unintended file submissions or shell launches."""
             self.assertIn('NATIVE_PASS phone files', output)
             records = [json.loads(line) for line in (home/'browse.jsonl').read_text().splitlines()]
             self.assertEqual([row['number'] for row in records if row['operation']=='prepare'], list(range(1, 9)))

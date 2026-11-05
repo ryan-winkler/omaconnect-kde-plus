@@ -11,6 +11,7 @@ ShellRoot {
     property int phase:0
     property int ticks:0
     property int hoverFrames:0
+    property int launchStartupWaitTicks:0
     property int focusSteps:0
     property var focusCounts:({forward:0,backward:0})
     property var focusHeaders:({forward:[],backward:[]})
@@ -320,11 +321,11 @@ ShellRoot {
                     captureLayout("layout-edit-narrow.png",9015)
                 }else if(test.phase===9015){
                     languageWriter.language="ar";languageWriter.running=true;test.phase=9016
-                }else if(test.phase===9016 && Commons.I18n.rightToLeft){
+                }else if(test.phase===9016 && Commons.I18n.rightToLeft && !languageWriter.running){
                     captureLayout("layout-edit-narrow-rtl.png",9017)
                 }else if(test.phase===9017){
                     languageWriter.language="en";languageWriter.running=true;test.phase=9018
-                }else if(test.phase===9018 && !Commons.I18n.rightToLeft){
+                }else if(test.phase===9018 && !Commons.I18n.rightToLeft && !languageWriter.running){
                     find(panel,function(item){return "contentWidth" in item && "anchorItem" in item},[]).contentWidth=380
                     panel.setLayoutEditing(false);test.phase=8
                 }else if(test.phase===8){
@@ -416,6 +417,8 @@ ShellRoot {
                     test.phase=18
                 }else if(test.phase===18){
                     var quick=named(panel,"collapsed-launch-status-quick-share"),native=named(panel,"collapsed-launch-status-native")
+                    // Process start is asynchronous; keep the pending assertion after readiness.
+                    if((!service.quickShareOpening || !service.nativeAppOpening) && ++launchStartupWaitTicks<60)return
                     if(!test.check(service.quickShareOpening && service.nativeAppOpening && quick.visible && quick.text==="Opening RQuickShare…" && native.visible && native.text==="Opening KDE Connect","actual pending provider feedback remains visible outside collapsed owner sections"))return
                     releaseLaunches.running=true
                     test.phase=19

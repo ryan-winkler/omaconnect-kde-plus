@@ -10,14 +10,17 @@ else:
 
 class SendWindow(unittest.TestCase):
     def configure_fixture(self, fixture, plugin, home, fake_bin):
+        """Create the private command log for the isolated managed-window fixture."""
         (fixture/'commands.jsonl').write_text('')
 
     def assert_fixture(self, fixture, home, output, calls):
+        """Accept only native window checks with no provider calls or portal requests."""
         self.assertIn('SEND_WINDOW_PASS',output,output)
         self.assertTrue(all(row['tool'] in ('fc-match','hyprctl') for row in calls),calls)
         self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()),[])
 
     def test_native_persistent_send_window_preserves_draft_and_copy_only_drop(self):
+        """Preserve review identity and expose guarded named button actions."""
         runner=native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture='send_window_ui.qml';runner.force_offscreen=True
         runner.configure_fixture=self.configure_fixture;runner.assert_fixture=self.assert_fixture

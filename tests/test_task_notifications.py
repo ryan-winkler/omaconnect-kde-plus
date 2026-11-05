@@ -25,11 +25,13 @@ spec.loader.exec_module(notice)
 
 class TaskNoticeTests(unittest.TestCase):
     def test_unwritten_notice_rechecks_privacy_and_surface_generation(self):
+        """Discard unwritten payloads after privacy or visible-surface policy changes."""
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'task_notifications_ui.qml'
         runner.force_offscreen = True
 
         def configure(fixture, plugin, home, fake_bin):
+            """Replace only the owned fixture helper to expose privacy or timeout failures."""
             (fixture / 'commands.jsonl').write_text('')
             (fixture / 'shell.qml').write_text('''import QtQuick
 import Quickshell
@@ -63,6 +65,7 @@ print('{"ok":true}')
 ''')
 
         def inspect(fixture, home, output, calls):
+            """Reject any leaked payload or provider call after an intentional policy discard."""
             self.assertIn('NATIVE_PASS policy revalidation', output)
             self.assertFalse((home / 'UNEXPECTED_NOTICE').exists())
             self.assertEqual(calls, [])
@@ -72,6 +75,7 @@ print('{"ok":true}')
         runner.test_actual_service_bar_panel_and_controls()
 
     def test_private_payload_limits_opt_in_and_markup_controls(self):
+        """Reject malformed notices and neutralize private names before native rendering."""
         request = {'summary': 'File requests accepted', 'body': 'Delivery is unknown.',
                    'includeDeviceName': False, 'deviceName': ''}
         encode = lambda value: io.BytesIO(json.dumps(value, ensure_ascii=True).encode())
@@ -96,6 +100,7 @@ print('{"ok":true}')
 
     @unittest.skipUnless(shutil.which('node'), 'Node absent')
     def test_opted_in_names_keep_complete_unicode_at_the_length_limit(self):
+        """Keep complete Unicode names through the production queue and strict helper."""
         source = (ROOT/'controller/TaskNotificationController.qml').read_text()
         function = block(source, '    function notify(')
         names = ['a'*127 + '\U0001f4f1', '\U0001f4f1'*129, 'a'*129]
@@ -119,6 +124,7 @@ process.stdout.write(JSON.stringify(context.pending));
 
     @unittest.skipUnless(shutil.which('node'), 'Node absent')
     def test_finish_emits_once_after_final_state_and_preserves_evidence(self):
+        """Publish one final snapshot only after busy state and transient queues settle."""
         source = (ROOT/'controller/FileTransferController.qml').read_text()
         function = block(source, '    function finishOperation(')
         script = '''const vm=require('node:vm'),assert=require('node:assert/strict');
@@ -139,6 +145,7 @@ for(const state of ['request_accepted','submission_failed','submission_unknown',
 
     @unittest.skipUnless(importlib.util.find_spec('gi') and shutil.which('dbus-run-session'), 'Private Gio bus absent')
     def test_native_bus_metadata_privacy_and_fixed_failure_without_autostart(self):
+        """Use private buses to verify metadata, bounded failures and no service autostart."""
         for mode in ('generic', 'detail', 'failure', 'timeout', 'unavailable'):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory(prefix='plus-notice-bus-') as temporary:
                 root = Path(temporary)
@@ -158,12 +165,14 @@ for(const state of ['request_accepted','submission_failed','submission_unknown',
                 self.assertFalse((root/'UNEXPECTED_ACTIVATION').exists())
 
     def test_native_queue_suppression_visibility_and_coarse_failures(self):
+        """Bound waiting notices and discard replay while any Plus surface is visible."""
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'task_notifications_ui.qml'
         runner.force_offscreen = True
 
         def configure(fixture, plugin, home, fake_bin):
             # Controlled helper keeps the real QML process/queue/deadline boundary.
+            """Replace only the owned fixture helper to expose privacy or timeout failures."""
             (plugin/'scripts/task_notification.py').write_text('''import json,sys,time
 from pathlib import Path
 value=json.load(sys.stdin)
@@ -177,6 +186,7 @@ raise SystemExit(1 if title == 'File submission unknown' else 0)
 ''')
 
         def check(fixture, home, output, calls):
+            """Verify generic notice outcomes without private names or shell dispatch."""
             self.assertIn('NATIVE_PASS task notifications', output)
             records = [json.loads(line) for line in (home/'notices.jsonl').read_text().splitlines()]
             self.assertEqual(len(records), 7)

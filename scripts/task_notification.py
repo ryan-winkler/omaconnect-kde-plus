@@ -12,6 +12,7 @@ ACTIVITY_ARGV = ["/usr/bin/omarchy-shell", "omaconnect.plus", "activity"]
 
 
 def unique_object(pairs):
+    """Reject duplicate JSON fields before request validation."""
     result = {}
     for key, value in pairs:
         if key in result:
@@ -21,6 +22,7 @@ def unique_object(pairs):
 
 
 def read_request(stream):
+    """Validate a bounded UTF-8 notice and require an empty name without opt-in."""
     raw = stream.read(MAX_INPUT + 1)
     if not raw or len(raw) > MAX_INPUT:
         raise ValueError()
@@ -40,6 +42,7 @@ def read_request(stream):
 
 
 def plain_name(value):
+    """Bound an opted-in name and neutralize notification markup and URL delimiters."""
     # Omarchy decodes entities before rendering markup. HTML escaping alone
     # would revive a remote tag. Neutralize syntax and automatic URL linking.
     value = "".join(char for char in value if unicodedata.category(char) not in {"Cc", "Cf"})
@@ -48,6 +51,7 @@ def plain_name(value):
 
 
 def parameters(value, GLib):
+    """Build normal-priority Notify arguments with fixed Activity action hints."""
     body = value["body"]
     if value["includeDeviceName"]:
         name = plain_name(value["deviceName"])
@@ -65,6 +69,7 @@ def parameters(value, GLib):
 
 
 def notify(value):
+    """Submit one notice on the existing session bus without service autostart."""
     # A missing session address must not start a different bus or service.
     if not os.environ.get("DBUS_SESSION_BUS_ADDRESS"):
         raise ValueError()
@@ -76,6 +81,7 @@ def notify(value):
 
 
 def main():
+    """Send one stdin notice and report only a coarse result without private diagnostics."""
     try:
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
         if len(sys.argv) != 1:

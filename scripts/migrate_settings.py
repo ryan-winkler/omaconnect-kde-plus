@@ -85,6 +85,7 @@ def source_shape(entry):
 
 
 def settings(entry):
+    """Copy understood entry settings; reject unknown keys or invalid values for review."""
     shape = source_shape(entry)
     value = {} if shape == "string" else entry.get("settings", {}) if shape == "nested" else {k:v for k,v in entry.items() if k != "id"}
     if not isinstance(value, dict) or set(value) - ALLOWED:
