@@ -189,6 +189,7 @@ Window {
                             Accessible.role: Accessible.RadioButton
                             Accessible.checkable: true
                             Accessible.checked: selected
+                            Accessible.onToggleAction: if (enabled) clicked()
                             selected: root.currentPage === modelData
                             focusable: true
                             leftAlign: true

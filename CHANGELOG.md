@@ -35,6 +35,10 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Layout menu selections use native popup colors so muted theme accents do not
+  reduce the contrast of selected text.
+- Settings navigation responds to the accessibility Toggle action exposed by
+  its native radio-button role.
 - The persistent Send window exposes Back and Choose files as named accessible
   button actions. Disabled Choose files cannot dispatch through accessibility.
 - Opted-in task notices keep complete Unicode characters when a long device name

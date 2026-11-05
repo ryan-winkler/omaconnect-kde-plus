@@ -3,6 +3,7 @@ import QtQuick.Window
 import QtTest
 import Quickshell
 import Quickshell.Io
+import qs.Commons as Commons
 import "plugin" as Plugin
 import "plugin/components" as Components
 import "plugin/SectionOrder.js" as SectionOrder
@@ -61,16 +62,31 @@ ShellRoot {
         if (!value) { console.error("NATIVE_FAIL section order: " + message); Qt.quit(); return false }
         console.log("SECTION_ORDER_PASS " + message);return true
     }
+    function luminance(color) {
+        return [color.r,color.g,color.b].reduce(function(total,value,index) {
+            var linear=value<=0.04045 ? value/12.92 : Math.pow((value+0.055)/1.055,2.4)
+            return total+linear*[0.2126,0.7152,0.0722][index]
+        },0)
+    }
+    function contrast(first,second) {
+        var a=luminance(first),b=luminance(second)
+        return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05)
+    }
     Timer {
         interval:30;running:true;repeat:true
         onTriggered: {
             if (++test.ticks > 160) { test.check(false,"bounded scenario");return }
             if(test.phase===0 && catalog.ready){
+                Commons.Color.loadColors('foreground = "#c2c2b0"\nbackground = "#222222"\naccent = "#78824b"\n')
                 if(!test.check(catalog.entries.length===9 && catalog.preferencesFor("Connections").length===3,"one catalogue supplies order and expansion defaults"))return
                 heldPosition=find(actionFrame,"section-position-actions")
                 window.requestActivate();heldPosition.forceActiveFocus();test.phase=10
             }else if(test.phase===10){
                 if(!test.check(window.activeFocusItem===heldPosition,"native position menu receives keyboard focus"))return
+                var visibility=find(actionFrame,"section-visibility-actions")
+                var selectedContrast=Math.min(contrast(visibility.palette.highlight,visibility.palette.highlightedText),
+                    contrast(heldPosition.palette.highlight,heldPosition.palette.highlightedText))
+                if(!test.check(selectedContrast>=4.5,"native layout choices retain readable selected text with a muted accent: "+selectedContrast.toFixed(2)+":1"))return
                 events.keyClick(Qt.Key_Space,Qt.NoModifier,1);events.keyClick(Qt.Key_Up,Qt.NoModifier,1);events.keyClick(Qt.Key_Return,Qt.NoModifier,1);test.phase=11
             }else if(test.phase===11 && requestState.text()==="sectionOrder"){
                 if(!test.check(saver.busy && heldPosition.currentIndex===1,"pending save keeps saved order selected"))return

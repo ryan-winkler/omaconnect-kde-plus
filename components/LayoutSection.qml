@@ -42,7 +42,7 @@ Column {
         palette.button: surfaceColor
         palette.window: surfaceColor
         palette.windowText: Commons.Color.popups.text
-        palette.highlight: Commons.Color.accent
+        palette.highlight: Commons.Color.popups.text
         palette.highlightedText: surfaceColor
         Accessible.role: Accessible.ComboBox
         Accessible.onPressAction: {
