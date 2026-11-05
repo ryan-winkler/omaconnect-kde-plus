@@ -18,7 +18,19 @@ unset WAYLAND_DISPLAY DISPLAY DBUS_SESSION_BUS_ADDRESS HYPRLAND_INSTANCE_SIGNATU
 export QT_QPA_PLATFORMTHEME=generic QT_STYLE_OVERRIDE=Fusion QT_QUICK_CONTROLS_STYLE=Basic
 export QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software PYTHONDONTWRITEBYTECODE=1
 # Tests substitute all provider mutations. Portal fixtures create their own bus.
-dbus-run-session -- python3 -m unittest discover -s tests -p 'test_*.py' -q
+dbus-run-session -- python3 - <<'PY'
+import os
+import sys
+import unittest
+
+suite = unittest.defaultTestLoader.discover("tests", pattern="test_*.py")
+result = unittest.TextTestRunner(verbosity=0).run(suite)
+if os.environ.get("OMACONNECT_REQUIRE_NATIVE") == "1" and result.skipped:
+    for test, reason in result.skipped:
+        print(f"Required test skipped: {test}: {reason}", file=sys.stderr)
+    sys.exit(1)
+sys.exit(not result.wasSuccessful())
+PY
 node tests/appearance.cjs
 node tests/test-bth-control.cjs
 node tests/transfer_model_test.js
@@ -28,15 +40,18 @@ for script in scripts/*.sh; do
 done
 
 validator=""
-if command -v omarchy-plugin-validate >/dev/null 2>&1; then
-    validator="$(command -v omarchy-plugin-validate)"
-elif [ -n "${OMARCHY_PATH:-}" ] && [ -x "${OMARCHY_PATH}/bin/omarchy-plugin-validate" ]; then
+if [ -n "${OMARCHY_PATH:-}" ] && [ -x "${OMARCHY_PATH}/bin/omarchy-plugin-validate" ]; then
     validator="${OMARCHY_PATH}/bin/omarchy-plugin-validate"
+elif command -v omarchy-plugin-validate >/dev/null 2>&1; then
+    validator="$(command -v omarchy-plugin-validate)"
 fi
 
 if [ -n "$validator" ] && [ -x "$validator" ]; then
     "$validator" .
     printf '%s\n' "Omarchy plugin validator passed"
+elif [[ "${OMACONNECT_REQUIRE_NATIVE:-0}" == 1 ]]; then
+    printf '%s\n' "Required Omarchy plugin validator unavailable" >&2
+    exit 1
 else
     printf '%s\n' "exact Omarchy validator unavailable; skipped"
 fi

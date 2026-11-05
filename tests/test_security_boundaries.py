@@ -1,5 +1,6 @@
 """Real media component, private HOME/bus and an owned loopback server only."""
 import http.server
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -8,7 +9,7 @@ import threading
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-OMARCHY_SHELL = Path('/usr/share/omarchy/shell')
+OMARCHY_SHELL = Path(os.environ.get('OMARCHY_PATH', '/usr/share/omarchy')) / 'shell'
 
 
 class SecurityBoundaries(unittest.TestCase):

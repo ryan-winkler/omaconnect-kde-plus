@@ -9,9 +9,10 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 FIXTURE=ROOT/"tests/security_activity_ui.qml"
+OMARCHY_SHELL=Path(os.environ.get("OMARCHY_PATH", "/usr/share/omarchy")) / "shell"
 
 class ActivityPrivacy(unittest.TestCase):
- @unittest.skipUnless(shutil.which('quickshell') and shutil.which('dbus-run-session') and Path('/usr/share/omarchy/shell/Ui').is_dir(), 'native runtime absent')
+ @unittest.skipUnless(shutil.which('quickshell') and shutil.which('dbus-run-session') and (OMARCHY_SHELL/'Ui').is_dir(), 'native runtime absent')
  def test_actual_activity_keeps_peer_markup_plain_and_does_not_fetch_or_log_url(self):
   hits=[]
   class Handler(http.server.BaseHTTPRequestHandler):
@@ -23,7 +24,7 @@ class ActivityPrivacy(unittest.TestCase):
    for hostile in (False,True):
     with self.subTest(hostile=hostile),tempfile.TemporaryDirectory(prefix="omaconnect-activity-probe-") as temporary:
      hits.clear();fixture=Path(temporary)
-     for name in ("Commons","Ui"):(fixture/name).symlink_to(Path("/usr/share/omarchy/shell")/name)
+     for name in ("Commons","Ui"):(fixture/name).symlink_to(OMARCHY_SHELL/name)
      (fixture/"components").symlink_to(ROOT/"components");(fixture/"TransferModel.js").symlink_to(ROOT/"TransferModel.js")
      (fixture/"runtime").mkdir(mode=0o700);shutil.copyfile(FIXTURE,fixture/"shell.qml")
      uri=f"http://127.0.0.1:{server.server_port}/owned-activity-image?token=OWNED-ACTIVITY-SENTINEL"

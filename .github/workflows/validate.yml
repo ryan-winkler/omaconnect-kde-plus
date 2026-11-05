@@ -16,11 +16,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      # Pinned Omarchy commit for bin/omarchy-plugin-validate; bump the SHA to follow upstream schema changes.
+      # Stable Omarchy v4.5.0 source for the native manifest validator.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: basecamp/omarchy
-          ref: 225dcb80ef1ced9436f27eb34ff140659d3956dd
+          repository: omacom/omarchy
+          ref: ac2690cd7be4f47e4a255f5e2e78d904d436b068
           path: .omarchy-validator
           persist-credentials: false
           sparse-checkout: bin/omarchy-plugin-validate
