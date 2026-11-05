@@ -34,7 +34,7 @@ def location(index):
   'name':'<b>Second storage</b>' if index else 'Shared storage','mountPath':'/owned/native/'+peer,
   'mountIdentity':'a'*64,'rootIdentity':str(index)*64,'advertisements':'b'*64}
 if request['operation']=='prepare':
- if number in (3,6): signal.signal(signal.SIGTERM,signal.SIG_IGN);time.sleep(.65)
+ if number in (3,6,9): signal.signal(signal.SIGTERM,signal.SIG_IGN);time.sleep(.65)
  else: time.sleep(.15)
  if number==8: print('x'*16385,flush=True);time.sleep(.1);raise SystemExit(1)
  result={'state':'prepared','error':'','peerId':peer,'locations':[location(0)]}
@@ -51,7 +51,7 @@ raise SystemExit(1 if result['state']=='failed' else 0)
             """Verify selected-folder requests and reject unintended file submissions or shell launches."""
             self.assertIn('NATIVE_PASS phone files', output)
             records = [json.loads(line) for line in (home/'browse.jsonl').read_text().splitlines()]
-            self.assertEqual([row['number'] for row in records if row['operation']=='prepare'], list(range(1, 9)))
+            self.assertEqual([row['number'] for row in records if row['operation']=='prepare'], list(range(1, 10)))
             opened = [row for row in records if row['operation']=='open']
             self.assertEqual([(row['number'], row['peerId']) for row in opened], [(1,'A'),(2,'A'),(4,'B')])
             self.assertTrue(opened[1]['location']['path'].endswith('/folder1'))
