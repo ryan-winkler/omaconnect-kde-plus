@@ -37,6 +37,8 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Keep File sharing collapsed when the Browse phone files shortcut opens a
+  single shared folder. Use the same shortcut to cancel while it runs.
 - Disable stale device actions when KDE Connect loses or changes its bus name.
   A read-only scan restores the selected device when it returns. Interrupted
   actions remain unconfirmed.
