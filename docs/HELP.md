@@ -42,7 +42,7 @@ reported device features can change the available controls.
 The bar icon and battery appear above the daily panel. Device details can collapse
 without hiding the device selector.
 
-![Bar icon and daily Devices panel with example device details and quick actions](../preview.png)
+![Bar icon and daily Devices panel with example device details and quick actions](screenshots/devices-panel.png)
 
 The open dropdown keeps connected, offline and unpaired devices in one list.
 
@@ -300,6 +300,10 @@ If the Quick Share window does not appear after launch, check its tray icon.
 See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare#installation).
 
 ## Review a saved screenshot
+
+The [review screenshot](../preview.png) shows the chosen PNG
+and recipient before Send. The [Activity screenshot](screenshots/screenshot-activity.png)
+shows how Plus reports an accepted request while delivery is still unknown.
 
 Capture or annotate with Omarchy Screenshot and choose **Save**. Add **Review
 saved screenshot** in **Plus settings → Quick actions**. Select it in Devices to

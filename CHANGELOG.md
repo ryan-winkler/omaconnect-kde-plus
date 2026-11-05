@@ -10,6 +10,8 @@ All notable changes are listed here. The format follows
 
 - Optional **Review saved screenshot** Quick action. Choose a `.png` file in
   the desktop picker and review its filename and recipient before sending.
+  Screenshot review also applies when ordinary file selection sends immediately.
+  The help gallery shows review and the Activity result.
 
 - Daily views, Settings, file choosers and Plus feedback use Omarchy's live
   language catalogue. Shared controls use Omarchy translations when Plus has no

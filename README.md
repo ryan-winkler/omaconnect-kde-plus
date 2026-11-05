@@ -5,7 +5,7 @@ browse shared phone folders, run your own quick actions and arrange your daily c
 [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect), built
 on [KDE Connect](https://kdeconnect.kde.org/).
 
-<img src="preview.png" width="428" alt="Omaconnect bar icon and daily Devices panel with an example phone">
+<img src="preview.png" width="380" alt="Saved screenshot review with an example phone and explicit Send">
 
 Example devices, files and media are used in the screenshots.
 See the [screenshot gallery](docs/HELP.md#screenshots) for the open device dropdown,
@@ -40,8 +40,12 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
   or **Use desktop file chooser** for any local file and batches of up to 100.
   Drops on Devices, the bar icon or Send window always require review and use Copy.
 - **Phone folders:** select **Browse phone files** to open folders shared by KDE
-  Connect in your default file manager. Several advertised folders show a choice.
-  Phone storage access stays with KDE Connect.
+  Connect in your default file manager. Add it to Quick actions for direct access
+  from Devices. If KDE Connect reports that storage is unmounted, Plus shows
+  the native settings and lets you retry. Several advertised folders show a choice.
+- **Screenshots:** save a capture with Omarchy Screenshot, then use
+  **Review saved screenshot** to select one PNG. Check the file and recipient,
+  then select **Send files**. The action always opens review.
 - **Cancel:** stop pending file work from any daily view or the Send window.
   After native acceptance, use KDE Connect's LAN transfer progress Cancel.
   Bluetooth cancellation is not exposed by the current native sharing API.
@@ -58,6 +62,10 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
   Send and Activity shortcuts. Switch devices in one dropdown. Collapse daily
   sections. Open **Devices → Edit layout** to change visibility and position on
   the actual sections, including hidden ones. Every view stays available.
+- **Language and launcher:** Plus follows Omarchy's language and reading direction.
+  Missing Plus text falls back to English. The optional
+  [application launcher](docs/INSTALL.md#optional-application-launcher)
+  opens Devices, Send files or Activity.
 - **Settings:** Appearance, Connections, Quick actions and Device features, with
   short help next to each control. Sections can be hidden or collapsed.
 - **Device features:** search installed native modules, change their local On/Off
@@ -93,6 +101,10 @@ also covers appearance, icon choices, section ordering, connections and native f
 | Recent files with type icons | Guided image previews |
 | --- | --- |
 | [![Native recent-file menu with file-type icons and an Image previews entry](docs/screenshots/recent-file-menu.png)](docs/screenshots/recent-file-menu.png) | [![Guided image preview with recipient, filename, Back and explicit Send or Review](docs/screenshots/image-previews.png)](docs/screenshots/image-previews.png) |
+
+| Review a saved screenshot | Read the request result |
+| --- | --- |
+| [![Saved screenshot review with the selected recipient, PNG filename, Send files and Cancel](preview.png)](preview.png) | [![Activity shows one request accepted and delivery unknown](docs/screenshots/screenshot-activity.png)](docs/screenshots/screenshot-activity.png) |
 
 ## Why Plus?
 
