@@ -296,12 +296,15 @@ See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare
 
 In Devices, select **Browse phone files** in **Quick actions**. You can add the
 shortcut in Quick actions settings. If you do not use the shortcut, expand
-**File sharing** for the same Browse control. KDE Connect prepares the phone's
-shared storage, then Plus asks your default file manager to open it. One
-advertised folder opens directly. The shortcut becomes **Cancel browse** while
-Plus prepares or opens the folder or waits for a choice. **File sharing** opens
-if you need to choose among several shares or see a recovery message. Plus uses
-only the advertised folders.
+**File sharing** for the same Browse control. If the section is hidden, open
+**Devices → Edit layout**, set **File sharing** visibility to **Show**, and
+select **Done** before expanding it.
+
+KDE Connect prepares the phone's shared storage, then Plus asks your default
+file manager to open it. One advertised folder opens directly. The shortcut
+becomes **Cancel browse** while Plus prepares or opens the folder or waits for
+a choice. **File sharing** opens if you need to choose among several shares or
+see a recovery message. Plus uses only the advertised folders.
 
 The phone must be paired, reachable and permit **Filesystem expose** in KDE
 Connect. **Phone file settings in KDE** opens the native settings fallback.
