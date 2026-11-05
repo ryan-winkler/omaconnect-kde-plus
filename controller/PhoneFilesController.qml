@@ -56,7 +56,7 @@ Item {
         messageKey = errorKey(code)
     }
     function browse(id) {
-        if (busy || !currentPeer() || id !== selectedPeerId) return false
+        if (busy || state === "choosing" || !currentPeer() || id !== selectedPeerId) return false
         generation++
         capturedPeerId = id
         locations = []

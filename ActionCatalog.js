@@ -65,13 +65,17 @@ function hasMedia(service) {
     var media=service && service.mediaState;
     return !!(media && (media.player || media.title || media.artist || media.album));
 }
+function browsePending(service) {
+    return !!service && (service.phoneFilesState === "preparing" || service.phoneFilesState === "opening"
+        || service.phoneFilesState === "choosing");
+}
 function ready(id,device,service) {
     var row=entry(id);
     if (!row || !compatible(id,device)) return false;
     if (id === "plus-settings") return true;
     if (service === null) return false;
     if (id === "quick-share") return !!service.quickShareAvailable && !service.quickShareOpening;
-    if (id === "browse-files" && service && service.phoneFilesBusy) return false;
+    if (id === "browse-files" && service && (service.phoneFilesBusy || browsePending(service))) return false;
     if (!locallyActive(row,device)) return false;
     if (id === "external-monitor" && (!device.virtualMonitor || !device.virtualMonitor.known || (!device.virtualMonitor.active && !device.virtualMonitor.available))) return false;
     if (row.requiresMedia && (!hasMedia(service) || (service && service.mediaLoading))) return false;

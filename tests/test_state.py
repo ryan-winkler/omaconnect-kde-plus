@@ -2001,14 +2001,24 @@ class LocaleCatalogueTests(unittest.TestCase):
       return json.loads((ROOT / "i18n" / (language + ".json")).read_text(), object_pairs_hook=unique_object)
 
     english = load("en")
-    for language in ("pt", "ar"):
-      for key, value in load(language).items():
-        with self.subTest(language=language, key=key):
+    for catalogue in sorted((ROOT / "i18n").glob("*.json")):
+      if catalogue.stem == "en":
+        continue
+      for key, value in load(catalogue.stem).items():
+        with self.subTest(language=catalogue.stem, key=key):
           self.assertIn(key, english)
           self.assertIsInstance(value, type(english[key]))
           if isinstance(value, str):
             self.assertCountEqual(re.findall(r"%[1-9][0-9]*", value),
                                   re.findall(r"%[1-9][0-9]*", english[key]))
+          else:
+            self.assertIn("other", value)
+            for form, text in value.items():
+              self.assertIsInstance(text, str)
+              placeholders = re.findall(r"%[1-9][0-9]*", text)
+              expected = re.findall(r"%[1-9][0-9]*", english[key].get(form, english[key]["other"]))
+              if form == "other" or placeholders:
+                self.assertCountEqual(placeholders, expected)
 
 
 class QmlWiringAndContractTests(unittest.TestCase):

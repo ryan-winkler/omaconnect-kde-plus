@@ -158,6 +158,11 @@ Configure links to the native settings owner.
 
 ## Daily popup
 
+Plus follows **Setup → Language** in Omarchy. Shared controls use the
+desktop’s translations. Arabic, German, French, Mexican Spanish and
+Portuguese include partial Plus translations. Other Plus text uses
+English when a matching translation is unavailable.
+
 The **View: Devices** menu also opens **Send**, **Activity** and **Plus settings**.
 Navigation stays at **Bottom** by default, so devices come first. In
 **Plus settings → Appearance**, enable **Place navigation at Top** to move the
@@ -296,12 +301,17 @@ See [RQuickShare setup and limitations](https://github.com/Martichou/rquickshare
 
 ## Browse phone files
 
-In Devices, expand **File sharing** and select **Browse phone files**. You can
-also add **Browse phone files** in Quick actions settings. KDE Connect prepares
-the phone's shared storage, then Plus asks your default file manager to open it.
-One advertised folder opens directly. If the phone shares several folders,
-select one from the list. Plus uses the advertised folders; it does not guess
-Photos or Downloads paths.
+In Devices, select **Browse phone files** in **Quick actions**. You can add the
+shortcut in Quick actions settings. If you do not use the shortcut, expand
+**File sharing** for the same Browse control. If the section is hidden, open
+**Devices → Edit layout**, set **File sharing** visibility to **Show**, and
+select **Done** before expanding it.
+
+KDE Connect prepares the phone's shared storage, then Plus asks your default
+file manager to open it. One advertised folder opens directly. The shortcut
+becomes **Cancel browse** while Plus prepares or opens the folder or waits for
+a choice. **File sharing** opens if you need to choose among several shares or
+see a recovery message. Plus uses only the advertised folders.
 
 The phone must be paired, reachable and permit **Filesystem expose** in KDE
 Connect. **Phone file settings in KDE** opens the native settings fallback.

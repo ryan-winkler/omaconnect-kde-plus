@@ -62,6 +62,19 @@ Panel {
     property bool inlineSendExpanded: getSetting("inlineSendStartExpanded", false)
     property bool nativeFeaturesExpanded: getSetting("nativeFeaturesStartExpanded", false)
     property bool dropActionRevealed: false
+    readonly property bool phoneBrowseToolbarAvailable: sectionBodyVisible("actions")
+        && availableActions.indexOf("browse-files") >= 0
+    readonly property bool phoneBrowseInToolbar: phoneBrowseToolbarAvailable
+        && (Actions.browsePending(service) || Actions.ready("browse-files", device, service))
+    readonly property bool phoneBrowseNeedsDetails: !!service && (service.phoneFilesState === "failed"
+        || (service.phoneFilesState === "choosing" && service.phoneFileLocations.length > 1)
+        || (Actions.browsePending(service) && !phoneBrowseToolbarAvailable))
+    onPhoneBrowseNeedsDetailsChanged: {
+        if (!phoneBrowseNeedsDetails || !opened) return
+        setSectionExpanded("drop", true)
+        if (currentView === "Devices" && !editingLayout)
+            Qt.callLater(function() { root.scrollSectionIntoView("drop") })
+    }
     PanelSectionCatalog {
         id: sectionCatalogModel
         storedOrder: root.getSetting("sectionOrder", "")
@@ -107,6 +120,7 @@ Panel {
         if (!service) return "checking"
         if (id === "syncthing") return !service.appearance || !service.appearance.ready ? "checking" : device ? "available" : "unavailable"
         if (id === "addresses") return service.customAddressesReady ? "available" : "checking"
+        if (id === "drop" && phoneBrowseNeedsDetails) return "available"
         if (id === "actions" && availableActions.some(function(id) { return Actions.entry(id).scope === "global" })) return "available"
         if (service.scanning || ["starting", "checking"].indexOf(service.discoveryState) >= 0) return "checking"
         if (service.discoveryState !== "ready") return "unavailable"
@@ -133,7 +147,7 @@ Panel {
     function sectionVisible(id) {
         if (id === "devices") return true
         if (!sectionCatalogModel.entry(id)) return false
-        if ((id === "drop" && dropActionRevealed) || (id === "actions" && activeComposer !== "none") || (id === "media" && mediaActionRevealed) || (id === "commands" && commandsActionRevealed)) return true
+        if ((id === "drop" && (dropActionRevealed || phoneBrowseNeedsDetails)) || (id === "actions" && activeComposer !== "none") || (id === "media" && mediaActionRevealed) || (id === "commands" && commandsActionRevealed)) return true
         if (sectionVisibility && Object.prototype.hasOwnProperty.call(sectionVisibility, id)) return SectionOrder.matches(sectionVisibility[id], sectionAvailability(id))
         if (!sectionFlag(id)) return false
         // Missing override retains the earlier boolean/capability behavior.
@@ -568,6 +582,12 @@ Panel {
 
     function triggerAction(actionId) {
         if (editingLayout) return
+        if (actionId === "browse-files") {
+            if (!opened || currentView !== "Devices" || !phoneBrowseToolbarAvailable) return
+            if (Actions.browsePending(service)) service.cancelPhoneFiles(false)
+            else if (Actions.ready(actionId, device, service)) service.browsePhoneFiles(device.id)
+            return
+        }
         if (!(actionId === "file" && service && service.fileBusy) && !Actions.ready(actionId, device, service)) return
         if (actionId === "plus-settings") { openSettings(); return }
         if (actionId === "quick-share") { service.openQuickShare(); return }
@@ -577,13 +597,6 @@ Panel {
             return
         }
         if (!service || !device) return
-        if (actionId === "browse-files") {
-            currentView = "Devices"; editingLayout = false; dropActionRevealed = true
-            setSectionExpanded("drop", true)
-            Qt.callLater(function() { root.scrollSectionIntoView("drop") })
-            service.browsePhoneFiles(device.id)
-            return
-        }
         if (actionId === "external-monitor") { service.toggleVirtualMonitor(device.id); return }
         if (actionId === "ring") service.ringDevice(device.id)
         else if (actionId === "clipboard") service.sendClipboard(device.id)
@@ -1189,7 +1202,11 @@ Panel {
                                 description: root.sectionHelp(sectionId)
                                 expanded: root.inlineSendExpanded
                                 onToggleRequested: root.toggleSection(sectionId)
-                                PhoneFilesSection { width: parent.width; service: root.service }
+                                PhoneFilesSection {
+                                    width: parent.width
+                                    service: root.service
+                                    browseInToolbar: root.phoneBrowseInToolbar
+                                }
                                 InlineSendSection {
                                     id: inlineSendSection
                                     panel: root
