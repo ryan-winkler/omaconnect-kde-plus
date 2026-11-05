@@ -27,10 +27,11 @@ def read_request(stream):
     if not raw or len(raw) > MAX_INPUT:
         raise ValueError()
     value = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_object)
-    if not isinstance(value, dict) or set(value) != {"summary", "body", "includeDeviceName", "deviceName"}:
+    required = {"summary", "body", "includeDeviceName", "deviceName"}
+    if not isinstance(value, dict) or not required <= value.keys() <= required | {"actionLabel"}:
         raise ValueError()
-    for key, limit in (("summary", 256), ("body", 1024), ("deviceName", 256)):
-        text = value[key]
+    for key, limit in (("summary", 256), ("body", 1024), ("deviceName", 256), ("actionLabel", 80)):
+        text = value.get(key, "")
         if not isinstance(text, str) or len(text) > limit or "\0" in text:
             raise ValueError()
         text.encode("utf-8", "strict")
@@ -59,7 +60,7 @@ def parameters(value, GLib):
             body += "\n" + name
     # Same fixed Omarchy hints as `omarchy notification send --action`.
     # The fixed action is safe after history replay and does not identify a task.
-    action = {"label": "Activity", "argv": ACTIVITY_ARGV}
+    action = {"label": plain_name(value.get("actionLabel", "")) or "Activity", "argv": ACTIVITY_ARGV}
     hints = {
         "urgency": GLib.Variant("y", 1),
         "omarchy-exec-argv": GLib.Variant("s", json.dumps(ACTIVITY_ARGV)),

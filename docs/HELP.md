@@ -121,6 +121,8 @@ reported capability or configured local tools; they do not confirm delivery.
 
 Appearance holds bar and device identity choices and daily navigation preferences.
 
+Plus follows **Setup → Language**. Labels without a translation use English.
+
 ![Appearance settings with icon actions and popup navigation preferences](screenshots/appearance.png)
 
 Choose a preset, alias or installed icon, then preview before Apply.
@@ -155,6 +157,11 @@ Configure links to the native settings owner.
 </details>
 
 ## Daily popup
+
+Plus follows **Setup → Language** in Omarchy. Shared controls use the
+desktop’s translations. Arabic, German, French, Mexican Spanish and
+Portuguese include partial Plus translations. Other Plus text uses
+English when a matching translation is unavailable.
 
 The **View: Devices** menu also opens **Send**, **Activity** and **Plus settings**.
 Navigation stays at **Bottom** by default, so devices come first. In

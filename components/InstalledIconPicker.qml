@@ -5,15 +5,16 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
 import "../Appearance.js" as Appearance
+import "../i18n" as Locale
 
 Item {
     id: root
     property var options: []
     property string value: ""
-    property string label: qsTr("Installed icons")
-    property string triggerLabel: qsTr("Search installed icons…")
-    property string placeholderText: qsTr("Search installed icons")
-    property string emptyText: qsTr("No matching icons")
+    property string label: Locale.Strings.t("installedIconPicker.installedIcons")
+    property string triggerLabel: Locale.Strings.t("installedIconPicker.searchInstalledIcons")
+    property string placeholderText: Locale.Strings.t("installedIconPicker.searchInstalledIcons2")
+    property string emptyText: Locale.Strings.t("installedIconPicker.noMatchingIcons")
     property bool showLabel: true
     property color foreground: Commons.Color.popups.text
     property color background: Commons.Color.popups.background
@@ -69,8 +70,8 @@ Item {
         height: root.rowHeight
         padding: Style.spacing.controlPaddingX
         focusPolicy: Qt.StrongFocus
-        Accessible.name: root.label || qsTr("Installed icons")
-        Accessible.description: root.value ? qsTr("Selected icon: ") + root.value : root.triggerLabel
+        Accessible.name: root.label || Locale.Strings.t("installedIconPicker.installedIcons")
+        Accessible.description: root.value ? Locale.Strings.t("installedIconPicker.selectedIcon") + root.value : root.triggerLabel
         Accessible.onPressAction: if (enabled) root.toggle()
         onClicked: root.toggle()
         Keys.onDownPressed: root.open()
@@ -171,7 +172,7 @@ Item {
                 foreground: root.foreground
                 accent: root.accent
                 font.family: root.fontFamily
-                Accessible.name: qsTr("Search installed icons")
+                Accessible.name: Locale.Strings.t("installedIconPicker.searchInstalledIcons2")
                 Keys.onDownPressed: if (results.count) { results.currentIndex = 0; results.forceActiveFocus() }
                 Keys.onReturnPressed: root.choose(results.currentIndex)
                 Keys.onEnterPressed: root.choose(results.currentIndex)
@@ -205,7 +206,7 @@ Item {
                     boundsBehavior: Flickable.StopAtBounds
                     keyNavigationEnabled: true
                     Accessible.role: Accessible.List
-                    Accessible.name: qsTr("Matching installed icons")
+                    Accessible.name: Locale.Strings.t("installedIconPicker.matchingInstalledIcons")
                     Keys.onReturnPressed: root.choose(currentIndex)
                     Keys.onEnterPressed: root.choose(currentIndex)
                     Keys.onSpacePressed: root.choose(currentIndex)
@@ -224,7 +225,7 @@ Item {
                         padding: Style.spacing.controlPaddingX
                         highlighted: results.currentIndex === index
                         Accessible.name: modelData
-                        Accessible.description: qsTr("Choose this installed icon. Apply saves the choice.")
+                        Accessible.description: Locale.Strings.t("installedIconPicker.chooseThisInstalledIconApplySaves")
                         Accessible.selected: root.value === modelData
                         Accessible.onPressAction: if (enabled) root.choose(index)
                         onClicked: root.choose(index)

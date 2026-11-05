@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Io
 import "bridge" as OmaconnectBridge
 import "controller"
+import "i18n" as Locale
 
 Item {
     id: root
@@ -52,12 +53,12 @@ Item {
         command: ["/usr/bin/timeout", "4", "/usr/bin/omarchy-shell", "shell", "summon", "io.github.ilyazar.syncthing", "{}"]
         stdout: StdioCollector { id: ownerReply; waitForEnd: false; onDataChanged: if (text.length > 8192) ownerPanel.running = false }
         onExited: function(code) {
-            root.ownerPanelMessage = code === 0 && ownerReply.text.trim() === "ok" ? "Opened the existing Syncthing panel." : "Syncthing panel unavailable. Enable the existing Syncshell plugin first."
+            root.ownerPanelMessage = code === 0 && ownerReply.text.trim() === "ok" ? Locale.Strings.live("service.status.syncthingOpened") : Locale.Strings.live("service.status.syncthingUnavailable")
         }
     }
     function openSyncthingPanel() {
         if (!ownerPanel.running) {
-            ownerPanelMessage = "Opening the existing Syncthing panel…"
+            ownerPanelMessage = Locale.Strings.live("service.status.syncthingOpening")
             ownerPanel.running = true
         }
     }
@@ -133,14 +134,14 @@ Item {
         command: ["/usr/bin/timeout", "5", "/usr/bin/python3", root.quickShareHelper, "--open"]
         onExited: function(code) {
             root.quickShareFailed = code !== 0
-            root.quickShareMessage = code === 0 ? "RQuickShare launch requested. Check its window or tray icon."
-                : "RQuickShare could not open. Check that r-quick-share is installed and try again."
+            root.quickShareMessage = code === 0 ? Locale.Strings.live("service.status.quickShareRequested")
+                : Locale.Strings.live("service.status.quickShareFailed")
             if (code !== 0) root.quickShareAvailable = false
         }
     }
     function openQuickShare() {
         if (!quickShareAvailable || quickShareLaunch.running) return false
-        quickShareMessage = "Opening RQuickShare…"
+        quickShareMessage = Locale.Strings.live("service.status.quickShareOpening")
         quickShareFailed = false
         quickShareLaunch.running = true
         return true

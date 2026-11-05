@@ -82,7 +82,7 @@ def _plain_path(value):
                     for c in value))
 
 
-def _candidates(home, cancelled):
+def _candidates(home, cancelled, preview_label=PREVIEW_LABEL):
     """Collect recent supported files within scan, depth and serialized option limits."""
     deadline = time.monotonic() + SCAN_SECONDS
     remaining = MAX_SCAN_ENTRIES
@@ -132,7 +132,7 @@ def _candidates(home, cancelled):
     # json.dumps with ASCII escaping conservatively bounds JSON::PP's UTF-8
     # options array and each argv copy in the native menu wrapper's payload.
     # Reserve the optional preview route as well as each rendered glyph/TAB row.
-    options, size = [], 3 + len(json.dumps('\uf03e\t' + PREVIEW_LABEL, ensure_ascii=True))
+    options, size = [], 3 + len(json.dumps('\uf03e\t' + preview_label, ensure_ascii=True))
     for _, path in sorted(found, key=lambda item: (-item[0], item[1])):
         cost = len(json.dumps(_file_row(path), ensure_ascii=True).encode('ascii')) + bool(options)
         if size + cost > OPTION_BUDGET:
@@ -194,18 +194,19 @@ def _read_output(process, cancelled, deadline):
         raise RecentError('source-path-rejected') from None
 
 
-def _menu(options, cancelled, label):
-    # Recipient text is display-only. It cannot add menu rows or command flags.
-    """Return one offered path and remove private result files on every exit."""
-    label = label if isinstance(label, str) else ''
-    label = ' '.join(''.join(' ' if unicodedata.category(c).startswith('C')
+def _display_text(value, limit):
+    """Bound native menu copy and remove characters that can change row parsing."""
+    return ' '.join(''.join(' ' if unicodedata.category(c).startswith('C')
                                or c in '\u2028\u2029' else c
-                               for c in label[:256]).split())[:80]
-    prompt = PROMPT + (' to ' + label if label else '')
+                               for c in value[:256]).split())[:limit]
+
+
+def _menu(options, cancelled, prompt, preview_label):
+    """Return one offered label and remove private result files on every exit."""
     images = _preview_options(options)
     rows = [_file_row(path) for path in options]
     if images:
-        rows.insert(0, '\uf03e\t' + PREVIEW_LABEL)
+        rows.insert(0, '\uf03e\t' + preview_label)
     # The shell menu outlives its wrapper. Removing this private parent after
     # group cleanup prevents a stale native selection from recreating result
     # files, even when its visible menu still needs dismissal with Escape.
@@ -225,15 +226,20 @@ def _menu(options, cancelled, label):
                 raise Cancelled()
             if process.returncode:
                 raise RecentError('recent-files-unavailable')
-            if selected not in options and not (images and selected == PREVIEW_LABEL):
+            if selected not in options and not (images and selected == preview_label):
                 raise RecentError('source-path-rejected')
         finally:
             _stop_group(process)
     return selected
 
 
-def choose_recent(label=''):
+def choose_recent(label='', title='', preview_label=''):
     """Return the portal selection contract without opening the portal or sending."""
+    label = _display_text(label, 80)
+    prompt = _display_text(title, 160) or PROMPT + (' to ' + label if label else '')
+    preview_label = _display_text(preview_label, 80)
+    if not preview_label or preview_label.startswith('/'):
+        preview_label = PREVIEW_LABEL
     cancelled = False
 
     def stop(*unused):
@@ -243,15 +249,15 @@ def choose_recent(label=''):
 
     previous = signal.signal(signal.SIGTERM, stop)
     try:
-        options = _candidates(Path.home(), lambda: cancelled)
+        options = _candidates(Path.home(), lambda: cancelled, preview_label)
         if cancelled:
             raise Cancelled()
         if not options:
             raise RecentError('recent-files-empty')
-        selected = _menu(options, lambda: cancelled, label)
+        selected = _menu(options, lambda: cancelled, prompt, preview_label)
         if cancelled:
             raise Cancelled()
-        if selected == PREVIEW_LABEL:
+        if selected == preview_label:
             return {'state': 'preview', 'paths': _preview_options(options)}
         from portal_files import inspect_uris
         files = inspect_uris([Path(selected).as_uri()])

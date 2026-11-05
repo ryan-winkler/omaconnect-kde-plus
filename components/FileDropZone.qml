@@ -3,6 +3,7 @@ import QtQuick
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
 
 Kit.BorderSurface {
     id: root
@@ -17,7 +18,7 @@ Kit.BorderSurface {
     radius: Style.cornerRadius
     borderSpec: Commons.Border.controlSpec(dropArea.containsDrag ? "focus" : "normal", Commons.Color.popups.text, Commons.Color.accent)
     Accessible.role: Accessible.StaticText
-    Accessible.name: "Drop files for review"
+    Accessible.name: Locale.Strings.t("fileDropZone.dropFilesForReview")
     Accessible.description: instructions
 
     function acceptFiles(event) { return dropArea.acceptFiles(event) }
@@ -27,7 +28,7 @@ Kit.BorderSurface {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         anchors.margins: Style.space(12)
-        text: dropArea.containsDrag && root.ready ? "Release to review these files. Nothing sends until you select Send." : root.instructions
+        text: dropArea.containsDrag && root.ready ? Locale.Strings.t("fileDropZone.releaseToReviewTheseFilesNothing") : root.instructions
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text

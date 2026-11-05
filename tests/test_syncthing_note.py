@@ -20,6 +20,8 @@ class SyncthingNote(unittest.TestCase):
             for name in ('Commons', 'Ui'):
                 (fixture/name).symlink_to(SHELL/name)
             (fixture/'components').symlink_to(ROOT/'components')
+            (fixture/'i18n').symlink_to(ROOT/'i18n')
+            (fixture/'TransferModel.js').symlink_to(ROOT/'TransferModel.js')
             (fixture/'runtime').mkdir(mode=0o700)
             shutil.copyfile(ROOT/'tests/syncthing_note_ui.qml', fixture/'shell.qml')
             env = {'PATH':'/usr/bin', 'HOME':temporary, 'XDG_CONFIG_HOME':temporary+'/config',

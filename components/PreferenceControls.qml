@@ -6,6 +6,8 @@ import Quickshell.Io
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
+import "PreferenceFeedback.js" as Feedback
 
 Column {
     id: root
@@ -21,12 +23,12 @@ Column {
     function valueFor(row) { return panel ? panel.getSetting(row.key, row.defaultValue) : row.defaultValue }
     function save(request) {
         if (submissionPending || saver.running) {
-            message = "A setting is already saving. This change was not submitted. Wait for its result, then try again."
+            message = Locale.Strings.t("preferenceControls.aSettingIsAlreadySavingThis")
             return false
         }
         lastSaveOk = false
         submissionPending = true
-        message = "Saving setting…"
+        message = Locale.Strings.t("preferenceControls.savingSetting")
         saver.payload = JSON.stringify(request)
         saver.running = true
         return true
@@ -50,7 +52,7 @@ Column {
                 visible: !row.stringType
                 // State in words, from the saved value, not only the knob.
                 label: row.modelData.label
-                description: root.valueFor(row.modelData) === true ? "On" : "Off"
+                description: root.valueFor(row.modelData) === true ? Locale.Strings.t("common.on") : Locale.Strings.t("common.off")
                 descriptionSize: Style.font.bodySmall
                 checked: root.valueFor(row.modelData) === true
                 foreground: Commons.Color.popups.text
@@ -98,7 +100,7 @@ Column {
             Text {
                 width: parent.width
                 visible: row.stringType && row.draft !== row.stored
-                text: "Unsaved changes. Select Save to apply."
+                text: Locale.Strings.t("preferenceControls.unsavedChangesSelectSaveToApply")
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
@@ -108,7 +110,7 @@ Column {
             SettingsButton {
                 width: parent.width
                 visible: row.stringType
-                text: "Save " + row.modelData.label
+                text: Locale.Strings.format("preferenceControls.save", [row.modelData.label])
                 Accessible.name: text
                 focusable: true
                 foreground: Commons.Color.popups.text
@@ -133,7 +135,7 @@ Column {
         property bool oversized: false
         command: ["/usr/bin/timeout", "5", "/usr/bin/python3", root.helperPath]
         onRunningChanged: if (!running && root.submissionPending) {
-            root.message = "Setting could not start. Reopen Plus settings and try again."
+            root.message = Locale.Strings.t("preferenceControls.settingCouldNotStartReopenPlus")
             stdinEnabled = true
             root.submissionPending = false
         }
@@ -145,12 +147,9 @@ Column {
             onDataChanged: if (text.length > 8192) { saver.oversized = true; saver.running = false }
         }
         onExited: function(code) {
-            var result
-            try { result = !oversized ? JSON.parse(reply.text) : null } catch (_) { result = null }
-            var valid = result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length < 512
-                && (code === 0) === result.ok
-            root.lastSaveOk = !!valid && result.ok
-            root.message = valid ? result.message : "Setting was not confirmed. Check the saved value and try again."
+            var result = Feedback.parse(code, reply.text, oversized)
+            root.lastSaveOk = !!result && result.ok
+            root.message = Feedback.display(Locale.Strings, result, "preferences.notConfirmed")
             stdinEnabled = true
             root.submissionPending = false
         }

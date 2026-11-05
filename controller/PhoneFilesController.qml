@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Io
+import "../i18n" as Locale
 
 // One native mount handoff. Send drafts and transfer operations have separate owners.
 Item {
@@ -8,7 +9,8 @@ Item {
     property string selectedPeerId: ""
     property var device: null
     state: "idle"
-    property string message: ""
+    property string messageKey: ""
+    readonly property string message: messageKey ? Locale.Strings.t(messageKey) : ""
     property var locations: []
     property string capturedPeerId: ""
     property int generation: 0
@@ -30,28 +32,28 @@ Item {
                 return typeof item === "string" && /^[0-9a-f]{64}$/.test(item)
             })
     }
-    function errorText(code) {
+    function errorKey(code) {
         var messages = {
-            "invalid-input": "Phone files request rejected. Choose the phone and try again.",
-            "provider-unavailable": "KDE Connect is unavailable. Open native KDE Connect.",
-            "peer-unpaired": "Pair this phone in native KDE Connect, then try again.",
-            "peer-offline": "The phone is offline. Reconnect it and try again.",
-            "capability-unavailable": "Enable Filesystem expose in the phone's KDE Connect settings.",
-            "mount-failed": "KDE Connect could not mount phone storage. Check native KDE Connect.",
-            "no-shares": "The phone shares no folders. Check its Filesystem expose settings.",
-            "share-limit": "The shared folder list is too large. Use native KDE Connect.",
-            "location-changed": "Phone storage changed. Select Browse phone files again.",
-            "storage-timeout": "Phone storage did not respond in time. Try again.",
-            "opener-unavailable": "Set a default file manager, then try again.",
-            "cancelled": "Browse cancelled. A file manager already opening can still appear.",
-            "storage-unavailable": "Phone storage could not be verified. Try again or open native KDE Connect."
+            "invalid-input": "phoneFiles.error.invalid-input",
+            "provider-unavailable": "phoneFiles.error.provider-unavailable",
+            "peer-unpaired": "phoneFiles.error.peer-unpaired",
+            "peer-offline": "phoneFiles.error.peer-offline",
+            "capability-unavailable": "phoneFiles.error.capability-unavailable",
+            "mount-failed": "phoneFiles.error.mount-failed",
+            "no-shares": "phoneFiles.error.no-shares",
+            "share-limit": "phoneFiles.error.share-limit",
+            "location-changed": "phoneFiles.error.location-changed",
+            "storage-timeout": "phoneFiles.error.storage-timeout",
+            "opener-unavailable": "phoneFiles.error.opener-unavailable",
+            "cancelled": "phoneFiles.error.cancelled",
+            "storage-unavailable": "phoneFiles.error.storage-unavailable"
         }
         return messages[code] || messages["storage-unavailable"]
     }
     function fail(code) {
         locations = []
         state = "failed"
-        message = errorText(code)
+        messageKey = errorKey(code)
     }
     function browse(id) {
         if (busy || state === "choosing" || !currentPeer() || id !== selectedPeerId) return false
@@ -73,7 +75,7 @@ Item {
         worker.stdinEnabled = true
         inFlight = true
         state = operation === "prepare" ? "preparing" : "opening"
-        message = operation === "prepare" ? "Preparing phone storage…" : "Opening phone files…"
+        messageKey = operation === "prepare" ? "phoneFiles.preparingPhoneStorage" : "phoneFiles.openingPhoneFiles"
         worker.running = true
         return true
     }
@@ -89,7 +91,7 @@ Item {
         locations = []
         capturedPeerId = ""
         state = silent ? "idle" : "cancelled"
-        message = silent ? "" : opening ? errorText("cancelled") : "Browse cancelled."
+        messageKey = silent ? "" : opening ? errorKey("cancelled") : "phoneFiles.browseCancelled"
         if (worker.running) { worker.signal(15); killTimer.restart() }
     }
     function finish(code) {
@@ -108,7 +110,7 @@ Item {
             if (result.state !== "opened") { fail("storage-unavailable"); return }
             locations = []
             state = "opened"
-            message = "File manager launch requested. Check the file manager window."
+            messageKey = "phoneFiles.fileManagerLaunchRequestedCheckThe"
             return
         }
         if (result.state !== "prepared" || result.peerId !== capturedPeerId || !Array.isArray(result.locations)
@@ -118,7 +120,7 @@ Item {
         }
         locations = result.locations
         state = "choosing"
-        message = locations.length === 1 ? "Phone storage ready…" : "Choose a shared folder."
+        messageKey = locations.length === 1 ? "phoneFiles.phoneStorageReady" : "phoneFiles.chooseASharedFolder"
         if (locations.length === 1) {
             var preparedGeneration = generation
             Qt.callLater(function() {

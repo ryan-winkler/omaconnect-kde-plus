@@ -16,6 +16,7 @@ class NativeModuleSettingsTests(unittest.TestCase):
             self.skipTest('QtTest QML module absent')
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'native_module_settings_ui.qml'
+        runner.fixture_prefix = 'omaconnect-native % catalog-'
         runner.force_offscreen = True
 
         def configure(fixture, plugin, home, fake_bin):

@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -26,7 +27,7 @@ Column {
         foreground: Qt.darker(Commons.Color.popups.text, 1.4)
         focusable: true
         tooltipText: root.description
-        Accessible.name: (root.expanded ? "Collapse " : "Expand ") + root.title
+        Accessible.name: Locale.Strings.format(root.expanded ? "layout.collapse" : "layout.expand", [root.title])
         Accessible.description: root.description
         Accessible.checkable: true
         Accessible.checked: root.expanded

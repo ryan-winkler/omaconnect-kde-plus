@@ -3,6 +3,7 @@ import QtQuick
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -31,17 +32,17 @@ Column {
         if (!store || !peerId || busy) return false
         if (draftPeerId !== peerId) {
             rebaseDraft()
-            feedback = "Device changed. Compare both identities before saving a note."
+            feedback = Locale.Strings.live("syncthingLink.deviceChanged")
             return false
         }
         var value = remove ? "" : draft.trim()
         if (remove ? !linkedId : (!validDraft || value === linkedId)) return false
         // The request keeps its reviewed KDE identity even if selection changes.
         pending = {peerId: peerId, value: value}
-        feedback = remove ? "Removing local note…" : "Saving local note…"
+        feedback = remove ? Locale.Strings.live("syncthingLink.removing") : Locale.Strings.live("syncthingLink.saving")
         if (!store.linkSyncthing(pending.peerId, value)) {
             pending = null
-            feedback = "The request did not start. Check the saved note and try again."
+            feedback = Locale.Strings.live("syncthingLink.requestFailed")
             return false
         }
         return true
@@ -52,16 +53,16 @@ Column {
         pending = null
         var actual = String(store.deviceAppearance(request.peerId).syncthing_device_id || "")
         if (actual !== request.value) {
-            feedback = "The note was not confirmed by saved readback. Check it before trying again."
+            feedback = Locale.Strings.live("syncthingLink.readbackUnconfirmed")
             return
         }
         if (request.peerId !== peerId) {
-            feedback = "The request was applied to the previous KDE device. Select it to check its saved note."
+            feedback = Locale.Strings.live("syncthingLink.previousApplied")
             return
         }
         edited = false
         draft = actual
-        feedback = actual ? "Local identity note saved." : "Local identity note removed."
+        feedback = actual ? Locale.Strings.live("syncthingLink.saved") : Locale.Strings.live("syncthingLink.removed")
     }
     readonly property string syncState: service && service.syncthingDeviceId === linkedId ? String(service.syncthingState || "") : ""
     function readSyncState() { if (service && linkedId && visible && panelOpened) service.readSyncthingPause(linkedId) }
@@ -89,15 +90,15 @@ Column {
             var previous = root.pending.peerId !== root.peerId
             root.pending = null
             root.feedback = previous
-                ? "The previous device's note was not confirmed. Select it to check the saved note."
-                : "Local note not confirmed. " + (message || "Check the saved note before trying again.")
+                ? Locale.Strings.live("syncthingLink.previousUnconfirmed")
+                : message ? Locale.Strings.format("syncthingLink.unconfirmedWithDetail", [message]) : Locale.Strings.live("syncthingLink.unconfirmed")
         }
     }
 
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: "Syncthing identity note"
+        text: Locale.Strings.t("syncthingLink.syncthingIdentityNote")
         color: Commons.Color.popups.text
         font.bold: true
         font.pixelSize: Style.font.body
@@ -105,7 +106,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: "Keep an optional local note to recognize the same device in both apps. Compare its name and full IDs in KDE Connect and Syncthing. This note does not verify ownership, pair devices or start synchronization."
+        text: Locale.Strings.t("syncthingLink.keepAnOptionalLocalNoteTo")
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -114,7 +115,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: root.device ? "KDE device: " + (root.device.name || root.peerId) + "\nKDE ID: " + root.peerId : "Select a KDE device first."
+        text: root.device ? Locale.Strings.format("syncthingLink.deviceId", [root.device.name || root.peerId, root.peerId]) : Locale.Strings.t("syncthingLink.selectAKdeDeviceFirst")
         wrapMode: Text.WrapAnywhere
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -123,7 +124,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: "Saved Syncthing ID — select to copy"
+        text: Locale.Strings.t("syncthingLink.savedSyncthingIdSelectToCopy")
         color: Commons.Color.popups.text
         font.pixelSize: Style.font.bodySmall
     }
@@ -131,20 +132,20 @@ Column {
         objectName: "syncthing-saved-id"
         width: parent.width
         text: root.linkedId
-        placeholderText: "No saved identity note"
+        placeholderText: Locale.Strings.t("syncthingLink.noSavedIdentityNote")
         readOnly: true
         selectByMouse: true
-        Accessible.name: "Saved full Syncthing device ID; select to copy"
+        Accessible.name: Locale.Strings.t("syncthingLink.savedFullSyncthingDeviceIdSelect")
     }
     Text {
         objectName: "syncthing-pause-state"
         textFormat: Text.PlainText
         width: parent.width
         visible: !!root.linkedId
-        text: root.syncState === "paused" ? "Syncthing last check: paused for this device."
-            : root.syncState === "active" ? "Syncthing last check: not paused for this device."
-            : root.syncState === "unknown" ? "Syncthing state unknown. Plus could not confirm it. Check Syncthing and try Refresh state."
-            : "Checking Syncthing…"
+        text: root.syncState === "paused" ? Locale.Strings.t("syncthingLink.syncthingLastCheckPausedForThis")
+            : root.syncState === "active" ? Locale.Strings.t("syncthingLink.syncthingLastCheckNotPausedFor")
+            : root.syncState === "unknown" ? Locale.Strings.t("syncthingLink.syncthingStateUnknownPlusCouldNot")
+            : Locale.Strings.t("syncthingLink.checkingSyncthing")
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -154,7 +155,7 @@ Column {
         objectName: "syncthing-refresh"
         width: parent.width
         visible: !!root.linkedId
-        text: "Refresh Syncthing state"
+        text: Locale.Strings.t("syncthingLink.refreshSyncthingState")
         foreground: Commons.Color.popups.text
         focusable: true
         enabled: !!root.service && !root.service.syncthingBusy
@@ -164,18 +165,18 @@ Column {
         objectName: "syncthing-pause"
         width: parent.width
         visible: !!root.linkedId
-        text: root.syncState === "paused" ? "Resume in Syncthing" : "Pause in Syncthing"
+        text: root.syncState === "paused" ? Locale.Strings.t("syncthingLink.resumeInSyncthing") : Locale.Strings.t("syncthingLink.pauseInSyncthing")
         foreground: Commons.Color.popups.text
         focusable: true
         enabled: (root.syncState === "paused" || root.syncState === "active") && !!root.service && !root.service.syncthingBusy
-        Accessible.name: text + " for the saved device ID"
+        Accessible.name: Locale.Strings.format("syncthingLink.savedIdAction", [text])
         onClicked: root.service.setSyncthingPaused(root.linkedId, root.syncState !== "paused")
     }
     Text {
         textFormat: Text.PlainText
         width: parent.width
         visible: !!root.linkedId
-        text: "Pause stops Syncthing from syncing with this device until you resume. Syncthing keeps its folders, keys and settings."
+        text: Locale.Strings.t("syncthingLink.pauseStopsSyncthingFromSyncingWith")
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -183,7 +184,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "Syncthing device ID"
+        text: Locale.Strings.t("syncthingLink.syncthingDeviceId")
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.pixelSize: Style.font.bodySmall
@@ -193,17 +194,17 @@ Column {
         objectName: "syncthing-note-editor"
         width: parent.width
         text: root.draft
-        placeholderText: "Full Syncthing device ID"
+        placeholderText: Locale.Strings.t("syncthingLink.fullSyncthingDeviceId")
         maximumLength: 63
         enabled: !root.busy && root.peerId !== ""
-        Accessible.name: "Full Syncthing device ID to note for the selected KDE identity"
+        Accessible.name: Locale.Strings.t("syncthingLink.fullSyncthingDeviceIdToNote")
         selectByMouse: true
         onTextEdited: { root.edited = true; root.draft = text }
     }
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: "Paste all eight groups from Syncthing's Show ID view. Save applies only to the KDE device named above."
+        text: Locale.Strings.t("syncthingLink.pasteAllEightGroupsFromSyncthing")
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -212,7 +213,7 @@ Column {
     SettingsButton {
         objectName: "syncthing-save"
         width: parent.width
-        text: "Save local identity note"
+        text: Locale.Strings.t("syncthingLink.saveLocalIdentityNote")
         foreground: Commons.Color.popups.text
         focusable: true
         enabled: !!root.peerId && !!root.store && !root.busy && root.draftPeerId === root.peerId && root.validDraft && root.draft.trim() !== root.linkedId
@@ -222,7 +223,7 @@ Column {
     SettingsButton {
         objectName: "syncthing-remove"
         width: parent.width
-        text: "Remove local note"
+        text: Locale.Strings.t("syncthingLink.removeLocalNote")
         foreground: Commons.Color.popups.text
         focusable: true
         enabled: !!root.peerId && !!root.linkedId && !!root.store && !root.busy
@@ -243,7 +244,7 @@ Column {
     SettingsButton {
         objectName: "syncthing-owner"
         width: parent.width
-        text: "Open existing Syncthing panel"
+        text: Locale.Strings.t("syncthingLink.openExistingSyncthingPanel")
         foreground: Commons.Color.popups.text
         focusable: true
         enabled: !!root.service
@@ -253,7 +254,7 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: "Opens the existing Syncshell panel. It is a general panel, not a link to this particular device."
+        text: Locale.Strings.t("syncthingLink.opensTheExistingSyncshellPanelIt")
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -272,8 +273,8 @@ Column {
     }
     SettingsButton {
         width: parent.width
-        text: "Syncthing device setup help ↗"
-        Accessible.name: "Open official Syncthing device setup help"
+        text: Locale.Strings.t("syncthingLink.syncthingDeviceSetupHelp")
+        Accessible.name: Locale.Strings.t("syncthingLink.openOfficialSyncthingDeviceSetupHelp")
         foreground: Commons.Color.popups.text
         focusable: true
         onClicked: Qt.openUrlExternally("https://docs.syncthing.net/intro/getting-started.html")

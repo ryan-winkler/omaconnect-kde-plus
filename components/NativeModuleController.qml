@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Io
+import "../i18n" as Locale
 
 QtObject {
     id: root
@@ -18,8 +19,9 @@ QtObject {
             var id = modules[i] ? modules[i].id : null
             if (typeof id === "string" && /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(id) && ids.indexOf(id) < 0) ids.push(id)
         }
-        return ids
+        return ids.sort()
     }
+    readonly property string pluginSetKey: pluginIds.join(",")
     property var enabledStates: ({})
     property string message: ""
     property string error: ""
@@ -44,7 +46,7 @@ QtObject {
     }
     onPeerIdChanged: invalidate()
     onReadyChanged: invalidate()
-    onPluginIdsChanged: invalidate()
+    onPluginSetKeyChanged: invalidate()
 
     function refresh() {
         if (!ready || !pluginIds.length) return false
@@ -56,7 +58,7 @@ QtObject {
         if (!ready || pluginIds.indexOf(id) < 0 || !known(id) || typeof enabled !== "boolean") return false
         if (enabledStates[id] === enabled) return false
         if (inFlight) {
-            message = "Native settings are busy. This change was not submitted. Try again after the current request finishes."
+            message = Locale.Strings.t("nativeModuleController.nativeSettingsAreBusyThisChange")
             return false
         }
         queuedRead = false
@@ -70,7 +72,7 @@ QtObject {
         process.payload = JSON.stringify(request)
         oversized = false
         inFlight = true
-        message = request.operation === "read" ? "Reading native feature settings…" : "Updating native feature setting…"
+        message = request.operation === "read" ? Locale.Strings.live("nativeModuleController.reading") : Locale.Strings.live("nativeModuleController.updating")
         error = ""
         process.stdinEnabled = true
         process.running = true
@@ -112,10 +114,10 @@ QtObject {
             if (finished.operation === "set" && (!reply || reply.state !== "observed")) delete states[finished.pluginId]
             enabledStates = states
             error = reply ? reply.error : finished.operation === "set" ? "submission-unknown" : "provider-unavailable"
-            message = error === "submission-unknown" ? "Change unconfirmed. Refresh native settings before you try again."
-                : error === "readback-mismatch" ? "KDE Connect reports a different value. The observed setting is shown."
-                : error ? "Native settings unavailable. Refresh to read the current state."
-                : finished.operation === "set" ? "Native setting confirmed." : "Native settings are current."
+            message = error === "submission-unknown" ? Locale.Strings.live("nativeModuleController.unconfirmed")
+                : error === "readback-mismatch" ? Locale.Strings.live("nativeModuleController.mismatch")
+                : error ? Locale.Strings.live("nativeModuleController.unavailable")
+                : finished.operation === "set" ? Locale.Strings.live("nativeModuleController.confirmed") : Locale.Strings.live("nativeModuleController.current")
         }
         if (queuedRead) pump.restart()
     }

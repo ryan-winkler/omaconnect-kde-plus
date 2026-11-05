@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "Appearance.js" as Appearance
+import "i18n" as Locale
 
 // Own-service presentation store. All writes go through a short-lived helper.
 // Commands use fixed argv and bounded JSON stdin. No polling or service actions.
@@ -15,8 +16,10 @@ Item {
     property bool libraryTruncated: false
     property var invalidAssets: []
     property string assetBaseUrl: ""
-    property string error: ""
-    property var warnings: []
+    property string errorKey: ""
+    property string errorFallback: ""
+    readonly property string error: errorKey ? Locale.Strings.t(errorKey, errorFallback) : errorFallback
+    readonly property var warnings: invalidAssets.length ? [Locale.Strings.t("appearance.assetFallback")] : []
     property bool ready: false
     readonly property bool busy: worker.running
     signal saved()
@@ -38,7 +41,8 @@ Item {
         if (worker.running) return false;
         currentAction = action;
         outputRejected = false;
-        error = "";
+        errorKey = "";
+        errorFallback = "";
         payload = JSON.stringify(request || {}) + "\n";
         worker.stdinEnabled = true;
         worker.command = ["python3", decodeURIComponent(helperPath), action];
@@ -57,7 +61,12 @@ Item {
     function linkSyncthing(id,syncthingId) { return start("update",{action:"link",device_id:String(id),syncthing_device_id:syncthingId || null}); }
     function forgetAppearance(id) { return start("update",{action:"forget",device_id:String(id)}); }
     function importImage(localUrl) { return start("import",{path:String(localUrl)}); }
-    function fail(message) { ready = true; error = message; operationFailed(message); }
+    function fail(key, fallback) {
+        ready = true
+        errorKey = key
+        errorFallback = fallback || ""
+        operationFailed(error)
+    }
 
     Process {
         id: worker
@@ -69,19 +78,21 @@ Item {
                 if (text.length > 400000) {
                     root.outputRejected = true;
                     worker.running = false;
-                    root.fail("Appearance response exceeded its limit.");
+                    root.fail("appearance.responseTooLarge");
                 }
             }
             onStreamFinished: {
                 deadline.stop();
                 if (root.outputRejected) return;
-                if (text.length > 400000) { root.fail("Appearance response exceeded its limit."); return; }
+                if (text.length > 400000) { root.fail("appearance.responseTooLarge"); return; }
                 var result;
                 try { result = JSON.parse(text); }
-                catch (exception) { root.fail("Appearance helper is unavailable."); return; }
+                catch (exception) { root.fail("appearance.helperUnavailable"); return; }
                 if (!result.ok) {
                     root.ready = true;
-                    root.fail(result.error || "Appearance could not be saved. Existing metadata was preserved.");
+                    var knownCode = typeof result.error_code === "string" && /^[a-z0-9-]{1,128}$/.test(result.error_code)
+                    var fallback = typeof result.error === "string" && result.error.length < 512 ? result.error : ""
+                    root.fail(knownCode ? "appearance.error." + result.error_code : fallback ? "" : "appearance.error.read-save-failed", fallback);
                     return;
                 }
                 if (root.currentAction === "library") {
@@ -90,7 +101,6 @@ Item {
                 }
                 else {
                     root.snapshot = result.snapshot;
-                    root.warnings = result.warnings || [];
                     root.invalidAssets = result.invalid_assets || [];
                     root.assetBaseUrl = "file://" + result.asset_dir.split("/").map(encodeURIComponent).join("/") + "/";
                     root.ready = true;
@@ -101,14 +111,14 @@ Item {
         }
         onExited: function(code) {
             deadline.stop();
-            if (code !== 0 && !root.error) root.fail("Appearance helper is unavailable.");
+            if (code !== 0 && !root.error) root.fail("appearance.helperUnavailable");
             if (root.libraryPending) Qt.callLater(function() { if (!worker.running) root.loadLibrary(); });
         }
     }
     Timer {
         id: deadline
         interval: 5000
-        onTriggered: { worker.running = false; root.fail("Appearance helper did not respond in time."); }
+        onTriggered: { worker.running = false; root.fail("appearance.helperTimeout"); }
     }
     Component.onCompleted: if (autoLoad) refresh()
 }

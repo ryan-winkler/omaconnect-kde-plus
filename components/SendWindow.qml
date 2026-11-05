@@ -5,6 +5,7 @@ import QtQuick.Controls as Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
 
 // A normal managed window stays open when the file manager receives focus.
 // All draft/transfer state belongs to the existing service, not this window.
@@ -15,7 +16,7 @@ Window {
     required property var service
     property var device: null
     property var chooserOptions: ({useDesktopFileChooser: false, reviewFilesBeforeSend: false})
-    property string fileChoiceHint: "Selecting a file sends it to the selected recipient. To review first, use Plus settings → Quick actions. Drops always need review."
+    property string fileChoiceHint: Locale.Strings.t("files.immediateHint")
     readonly property var target: service ? service.draftTarget : null
     readonly property bool canChoose: !!(service && device && device.paired && device.reachable
         && device.capabilities && device.capabilities.file && !service.operationBusy && !service.selectionCancelling
@@ -23,7 +24,7 @@ Window {
         && (!service.selection || service.selection.length === 0))
     signal returnToPanelRequested()
     signal chooserStarted()
-    title: "Omaconnect KDE Plus — Send files"
+    title: Locale.Strings.t("sendWindow.omaconnectKdePlusSendFiles")
     transientParent: null
     flags: Qt.Window
     width: 620
@@ -62,7 +63,7 @@ Window {
         spacing: Style.space(12)
         Text {
             width: parent.width
-            text: "Send files"
+            text: Locale.Strings.t("files.send")
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font.family: Style.font.family
@@ -72,9 +73,10 @@ Window {
         Text {
             objectName: "send-window-recipient"
             width: parent.width
-            text: root.target ? "Reviewed recipient: \u2068" + root.target.peerName + "\u2069\nKDE ID: \u2068" + root.target.peerId + "\u2069"
-                : root.device ? "Selected recipient: \u2068" + (root.service && typeof root.service.displayName === "function" ? root.service.displayName(root.device) : root.device.name) + "\u2069\nKDE ID: \u2068" + root.device.id + "\u2069"
-                : "Select a device in Devices first."
+            text: root.target ? Locale.Strings.format("files.reviewedRecipient", [root.target.peerName, root.target.peerId])
+                : root.device ? Locale.Strings.format("files.selectedRecipient", [
+                    root.service && typeof root.service.displayName === "function" ? root.service.displayName(root.device) : root.device.name, root.device.id])
+                : Locale.Strings.t("sendWindow.selectADeviceInDevicesFirst")
             textFormat: Text.PlainText
             wrapMode: Text.WrapAnywhere
             color: Commons.Color.popups.text
@@ -87,7 +89,7 @@ Window {
             spacing: Style.space(8)
             SettingsButton {
                 objectName: "send-window-back-to-devices"
-                text: "Back to devices"
+                text: Locale.Strings.t("settings.back")
                 Accessible.name: text
                 focusable: true
                 foreground: Commons.Color.popups.text
@@ -95,7 +97,7 @@ Window {
             }
             SettingsButton {
                 objectName: "send-window-choose-files"
-                text: "Choose files"
+                text: Locale.Strings.t("files.choose")
                 Accessible.name: text
                 focusable: true
                 foreground: Commons.Color.popups.text
@@ -136,7 +138,7 @@ Window {
                 }
                 Text {
                     width: parent.width
-                    text: "This window stays open while you use your file manager. Closing it keeps the current selection and activity."
+                    text: Locale.Strings.t("sendWindow.thisWindowStaysOpenWhileYou")
                     textFormat: Text.PlainText
                     wrapMode: Text.Wrap
                     color: Commons.Color.popups.text

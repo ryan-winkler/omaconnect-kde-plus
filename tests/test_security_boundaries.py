@@ -38,6 +38,8 @@ class SecurityBoundaries(unittest.TestCase):
                     (fixture/'Commons').symlink_to(OMARCHY_SHELL/'Commons')
                     (fixture/'Ui').symlink_to(OMARCHY_SHELL/'Ui')
                     (fixture/'components').symlink_to(ROOT/'components')
+                    (fixture/'i18n').symlink_to(ROOT/'i18n')
+                    (fixture/'TransferModel.js').symlink_to(ROOT/'TransferModel.js')
                     (fixture/'runtime').mkdir(mode=0o700)
                     shutil.copyfile(ROOT/'tests/security_media_ui.qml', fixture/'shell.qml')
                     art = f'http://127.0.0.1:{server.server_port}/owned-art?token=OWNED-ART-SENTINEL'

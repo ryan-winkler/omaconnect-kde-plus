@@ -10,6 +10,7 @@ ShellRoot {
     property int phase: 0
     property int ticks: 0
     property int backs: 0
+    property int secondaryBacks: 0
     property int cancels: 0
     property var confirmations: []
     property bool acceptConfirmation: false
@@ -61,6 +62,7 @@ ShellRoot {
         id: secondaryPreview
         service: state
         activeForOwner: state.selectionGeneration === test.secondaryOwnerGeneration
+        onBackRequested: { test.secondaryBacks++; state.selectionState = "choosing" }
         onCancelRequested: { test.cancels++; state.selectionState = "idle" }
         onConfirmRequested: function(path) {
             test.secondaryConfirmations = test.secondaryConfirmations.concat([path])
@@ -205,6 +207,22 @@ ShellRoot {
                 if (!test.check(preview.LayoutMirroring.enabled && preview.LayoutMirroring.childrenInherit
                     && secondaryPreview.LayoutMirroring.enabled && search.LayoutMirroring.enabled,
                     "native RTL language mirrors both preview roots and their controls")) return
+                state.selectionState = "preview"
+                secondaryPreview.requestActivate()
+                test.phase++
+            } else if (test.phase === 24 && secondaryPreview.visible) {
+                var rtlImage = test.find(secondaryPreview.contentItem, "image-preview-image")
+                secondaryPreview.selectedIndex = 0
+                rtlImage.parent.forceActiveFocus()
+                keyboard.keyClick(Qt.Key_Left)
+                if (!test.check(secondaryPreview.selectedIndex === 1, "RTL Left browses forward")) return
+                keyboard.keyClick(Qt.Key_Right)
+                if (!test.check(secondaryPreview.selectedIndex === 0, "RTL Right browses back")) return
+                keyboard.keyClick(Qt.Key_Right, Qt.AltModifier)
+                test.phase++
+            } else if (test.phase === 25 && !secondaryPreview.visible) {
+                if (!test.check(test.secondaryBacks === 1 && test.secondaryConfirmations.length === 1,
+                    "RTL Alt Right returns to files without confirmation")) return
                 console.log("IMAGE_PREVIEW_KEYBOARD_PASS " + JSON.stringify(test.checks))
                 console.log("IMAGE_PREVIEW_PASS native keyboard extension")
                 console.log("NATIVE_PASS image preview keyboard"); Qt.quit()

@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "controller"
+import "i18n" as Locale
 
 Item {
     id: root
@@ -11,7 +12,7 @@ Item {
     property bool sessionBusAvailable: false
     property bool scanning: false
     property string discoveryState: "starting"
-    property string discoveryMessage: "Checking KDE Connect"
+    property string discoveryMessage: Locale.Strings.t("kde.status.checking")
     property int generation: 0
     property int ownerGeneration: 0
     property bool scanQueued: false
@@ -59,7 +60,7 @@ Item {
     property bool tailscaleInstalled: false
     property bool tailscaleRunning: false
     property bool tailscaleLoading: false
-    property string tailscaleStatus: "Checking Tailscale"
+    property string tailscaleStatus: Locale.Strings.t("kde.status.tailscaleChecking")
     property string localTailscaleAddress: ""
     property var tailscalePeers: []
     property var customAddresses: []
@@ -158,16 +159,15 @@ Item {
         var batteryText = ""
         if (batteryAllowed && device.capabilities && device.capabilities.battery && device.battery >= 0) {
             var charging = !!(device.isCharging || device.charging)
-            if (charging) batteryText = device.battery + "% • Charging"
-            else if (device.battery <= 20) batteryText = device.battery + "% • Low battery"
-            else batteryText = device.battery + "% • Discharging"
+            var key = charging ? "kde.battery.charging" : device.battery <= 20 ? "kde.battery.low" : "kde.battery.discharging"
+            batteryText = Locale.Strings.format(key, [Locale.Strings.number(device.battery)])
         }
         var netText = ""
         if (networkAllowed && device.networkType) {
             var type = String(device.networkType).trim()
             if (type && type !== "null") {
                 var str = device.networkStrength
-                if (typeof str === "number" && str >= 0) netText = type + " (" + str + "/4)"
+                if (typeof str === "number" && str >= 0) netText = Locale.Strings.format("kde.network.strength", [type, Locale.Strings.number(str), Locale.Strings.number(4)])
                 else netText = type
             }
         }
@@ -207,10 +207,11 @@ Item {
     }
 
     function safeError(exitCode, operation) {
-        if (exitCode === 127 || exitCode === 69) return operation + " unavailable"
-        if (exitCode === 2) return operation + " rejected"
-        if (exitCode === 3) return operation + " timed out"
-        return operation + " failed"
+        var key = "kde.error.failed"
+        if (exitCode === 127 || exitCode === 69) key = "kde.error.unavailable"
+        else if (exitCode === 2) key = "kde.error.rejected"
+        else if (exitCode === 3) key = "kde.error.timeout"
+        return Locale.Strings.live(key, ["kde.operation." + operation])
     }
 
     function canAct(id) {
@@ -293,7 +294,7 @@ Item {
         scanning = true
         if (discoveryState !== "ready") {
             discoveryState = "checking"
-            discoveryMessage = "Checking KDE Connect"
+            discoveryMessage = Locale.Strings.live("kde.status.checking")
         }
         scanProcess.targetGeneration = nextGeneration
         var cmd = ["bash", getScriptPath()]
@@ -311,7 +312,7 @@ Item {
         scanQueued = false
         daemonAvailable = false
         discoveryState = "unavailable"
-        discoveryMessage = "KDE Connect unavailable"
+        discoveryMessage = Locale.Strings.live("kde.status.unavailable")
         customAddressesReady = false
         customAddresses = []
         devices = []
@@ -327,7 +328,7 @@ Item {
         if (actionProcess.running || pairProcess.running || pairResponseProcess.running || addressProcess.running) {
             actionState = "unknown"
             actionMessage = ""
-            actionError = "KDE Connect changed while an action was pending. Check its result before retrying."
+            actionError = Locale.Strings.live("kde.status.ownerChangedDuringAction")
         }
         if (scanProcess.running) scanProcess.running = false
         dbusDebounceTimer.restart()
@@ -443,7 +444,7 @@ Item {
                     root.setPendingPairing(dev.id, "")
                     if (root.selectedDeviceId === dev.id || !root.selectedDeviceId) {
                         root.actionState = "accepted"
-                        root.actionMessage = "Device paired"
+                        root.actionMessage = Locale.Strings.live("kde.status.paired")
                         root.actionError = ""
                     }
                 } else if (root.pendingPairing[dev.id]) {
@@ -489,16 +490,16 @@ Item {
         sessionBusAvailable = scanProcess.exitCode !== 127 && scanProcess.exitCode !== 78
         if (scanProcess.exitCode === 127) {
             discoveryState = "not_installed"
-            discoveryMessage = "KDE Connect not installed"
+            discoveryMessage = Locale.Strings.live("kde.status.missing")
         } else if (scanProcess.exitCode === 78) {
             discoveryState = "unavailable"
-            discoveryMessage = "Discovery needs busctl and Python 3. Check the system tools, then select Refresh."
+            discoveryMessage = Locale.Strings.live("kde.status.dependencies")
         } else if (scanProcess.exitCode === 0) {
             discoveryState = "ready"
-            discoveryMessage = next.length ? "Device state is current" : "No KDE Connect devices"
+            discoveryMessage = next.length ? Locale.Strings.live("kde.status.current") : Locale.Strings.live("kde.status.empty")
         } else {
             discoveryState = "unavailable"
-            discoveryMessage = "KDE Connect unavailable"
+            discoveryMessage = Locale.Strings.live("kde.status.unavailable")
         }
         if (scanQueued) {
             scanQueued = false
@@ -506,11 +507,11 @@ Item {
         }
     }
 
-    function startAction(id, command, acceptedMessage, operation, payload) {
+    function startAction(id, command, acceptedKey, operation, payload) {
         if (actionProcess.running || pairProcess.running || !canAct(id)) {
             var busy = actionProcess.running || pairProcess.running
             actionState = "blocked"
-            actionError = busy ? "Another action is already running" : "Device must be paired and reachable"
+            actionError = busy ? Locale.Strings.live("kde.status.busy") : Locale.Strings.live("panel.deviceMustBePairedAndReachable")
             actionMessage = ""
             return false
         }
@@ -522,10 +523,10 @@ Item {
         actionProcess.privateSubmission = !!payload
         actionProcess.resultState = ""
         actionProcess.resultError = ""
-        actionProcess.acceptedMessage = acceptedMessage
+        actionProcess.acceptedKey = acceptedKey
         actionProcess.operation = operation
         actionState = "running"
-        actionMessage = "Requesting " + operation
+        actionMessage = Locale.Strings.live("kde.action.requesting", ["kde.operation." + operation])
         actionError = ""
         actionProcess.running = true
         return true
@@ -535,65 +536,65 @@ Item {
         var text = String(message || "").trim()
         if (!text) {
             actionState = "blocked"
-            actionError = "Message cannot be empty"
+            actionError = Locale.Strings.live("panel.messageCannotBeEmpty")
             actionMessage = ""
             return false
         }
         var device = deviceById(id)
         if (!device || !device.capabilities.ping) {
             actionState = "blocked"
-            actionError = "Ping not supported by device"
+            actionError = Locale.Strings.live("panel.pingNotSupportedByDevice")
             actionMessage = ""
             return false
         }
         if (text.length > 8192) {
             actionState = "blocked"
-            actionError = "Use at most 8192 characters"
+            actionError = Locale.Strings.live("kde.status.messageTooLong")
             actionMessage = ""
             return false
         }
-        return startAction(id, ["python3", scriptPath("scripts/send_text.py")], "Ping request accepted. Delivery is not confirmed.", "ping", JSON.stringify({peerId: String(id), operation: "ping", text: text}) + "\n")
+        return startAction(id, ["python3", scriptPath("scripts/send_text.py")], "kde.accepted.ping", "ping", JSON.stringify({peerId: String(id), operation: "ping", text: text}) + "\n")
     }
 
     function shareText(id, text) {
         var value = String(text || "").trim()
         if (!value) {
             actionState = "blocked"
-            actionError = "Message cannot be empty"
+            actionError = Locale.Strings.live("panel.messageCannotBeEmpty")
             actionMessage = ""
             return false
         }
         var device = deviceById(id)
         if (!device || !device.capabilities.text) {
             actionState = "blocked"
-            actionError = "Text share not supported by device"
+            actionError = Locale.Strings.live("panel.textShareNotSupportedByDevice")
             actionMessage = ""
             return false
         }
         if (value.length > 8192) {
             actionState = "blocked"
-            actionError = "Use at most 8192 characters"
+            actionError = Locale.Strings.live("kde.status.messageTooLong")
             actionMessage = ""
             return false
         }
-        return startAction(id, ["python3", scriptPath("scripts/send_text.py")], "Text request accepted. Delivery is not confirmed.", "text share", JSON.stringify({peerId: String(id), operation: "text", text: value}) + "\n")
+        return startAction(id, ["python3", scriptPath("scripts/send_text.py")], "kde.accepted.text", "text", JSON.stringify({peerId: String(id), operation: "text", text: value}) + "\n")
     }
 
     function ringDevice(id) {
         var device = deviceById(id)
         if (!device || !device.capabilities.ring) {
             actionState = "blocked"
-            actionError = "Ring not supported by device"
+            actionError = Locale.Strings.live("kde.status.noRing")
             actionMessage = ""
             return false
         }
         if (device.loadedKnown && (!Array.isArray(device.loadedPluginIds) || device.loadedPluginIds.indexOf("kdeconnect_findmyphone") === -1)) {
             actionState = "blocked"
-            actionError = "Ring is not active locally for this device. Open KDE Connect → Plugin Settings and check Find My Phone."
+            actionError = Locale.Strings.live("kde.status.ringNotActive")
             actionMessage = ""
             return false
         }
-        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--ring"], "Ring request accepted. Audible ringing is not confirmed.", "ring")
+        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--ring"], "kde.accepted.ring", "ring")
     }
 
     function toggleVirtualMonitor(id) {
@@ -601,7 +602,7 @@ Item {
         if (!device || !device.paired || !device.reachable || device.pluginIds.indexOf("kdeconnect_virtualmonitor") < 0 || !device.virtualMonitor || !device.virtualMonitor.known) return false
         var operation = device.virtualMonitor.active ? "stop" : "start"
         return startAction(id, ["python3", scriptPath("scripts/virtual_monitor.py")],
-            "Virtual monitor " + operation + " request accepted. Check the device for display confirmation.", "virtual monitor",
+            operation === "stop" ? "kde.accepted.virtualMonitorStop" : "kde.accepted.virtualMonitorStart", "virtualMonitor",
             JSON.stringify({peerId: id, operation: operation}) + "\n")
     }
 
@@ -609,17 +610,17 @@ Item {
         var device = deviceById(id)
         if (!device || !device.capabilities.clipboard) {
             actionState = "blocked"
-            actionError = "Clipboard not supported by device"
+            actionError = Locale.Strings.live("kde.status.noClipboard")
             actionMessage = ""
             return false
         }
-        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--send-clipboard"], "Clipboard request accepted. Delivery is not confirmed.", "clipboard")
+        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--send-clipboard"], "kde.accepted.clipboard", "clipboard")
     }
 
     function openSmsApp(id) {
         var device = deviceById(id)
         if (!device) return false
-        return startAction(id, ["bash", getSmsScriptPath(), String(id)], "SMS app opened", "SMS app")
+        return startAction(id, ["bash", getSmsScriptPath(), String(id)], "kde.accepted.sms", "sms")
     }
 
     // Drop and compatibility entry points share the chooser's inspection boundary.
@@ -632,7 +633,7 @@ Item {
         if (commandsProcess.running || pairProcess.running || !canAct(id) || !device.capabilities.commands) {
             if (device && !commandsProcess.running && !pairProcess.running && canAct(id) && !device.capabilities.commands) {
                 actionState = "blocked"
-                actionError = "Remote commands not supported by device"
+                actionError = Locale.Strings.live("kde.status.noCommands")
                 actionMessage = ""
             }
             return false
@@ -652,7 +653,7 @@ Item {
         var device = deviceById(id)
         if (!device || !device.capabilities.commands) return false
         return startAction(id, ["python3", scriptPath("scripts/edit_remote_commands.py")],
-            "Command editor request accepted. Check the selected device; no command was run.", "remote command editor",
+            "kde.accepted.commandEditor", "commandEditor",
             JSON.stringify({peerId: String(id)}) + "\n")
     }
 
@@ -721,12 +722,12 @@ Item {
         if (!value || !device || !device.capabilities.commands) {
             if (device && !device.capabilities.commands) {
                 actionState = "blocked"
-                actionError = "Remote commands not supported by device"
+                actionError = Locale.Strings.live("kde.status.noCommands")
                 actionMessage = ""
             }
             return false
         }
-        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--execute-command", value], "Command request accepted. Execution is not confirmed.", "remote command")
+        return startAction(id, ["kdeconnect-cli", "-d", String(id), "--execute-command", value], "kde.accepted.command", "command")
     }
 
     function setPendingPairing(id, state) {
@@ -751,7 +752,7 @@ Item {
         times[String(id)] = Date.now()
         pairingRequestTimes = times
         actionState = "accepted"
-        actionMessage = "Pair request sent"
+        actionMessage = Locale.Strings.live("kde.status.pairSent")
         actionError = ""
         if (!pairingWatchdogTimer.running) pairingWatchdogTimer.start()
         pairProcess.targetDeviceId = String(id)
@@ -775,7 +776,7 @@ Item {
         pairResponseProcess.accepting = accept
         pairResponseProcess.command = ["gdbus", "call", "--session", "--dest", "org.kde.kdeconnect", "--object-path", "/modules/kdeconnect/devices/" + String(id), "--method", accept ? "org.kde.kdeconnect.device.acceptPairing" : "org.kde.kdeconnect.device.cancelPairing"]
         actionState = "running"
-        actionMessage = accept ? "Accepting pairing request" : "Rejecting pairing request"
+        actionMessage = accept ? Locale.Strings.live("kde.status.pairAccepting") : Locale.Strings.live("kde.status.pairRejecting")
         actionError = ""
         pairResponseProcess.targetOwnerGeneration = ownerGeneration
         pairResponseProcess.running = true
@@ -795,7 +796,7 @@ Item {
         if (!device || !device.paired || pairProcess.running || actionProcess.running || !device.capabilities.pair) return false
         setPendingPairing(id, "removing")
         actionState = "accepted"
-        actionMessage = "Device unpaired"
+        actionMessage = Locale.Strings.live("kde.status.unpaired")
         actionError = ""
         pairProcess.targetDeviceId = String(id)
         pairProcess.command = ["kdeconnect-cli", "-d", String(id), "--unpair"]
@@ -894,12 +895,12 @@ Item {
 
     function addressError(address) {
         var value = String(address || "").trim()
-        if (!value) return "Enter an IP address"
-        if (/\s|\/|\[|\]|%/.test(value)) return "Enter a literal IPv4 or IPv6 address"
+        if (!value) return Locale.Strings.t("kde.address.enter")
+        if (/\s|\/|\[|\]|%/.test(value)) return Locale.Strings.t("kde.address.literal")
         var ipv4 = value.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
         if (ipv4) {
             for (var i = 1; i <= 4; i++) {
-                if (Number(ipv4[i]) > 255) return "Invalid IPv4 address"
+                if (Number(ipv4[i]) > 255) return Locale.Strings.t("kde.address.invalidV4")
             }
             return ""
         }
@@ -915,7 +916,7 @@ Item {
                 if (compressedGroups.length > 0 && compressedGroups.length < 8 && compressedGroups.every(function(group) { return /^[0-9a-fA-F]{1,4}$/.test(group) })) return ""
             }
         }
-        return "Enter a literal IPv4 or IPv6 address"
+        return Locale.Strings.t("kde.address.literal")
     }
 
     function isAddressSaved(address) {
@@ -985,7 +986,7 @@ Item {
         if (!customAddressesReady) {
             actionState = "blocked"
             actionMessage = ""
-            actionError = "KDE Connect address list is not ready"
+            actionError = Locale.Strings.live("kde.status.addressNotReady")
             return false
         }
         var error = addressError(value)
@@ -997,7 +998,7 @@ Item {
         }
         if (isAddressSaved(value)) {
             actionState = "accepted"
-            actionMessage = "Address already saved; discovering devices"
+            actionMessage = Locale.Strings.live("kde.status.addressAlreadySaved")
             actionError = ""
             refresh(true)
             return true
@@ -1018,7 +1019,7 @@ Item {
         addressProcess.removal = removal
         addressProcess.command = ["bash", getAddressScriptPath(), removal ? "remove" : "add", address]
         actionState = "running"
-        actionMessage = removal ? "Removing saved address" : "Saving address"
+        actionMessage = removal ? Locale.Strings.live("kde.status.addressRemoving") : Locale.Strings.live("kde.status.addressSaving")
         actionError = ""
         addressProcess.targetOwnerGeneration = ownerGeneration
         addressProcess.running = true
@@ -1032,7 +1033,7 @@ Item {
         if (pluginId && (!selectedDevice || !selectedDevice.paired || !/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(pluginId))) return false
         appProcess.targetDeviceId = selectedDeviceId
         appProcess.configurationRequested = pluginId !== ""
-        nativeAppMessage = pluginId ? "Opening native feature configuration" : "Opening KDE Connect"
+        nativeAppMessage = pluginId ? Locale.Strings.live("kde.status.nativeFeatureOpening") : Locale.Strings.live("kde.status.nativeAppOpening")
         nativeAppFailed = false
         appProcess.command = ["bash", getAppScriptPath()]
         if (selectedDeviceId) appProcess.command = appProcess.command.concat([selectedDeviceId])
@@ -1085,7 +1086,7 @@ Item {
             if (timedOutSelected) {
                 root.actionState = "failed"
                 root.actionMessage = ""
-                root.actionError = "Pairing timed out or rejected"
+                root.actionError = Locale.Strings.live("kde.status.pairTimeout")
             }
             if (!anyRequesting) pairingWatchdogTimer.stop()
         }
@@ -1165,17 +1166,17 @@ Item {
         }
         property string targetDeviceId: ""
         property int targetGeneration: 0
-        property string acceptedMessage: "Action completed"
-        property string operation: "action"
+        property string acceptedKey: "kde.accepted.default"
+        property string operation: "default"
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
             if (targetGeneration !== root.actionGeneration || targetDeviceId !== root.selectedDeviceId) return
             var accepted = code === 0 && (!privateSubmission || resultState === "request_accepted")
             var unknown = privateSubmission && (resultError === "submission-unknown" || !resultState)
             root.actionState = unknown ? "unknown" : accepted ? "accepted" : "failed"
-            root.actionMessage = accepted ? acceptedMessage : ""
-            root.actionError = unknown ? "Submission unknown. Check the recipient before retrying." : accepted ? "" : resultError === "capability-unavailable" ? "The native feature is unavailable. Check KDE Connect Plugin Settings." : root.safeError(code, operation)
-            if (operation === "virtual monitor") root.refresh()
+            root.actionMessage = accepted ? Locale.Strings.live(acceptedKey) : ""
+            root.actionError = unknown ? Locale.Strings.live("kde.status.submissionUnknown") : accepted ? "" : resultError === "capability-unavailable" ? Locale.Strings.live("kde.status.featureUnavailable") : root.safeError(code, operation)
+            if (operation === "virtualMonitor") root.refresh()
         }
     }
 
@@ -1211,7 +1212,7 @@ Item {
             }
             if (code === 0) {
                 root.actionState = "accepted"
-                root.actionMessage = isPair ? "Pair request sent" : "Device unpaired"
+                root.actionMessage = isPair ? Locale.Strings.live("kde.status.pairSent") : Locale.Strings.live("kde.status.unpaired")
                 root.actionError = ""
             } else {
                 root.actionState = "failed"
@@ -1236,8 +1237,8 @@ Item {
                 return
             }
             root.actionState = code === 0 ? "accepted" : "failed"
-            root.actionMessage = code === 0 ? (accepting ? "Pairing response sent" : "Pairing request rejected") : ""
-            root.actionError = code === 0 ? "" : root.safeError(code, accepting ? "pairing" : "pairing rejection")
+            root.actionMessage = code === 0 ? (accepting ? Locale.Strings.live("kde.status.pairResponseSent") : Locale.Strings.live("kde.status.pairRejected")) : ""
+            root.actionError = code === 0 ? "" : root.safeError(code, accepting ? "pairing" : "pairingRejection")
             root.refresh()
         }
     }
@@ -1309,7 +1310,7 @@ Item {
             if (code === 127) {
                 root.tailscaleInstalled = false
                 root.tailscaleRunning = false
-                root.tailscaleStatus = "Not installed (optional)"
+                root.tailscaleStatus = Locale.Strings.live("kde.status.tailscaleMissing")
                 root.localTailscaleAddress = ""
                 root.tailscalePeers = []
                 return
@@ -1317,7 +1318,7 @@ Item {
             root.tailscaleInstalled = true
             if (code !== 0) {
                 root.tailscaleRunning = false
-                root.tailscaleStatus = "Not connected"
+                root.tailscaleStatus = Locale.Strings.live("kde.status.tailscaleOffline")
                 root.localTailscaleAddress = ""
                 root.tailscalePeers = []
                 return
@@ -1325,12 +1326,12 @@ Item {
             try {
                 var status = root.parseTailscaleStatus(stdout.text)
                 root.tailscaleRunning = status.running
-                root.tailscaleStatus = status.running ? "Connected" : (status.backend || "Not connected")
+                root.tailscaleStatus = status.running ? Locale.Strings.live("kde.status.tailscaleConnected") : (status.backend || Locale.Strings.live("kde.status.tailscaleOffline"))
                 root.localTailscaleAddress = status.localAddress
                 root.tailscalePeers = status.peers
             } catch (error) {
                 root.tailscaleRunning = false
-                root.tailscaleStatus = "Invalid status response"
+                root.tailscaleStatus = Locale.Strings.live("kde.status.tailscaleInvalid")
                 root.localTailscaleAddress = ""
                 root.tailscalePeers = []
             }
@@ -1348,13 +1349,13 @@ Item {
             if (targetOwnerGeneration !== root.ownerGeneration) return
             if (code === 0) {
                 root.actionState = "accepted"
-                root.actionMessage = removal ? "Saved address removed" : "Address saved; discovering devices"
+                root.actionMessage = removal ? Locale.Strings.live("kde.status.addressRemoved") : Locale.Strings.live("kde.status.addressSaved")
                 root.actionError = ""
                 root.refresh(true)
             } else {
                 root.actionState = "failed"
                 root.actionMessage = ""
-                root.actionError = root.safeError(code, removal ? "address removal" : "address save")
+                root.actionError = root.safeError(code, removal ? "addressRemoval" : "addressSave")
             }
         }
     }
@@ -1366,9 +1367,9 @@ Item {
         onExited: function(code) {
             if (targetDeviceId !== root.selectedDeviceId) return
             root.nativeAppFailed = code !== 0
-            root.nativeAppMessage = code === 0 ? (configurationRequested ? "Native configuration launch requested" : "KDE Connect launch requested")
-                : configurationRequested && code === 69 ? "Direct configuration unavailable. Open Native KDE Connect settings, then Plugin Settings."
-                : root.safeError(code, "KDE Connect app")
+            root.nativeAppMessage = code === 0 ? (configurationRequested ? Locale.Strings.live("kde.status.nativeFeatureRequested") : Locale.Strings.live("kde.status.nativeAppRequested"))
+                : configurationRequested && code === 69 ? Locale.Strings.live("kde.status.directConfigurationUnavailable")
+                : root.safeError(code, "nativeApp")
         }
     }
 

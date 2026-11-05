@@ -7,7 +7,7 @@ MAX_ORDER_LENGTH = 512
 MAX_CATALOG_LENGTH = 32768
 # Saved orders can still name sections that later releases removed.
 RETIRED_IDS = ("information",)
-FIELDS = {"id", "label", "description", "visibilityKey", "expandedKey", "defaultVisible", "defaultExpanded", "settingsPage", "defaultPolicy"}
+FIELDS = {"id", "visibilityKey", "expandedKey", "defaultVisible", "defaultExpanded", "settingsPage", "defaultPolicy"}
 POLICIES = ("show", "hide", "available", "unavailable")
 MAX_VISIBILITY_LENGTH = 2048
 PAGES = {"Appearance", "Connections", "Quick actions", "Device features"}
@@ -24,9 +24,6 @@ def validate_catalog(rows):
         ident = row.get("id")
         if not isinstance(ident, str) or not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", ident) or ident in ids:
             raise ValueError("invalid-section-catalogue")
-        for field, limit in (("label", 128), ("description", 1024)):
-            if not isinstance(row.get(field), str) or not row[field].strip() or len(row[field]) > limit:
-                raise ValueError("invalid-section-catalogue")
         if (type(row.get("defaultVisible")) is not bool or type(row.get("defaultExpanded")) is not bool
                 or not isinstance(row.get("settingsPage", "Appearance"), str) or row.get("settingsPage", "Appearance") not in PAGES
                 or row.get("defaultPolicy") not in POLICIES

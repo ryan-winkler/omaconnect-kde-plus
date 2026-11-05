@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -40,9 +41,9 @@ Column {
         SettingsButton {
             width: Math.min(implicitWidth, parent.width)
             height: Math.max(44, implicitHeight)
-            text: root.configuration ? "Native settings ↗" : "Native KDE Connect settings"
-            Accessible.name: "Native KDE Connect settings"
-            Accessible.description: "Open the selected device in native KDE Connect. Native configuration forms and phone permissions remain there."
+            text: root.configuration ? Locale.Strings.t("nativeFeatures.nativeSettings") : Locale.Strings.t("nativeFeatures.nativeKdeConnectSettings")
+            Accessible.name: Locale.Strings.t("nativeFeatures.nativeKdeConnectSettings")
+            Accessible.description: Locale.Strings.t("nativeFeatures.openTheSelectedDeviceInNative")
             focusable: true
             foreground: Commons.Color.popups.text
             enabled: !!root.service && !root.service.nativeAppOpening
@@ -52,9 +53,9 @@ Column {
             visible: root.configuration
             width: Math.min(implicitWidth, parent.width)
             height: Math.max(44, implicitHeight)
-            text: "Info"
-            Accessible.name: (root.informationExpanded ? "Hide" : "Show") + " device information"
-            tooltipText: "Device identity, battery and connection information"
+            text: Locale.Strings.t("nativeFeatures.info")
+            Accessible.name: Locale.Strings.t(root.informationExpanded ? "nativeFeatures.hideInformation" : "nativeFeatures.showInformation")
+            tooltipText: Locale.Strings.t("nativeFeatures.deviceIdentityBatteryAndConnectionInformation")
             focusable: true
             foreground: Commons.Color.popups.text
             selected: root.informationExpanded
@@ -64,9 +65,9 @@ Column {
             visible: root.configuration
             width: Math.min(implicitWidth, parent.width)
             height: Math.max(44, implicitHeight)
-            text: "Actions"
-            Accessible.name: (root.actionsExpanded ? "Hide" : "Show") + " device actions"
-            tooltipText: "Virtual monitor and command setup on the selected device"
+            text: Locale.Strings.t("nativeFeatures.actions")
+            Accessible.name: Locale.Strings.t(root.actionsExpanded ? "nativeFeatures.hideActions" : "nativeFeatures.showActions")
+            tooltipText: Locale.Strings.t("nativeFeatures.virtualMonitorAndCommandSetupOn")
             focusable: true
             foreground: Commons.Color.popups.text
             selected: root.actionsExpanded
@@ -100,9 +101,9 @@ Column {
             objectName: "request-remote-command-editor"
             width: parent.width
             height: Math.max(44, implicitHeight)
-            text: "Request command editor on selected device"
+            text: Locale.Strings.t("nativeFeatures.requestCommandEditorOnSelectedDevice")
             Accessible.name: text
-            Accessible.description: "Ask the selected device to open its command setup. No command runs."
+            Accessible.description: Locale.Strings.t("nativeFeatures.askTheSelectedDeviceToOpen")
             focusable: true
             foreground: Commons.Color.popups.text
             enabled: !!root.device && root.device.paired && root.device.reachable
@@ -111,7 +112,7 @@ Column {
         }
         Text {
             width: parent.width
-            text: "For commands that run on the selected device. Check that device for its editor. Commands on this computer are configured in the module list below."
+            text: Locale.Strings.t("nativeFeatures.forCommandsThatRunOnThe")
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
@@ -121,7 +122,7 @@ Column {
         Text {
             width: parent.width
             visible: !!root.service && !!(root.service.actionError || root.service.actionMessage)
-            text: root.service ? "Latest device action: " + (root.service.actionError || root.service.actionMessage) : ""
+            text: root.service ? Locale.Strings.format("nativeFeatures.latestAction", [root.service.actionError || root.service.actionMessage]) : ""
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
@@ -141,7 +142,7 @@ Column {
     Text {
         width: parent.width
         visible: root.configuration && !!nativeMetadata.item && nativeMetadata.item.truncated
-        text: "Some installed modules are omitted. Open Native settings for the complete list."
+        text: Locale.Strings.t("nativeFeatures.someInstalledModulesAreOmittedOpen")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -154,7 +155,7 @@ Column {
         spacing: Style.space(4)
         Text {
             width: parent.width
-            text: "Additional device-reported features"
+            text: Locale.Strings.t("nativeFeatures.additionalDeviceReportedFeatures")
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font.family: Style.font.family
@@ -166,7 +167,7 @@ Column {
             delegate: Text {
                 required property string modelData
                 width: parent.width
-                text: modelData + " · No installed module metadata"
+                text: Locale.Strings.format("nativeFeatures.missingModule", [modelData])
                 textFormat: Text.PlainText
                 wrapMode: Text.WrapAnywhere
                 color: Commons.Color.popups.text
@@ -179,8 +180,8 @@ Column {
     SettingsButton {
         visible: root.configuration
         width: Math.min(implicitWidth, parent.width)
-        text: "KDE Connect user guide ↗"
-        Accessible.name: "Open the official KDE Connect user guide"
+        text: Locale.Strings.t("nativeFeatures.kdeConnectUserGuide")
+        Accessible.name: Locale.Strings.t("nativeFeatures.openTheOfficialKdeConnectUser")
         focusable: true
         foreground: Commons.Color.popups.text
         onClicked: Qt.openUrlExternally("https://kdeconnect.kde.org/users.html")

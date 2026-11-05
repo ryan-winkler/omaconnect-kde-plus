@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Io
-import qs.Commons as Commons
+import "../i18n" as Locale
 
 // Desktop notices report final Plus requests. KDE owns delivery and history.
 Item {
@@ -14,8 +14,8 @@ Item {
     property var pending: []
     property bool inFlight: false
     property int policyGeneration: 0
+    readonly property var strings: Locale.Strings
     readonly property string helperPath: decodeURIComponent(Qt.resolvedUrl("../scripts/task_notification.py").toString().replace(/^file:\/\//, ""))
-    Commons.Translations { id: strings; directory: Qt.resolvedUrl("../i18n") }
 
     onSuppressedChanged: if (suppressed) { pending = []; policyGeneration++ }
     onIncludeDeviceNameChanged: { pending = []; policyGeneration++ }
@@ -32,6 +32,7 @@ Item {
         var payload = {
             summary: strings.t("notice." + key + ".title"),
             body: strings.t("notice." + key + ".body"),
+            actionLabel: strings.t("navigation.activity"),
             includeDeviceName: includeDeviceName,
             deviceName: includeDeviceName && typeof operation.peerName === "string" && operation.peerName !== operation.peerId
                 ? Array.from(operation.peerName).slice(0, 128).join("") : ""

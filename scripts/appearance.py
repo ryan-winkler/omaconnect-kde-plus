@@ -30,77 +30,91 @@ BAD_TEXT = re.compile(r'[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]')
 
 
 class Rejected(ValueError):
-    pass
+    def __init__(self, code):
+        super().__init__(code)
+        self.code = code
+
+    def __str__(self):
+        return english_message('appearance.error.' + self.code)
 
 
-def reject(condition, message):
+def english_message(key):
+    """Keep a readable fallback for CLI callers and older clients."""
+    try:
+        catalog_path = Path(__file__).resolve().parents[1] / 'i18n' / 'en.json'
+        return json.loads(catalog_path.read_text(encoding='utf-8'))[key]
+    except (OSError, ValueError, KeyError):
+        return 'Appearance could not be read or saved. Existing metadata was preserved.'
+
+
+def reject(condition, code):
     if condition:
-        raise Rejected(message)
+        raise Rejected(code)
 
 
 def default():
     return {'schema_version': 1, 'bar_icon': {'mode': 'preset', 'value': 'phone', 'render': 'symbolic'}, 'devices': {}}
 
 
-def bounded_text(value, maximum, label):
-    reject(not isinstance(value, str) or bool(BAD_TEXT.search(value)), label + ' is invalid.')
+def bounded_text(value, maximum, error_code):
+    reject(not isinstance(value, str) or bool(BAD_TEXT.search(value)), error_code)
     value = value.strip()
-    reject(len(value) > maximum, label + ' is invalid.')
+    reject(len(value) > maximum, error_code)
     return value
 
 
 def device_key(value):
-    reject(not isinstance(value, str), 'Device ID is invalid.')
+    reject(not isinstance(value, str), 'device-id-is-invalid')
     raw = value.removeprefix('kdeconnect:')
-    reject(not DEVICE.fullmatch(raw), 'Device ID is invalid.')
+    reject(not DEVICE.fullmatch(raw), 'device-id-is-invalid')
     return 'kdeconnect:' + raw
 
 
 def icon(value, device=False):
     """Keep legacy automatic rendering distinct from an explicit tint request."""
-    reject(not isinstance(value, dict), 'Icon is invalid.')
-    reject(bool(set(value) - {'mode','value','render','font','tint'}), 'Icon contains unsupported fields.')
+    reject(not isinstance(value, dict), 'icon-is-invalid')
+    reject(bool(set(value) - {'mode','value','render','font','tint'}), 'icon-contains-unsupported-fields')
     mode = value.get('mode')
-    reject(mode not in ({'automatic', 'preset', 'theme', 'glyph', 'image', 'inherit'} if device else {'automatic', 'preset', 'theme', 'glyph', 'image'}), 'Icon mode is invalid.')
+    reject(mode not in ({'automatic', 'preset', 'theme', 'glyph', 'image', 'inherit'} if device else {'automatic', 'preset', 'theme', 'glyph', 'image'}), 'icon-mode-is-invalid')
     render = value.get('render', 'symbolic')
-    reject(render not in {'symbolic', 'color'}, 'Icon rendering is invalid.')
-    reject('tint' in value and (mode != 'theme' or type(value['tint']) is not bool), 'Theme tint override is invalid.')
-    reject(value.get('tint') is True and render != 'symbolic', 'Theme tint requires symbolic rendering.')
+    reject(render not in {'symbolic', 'color'}, 'icon-rendering-is-invalid')
+    reject('tint' in value and (mode != 'theme' or type(value['tint']) is not bool), 'theme-tint-override-is-invalid')
+    reject(value.get('tint') is True and render != 'symbolic', 'theme-tint-requires-symbolic-rendering')
     result = {'mode': mode, 'render': render}
     if value.get('tint') is True:
         result['tint'] = True
     if mode not in {'automatic', 'inherit'}:
-        text = bounded_text(value.get('value'), 128, 'Icon value')
-        reject(not text, 'Icon value is empty.')
-        reject(mode == 'preset' and text not in PRESETS, 'Preset is unavailable.')
-        reject(mode == 'theme' and not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', text), 'Theme icon is invalid.')
-        reject(mode == 'glyph' and len(text) > 8, 'Symbol must be at most 8 characters.')
-        reject(mode == 'image' and not ASSET.fullmatch(text), 'Imported image is invalid.')
+        text = bounded_text(value.get('value'), 128, 'icon-value-is-invalid')
+        reject(not text, 'icon-value-is-empty')
+        reject(mode == 'preset' and text not in PRESETS, 'preset-is-unavailable')
+        reject(mode == 'theme' and not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', text), 'theme-icon-is-invalid')
+        reject(mode == 'glyph' and len(text) > 8, 'symbol-must-be-at-most-8-characters')
+        reject(mode == 'image' and not ASSET.fullmatch(text), 'imported-image-is-invalid')
         result['value'] = text
         if mode == 'glyph' and value.get('font'):
-            result['font'] = bounded_text(value['font'], 128, 'Font')
+            result['font'] = bounded_text(value['font'], 128, 'font-is-invalid')
     return result
 
 
 def validate(value):
-    reject(not isinstance(value, dict) or type(value.get('schema_version')) is not int or value.get('schema_version') != 1, 'Appearance schema is unsupported.')
-    reject(bool(set(value) - {'schema_version','bar_icon','devices'}), 'Appearance contains unsupported fields.')
+    reject(not isinstance(value, dict) or type(value.get('schema_version')) is not int or value.get('schema_version') != 1, 'appearance-schema-is-unsupported')
+    reject(bool(set(value) - {'schema_version','bar_icon','devices'}), 'appearance-contains-unsupported-fields')
     devices = value.get('devices')
-    reject(not isinstance(devices, dict) or len(devices) > 256, 'Appearance device limit is 256.')
+    reject(not isinstance(devices, dict) or len(devices) > 256, 'appearance-device-limit-is-256')
     result = {'schema_version': 1, 'bar_icon': icon(value.get('bar_icon')), 'devices': {}}
     for key, entry in devices.items():
-        reject(device_key(key) != key or not isinstance(entry, dict), 'Device metadata is invalid.')
-        reject(bool(set(entry) - {'alias','icon','addresses','syncthing_device_id'}), 'Device metadata contains unsupported fields.')
-        record = {'alias': bounded_text(entry.get('alias', ''), 80, 'Alias'), 'icon': icon(entry.get('icon', {'mode': 'inherit'}), True)}
+        reject(device_key(key) != key or not isinstance(entry, dict), 'device-metadata-is-invalid')
+        reject(bool(set(entry) - {'alias','icon','addresses','syncthing_device_id'}), 'device-metadata-contains-unsupported-fields')
+        record = {'alias': bounded_text(entry.get('alias', ''), 80, 'alias-is-invalid'), 'icon': icon(entry.get('icon', {'mode': 'inherit'}), True)}
         identity = entry.get('syncthing_device_id')
-        reject(identity is not None and (not isinstance(identity, str) or not SYNCTHING.fullmatch(identity)), 'Syncthing ID is invalid.')
+        reject(identity is not None and (not isinstance(identity, str) or not SYNCTHING.fullmatch(identity)), 'syncthing-id-is-invalid')
         record['syncthing_device_id'] = identity
         # Keep the specified address field, without performing discovery or writes.
         if 'addresses' in entry:
             addresses = entry['addresses']
-            reject(not isinstance(addresses, list) or len(addresses) > 64, 'Saved addresses are invalid.')
+            reject(not isinstance(addresses, list) or len(addresses) > 64, 'saved-addresses-are-invalid')
             for address in addresses:
-                reject(not isinstance(address, dict) or not isinstance(address.get('address'), str) or len(address['address']) > 128 or BAD_TEXT.search(address['address']) or address.get('source') not in {'manual', 'inventory', 'route'} or type(address.get('auto_discover')) is not bool, 'Saved addresses are invalid.')
+                reject(not isinstance(address, dict) or not isinstance(address.get('address'), str) or len(address['address']) > 128 or BAD_TEXT.search(address['address']) or address.get('source') not in {'manual', 'inventory', 'route'} or type(address.get('auto_discover')) is not bool, 'saved-addresses-are-invalid')
             record['addresses'] = addresses
         result['devices'][key] = record
     return result
@@ -110,7 +124,7 @@ def paths():
     home = Path.home()
     config = Path(os.environ.get('XDG_CONFIG_HOME', str(home/'.config')))
     data = Path(os.environ.get('XDG_DATA_HOME', str(home/'.local/share')))
-    reject(not config.is_absolute() or not data.is_absolute(), 'Appearance directory must be absolute.')
+    reject(not config.is_absolute() or not data.is_absolute(), 'appearance-directory-must-be-absolute')
     return config/'Omaconnect.plus', data/'Omaconnect.plus'/'icons'
 
 
@@ -121,17 +135,17 @@ def private_dir(path):
         private_dir(path.parent)
     path.mkdir(mode=0o700, parents=True, exist_ok=True)
     info = path.lstat()
-    reject(not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077, 'Appearance directory is unsafe.')
+    reject(not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077, 'appearance-directory-is-unsafe')
 
 
 def read_file(path, limit, owned=False):
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     with os.fdopen(fd, 'rb') as stream:
         info = os.fstat(stream.fileno())
-        reject(not stat.S_ISREG(info.st_mode) or info.st_size > limit, 'File is not a supported regular file or exceeds its size limit.')
-        reject(owned and (info.st_uid != os.getuid() or info.st_mode & 0o077), 'Appearance file permissions are unsafe.')
+        reject(not stat.S_ISREG(info.st_mode) or info.st_size > limit, 'file-is-not-a-supported-regular-file-or-exceeds-its-size-limit')
+        reject(owned and (info.st_uid != os.getuid() or info.st_mode & 0o077), 'appearance-file-permissions-are-unsafe')
         data = stream.read(limit + 1)
-        reject(len(data) > limit, 'File exceeds its size limit.')
+        reject(len(data) > limit, 'file-exceeds-its-size-limit')
         return data
 
 
@@ -162,43 +176,43 @@ def atomic_write(directory, name, data):
 
 
 def inspect_png(data):
-    reject(not data.startswith(b'\x89PNG\r\n\x1a\n'), 'Image is not PNG.')
+    reject(not data.startswith(b'\x89PNG\r\n\x1a\n'), 'image-is-not-png')
     position, chunks, payload, width, height, row_size = 8, [], bytearray(), 0, 0, 0
     while position < len(data):
-        reject(position + 12 > len(data), 'PNG is truncated.')
+        reject(position + 12 > len(data), 'png-is-truncated')
         size = struct.unpack('!I', data[position:position+4])[0]
         kind = data[position+4:position+8]
         end = position + 12 + size
-        reject(end > len(data), 'PNG is truncated.')
+        reject(end > len(data), 'png-is-truncated')
         body = data[position+8:position+8+size]
         crc = struct.unpack('!I', data[position+8+size:end])[0]
-        reject(zlib.crc32(kind + body) != crc, 'PNG checksum is invalid.')
-        reject(kind in {b'acTL', b'fcTL', b'fdAT'}, 'Animated images are unsupported.')
-        reject(not chunks and kind != b'IHDR', 'PNG header is missing.')
+        reject(zlib.crc32(kind + body) != crc, 'png-checksum-is-invalid')
+        reject(kind in {b'acTL', b'fcTL', b'fdAT'}, 'animated-images-are-unsupported')
+        reject(not chunks and kind != b'IHDR', 'png-header-is-missing')
         if kind == b'IHDR':
-            reject(bool(chunks) or size != 13, 'PNG header is invalid.')
+            reject(bool(chunks) or size != 13, 'png-header-is-invalid')
             width, height, depth, color, compression, filtering, interlace = struct.unpack('!IIBBBBB', body)
             allowed = {0: {1,2,4,8,16}, 2: {8,16}, 3: {1,2,4,8}, 4: {8,16}, 6: {8,16}}
-            reject(not 1 <= width <= 512 or not 1 <= height <= 512, 'Image dimensions must be at most 512 by 512.')
-            reject(color not in allowed or depth not in allowed[color] or compression or filtering or interlace, 'PNG uses an unsupported format. Export a non-interlaced PNG.')
+            reject(not 1 <= width <= 512 or not 1 <= height <= 512, 'image-dimensions-must-be-at-most-512-by-512')
+            reject(color not in allowed or depth not in allowed[color] or compression or filtering or interlace, 'png-uses-an-unsupported-format-export-a-non-interlaced-png')
             row_size = (width * {0:1, 2:3, 3:1, 4:2, 6:4}[color] * depth + 7)//8
         elif kind == b'IDAT':
-            reject(b'IDAT' in chunks and chunks[-1] != b'IDAT', 'PNG image data is invalid.')
+            reject(b'IDAT' in chunks and chunks[-1] != b'IDAT', 'png-image-data-is-invalid')
             payload.extend(body)
         elif kind == b'IEND':
-            reject(size != 0 or end != len(data) or b'IDAT' not in chunks, 'PNG end is invalid.')
+            reject(size != 0 or end != len(data) or b'IDAT' not in chunks, 'png-end-is-invalid')
         elif kind == b'PLTE':
-            reject(size == 0 or size % 3 or size > 768 or b'PLTE' in chunks or b'IDAT' in chunks, 'PNG palette is invalid.')
+            reject(size == 0 or size % 3 or size > 768 or b'PLTE' in chunks or b'IDAT' in chunks, 'png-palette-is-invalid')
         else:
-            reject(not kind[0] & 32, 'PNG has an unsupported critical chunk.')
+            reject(not kind[0] & 32, 'png-has-an-unsupported-critical-chunk')
         chunks.append(kind)
         position = end
-    reject(not chunks or chunks[-1] != b'IEND' or (color == 3 and b'PLTE' not in chunks), 'PNG is incomplete.')
+    reject(not chunks or chunks[-1] != b'IEND' or (color == 3 and b'PLTE' not in chunks), 'png-is-incomplete')
     expected = (row_size + 1) * height
     decoder = zlib.decompressobj()
     raw = decoder.decompress(payload, expected + 1)
-    reject(len(raw) != expected or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail, 'PNG decoded data is invalid.')
-    reject(any(raw[index] > 4 for index in range(0, len(raw), row_size + 1)), 'PNG row filter is invalid.')
+    reject(len(raw) != expected or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail, 'png-decoded-data-is-invalid')
+    reject(any(raw[index] > 4 for index in range(0, len(raw), row_size + 1)), 'png-row-filter-is-invalid')
     return 'png'
 
 
@@ -209,36 +223,36 @@ STYLE_ATTRS = {'fill','fill-opacity','fill-rule','stroke','stroke-width','stroke
 
 def inspect_svg(data):
     data.decode('utf-8-sig')
-    reject(b'\0' in data, 'SVG must use UTF-8 encoding.')
-    reject(re.search(br'<!|<\?', data.replace(b'<?xml ', b'<xml ', 1), re.I) is not None, 'SVG declarations and active content are unsupported.')
+    reject(b'\0' in data, 'svg-must-use-utf-8-encoding')
+    reject(re.search(br'<!|<\?', data.replace(b'<?xml ', b'<xml ', 1), re.I) is not None, 'svg-declarations-and-active-content-are-unsupported')
     root = ET.fromstring(data)
     namespace = '{http://www.w3.org/2000/svg}'
-    reject(root.tag not in {'svg', namespace+'svg'}, 'Image is not SVG.')
+    reject(root.tag not in {'svg', namespace+'svg'}, 'image-is-not-svg')
     nodes = list(root.iter())
-    reject(len(nodes) > 4096, 'SVG has too many elements.')
+    reject(len(nodes) > 4096, 'svg-has-too-many-elements')
     for node in nodes:
         tag = node.tag.removeprefix(namespace)
-        reject(tag not in SVG_TAGS, 'SVG contains unsupported or active content.')
+        reject(tag not in SVG_TAGS, 'svg-contains-unsupported-or-active-content')
         for raw_key, value in node.attrib.items():
             key = raw_key.removeprefix('{http://www.w3.org/1999/xlink}')
-            reject(key not in SVG_ATTRS or len(value) > 65536, 'SVG attribute is unsupported.')
-            reject(key == 'href' and not re.fullmatch(r'#[A-Za-z_][A-Za-z0-9_.:-]*', value), 'SVG external resources are unsupported.')
+            reject(key not in SVG_ATTRS or len(value) > 65536, 'svg-attribute-is-unsupported')
+            reject(key == 'href' and not re.fullmatch(r'#[A-Za-z_][A-Za-z0-9_.:-]*', value), 'svg-external-resources-are-unsupported')
             urls = re.findall(r'url\s*\(([^)]*)\)', value, re.I)
-            reject(any(not re.fullmatch(r'#[A-Za-z_][A-Za-z0-9_.:-]*', ref.strip()) for ref in urls), 'SVG external resources are unsupported.')
-            reject(re.search(r'@|\\|(?:https?|file|data|javascript):|expression\s*\(', value, re.I) is not None, 'SVG external resources are unsupported.')
+            reject(any(not re.fullmatch(r'#[A-Za-z_][A-Za-z0-9_.:-]*', ref.strip()) for ref in urls), 'svg-external-resources-are-unsupported')
+            reject(re.search(r'@|\\|(?:https?|file|data|javascript):|expression\s*\(', value, re.I) is not None, 'svg-external-resources-are-unsupported')
             if key == 'style':
                 for declaration in value.split(';'):
                     if declaration.strip():
                         name, separator, unused = declaration.partition(':')
-                        reject(not separator or name.strip() not in STYLE_ATTRS, 'SVG style is unsupported.')
+                        reject(not separator or name.strip() not in STYLE_ATTRS, 'svg-style-is-unsupported')
     viewbox = root.get('viewBox', '').replace(',', ' ').split()
     fallback = viewbox[2:] if len(viewbox) == 4 else []
     dimensions = []
     for index, name in enumerate(('width','height')):
         value = root.get(name, fallback[index] if len(fallback) == 2 else '')
-        reject(not re.fullmatch(r'(?:\d+(?:\.\d*)?|\.\d+)(?:px)?', value), 'SVG needs explicit pixel dimensions or a viewBox.')
+        reject(not re.fullmatch(r'(?:\d+(?:\.\d*)?|\.\d+)(?:px)?', value), 'svg-needs-explicit-pixel-dimensions-or-a-viewbox')
         dimensions.append(float(value.removesuffix('px')))
-    reject(any(not math.isfinite(size) or not 0 < size <= 512 for size in dimensions), 'Image dimensions must be at most 512 by 512.')
+    reject(any(not math.isfinite(size) or not 0 < size <= 512 for size in dimensions), 'image-dimensions-must-be-at-most-512-by-512')
     # Fragment reuse cycles can exhaust native decoders. Disallow reuse chains;
     # basic symbols and gradients remain supported without recursive references.
     references = {node.get('id'): node for node in nodes if node.get('id')}
@@ -246,17 +260,16 @@ def inspect_svg(data):
         for raw_key, value in node.attrib.items():
             if raw_key.endswith('href'):
                 target = references.get(value[1:])
-                reject(target is None or any(child.tag.removeprefix(namespace) == 'use' or any(attr.endswith('href') for attr in child.attrib) for child in target.iter()), 'SVG reuse is missing or recursive.')
+                reject(target is None or any(child.tag.removeprefix(namespace) == 'use' or any(attr.endswith('href') for attr in child.attrib) for child in target.iter()), 'svg-reuse-is-missing-or-recursive')
     return 'svg'
 
 
 def inspect_image(data):
-    reject(not data or len(data) > MAX_IMAGE, 'Image must be at most 1 MiB.')
+    reject(not data or len(data) > MAX_IMAGE, 'image-must-be-at-most-1-mib')
     return inspect_png(data) if data.startswith(b'\x89PNG') else inspect_svg(data)
 
 
 def asset_warnings(snapshot, assets):
-    warnings = []
     invalid = []
     checked = set()
     icons = [snapshot['bar_icon']] + [entry['icon'] for entry in snapshot['devices'].values()]
@@ -266,11 +279,10 @@ def asset_warnings(snapshot, assets):
             try:
                 data = read_file(assets/entry['value'], MAX_IMAGE, True)
                 extension = inspect_image(data)
-                reject(hashlib.sha256(data).hexdigest()+'.'+extension != entry['value'], 'Imported image changed.')
+                reject(hashlib.sha256(data).hexdigest()+'.'+extension != entry['value'], 'imported-image-changed')
             except (OSError, ValueError, ET.ParseError, zlib.error):
-                warnings.append('An imported image is missing or invalid. Phone is shown instead.')
                 invalid.append(entry['value'])
-    return list(dict.fromkeys(warnings)), invalid
+    return ([english_message('appearance.assetFallback')] if invalid else []), invalid
 
 
 # Required defaults stay discoverable even when other themes exhaust the bank.
@@ -313,12 +325,12 @@ def main(command, request):
         return result
     if command == 'import':
         source = request.get('path')
-        reject(not isinstance(source, str) or len(source) > 4096, 'Choose a local SVG or PNG.')
+        reject(not isinstance(source, str) or len(source) > 4096, 'choose-a-local-svg-or-png')
         if source.startswith('file:'):
             parsed = urlsplit(source)
-            reject(parsed.netloc not in {'', 'localhost'} or parsed.query or parsed.fragment, 'Choose a local file.')
+            reject(parsed.netloc not in {'', 'localhost'} or parsed.query or parsed.fragment, 'choose-a-local-file')
             source = unquote(parsed.path)
-        reject(not Path(source).is_absolute() or '\0' in source, 'Choose a local file.')
+        reject(not Path(source).is_absolute() or '\0' in source, 'choose-a-local-file')
         data = read_file(source, MAX_IMAGE)
         extension = inspect_image(data)
         name = hashlib.sha256(data).hexdigest()+'.'+extension
@@ -328,7 +340,7 @@ def main(command, request):
         private_dir(config)
         descriptor = os.open(config/'.appearance.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
         with os.fdopen(descriptor, 'r+') as lock:
-            reject(not stat.S_ISREG(os.fstat(lock.fileno()).st_mode) or os.fstat(lock.fileno()).st_uid != os.getuid() or os.fstat(lock.fileno()).st_mode & 0o077, 'Appearance lock is unsafe.')
+            reject(not stat.S_ISREG(os.fstat(lock.fileno()).st_mode) or os.fstat(lock.fileno()).st_uid != os.getuid() or os.fstat(lock.fileno()).st_mode & 0o077, 'appearance-lock-is-unsafe')
             fcntl.flock(lock, fcntl.LOCK_EX)
             snapshot = load(config)
             action = request.get('action')
@@ -339,14 +351,14 @@ def main(command, request):
                 if action == 'forget':
                     snapshot['devices'].pop(key, None)
                 else:
-                    reject(action not in {'device','link'}, 'Appearance action is unsupported.')
+                    reject(action not in {'device','link'}, 'appearance-action-is-unsupported')
                     record = snapshot['devices'].get(key, {'alias':'', 'icon':{'mode':'inherit'}, 'syncthing_device_id':None})
                     if action == 'device':
-                        record['alias'] = bounded_text(request.get('alias',''), 80, 'Alias')
+                        record['alias'] = bounded_text(request.get('alias',''), 80, 'alias-is-invalid')
                         record['icon'] = icon(request.get('icon'), True)
                     else:
                         identity = request.get('syncthing_device_id')
-                        reject(identity is not None and (not isinstance(identity, str) or not SYNCTHING.fullmatch(identity)), 'Choose a valid full Syncthing device ID.')
+                        reject(identity is not None and (not isinstance(identity, str) or not SYNCTHING.fullmatch(identity)), 'choose-a-valid-full-syncthing-device-id')
                         record['syncthing_device_id'] = identity
                     snapshot['devices'][key] = record
             snapshot = validate(snapshot)
@@ -354,16 +366,16 @@ def main(command, request):
                 if entry['mode'] == 'image':
                     data = read_file(assets/entry['value'], MAX_IMAGE, True)
                     extension = inspect_image(data)
-                    reject(hashlib.sha256(data).hexdigest()+'.'+extension != entry['value'], 'Imported image is invalid.')
+                    reject(hashlib.sha256(data).hexdigest()+'.'+extension != entry['value'], 'imported-image-is-invalid')
             encoded = json.dumps(snapshot, ensure_ascii=False, separators=(',',':')).encode('utf-8')
-            reject(len(encoded) > MAX_STATE, 'Appearance exceeds 256 KiB.')
+            reject(len(encoded) > MAX_STATE, 'appearance-exceeds-256-kib')
             atomic_write(config, 'appearance.json', encoded)
     else:
-        reject(command != 'read', 'Appearance command is unsupported.')
+        reject(command != 'read', 'appearance-command-is-unsupported')
     # A read never creates configuration or assets.
     if config.exists():
         info = config.lstat()
-        reject(not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077, 'Appearance directory is unsafe.')
+        reject(not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077, 'appearance-directory-is-unsafe')
     result['snapshot'] = load(config)
     result['warnings'], result['invalid_assets'] = asset_warnings(result['snapshot'], assets)
     return result
@@ -371,14 +383,15 @@ def main(command, request):
 
 if __name__ == '__main__':
     try:
-        reject(len(sys.argv) != 2, 'Appearance command is required.')
+        reject(len(sys.argv) != 2, 'appearance-command-is-required')
         source = sys.stdin.buffer.readline(MAX_STATE+1)
-        reject(len(source) > MAX_STATE, 'Appearance request exceeds 256 KiB.')
+        reject(len(source) > MAX_STATE, 'appearance-request-exceeds-256-kib')
         request = json.loads(source or b'{}')
-        reject(not isinstance(request, dict), 'Appearance request is invalid.')
+        reject(not isinstance(request, dict), 'appearance-request-is-invalid')
         output = main(sys.argv[1], request)
     except (OSError, ValueError, ET.ParseError, zlib.error, OverflowError, RecursionError) as error:
         # Never expose paths, metadata or parser excerpts in error messages.
-        message = str(error) if isinstance(error, Rejected) else 'Appearance could not be read or saved. Existing metadata was preserved.'
-        output = {'ok':False, 'snapshot':default(), 'warnings':[], 'error':message}
+        code = error.code if isinstance(error, Rejected) else 'read-save-failed'
+        message = english_message('appearance.error.' + code)
+        output = {'ok':False, 'snapshot':default(), 'warnings':[], 'error':message, 'error_code':code}
     print(json.dumps(output, ensure_ascii=False, separators=(',',':')))

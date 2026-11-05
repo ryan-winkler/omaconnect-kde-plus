@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -30,7 +31,7 @@ Column {
         Text {
             width: Math.max(1, parent.width - refreshButton.width - parent.spacing)
             anchors.verticalCenter: parent.verticalCenter
-            text: "KDE Connect modules · " + root.modules.length
+            text: Locale.Strings.format("nativeModuleSettings.moduleCount", [Commons.I18n.formatNumber(root.modules.length)])
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
             color: Commons.Color.popups.text
@@ -41,8 +42,8 @@ Column {
         SettingsButton {
             id: refreshButton
             objectName: "native-module-refresh"
-            text: "Refresh"
-            Accessible.name: "Refresh native settings"
+            text: Locale.Strings.t("nativeModuleSettings.refresh")
+            Accessible.name: Locale.Strings.t("nativeModuleSettings.refreshNativeSettings")
             foreground: Commons.Color.popups.text
             focusable: true
             enabled: controller.ready
@@ -51,7 +52,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "On/Off changes KDE Connect on this computer. Phone permissions stay on the phone."
+        text: Locale.Strings.t("nativeModuleSettings.onOffChangesKdeConnectOn")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
@@ -63,8 +64,8 @@ Column {
         objectName: "native-module-search"
         width: parent.width
         foreground: Commons.Color.popups.text
-        placeholderText: "Search device features"
-        Accessible.name: "Search native features"
+        placeholderText: Locale.Strings.t("nativeModuleSettings.searchDeviceFeatures")
+        Accessible.name: Locale.Strings.t("nativeModuleSettings.searchNativeFeatures")
         maximumLength: 128
         selectByMouse: true
     }
@@ -72,9 +73,9 @@ Column {
         objectName: "native-module-status"
         width: parent.width
         text: !root.active ? ""
-            : !root.service || root.service.daemonAvailable !== true ? "KDE Connect is unavailable."
-            : !controller.device ? "Choose a device above."
-            : !controller.device.paired ? "Pair this device in KDE Connect to change its native features."
+            : !root.service || root.service.daemonAvailable !== true ? Locale.Strings.t("nativeModuleSettings.kdeConnectIsUnavailable")
+            : !controller.device ? Locale.Strings.t("nativeModuleSettings.chooseADeviceAbove")
+            : !controller.device.paired ? Locale.Strings.t("nativeModuleSettings.pairThisDeviceInKdeConnect")
             : controller.message
         visible: text !== "" && text !== "Native settings are current."
         textFormat: Text.PlainText
@@ -113,7 +114,7 @@ Column {
                     Layout.alignment: Qt.AlignVCenter
                     font.family: Style.font.family
                     font.pixelSize: Style.font.bodySmall
-                    text: controller.known(modelData.id) ? controller.enabledStates[modelData.id] ? "On" : "Off" : "Unknown"
+                    text: controller.known(modelData.id) ? controller.enabledStates[modelData.id] ? Locale.Strings.t("common.on") : Locale.Strings.t("common.off") : Locale.Strings.t("common.unknown")
                     checked: controller.known(modelData.id) && controller.enabledStates[modelData.id] === true
                     nextCheckState: function() { return checkState }
                     enabled: controller.ready && controller.known(modelData.id)
@@ -128,8 +129,8 @@ Column {
                     Accessible.role: Accessible.CheckBox
                     Accessible.checkable: true
                     Accessible.checked: checked
-                    Accessible.name: "Enable " + (modelData.name || modelData.id)
-                    Accessible.description: (modelData.description || "") + ". Native setting: " + text + ". On this computer for the selected device."
+                    Accessible.name: Locale.Strings.format("nativeModuleSettings.enable", [modelData.name || modelData.id])
+                    Accessible.description: Locale.Strings.format("nativeModuleSettings.settingHelp", [modelData.description || "", text])
                     function requestChange() { if (enabled) controller.setEnabled(modelData.id, !checked) }
                     onClicked: requestChange()
                     Accessible.onToggleAction: requestChange()
@@ -182,12 +183,12 @@ Column {
                     Layout.columnSpan: featureRow.configureBelow ? 2 : 1
                     Layout.preferredHeight: Math.max(44, implicitHeight)
                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                    text: "Configure ↗"
+                    text: Locale.Strings.t("nativeModuleSettings.configure")
                     foreground: Commons.Color.popups.text
                     focusable: true
                     enabled: root.active && !!root.service && !!root.service.selectedDevice && root.service.selectedDevice.paired === true && !root.service.nativeAppOpening
-                    Accessible.name: "Configure " + (modelData.name || modelData.id) + " in KDE Connect"
-                    Accessible.description: "Open native configuration on this computer for the selected device."
+                    Accessible.name: Locale.Strings.format("nativeModuleSettings.configureModule", [modelData.name || modelData.id])
+                    Accessible.description: Locale.Strings.t("nativeModuleSettings.openNativeConfigurationOnThisComputer")
                     onClicked: if (enabled) root.configureRequested(modelData.id)
                 }
             }
@@ -197,7 +198,7 @@ Column {
     Text {
         width: parent.width
         visible: root.filteredModules.length === 0
-        text: root.modules.length ? "No matching native features. Clear the search to see all installed features." : "Native feature metadata is unavailable. Open KDE Connect Plugin Settings."
+        text: root.modules.length ? Locale.Strings.t("nativeModuleSettings.noMatchingNativeFeaturesClearThe") : Locale.Strings.t("nativeModuleSettings.nativeFeatureMetadataIsUnavailableOpen")
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text

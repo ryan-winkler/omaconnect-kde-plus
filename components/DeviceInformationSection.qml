@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -19,27 +20,36 @@ Column {
     spacing: Style.space(6)
     Text {
         visible: root.showTitle
-        text: "Information"
+        text: Locale.Strings.t("deviceInformation.information")
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
         font.pixelSize: Style.font.body
         font.bold: true
     }
+    function reportedStats(showBattery, showCellular) {
+        return current && service && typeof service.deviceBatteryText === "function"
+            ? service.deviceBatteryText(device, showBattery, showCellular) : ""
+    }
+
     Repeater {
         model: [
-            {label: "Device ID", value: root.device ? root.device.id : "Choose a device"},
-            {label: "Battery", value: root.current && root.service && typeof root.service.deviceBatteryText === "function" ? root.service.deviceBatteryText(root.device, true, false) || "Not reported" : "Not reported", shown: root.showBattery},
-            {label: "Cellular", value: root.current && root.service && typeof root.service.deviceBatteryText === "function" ? root.service.deviceBatteryText(root.device, false, true) || "Not reported" : "Not reported", shown: root.showCellular},
-            {label: "Addresses", value: !root.device || !root.current ? "Unavailable while offline or not paired" : (root.device.reachableAddresses || []).join(", ") || "Not reported"},
-            {label: "Connection providers", value: !root.device || !root.current ? "Unavailable while offline or not paired" : (root.device.activeProviderNames || []).join(", ") || "Not reported"}
+            {id: "id", value: root.device ? root.device.id : Locale.Strings.t("deviceInformation.chooseDevice")},
+            {id: "battery", value: root.reportedStats(true, false), shown: root.showBattery},
+            {id: "cellular", value: root.reportedStats(false, true), shown: root.showCellular},
+            {id: "addresses", value: root.device && root.current ? (root.device.reachableAddresses || []).join(", ") : "", needsConnection: true},
+            {id: "providers", value: root.device && root.current ? (root.device.activeProviderNames || []).join(", ") : "", needsConnection: true}
         ]
         delegate: Text {
             required property var modelData
-            objectName: "device-information-" + modelData.label
+            objectName: "device-information-" + modelData.id
             width: root.width
-            visible: modelData.shown !== false && !(root.compact && (modelData.value === "Not reported" || modelData.value.indexOf("Unavailable") === 0))
-            text: modelData.label + ": " + modelData.value
+            visible: modelData.shown !== false && (!root.compact || !!modelData.value)
+            text: Locale.Strings.format("deviceInformation.field", [
+                Locale.Strings.t("deviceInformation." + modelData.id),
+                modelData.value || (modelData.needsConnection && !root.current
+                    ? Locale.Strings.t("deviceInformation.offline") : Locale.Strings.t("deviceInformation.notReported"))
+            ])
             textFormat: Text.PlainText
             wrapMode: Text.WrapAnywhere
             color: root.foreground

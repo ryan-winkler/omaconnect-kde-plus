@@ -6,6 +6,8 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
 import "../ActionCatalog.js" as Actions
+import "../i18n" as Locale
+import "PreferenceFeedback.js" as Feedback
 
 Column {
     id: root
@@ -14,7 +16,7 @@ Column {
     readonly property var service: panel && "service" in panel ? panel.service : null
     readonly property string storedOrder: panel ? panel.getSetting("quickActionsOrder", Actions.DEFAULT_ORDER) : Actions.DEFAULT_ORDER
     readonly property var order: Actions.order(storedOrder)
-    readonly property var addable: Actions.entries.filter(function(row) { return root.order.indexOf(row.id) < 0; }).map(function(row) { return {value:row.id,label:row.label,description:row.group + " · " + row.description}; })
+    readonly property var addable: Actions.entries.filter(function(row) { return root.order.indexOf(row.id) < 0; }).map(function(row) { return {value:row.id,label:Locale.Strings.t(row.labelKey),description:Locale.Strings.t(row.groupKey) + " · " + Locale.Strings.t(row.descriptionKey)}; })
     readonly property var selectedEntry: Actions.entry(selectedAction)
     property string selectedAction: ""
     property string message: ""
@@ -27,7 +29,7 @@ Column {
         if (busy || !Array.isArray(ids)) return false
         var csv=ids.join(",")
         if (Actions.parse(csv) === null) return false
-        message = "Saving quick actions…"
+        message = Locale.Strings.t("quickActionsSettings.savingQuickActions")
         saver.payload=JSON.stringify({key:"quickActionsOrder",value:csv})
         saver.running=true
         return true
@@ -45,7 +47,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "Choose an action, then select Add selected action. Use Up, Down and Remove to arrange your toolbar."
+        text: Locale.Strings.t("quickActionsSettings.chooseAnActionThenSelectAdd")
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -55,7 +57,7 @@ Column {
     Text {
         width: parent.width
         visible: Actions.parse(root.storedOrder) === null
-        text: "Your saved action list could not be read, so the defaults are shown. Select Use default actions to fix it."
+        text: Locale.Strings.t("quickActionsSettings.yourSavedActionListCouldNot")
         textFormat: Text.PlainText
         color: Commons.Color.urgent
         font.family: Style.font.family
@@ -64,10 +66,10 @@ Column {
     }
     Kit.SearchableDropdown {
         width: parent.width
-        label: "Add action"
+        label: Locale.Strings.t("quickActionsSettings.addAction")
         options: root.addable
         value: root.selectedAction
-        triggerLabel: "Choose an action…"
+        triggerLabel: Locale.Strings.t("quickActionsSettings.choose")
         foreground: Commons.Color.popups.text
         enabled: !root.busy && root.addable.length > 0
         onChanged: function(value) { root.selectedAction = value }
@@ -75,7 +77,7 @@ Column {
     Text {
         width: parent.width
         visible: !!root.selectedEntry
-        text: root.selectedEntry ? root.selectedEntry.description + "\n" + Actions.availabilityText(root.selectedAction,root.device,root.service) : ""
+        text: root.selectedEntry ? Locale.Strings.t(root.selectedEntry.descriptionKey) + "\n" + Locale.Strings.t(Actions.availabilityKey(root.selectedAction,root.device,root.service)) : ""
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -84,7 +86,7 @@ Column {
     }
     SettingsButton {
         width: parent.width
-        text: "Add selected action"
+        text: Locale.Strings.t("quickActionsSettings.addSelectedAction")
         Accessible.name: text
         focusable: true
         foreground: Commons.Color.popups.text
@@ -101,7 +103,7 @@ Column {
             spacing: Style.space(4)
             Text {
                 width: parent.width
-                text: action.label
+                text: Locale.Strings.t(action.labelKey)
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
@@ -110,7 +112,7 @@ Column {
             }
             Text {
                 width: parent.width
-                text: action.description + "\n" + Actions.availabilityText(modelData,root.device,root.service)
+                text: Locale.Strings.t(action.descriptionKey) + "\n" + Locale.Strings.t(Actions.availabilityKey(modelData,root.device,root.service))
                 textFormat: Text.PlainText
                 color: Commons.Color.popups.text
                 font.family: Style.font.family
@@ -121,24 +123,24 @@ Column {
                 width: parent.width
                 spacing: Style.space(6)
                 SettingsButton {
-                    text: "Up"
-                    Accessible.name: "Move " + action.label + " up"
+                    text: Locale.Strings.t("quickActionsSettings.up")
+                    Accessible.name: Locale.Strings.format("quickActionsSettings.moveUp", [Locale.Strings.t(action.labelKey)])
                     focusable: true
                     foreground: Commons.Color.popups.text
                     enabled: !root.busy && index > 0
                     onClicked: root.moveAction(modelData,-1)
                 }
                 SettingsButton {
-                    text: "Down"
-                    Accessible.name: "Move " + action.label + " down"
+                    text: Locale.Strings.t("quickActionsSettings.down")
+                    Accessible.name: Locale.Strings.format("quickActionsSettings.moveDown", [Locale.Strings.t(action.labelKey)])
                     focusable: true
                     foreground: Commons.Color.popups.text
                     enabled: !root.busy && index < root.order.length - 1
                     onClicked: root.moveAction(modelData,1)
                 }
                 SettingsButton {
-                    text: "Remove"
-                    Accessible.name: "Remove " + action.label + " quick action"
+                    text: Locale.Strings.t("quickActionsSettings.remove")
+                    Accessible.name: Locale.Strings.format("quickActionsSettings.removeAction", [Locale.Strings.t(action.labelKey)])
                     focusable: true
                     foreground: Commons.Color.popups.text
                     enabled: !root.busy
@@ -149,7 +151,7 @@ Column {
     }
     Text {
         width: parent.width
-        text: "Find every other KDE Connect feature in Device features."
+        text: Locale.Strings.t("quickActionsSettings.findEveryOtherKdeConnectFeature")
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -159,7 +161,7 @@ Column {
     Text {
         width: parent.width
         visible: root.order.length === 0
-        text: "Your toolbar is empty. Choose an action above, then select Add selected action."
+        text: Locale.Strings.t("quickActionsSettings.yourToolbarIsEmptyChooseAn")
         textFormat: Text.PlainText
         color: Commons.Color.popups.text
         font.family: Style.font.family
@@ -168,7 +170,7 @@ Column {
     }
     SettingsButton {
         width: parent.width
-        text: "Use default actions"
+        text: Locale.Strings.t("quickActionsSettings.useDefaultActions")
         Accessible.name: text
         focusable: true
         foreground: Commons.Color.popups.text
@@ -198,10 +200,8 @@ Column {
             onDataChanged: if(text.length>8192){saver.oversized=true;saver.running=false}
         }
         onExited: function(code) {
-            var result
-            try { result=!oversized ? JSON.parse(reply.text) : null } catch(_){result=null}
-            root.message=result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length<512 && (code===0)===result.ok
-                ? result.message : "Quick actions were not confirmed. The saved order is still shown. Try again."
+            var result = Feedback.parse(code, reply.text, oversized)
+            root.message = Feedback.display(Locale.Strings, result, "quickActionsSettings.notConfirmed")
             stdinEnabled=true
         }
     }
