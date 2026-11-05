@@ -14,14 +14,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class DesktopLauncher(unittest.TestCase):
-    @patch.dict(os.environ, {"GIO_USE_VFS": "local"})
     def test_routes_and_inactive_feedback_use_fixed_arguments(self):
         """Check the three GLib routes, ignored file input, and inactive notice."""
-        with tempfile.TemporaryDirectory(prefix="plus launcher ") as directory:
-            fixture = Path(directory)
-            self.enterContext(patch.dict(os.environ, {
+        with (
+            tempfile.TemporaryDirectory(prefix="plus launcher ") as directory,
+            patch.dict(os.environ, {
+                "GIO_USE_VFS": "local",
                 "PATH": os.pathsep.join((directory, os.environ.get("PATH", os.defpath))),
-            }))
+            }),
+        ):
+            fixture = Path(directory)
             log = fixture / "calls.jsonl"
             commands = {
                 "/usr/bin/omarchy-shell": fixture / "shell",
