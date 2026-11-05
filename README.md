@@ -41,8 +41,10 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
   Drops on Devices, the bar icon or Send window always require review and use Copy.
 - **Phone folders:** select **Browse phone files** to open folders shared by KDE
   Connect in your default file manager. Add it to Quick actions for direct access
-  from Devices. If KDE Connect reports that storage is unmounted, Plus shows
-  the native settings and lets you retry. Several advertised folders show a choice.
+  from Devices. If KDE Connect reports that storage is unmounted, select
+  **Phone file settings in KDE** or retry **Browse phone files**. If the button
+  cannot open plugin settings, open KDE Connect settings manually. Several
+  advertised folders show a choice.
 - **Screenshots:** save a capture with Omarchy Screenshot, then use
   **Review saved screenshot** to select one PNG. Check the file and recipient,
   then select **Send files**. The action always opens review.
