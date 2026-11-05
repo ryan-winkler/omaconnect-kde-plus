@@ -11,10 +11,13 @@ ShellRoot {
     property int started: 0
     property var secondWindow: null
     property var serviceNotices: null
+    property var previewWindow: null
+    property var unownedPreviewWindow: null
     Plugin.Service { id: service }
     Controllers.TaskNotificationController { id: notices }
     Components.SendWindow { id: sendWindow; service: service }
     Component { id: sendWindowFactory; Components.SendWindow {} }
+    Component { id: previewWindowFactory; Components.ImagePreviewWindow {} }
     function check(value, message) {
         if (!value) { console.error("NATIVE_FAIL task notices: " + message); Qt.quit(); return false }
         return true
@@ -56,6 +59,32 @@ ShellRoot {
                 test.phase = 31
             } else if (test.phase === 31 && test.ticks-test.started > 1) {
                 if (!test.check(!service.sendWindowOpened && service.taskNoticeVisibleSurfaces.length === 0 && !test.serviceNotices.suppressed && test.serviceNotices.pending.length === 0, "destroying the last visible surface cleans up without replay")) return
+                service.selectionState = "preview"
+                test.previewWindow = previewWindowFactory.createObject(test, {service:service})
+                test.unownedPreviewWindow = previewWindowFactory.createObject(test, {service:service, activeForOwner:false})
+                if (!test.check(test.previewWindow.visible && !test.unownedPreviewWindow.visible
+                    && service.taskNoticeVisibleSurfaces.length === 1 && service.taskNoticeVisibleSurfaces[0].kind === "preview"
+                    && test.serviceNotices.suppressed && !test.serviceNotices.notify(test.op("request_accepted")),
+                    "only the visible owner preview registers and suppresses notices")) return
+                sendWindow.visible = true
+                test.previewWindow.activeForOwner = false
+                if (!test.check(!test.previewWindow.visible && service.taskNoticeVisibleSurfaces.length === 1
+                    && service.sendWindowOpened && test.serviceNotices.suppressed,
+                    "revoking preview ownership removes only its surface while Send stays visible")) return
+                sendWindow.visible = false
+                test.previewWindow.activeForOwner = true
+                test.previewWindow.service = null
+                if (!test.check(!test.previewWindow.visible && service.taskNoticeVisibleSurfaces.length === 0 && !test.serviceNotices.suppressed,
+                    "preview service replacement removes its old visibility registration")) return
+                test.previewWindow.service = service
+                if (!test.check(test.previewWindow.visible && service.taskNoticeVisibleSurfaces.length === 1 && test.serviceNotices.suppressed,
+                    "preview registers again when its active service returns")) return
+                test.previewWindow.destroy(); test.unownedPreviewWindow.destroy()
+                test.started = test.ticks; test.phase = 32
+            } else if (test.phase === 32 && test.ticks-test.started > 1) {
+                if (!test.check(service.taskNoticeVisibleSurfaces.length === 0 && !test.serviceNotices.suppressed
+                    && test.serviceNotices.pending.length === 0, "destroying the final preview cleans visibility without replay")) return
+                service.selectionState = "idle"
                 notices.panelOpened = true
                 if (!test.check(!notices.notify(test.op("request_accepted")) && notices.pending.length === 0,"open popup suppressed")) return
                 notices.panelOpened = false

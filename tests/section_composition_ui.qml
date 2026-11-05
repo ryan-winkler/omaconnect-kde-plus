@@ -78,6 +78,10 @@ ShellRoot {
         property string language:"en"
         command:["python3","-c","import os,pathlib,sys; pathlib.Path(os.environ['XDG_CONFIG_HOME'],'omarchy','language').write_text(sys.argv[1]+chr(10))",language]
     }
+    Process {
+        id:releaseLaunches
+        command:["python3","-c","from pathlib import Path; (Path.home()/'composition-launches-released').touch()"]
+    }
     function captureLayout(name,next,preservePosition) {
         test.phase=-1
         var viewport=named(panel,"daily-content-scroll")
@@ -413,6 +417,7 @@ ShellRoot {
                 }else if(test.phase===18){
                     var quick=named(panel,"collapsed-launch-status-quick-share"),native=named(panel,"collapsed-launch-status-native")
                     if(!test.check(service.quickShareOpening && service.nativeAppOpening && quick.visible && quick.text==="Opening RQuickShare…" && native.visible && native.text==="Opening KDE Connect","actual pending provider feedback remains visible outside collapsed owner sections"))return
+                    releaseLaunches.running=true
                     test.phase=19
                 }else if(test.phase===19 && !service.quickShareOpening && !service.nativeAppOpening){
                     service.cancelDraft()

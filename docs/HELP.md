@@ -398,7 +398,7 @@ invocation does not prove that the transfer stopped.
 
 **Task notices:** In **Plus settings → Quick actions**, **Show task notices**
 controls desktop notices after a file operation. Plus suppresses these notices
-while its popup or Send window is open. It reports request evidence, not receipt.
+while its popup, Send window or image preview is open. It reports request evidence, not receipt.
 The **Activity** button opens current Activity. It never retries or restores an
 old task. Desktop Do Not Disturb and notification history apply.
 

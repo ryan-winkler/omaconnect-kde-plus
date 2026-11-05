@@ -1,6 +1,8 @@
 import QtQuick
 import QtTest
 import Quickshell
+import Quickshell.Io
+import qs.Commons as Commons
 import "plugin/components" as Components
 
 ShellRoot {
@@ -30,6 +32,10 @@ ShellRoot {
         return null
     }
     TestCase { id: keyboard; name: "ScopedPreviewKeyboard"; when: false }
+    Process {
+        id: languageWriter
+        command: ["python3", "-c", "import os,pathlib; pathlib.Path(os.environ['XDG_CONFIG_HOME'],'omarchy','language').write_text('ar'+chr(10))"]
+    }
     QtObject {
         id: state
         property string selectionState: "idle"
@@ -194,6 +200,11 @@ ShellRoot {
                 if (!test.check(test.secondaryConfirmations.length === 1 && test.secondaryConfirmations[0] === state.previewCandidates[0]
                     && test.confirmations.length === 3 && test.cancels === 3 && String(secondaryImage.source) === "",
                     "only the newer owner confirms and model hiding clears its image")) return
+                languageWriter.running = true; test.phase++
+            } else if (test.phase === 23 && Commons.I18n.rightToLeft) {
+                if (!test.check(preview.LayoutMirroring.enabled && preview.LayoutMirroring.childrenInherit
+                    && secondaryPreview.LayoutMirroring.enabled && search.LayoutMirroring.enabled,
+                    "native RTL language mirrors both preview roots and their controls")) return
                 console.log("IMAGE_PREVIEW_KEYBOARD_PASS " + JSON.stringify(test.checks))
                 console.log("IMAGE_PREVIEW_PASS native keyboard extension")
                 console.log("NATIVE_PASS image preview keyboard"); Qt.quit()

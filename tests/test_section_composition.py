@@ -53,8 +53,16 @@ class SectionComposition(unittest.TestCase):
  else:
   values[sys.argv[4]]=json.loads(sys.argv[5])
   pending=state.with_suffix('.next');pending.write_text(json.dumps(values));pending.replace(state);print('ok')'''))
-            (plugin/'scripts/open_quick_share.py').write_text('import sys,time\nif sys.argv[1:] == ["--check"]: raise SystemExit(0)\nif sys.argv[1:] != ["--open"]: raise SystemExit(99)\ntime.sleep(.5)\n')
-            (plugin/'scripts/open_app.sh').write_text("#!/bin/bash\nexec /usr/bin/python3 -c 'import time; time.sleep(.5)'\n")
+            # Keep pending feedback observable until QML checks it, even under load.
+            launch_wait='''import time
+from pathlib import Path
+released=Path.home()/'composition-launches-released'
+deadline=time.monotonic()+3
+while not released.exists() and time.monotonic()<deadline: time.sleep(.01)
+raise SystemExit(0 if released.exists() else 98)
+'''
+            (plugin/'scripts/open_quick_share.py').write_text('import sys\nif sys.argv[1:] == ["--check"]: raise SystemExit(0)\nif sys.argv[1:] != ["--open"]: raise SystemExit(99)\n'+launch_wait)
+            (plugin/'scripts/open_app.sh').write_text("#!/bin/bash\nexec /usr/bin/python3 - <<'PY'\n"+launch_wait+"PY\n")
             (fake_bin/'busctl').symlink_to(fake)
             (fake_bin/'syncthing').symlink_to(fake)
         def checked(fixture,home,output,calls):
@@ -66,6 +74,7 @@ class SectionComposition(unittest.TestCase):
                 self.assertEqual(len(writes),3,writes)
                 self.assertEqual([json.loads(json.loads(row[-2])) for row in writes],[{'commands':'unavailable'},{'commands':'show'},{'commands':'hide'}])
             else:
+                self.assertTrue((home/'composition-launches-released').exists())
                 self.assertEqual(len(writes),7,writes)
                 self.assertTrue(all(row[:4]==['shell','setBarWidget','omaconnect.plus','sectionOrder'] and row[-1]=='{}' for row in writes[:3]),writes)
                 self.assertEqual(json.loads(writes[0][-2]).split(',')[:3],['devices','drop','actions'])

@@ -21,7 +21,7 @@ All notable changes are listed here. The format follows
   are rechecked before opening.
 
 - Native desktop notices report final Plus file-request outcomes while the
-  popup and Send window are closed. Device names are excluded by default;
+  popup, Send window and image preview are closed. Device names are excluded by default;
   an explicit sharing preference adds them to notices and desktop history.
   The Activity action opens current activity without repeating a request.
 - Original-style searchable recent-file menu, with the desktop chooser retained
@@ -44,9 +44,9 @@ All notable changes are listed here. The format follows
   moved storage. Links inside those folders remain excluded.
 - Native direct-socket IPC registration preserves existing Plus routes and adds
   a safe Activity action for notification history.
-- Managed Settings and Send windows follow live native text direction. Settings
+- Managed Settings, Send and image-preview windows follow live native text direction. Settings
   width no longer feeds back through mirrored row positioning.
-- Task-notice suppression tracks all visible popup and Send instances instead
+- Task-notice suppression tracks all visible popup, Send and image-preview instances instead
   of treating one closed window as every window being closed.
 
 - Address automatic-discovery requests consistently apply the validated false

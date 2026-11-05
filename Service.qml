@@ -10,7 +10,7 @@ Item {
     property var taskNoticeVisibleSurfaces: []
     readonly property bool sendWindowOpened: taskNoticeVisibleSurfaces.some(function(entry) { return entry.kind === "send" })
     function setTaskNoticeSurfaceVisible(owner, kind, visible) {
-        if (!owner || (kind !== "popup" && kind !== "send")) return
+        if (!owner || (kind !== "popup" && kind !== "send" && kind !== "preview")) return
         var surfaces = taskNoticeVisibleSurfaces.filter(function(entry) { return entry.owner !== owner })
         if (visible === true) surfaces.push({owner: owner, kind: kind})
         taskNoticeVisibleSurfaces = surfaces

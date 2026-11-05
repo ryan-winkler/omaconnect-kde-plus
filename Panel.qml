@@ -37,8 +37,11 @@ Panel {
             service.setTaskNoticeSurfaceVisible(root, "popup", opened)
     }
     onServiceChanged: syncTaskNoticeSurface()
-    Component.onDestruction: if (noticeSurfaceService && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
-        noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "popup", false)
+    Component.onDestruction: {
+        if (noticeSurfaceService && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
+            noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "popup", false)
+        releasePreview()
+    }
     readonly property var device: service ? service.selectedDevice : null
     property int previewGeneration: -1
     readonly property bool ownsPreview: !!service && previewGeneration === service.selectionGeneration
@@ -317,7 +320,6 @@ Panel {
         if (service && previewGeneration === service.selectionGeneration && !service.operationBusy
                 && (service.selectionState === "choosing" || service.selectionState === "preview")) service.cancelFileTransfer()
     }
-    Component.onDestruction: releasePreview()
     onOpenedChanged: {
         root.syncTaskNoticeSurface()
         if (service) service.panelOpened = opened

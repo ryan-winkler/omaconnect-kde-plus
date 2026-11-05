@@ -243,12 +243,12 @@ defaults. A missing fake service property is not written. The existing Quick
 actions/sharing preferences expose both settings. They do not alter KDE Connect
 phone-forwarding permissions, native notification actions or module state.
 
-New notices are suppressed while the Plus popup or persistent Send window is
-visible. A service-owned list records actual visible popup and Send instances;
+New notices are suppressed while the Plus popup, persistent Send window or
+image preview is visible. A service-owned list records those visible instances;
 closing or destroying one removes only its own entry. Notices remain suppressed
 until every instance closes, including instances on different monitors. Service
 changes unregister the old owner. Existing `panelOpened` discovery behavior stays
-separate. Opening either surface, disabling notices or changing the device-name
+separate. Opening any of these surfaces, disabling notices or changing the device-name
 opt-in discards waiting notices. There is no deferred replay. A policy generation is captured before process launch and rechecked before stdin is written; opt-out or a transient surface open/close discards an unwritten payload without reporting sender failure. Already submitted native notices cannot be recalled. One helper can run
 at a time; only the latest three pending outcomes are retained. Activity retains
 its existing 50-operation limit independently of desktop history.

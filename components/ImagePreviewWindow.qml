@@ -8,6 +8,8 @@ import qs.Ui as Kit
 // The service owns the captured recipient and policy. Browsing emits no send.
 Window {
     id: root
+    LayoutMirroring.enabled: Commons.I18n.rightToLeft
+    LayoutMirroring.childrenInherit: true
     required property var service
     property bool activeForOwner: true
     readonly property bool previewActive: activeForOwner && !!(service && service.selectionState === "preview")
@@ -40,6 +42,18 @@ Window {
     minimumHeight: 560
     color: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     visible: previewActive
+    property var noticeSurfaceService: null
+    function syncTaskNoticeSurface() {
+        if (noticeSurfaceService && noticeSurfaceService !== service && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
+            noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "preview", false)
+        noticeSurfaceService = service
+        if (service && typeof service.setTaskNoticeSurfaceVisible === "function")
+            service.setTaskNoticeSurfaceVisible(root, "preview", visible)
+    }
+    onServiceChanged: syncTaskNoticeSurface()
+    onVisibleChanged: syncTaskNoticeSurface()
+    Component.onDestruction: if (noticeSurfaceService && typeof noticeSurfaceService.setTaskNoticeSurfaceVisible === "function")
+        noticeSurfaceService.setTaskNoticeSurfaceVisible(root, "preview", false)
 
     onMatchesChanged: selectedIndex = 0
     onPreviewActiveChanged: if (previewActive) Qt.callLater(function() {
