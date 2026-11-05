@@ -59,7 +59,7 @@ ctx.fileInspectProcess.running=false;ctx.applySelection('{"state":"failed","erro
 assert.equal(ctx.selectionState,'idle');assert.equal(ctx.stageDroppedFiles('B',input.uris),true,'a failed inspection can be retried');
 const newTarget=ctx.draftTarget;ctx.applySelection(JSON.stringify(input.result),0,generation);assert.equal(ctx.draftTarget,newTarget);assert.equal(ctx.selection.length,0,'stale inspection is ignored');
 '''
-            functions = '\n'.join(extract(n) for n in ('stageDroppedFiles', 'applySelection', 'selectionErrorText', 'cancelDraft'))
+            functions = '\n'.join(extract(n) for n in ('stageDroppedFiles', 'validPreviewPaths', 'applySelection', 'selectionErrorText', 'cancelDraft'))
             check = subprocess.run(['node', '-e', script], input=json.dumps({'functions':functions,'uris':uris,'result':result}), text=True, capture_output=True, timeout=5)
             self.assertEqual(check.returncode, 0, check.stderr)
 

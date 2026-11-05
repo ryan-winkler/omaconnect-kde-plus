@@ -51,18 +51,18 @@ The open dropdown keeps connected, offline and unpaired devices in one list.
 </details>
 
 <details>
-<summary>Recent-file icons and native image previews</summary>
+<summary>Recent-file icons and guided image previews</summary>
 
 File-type icons help identify recent files. Select **Image previews…** to browse
-supported images in Omarchy's native picker. Confirming a file uses your saved
-immediate-send or review preference; browsing alone does not send.
+supported images with your recipient and next action visible. **Back to files**
+keeps that recipient and send/review choice. Browsing alone does not send.
 
 ![Native recent-file menu with image, document, video, audio and archive icons and an Image previews entry](screenshots/recent-file-menu.png)
 
-The native image picker shows example images here. Your installed image codecs
-and theme can change the available previews.
+The preview uses an example image here. Your installed image codecs and theme
+can change the available previews.
 
-![Native image picker displaying three example images with a highlighted preview and filename](screenshots/image-previews.png)
+![Guided image preview showing the recipient, filename, Back, Cancel and explicit image action](screenshots/image-previews.png)
 
 </details>
 
@@ -341,14 +341,14 @@ Read the [KDE Connect user guide](https://kdeconnect.kde.org/users.html).
    storage can take longer; a large tree can omit files. The menu options have a
    64 KiB budget.
    File-type icons identify images, videos, audio, documents and archives.
-   **Image previews…** opens Omarchy’s native image selector for offered JPEG,
-   PNG, WebP and GIF files. Browse or filter by name, then press Enter or select
-   the highlighted image to confirm. Confirmation sends immediately by default,
-   or opens your review when **Review files before Send** is enabled. Browsing
-   alone does not send. Previews show up to 200 images within a 48 KiB row budget;
-   duplicate filenames show their most recently changed path. Other formats and
-   duplicate paths remain selectable from the normal file list. If previews are
-   unavailable, use that list or the desktop chooser.
+   **Image previews…** opens a preview window with your recipient and filename
+   always visible. Search or use **Previous** and **Next** to find the image.
+   Browsing never sends. Select **Send image** to send it, or **Review image** to
+   check it before the separate Send step when review is enabled.
+   **Back to files** returns to the file list for the same recipient and saved
+   send/review choice. **Cancel**, Escape or closing the preview clears this
+   selection. Previews support JPEG, PNG, WebP and GIF, with up to 200 images
+   within a 48 KiB list budget. Other formats stay in the normal file list.
    Use the desktop chooser for other files, names with controls, or larger trees.
    The desktop chooser and drops support up to 100 local regular files, 1 TiB combined.
    Directories and remote URLs are not accepted. Drops use Copy and preserve originals.
@@ -373,8 +373,8 @@ to the same device. The public sharing API returns no transfer ID or cancel meth
 and the Bluetooth path has no evidenced equivalent. Plus cannot cancel a specific
 accepted transfer or recall a received file. See [native API limits](CONTRACTS.md#native-transfer-cancellation).
 
-If the file menu or image previews remain visible after Cancel or timeout, press
-**Escape**. These native views belong to the shell. Plus cannot close only its
+If the original file menu remains visible after Cancel or timeout, press
+**Escape**. That native menu belongs to the shell. Plus cannot close only its
 request without risking another caller's picker. A late choice from a cancelled
 picker cannot send a file. Use the desktop chooser when you need a picker whose
 Close request Plus can control.

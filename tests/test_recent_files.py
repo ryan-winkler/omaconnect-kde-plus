@@ -34,8 +34,6 @@ class RecentFiles(unittest.TestCase):
         patch.object(sys, 'path', [str(SCRIPTS), *sys.path]).start()
         self.menu = self.home / 'fake-menu'
         self.helper.MENU = str(self.menu)
-        self.shell = self.home / 'fake-shell'
-        self.helper.SHELL = str(self.shell)
 
     def file(self, name='Downloads/file.txt', mtime=10):
         """Create one synthetic candidate with a controlled modification time."""
@@ -49,14 +47,6 @@ class RecentFiles(unittest.TestCase):
         """Install an owned menu double that can exercise subprocess behavior."""
         self.menu.write_text('#!' + sys.executable + '\n' + body + '\n')
         self.menu.chmod(0o700)
-
-    def fake_preview(self, body):
-        """Route to a private native-overlay double with decoded request paths."""
-        self.fake(f'print({self.helper.PREVIEW_LABEL!r})')
-        self.shell.write_text('#!' + sys.executable + '\n'
-                              'import json,sys\nfrom pathlib import Path\n'
-                              'request=json.loads(sys.argv[4])\n' + body + '\n')
-        self.shell.chmod(0o700)
 
     def test_selected_metadata_recent_order_and_fixed_native_arguments(self):
         """Verify recent ordering, recipient sanitization and inspected selection metadata."""
@@ -91,31 +81,25 @@ class RecentFiles(unittest.TestCase):
         self.fake('import sys\nprint(sys.argv[2].split("\\t",1)[-1])')
         self.assertEqual(self.helper.choose_recent()['files'][0]['path'], str(chosen))
 
-    def test_preview_route_uses_exact_raster_rows_and_private_native_request(self):
-        """Preview only offered raster paths, then inspect the explicit native choice."""
+    def test_preview_handoff_contains_exact_offered_rasters_without_native_overlay(self):
+        """Return bounded canonical paths without opening an overlay or inspecting a choice."""
         newest = self.file('Pictures/new/photo.png', 30)
-        self.file('Pictures/old/photo.png', 20)
+        same_name = self.file('Pictures/old/photo.png', 20)
         other = self.file('Pictures/other.gif', 10)
         self.file('Pictures/vector.svg', 40)
         self.file('Videos/video.mp4', 50)
         self.file('Pictures/optional.avif', 60)
-        receipt = self.home / 'preview-request.json'
-        self.fake_preview(f'Path({str(receipt)!r}).write_text(json.dumps({{"argv":sys.argv[1:4],'
-                          '"request":request,"mode":Path(request["doneFile"]).parent.stat().st_mode & 0o777}))\n'
-                          'Path(request["selectionFile"]).write_text(request["imageRows"].split("\\n")[0]+"\\n")\n'
-                          'Path(request["doneFile"]).touch()\nprint("ok")')
-        result = self.helper.choose_recent()
-        self.assertEqual(result['state'], 'selected')
-        self.assertEqual(result['files'][0]['path'], str(newest))
-        data = json.loads(receipt.read_text())
-        self.assertEqual(data['argv'], ['shell', 'summon', 'omarchy.image-picker'])
-        self.assertEqual(set(data['request']),
-                         {'imageRows', 'selectionFile', 'doneFile', 'showLabels', 'filterable'})
-        self.assertEqual(data['request']['imageRows'], str(newest) + '\n' + str(other))
-        self.assertIs(data['request']['showLabels'], True)
-        self.assertIs(data['request']['filterable'], True)
-        self.assertEqual(data['mode'], 0o700)
-        self.assertFalse(Path(data['request']['doneFile']).parent.exists())
+        self.fake(f'print({self.helper.PREVIEW_LABEL!r})')
+        import portal_files
+        with patch.object(portal_files, 'inspect_uris') as inspector:
+            self.assertEqual(self.helper.choose_recent(),
+                             {'state': 'preview', 'paths': [str(newest), str(same_name), str(other)]})
+            inspector.assert_not_called()
+        self.helper.MAX_PREVIEW_FILES = 1
+        self.assertEqual(self.helper.choose_recent(), {'state': 'preview', 'paths': [str(newest)]})
+        self.helper.PREVIEW_ROW_BUDGET = 2
+        self.assertEqual(self.helper.choose_recent(),
+                         {'state': 'failed', 'error': 'source-path-rejected'})
 
     def test_nonpreview_formats_keep_normal_menu_and_rendered_rows_fit_budget(self):
         """Keep vectors, video and optional codecs selectable without native raster decode."""
@@ -128,7 +112,6 @@ class RecentFiles(unittest.TestCase):
         self.assertEqual(self.helper.choose_recent()['state'], 'selected')
         rows = json.loads(args.read_text())
         self.assertFalse(any(self.helper.PREVIEW_LABEL in row for row in rows))
-        self.assertFalse(self.shell.exists())
         self.file('Pictures/photo.png')
         self.helper.OPTION_BUDGET = 260
         offered = self.helper._candidates(self.home, lambda: False)
@@ -142,110 +125,6 @@ class RecentFiles(unittest.TestCase):
                                                           str(self.home/'two.png')])), 1)
         self.helper.PREVIEW_ROW_BUDGET = 2
         self.assertEqual(self.helper._preview_options([str(self.home/'one.png')]), [])
-
-    def test_preview_rejects_unoffered_invalid_utf8_and_excessive_results(self):
-        """A native preview reply must be one exact image from the displayed raster set."""
-        offered = self.file('Pictures/offered.png')
-        nonimage = self.file('Downloads/unoffered.txt')
-        for raw in (str(nonimage).encode(), (str(offered) + '\n\n').encode(),
-                    b'\xff', b'x' * (self.helper.MAX_OUTPUT + 1)):
-            with self.subTest(raw=raw[:40]):
-                self.fake_preview(f'Path(request["selectionFile"]).write_bytes({raw!r})\n'
-                                  'Path(request["doneFile"]).touch()\nprint("ok")')
-                self.assertEqual(self.helper.choose_recent(),
-                                 {'state': 'failed', 'error': 'source-path-rejected'})
-
-    def test_preview_cancel_unavailable_timeout_and_removed_parent_block_late_result(self):
-        """Return honest native failures and remove the private result parent on every exit."""
-        chosen = self.file('Pictures/photo.png')
-        receipt = self.home / 'preview-request.json'
-        self.helper.MENU_SECONDS = .2
-        for mode in ('cancel', 'unknown', 'failure', 'timeout'):
-            with self.subTest(mode=mode):
-                self.fake_preview(f'Path({str(receipt)!r}).write_text(json.dumps(request))\n' +
-                                  ('Path(request["doneFile"]).touch()\nprint("ok")' if mode == 'cancel' else
-                                   'print("unknown")' if mode == 'unknown' else
-                                   'sys.exit(1)' if mode == 'failure' else 'print("ok")'))
-                result = self.helper.choose_recent()
-                self.assertEqual(result, {'state': 'cancelled', 'files': []} if mode == 'cancel' else
-                                 {'state': 'failed', 'error': 'recent-files-timeout' if mode == 'timeout'
-                                  else 'recent-files-unavailable'})
-                request = json.loads(receipt.read_text())
-                self.assertFalse(Path(request['doneFile']).parent.exists())
-                stale = subprocess.run(['/bin/sh', '-c', 'printf "%s" "$1" > "$2"',
-                                        'stale-preview', str(chosen), request['selectionFile']],
-                                       capture_output=True, text=True, timeout=2)
-                self.assertNotEqual(stale.returncode, 0)
-                self.assertFalse(Path(request['selectionFile']).exists())
-        self.shell.unlink()
-        self.assertEqual(self.helper.choose_recent(),
-                         {'state': 'failed', 'error': 'recent-files-unavailable'})
-
-    def test_preview_rechecks_source_and_refuses_oversized_native_request(self):
-        """Inspect the final native selection and refuse excessive payloads before launch."""
-        chosen = self.file('Pictures/photo.png')
-        other = self.file('outside/other.png')
-        self.fake_preview(f'p=Path({str(chosen)!r})\np.unlink()\np.symlink_to({str(other)!r})\n'
-                          'Path(request["selectionFile"]).write_text(request["imageRows"]+"\\n")\n'
-                          'Path(request["doneFile"]).touch()\nprint("ok")')
-        self.assertEqual(self.helper.choose_recent(),
-                         {'state': 'failed', 'error': 'source-path-rejected'})
-        with patch.object(self.helper, 'OPTION_BUDGET', 2), \
-                patch.object(self.helper.subprocess, 'Popen') as popen:
-            with self.assertRaises(self.helper.RecentError):
-                self.helper._image_menu([str(other)], lambda: False)
-            popen.assert_not_called()
-
-    def test_sigterm_during_preview_returns_cancelled_and_removes_request_parent(self):
-        """Cancel an opened native-preview phase without hiding another shell request."""
-        self.file('Pictures/photo.png')
-        receipt = self.home / 'preview-request.json'
-        self.fake_preview(f'Path({str(receipt)!r}).write_text(json.dumps(request))\nprint("ok")')
-        loader = ('import sys,json; sys.path.insert(0,' + repr(str(SCRIPTS)) + '); '
-                  'import recent_files as r; r.MENU=' + repr(str(self.menu)) + '; '
-                  'r.SHELL=' + repr(str(self.shell)) + '; print(json.dumps(r.choose_recent()))')
-        process = subprocess.Popen([sys.executable, '-c', loader],
-                                   env=dict(os.environ, HOME=str(self.home)),
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        try:
-            for _ in range(200):
-                if receipt.exists():
-                    break
-                time.sleep(.01)
-            self.assertTrue(receipt.exists(), 'private native preview did not start')
-            process.send_signal(signal.SIGTERM)
-            stdout, stderr = process.communicate(timeout=3)
-            self.assertEqual(process.returncode, 0, stderr)
-            self.assertEqual(json.loads(stdout), {'state': 'cancelled', 'files': []})
-            request = json.loads(receipt.read_text())
-            self.assertFalse(Path(request['doneFile']).parent.exists())
-        finally:
-            if process.poll() is None:
-                process.kill()
-                process.communicate()
-
-    def test_preview_reaps_ipc_group_before_waiting_for_native_owner_result(self):
-        """Clean the short-lived IPC request before a later persistent-shell result."""
-        chosen = self.file('Pictures/photo.png')
-        receipt = self.home / 'preview-request.json'
-        self.fake_preview(f'Path({str(receipt)!r}).write_text(json.dumps(request))\nprint("ok")')
-        stop = self.helper._stop_group
-        completed = []
-
-        def clean_and_release(process):
-            """Model native completion only once the finished IPC group is cleaned."""
-            stop(process)
-            if receipt.exists():
-                request = json.loads(receipt.read_text())
-                self.assertFalse(Path(request['doneFile']).exists())
-                self.assertIsNotNone(process.returncode)
-                Path(request['selectionFile']).write_text(str(chosen) + '\n')
-                Path(request['doneFile']).touch()
-                completed.append(process.pid)
-
-        with patch.object(self.helper, '_stop_group', side_effect=clean_and_release):
-            self.assertEqual(self.helper.choose_recent()['files'][0]['path'], str(chosen))
-        self.assertEqual(len(completed), 1)
 
     def test_cancel_missing_menu_and_empty_roots_are_fixed_results(self):
         """Check empty roots, missing tools and menu exits expose only fixed results."""

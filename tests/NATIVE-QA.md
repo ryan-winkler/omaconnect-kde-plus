@@ -2,6 +2,7 @@
 
 The native tests load the real Service, BarWidget, Panel, controllers and Omarchy
 UI controls, then drive their signals against fake providers.
+The image-preview fixture also sends synthesized Qt keyboard events.
 
 ```sh
 python3 -m unittest discover -s tests -p test_native_ui.py
@@ -9,6 +10,9 @@ python3 -m unittest discover -s tests -p test_native_ui.py
 
 Prerequisites: Quickshell, Python Gio, Bubblewrap and `dbus-run-session`. The test
 skips when one is missing. `scripts/validate.sh` runs it with the full suite.
+The image-preview keyboard fixture also needs the QtTest QML module, provided
+by Omarchy's Qt Declarative package. This is native test tooling, not a plugin
+runtime dependency.
 
 ## Isolation
 

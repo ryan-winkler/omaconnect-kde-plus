@@ -32,8 +32,9 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
 ## Features
 
 - **Files:** use the searchable Omarchy recent-file menu with file-type icons.
-  **Image previews…** opens supported images in the native image picker. Selecting
-  a file sends it to the recipient shown when the menu opened. In **Plus settings
+  **Image previews…** opens a guided preview with the recipient, filename, Back
+  and Cancel. Browsing never sends; select **Send image** or **Review image** to
+  continue. Selecting a file in the ordinary list sends it to the recipient shown when the menu opened. In **Plus settings
   → Quick actions**, enable **Review files before Send** for an explicit review,
   or **Use desktop file chooser** for any local file and batches of up to 100.
   Drops on Devices, the bar icon or Send window always require review and use Copy.
@@ -81,9 +82,9 @@ also covers appearance, icon choices, section ordering, connections and native f
 | --- | --- |
 | [![In-progress file submission with Cancel and the persistent Cancel pending files control](docs/screenshots/pending-cancel.png)](docs/screenshots/pending-cancel.png) | [![Quick actions settings scrolled to desktop chooser and review-before-Send preferences](docs/screenshots/sharing-preferences.png)](docs/screenshots/sharing-preferences.png) |
 
-| Recent files with type icons | Native image previews |
+| Recent files with type icons | Guided image previews |
 | --- | --- |
-| [![Native recent-file menu with file-type icons and an Image previews entry](docs/screenshots/recent-file-menu.png)](docs/screenshots/recent-file-menu.png) | [![Native image picker showing three example images and the selected preview](docs/screenshots/image-previews.png)](docs/screenshots/image-previews.png) |
+| [![Native recent-file menu with file-type icons and an Image previews entry](docs/screenshots/recent-file-menu.png)](docs/screenshots/recent-file-menu.png) | [![Guided image preview with recipient, filename, Back and explicit Send or Review](docs/screenshots/image-previews.png)](docs/screenshots/image-previews.png) |
 
 ## Why Plus?
 

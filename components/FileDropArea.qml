@@ -10,14 +10,14 @@ DropArea {
     signal dragReadyEntered()
     readonly property bool ready: !!(service && device && device.paired && device.reachable
         && device.capabilities && device.capabilities.file && !service.operationBusy && !service.selectionCancelling
-        && service.selectionState !== "choosing" && service.selectionState !== "draft"
+        && service.selectionState !== "choosing" && service.selectionState !== "draft" && service.selectionState !== "preview"
         && (!service.selection || service.selection.length === 0))
     readonly property string instructions: !device ? "Select a device before dropping files."
         : !device.paired || !device.reachable || !device.capabilities || !device.capabilities.file
             ? "Select a paired, reachable device that supports files."
         : service && (service.operationBusy || service.selectionState === "choosing")
             ? "Wait for the current file action before dropping files."
-        : service && service.selectionState === "draft" ? "Review or clear the current selection to drop more files."
+        : service && (service.selectionState === "draft" || service.selectionState === "preview") ? "Review or clear the current selection to drop more files."
         : "Drop up to 100 local files, 1 TiB total. No folders. Review before Send."
     function canAccept(event) {
         if (!(ready && event && event.hasUrls && (event.supportedActions & Qt.CopyAction)

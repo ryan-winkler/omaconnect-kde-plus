@@ -28,6 +28,8 @@ Panel {
     // no host widget. See bridge/Bridge.qml.
     readonly property var service: hostWidget && hostWidget.service ? hostWidget.service : (bar && bar.shell && typeof bar.shell.serviceFor === "function" ? (bar.shell.serviceFor("omaconnect.plus") || OmaconnectBridge.Bridge.service) : OmaconnectBridge.Bridge.service)
     readonly property var device: service ? service.selectedDevice : null
+    property int previewGeneration: -1
+    readonly property bool ownsPreview: !!service && previewGeneration === service.selectionGeneration
     readonly property string deviceName: service ? service.displayName(device) : "KDE Connect"
     readonly property var incomingRequest: service ? service.incomingPairRequest : null
     readonly property var sectionCatalog: sectionCatalogModel
@@ -180,8 +182,20 @@ Panel {
         : "Selecting a file sends it to the selected recipient. To review first, use Plus settings → Quick actions. Drops always need review."
     function chooseFiles() {
         if (!service || !device) return false
-        return service.chooseFiles(device.id, fileChooserOptions)
+        if (!service.chooseFiles(device.id, fileChooserOptions)) return false
+        previewGeneration = service.selectionGeneration
+        return true
     }
+    function backToFiles() {
+        if (!service || previewGeneration !== service.selectionGeneration || !service.backToFiles()) return false
+        previewGeneration = service.selectionGeneration
+        return true
+    }
+    function releasePreview() {
+        if (service && previewGeneration === service.selectionGeneration && !service.operationBusy
+                && (service.selectionState === "choosing" || service.selectionState === "preview")) service.cancelFileTransfer()
+    }
+    Component.onDestruction: releasePreview()
     onOpenedChanged: {
         if (service) service.panelOpened = opened
         if (!opened) { dailyNavigation.closeMenu(); dropActionRevealed = false }
@@ -851,7 +865,7 @@ Panel {
                         width: parent.width
                         text: "Choose files"
                         Accessible.name: text
-                        enabled: !!root.device && root.device.paired && root.device.reachable && root.device.capabilities && root.device.capabilities.file && root.service && !root.service.operationBusy && !root.service.selectionCancelling && root.service.selectionState !== "choosing" && root.service.selectionState !== "draft"
+                        enabled: !!root.device && root.device.paired && root.device.reachable && root.device.capabilities && root.device.capabilities.file && root.service && !root.service.operationBusy && !root.service.selectionCancelling && root.service.selectionState !== "choosing" && root.service.selectionState !== "draft" && root.service.selectionState !== "preview"
                         onClicked: root.chooseFiles()
                     }
                     Text {
@@ -1035,11 +1049,29 @@ Panel {
     }
     SendWindow {
         id: sendWindow
+        objectName: "send-window"
         service: root.service
         device: root.device
         chooserOptions: root.fileChooserOptions
         fileChoiceHint: root.fileChoiceHint
+        onChooserStarted: root.previewGeneration = root.service.selectionGeneration
         onReturnToPanelRequested: { root.currentView = "Devices"; root.open() }
+    }
+    Connections {
+        target: root.service
+        function onSelectionStateChanged() {
+            if (root.ownsPreview && root.service.selectionState === "preview") root.close()
+        }
+    }
+    ImagePreviewWindow {
+        objectName: "image-preview-window"
+        service: root.service
+        activeForOwner: root.ownsPreview
+        onBackRequested: root.backToFiles()
+        onCancelRequested: if (root.ownsPreview) root.service.cancelFileTransfer()
+        onConfirmRequested: function(path) {
+            if (root.ownsPreview && root.service.confirmPreview(path)) root.openSendWindow()
+        }
     }
 
 }

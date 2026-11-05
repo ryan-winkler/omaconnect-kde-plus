@@ -121,11 +121,16 @@ Item {
     property alias selectionState: controller.selectionState
     property alias selectionCancelling: controller.selectionCancelling
     property alias draftTarget: controller.draftTarget
+    property alias previewCandidates: controller.previewCandidates
+    property alias previewSubmits: controller.previewSubmits
+    property alias selectionGeneration: controller.selectionGeneration
     property alias operations: controller.operations
     property alias activeOperation: controller.activeOperation
     property alias operationBusy: controller.operationBusy
     property alias cancellationRequested: controller.cancellationRequested
     function chooseFiles(id, options) { return controller.chooseFiles(id, options) }
+    function backToFiles() { return controller.backToFiles() }
+    function confirmPreview(path) { return controller.confirmPreview(path) }
     function stageDroppedFiles(id, urls) { return controller.stageDroppedFiles(id, urls) }
     function submitSelection() { return controller.submitSelection() }
     function cancelDraft() { return controller.cancelDraft() }

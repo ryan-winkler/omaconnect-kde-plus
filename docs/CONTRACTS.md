@@ -108,24 +108,43 @@ directory which is removed after exit, so a stale native menu cannot recreate
 its deleted result paths. No unscoped global hide is used. The menu does not submit; it returns inspected metadata.
 
 When displayed candidates include JPEG, PNG, WebP or GIF files, **Image previews…**
-opens the existing `omarchy.image-picker` overlay through fixed
-`omarchy-shell shell summon` argv. Its `imageRows` contains only exact displayed
-raster paths, newline-separated, at most 200 rows and 48 KiB after ASCII JSON
-escaping. The complete JSON request is one command argument of at most 64 KiB,
-so its paths can appear in process inspection by programs run as the same user.
-It sets `showLabels` and `filterable` true. Native duplicate-basename handling keeps the first path, so
-Plus supplies the newest offered path per basename. SVG, video and optional
-image codecs remain in the ordinary file list. No new renderer, directory scan,
-thumbnail generator, cache or setting is added. Native Qt owns preview decoding.
+returns an internal `{state:"preview",paths:[...]}` handoff instead of a selected
+file. Paths are exact displayed canonical raster candidates, at most 200 within
+48 KiB of conservative ASCII-escaped JSON. Distinct paths with the same basename
+remain available. SVG, video and optional image codecs stay in the ordinary list.
+The helper opens no image overlay and creates no preview result files or cache.
 
-The preview phase has its own 120-second deadline and a 4097-byte result limit.
-Only native `ok` confirms the summon; `unknown` or command failure reports picker
-unavailable. Selection/done files live in a private 0700 temporary parent, removed
-on every exit. Cancellation never hides the global overlay; it may need Escape,
-but a late result cannot recreate the removed parent or submit. Only an exact
-offered raster path is inspected through `inspect_uris` before the existing
-captured-recipient immediate/review policy runs. Merely browsing previews cannot
-submit. File metadata and private-source checks remain unchanged.
+`FileTransferController` validates the handoff before display: nonempty bounded
+array, unique absolute raster paths, no control/bidi separators or dot segments,
+4096 UTF-8 bytes per path and the same 48 KiB serialized budget. Only the native
+recent-menu generation can enter preview. `ImagePreviewWindow.qml` uses existing
+Qt image decoding with requested source dimensions capped at 1600 × 1200 pixels
+and one current preview. Loading is asynchronous and caching is disabled.
+Confirmation stays disabled until the image is ready and its resolved source
+matches the selected path. Loading and unavailable-image states keep Back and
+Cancel available. The window shows the captured recipient, filename, Back,
+Cancel and an explicit Send image or Review image action. Search and Previous/Next only change the displayed image;
+they never submit. No image-picker global summon/hide or result-file IPC remains.
+
+Back relaunches the original file chooser for the frozen recipient and policy,
+with a new selection generation. Navigation does not require the recipient to
+stay connected; confirmation and submission still check it. Back does not adopt
+current settings or device navigation. Cancel, Escape and window close clear the preview and draft; scoped
+preview cancellation closes only that window. Confirm accepts only an exact
+candidate, rechecks the original peer, then runs the existing file inspector.
+Only its current generation can enter the normal immediate/review flow. The Send
+window shows inspection/submission or the review draft; Review still needs a
+separate explicit Send. Metadata identity and private-source checks are unchanged.
+
+The Panel that starts a chooser records the service's selection generation.
+Only a matching generation activates its preview window; other preview windows
+do not show, decode or act on that selection. The existing global Cancel pending
+files action still stops shared pending work from any Panel or daily view.
+Send-window chooser starts record the
+same owner, and Back renews it after a successful restart. Destroying an owner
+releases only its unfinished choosing/preview generation. Review drafts,
+explicit confirmation, provider work and other generations remain with the
+controller. Standalone preview hosts can use the window's default owner mode.
 
 `scripts/pick_file.sh` runs `portal_files.py choose`. A normal FileChooser portal
 response is inspected before a draft reaches QML. Only local file URIs, readable

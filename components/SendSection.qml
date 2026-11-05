@@ -51,6 +51,7 @@ Column {
         visible: !!root.target
         width: parent.width
         text: root.service && root.service.selectionState === "choosing" ? "Choose files in the file picker. Cancel below stops this selection."
+            : root.service && root.service.selectionState === "preview" ? "Choose your image in the preview window. Back to files returns to the list; Cancel clears this selection."
             : root.files.length + " file(s) · " + TransferModel.formatBytes(root.service ? root.service.selectionBytes : 0) + "\nReview the recipient and files, then select Send."
 
         wrapMode: Text.Wrap
