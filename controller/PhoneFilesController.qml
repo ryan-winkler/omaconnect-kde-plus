@@ -40,6 +40,7 @@ Item {
             "peer-offline": "phoneFiles.error.peer-offline",
             "capability-unavailable": "phoneFiles.error.capability-unavailable",
             "mount-failed": "phoneFiles.error.mount-failed",
+            "mount-not-ready": "phoneFiles.error.mount-not-ready",
             "no-shares": "phoneFiles.error.no-shares",
             "share-limit": "phoneFiles.error.share-limit",
             "location-changed": "phoneFiles.error.location-changed",

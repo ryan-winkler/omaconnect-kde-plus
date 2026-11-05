@@ -326,6 +326,9 @@ see a recovery message. Plus uses only the advertised folders.
 
 The phone must be paired, reachable and permit **Filesystem expose** in KDE
 Connect. **Phone file settings in KDE** opens the native settings fallback.
+If KDE Connect reports that phone storage is unmounted, check those settings or
+select **Browse phone files** again. On Arch and Omarchy, check that the
+optional `sshfs` package is installed. See [installation prerequisites](INSTALL.md#install).
 A launch request does not confirm that a file-manager window appeared. If it
 fails, check the default file manager and the native KDE storage settings.
 Switching devices or closing the popup cancels pending browsing. A file manager

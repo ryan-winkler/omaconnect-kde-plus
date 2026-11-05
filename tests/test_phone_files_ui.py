@@ -40,6 +40,7 @@ if request['operation']=='prepare':
  result={'state':'prepared','error':'','peerId':peer,'locations':[location(0)]}
  if number in (2,5): result['locations'].append(location(1))
  if number==7: result['peerId']='Other_phone'
+ if number==10: result={'state':'failed','error':'mount-not-ready'}
 else:
  time.sleep(.15)
  result={'state':'failed','error':'opener-unavailable'} if number==4 else {'state':'opened','error':''}
@@ -51,7 +52,7 @@ raise SystemExit(1 if result['state']=='failed' else 0)
             """Verify selected-folder requests and reject unintended file submissions or shell launches."""
             self.assertIn('NATIVE_PASS phone files', output)
             records = [json.loads(line) for line in (home/'browse.jsonl').read_text().splitlines()]
-            self.assertEqual([row['number'] for row in records if row['operation']=='prepare'], list(range(1, 10)))
+            self.assertEqual([row['number'] for row in records if row['operation']=='prepare'], list(range(1, 11)))
             opened = [row for row in records if row['operation']=='open']
             self.assertEqual([(row['number'], row['peerId']) for row in opened], [(1,'A'),(2,'A'),(4,'B')])
             self.assertTrue(opened[1]['location']['path'].endswith('/folder1'))

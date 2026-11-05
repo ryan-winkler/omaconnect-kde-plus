@@ -156,6 +156,14 @@ ShellRoot {
                 if (!test.check(service.phoneFilesState === "cancelled" && test.draftIntact(), "pending cancellation preserves the draft")) return
                 test.phase = 14
             } else if (test.phase === 14 && !service.phoneFilesBusy) {
+                test.browseAction().clicked()
+                test.phase = 15
+            } else if (test.phase === 15 && service.phoneFilesState === "failed" && !service.phoneFilesBusy) {
+                var status = test.named("phone-files-status")
+                var settings = test.named("phone-files-native-settings")
+                if (!test.check(status.visible && status.text.indexOf("unmounted") >= 0
+                    && status.Accessible.name === status.text && test.browseAction().enabled && settings.enabled
+                    && test.draftIntact(), "unmounted response offers accessible manual recovery")) return
                 console.log("NATIVE_PASS phone files")
                 Qt.quit()
             }

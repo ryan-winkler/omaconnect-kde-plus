@@ -210,10 +210,14 @@ class NativeStorage:
         if "kdeconnect_sftp" not in loaded:
             raise BrowseError("capability-unavailable")
 
-    def locations(self):
+    def locations(self, *, after_prepare=False):
         """Return advertised roots with verified native mount and filesystem identities."""
         path = self.path + "/sftp"
         if self.call(path, SFTP, "isMounted", reply="(b)")[0] is not True:
+            if after_prepare:
+                self.check_peer()
+                self.check_owner()
+                raise BrowseError("mount-not-ready")
             raise BrowseError("storage-unavailable")
         mount = self.call(path, SFTP, "mountPoint", reply="(s)")[0]
         shares = self.call(path, SFTP, "getDirectories", reply="(a{sv})")[0]
@@ -253,7 +257,7 @@ def execute(request, cancelled, deadline):
             raise BrowseError("mount-failed")
         native.check_peer()
         try:
-            locations = native.locations()
+            locations = native.locations(after_prepare=True)
         except MountNotVisible as missing:
             # mountAndWait can reply before SSHFS is visible in this namespace.
             # Wait only for the missing kernel record; never request a second mount.
@@ -271,7 +275,7 @@ def execute(request, cancelled, deadline):
                     continue
             native.check_owner()
             native.check_peer()
-            locations = native.locations()
+            locations = native.locations(after_prepare=True)
         return {"state": "prepared", "error": "", "peerId": request["peerId"], "locations": locations}
     expected = request["location"]
     if expected["providerOwner"] != native.owner or expected not in native.locations():

@@ -37,6 +37,11 @@ visibility_failures = {
     "owner-replaced-during-visibility": "location-changed",
     "offline-during-visibility": "peer-offline",
 }
+unmounted_after_prepare = {
+    "unmounted-after-prepare": "mount-not-ready",
+    "offline-after-prepare": "peer-offline",
+    "owner-replaced-after-prepare": "location-changed",
+}
 
 
 def mount_record(path):
@@ -56,7 +61,7 @@ def mount_record(path):
 
 helper.mount_record = mount_record
 helper.launch_uri = lambda uri: opened.append(uri)
-paired, reachable, mounted = mode != "unpaired", mode != "offline", mode != "nonmount"
+paired, reachable, mounted = mode != "unpaired", mode != "offline", mode not in unmounted_after_prepare
 shares = {str(root): "Shared storage"}
 if mode == "multiple":
     shares[str(other)] = "Other storage"
@@ -141,6 +146,11 @@ def method(connection, sender, path, interface, member, parameters, invocation):
         cancelled.set()
     if member == "mountAndWait" and mode == "offline-during-mount":
         reachable = False
+    if member == "isMounted":
+        if mode == "offline-after-prepare":
+            reachable = False
+        elif mode == "owner-replaced-after-prepare":
+            change_owner(True)
     reply, value = {
         "loadedPlugins": ("(as)", ([] if mode == "unsupported" else ["kdeconnect_sftp"],)),
         "mountAndWait": ("(b)", (mode != "mount-failed",)),
@@ -219,7 +229,7 @@ def run():
         "offline": "peer-offline", "unpaired": "peer-unpaired", "unsupported": "capability-unavailable",
         "unsupported-method": "capability-unavailable", "unavailable": "provider-unavailable",
         "timeout": "storage-timeout", "no-shares": "no-shares", "share-limit": "share-limit",
-        "escape": "storage-unavailable", "symlink": "storage-unavailable", "nonmount": "storage-unavailable",
+        "escape": "storage-unavailable", "symlink": "storage-unavailable", **unmounted_after_prepare,
         "mount-failed": "mount-failed", "remote-error": "storage-unavailable",
         "mount-never-visible": "storage-unavailable", **visibility_failures,
         "changed-advertisement": "location-changed", "changed-name": "location-changed",
@@ -235,6 +245,8 @@ def run():
         passed = passed and 4.5 <= time.monotonic() - started < 6.5
     if mode in ("mount-visible-late", "mount-never-visible") or mode in visibility_failures:
         passed = passed and sum(call[2] == "mountAndWait" for call in calls) == 1
+    if mode in unmounted_after_prepare:
+        passed = passed and [call[2] for call in calls if call[1] == helper.SFTP] == ["mountAndWait", "isMounted"]
     if mode == "mount-never-visible":
         passed = passed and helper.MOUNT_VISIBILITY_SECONDS <= time.monotonic() - started < 2
     results.append({"passed": passed, "error": error, "mode": mode})

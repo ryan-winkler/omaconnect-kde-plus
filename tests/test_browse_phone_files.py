@@ -112,7 +112,8 @@ class BrowseContract(unittest.TestCase):
     def test_private_bus_contract(self):
         """Run each storage failure mode on a private bus with temporary home and runtime state."""
         modes = ["single", "multiple", "remote-name", "offline", "unpaired", "unsupported", "unsupported-method",
-                 "unavailable", "no-shares", "share-limit", "escape", "symlink", "nonmount", "mount-failed",
+                 "unavailable", "no-shares", "share-limit", "escape", "symlink", "mount-failed",
+                 "unmounted-after-prepare", "offline-after-prepare", "owner-replaced-after-prepare",
                  "remote-error", "mount-visible-late", "mount-never-visible", "mount-visibility-cancelled",
                  "owner-replaced-during-visibility", "offline-during-visibility", "changed-advertisement", "changed-name", "stale-mount", "stale-root",
                  "owner-changed", "offline-open", "unpaired-open", "unmounted-open", "cancelled", "missing-opener",

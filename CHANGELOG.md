@@ -54,6 +54,8 @@ All notable changes are listed here. The format follows
 - Let Browse phone files wait briefly for the verified SSHFS mount after
   KDE Connect reports a successful mount. A cancelled or stale request
   still opens nothing.
+- Explain when KDE Connect reports phone storage as unmounted after Prepare.
+  Offer native file settings and a manual retry.
 
 - Retained hidden preference toggles ignore Return, Enter and Space without
   interrupting saves accepted before their window closed.

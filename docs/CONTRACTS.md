@@ -536,9 +536,11 @@ only candidates. No Android path, mount location or file-manager executable is
 invented. At most 16 shares are accepted. Canonical roots must exist inside the
 native mount, on its filesystem, with a matching `fuse.sshfs` mountinfo entry.
 Symlinks and escapes are rejected. KDE Connect owns mounting. If it reports
-success before the kernel lists the mount, Prepare waits up to 500 ms for the
-record, observes cancellation, and rechecks owner, peer and all locations. It
-does not request a second mount. Open continues to reject any missing record.
+success and then reports `isMounted` as false, Prepare rechecks peer and owner
+before returning `mount-not-ready`. If KDE Connect reports a mount before the
+kernel lists it, Prepare waits up to 500 ms for the record, observes
+cancellation, and rechecks owner, peer and all locations. Prepare issues one
+mount request. Open continues to reject any missing record.
 
 Each prepared location carries `peerId`, `providerOwner`, `path`, `name`,
 `mountPath`, `mountIdentity`, `rootIdentity` and `advertisements`. Open accepts the
