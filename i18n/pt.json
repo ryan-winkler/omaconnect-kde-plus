@@ -1,4 +1,8 @@
 {
+  "actions.otherUnavailable": "Outras ações indisponíveis: %1.",
+  "savedAddresses.row": "⁨%1⁩ · %2%3\nID do KDE: ⁨%4⁩",
+  "savedAddresses.source.manual": "LAN / manual",
+  "discovery.bth-ipv6-disabled": "A política atual desativa os endereços IPv6 do BTH.",
   "preferences.saved": "Definição guardada.",
   "kde.action.requesting": "A pedir %1",
   "kde.operation.ping": "ping",

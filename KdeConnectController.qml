@@ -312,7 +312,7 @@ Item {
         scanQueued = false
         daemonAvailable = false
         discoveryState = "unavailable"
-        discoveryMessage = "KDE Connect unavailable"
+        discoveryMessage = Locale.Strings.live("kde.status.unavailable")
         customAddressesReady = false
         customAddresses = []
         devices = []
@@ -328,7 +328,7 @@ Item {
         if (actionProcess.running || pairProcess.running || pairResponseProcess.running || addressProcess.running) {
             actionState = "unknown"
             actionMessage = ""
-            actionError = "KDE Connect changed while an action was pending. Check its result before retrying."
+            actionError = Locale.Strings.live("kde.status.ownerChangedDuringAction")
         }
         if (scanProcess.running) scanProcess.running = false
         dbusDebounceTimer.restart()

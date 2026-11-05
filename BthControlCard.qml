@@ -39,7 +39,7 @@ Column {
         var mode = ["auto", "on", "off"][index]
         if (!helperPathValid || !Control.canRun(status, mode, action.running)) return
         wantedMode = mode
-        feedback = Locale.Strings.format("bth.savingMode", [Locale.Strings.t(Control.modeLabel(mode))])
+        feedback = Locale.Strings.live("bth.savingMode", [Control.modeLabel(mode)])
         action.mode = mode
         action.running = true
     }
@@ -47,7 +47,7 @@ Column {
         status = Control.parse(raw)
         if (wantedMode && Control.confirmed(status, wantedMode)) {
             wantedMode = ""
-            feedback = Locale.Strings.t("bth.modeSavedActualInterfaceStateIs")
+            feedback = Locale.Strings.live("bth.modeSavedActualInterfaceStateIs")
         }
     }
     onPanelOpenedChanged: if (panelOpened) refreshStatus()
@@ -90,8 +90,8 @@ Column {
         onExited: function(code) {
             if (code !== 0 || oversized) {
                 root.wantedMode = ""
-                root.feedback = Locale.Strings.t("bth.theRequestDidNotFinishRefreshing")
-            } else root.feedback = Locale.Strings.t("bth.requestSavedWaitingForTheActual")
+                root.feedback = Locale.Strings.live("bth.theRequestDidNotFinishRefreshing")
+            } else root.feedback = Locale.Strings.live("bth.requestSavedWaitingForTheActual")
             root.refreshStatus()
         }
     }

@@ -5,7 +5,7 @@ import "../TransferModel.js" as Transfers
 
 Commons.Translations {
     id: root
-    directory: Qt.resolvedUrl(".")
+    directory: decodeURIComponent(Qt.resolvedUrl(".").toString().replace(/^file:\/\//, ""))
 
     // Replace placeholders in the catalog text once. A device name may
     // itself contain %1 or %2 and must be displayed unchanged.

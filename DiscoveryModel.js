@@ -6,7 +6,7 @@ var MAX_BATCH = 32
 var ERRORS = {
     "address-invalid": "discovery.address-invalid",
     "address-not-private": "discovery.address-not-private",
-    "bth-ipv6-disabled": "BTH IPv6 addresses are disabled by the current policy.",
+    "bth-ipv6-disabled": "discovery.bth-ipv6-disabled",
     "approval-required": "discovery.approval-required",
     "peer-invalid": "discovery.peer-invalid",
     "address-conflict": "discovery.address-conflict",

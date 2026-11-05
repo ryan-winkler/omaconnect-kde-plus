@@ -119,3 +119,9 @@ test('only approved auto records are scheduled and extra reply fields are droppe
  assert.equal(discovery.parse('{'),null);
  assert.equal(discovery.parse(JSON.stringify({schema_version:1,ok:true,addresses:[],custom_addresses:[7]})),null);
 });
+
+test('BTH IPv6 policy feedback has a valid catalogue entry', () => {
+ const key=discovery.errorKey('bth-ipv6-disabled');
+ assert.equal(key,'discovery.bth-ipv6-disabled');
+ assert.equal(strings.t(key),'BTH IPv6 addresses are disabled by the current policy.');
+});

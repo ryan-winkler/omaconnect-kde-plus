@@ -19,8 +19,9 @@ QtObject {
             var id = modules[i] ? modules[i].id : null
             if (typeof id === "string" && /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(id) && ids.indexOf(id) < 0) ids.push(id)
         }
-        return ids
+        return ids.sort()
     }
+    readonly property string pluginSetKey: pluginIds.join(",")
     property var enabledStates: ({})
     property string message: ""
     property string error: ""
@@ -45,7 +46,7 @@ QtObject {
     }
     onPeerIdChanged: invalidate()
     onReadyChanged: invalidate()
-    onPluginIdsChanged: invalidate()
+    onPluginSetKeyChanged: invalidate()
 
     function refresh() {
         if (!ready || !pluginIds.length) return false

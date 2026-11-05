@@ -1,4 +1,7 @@
 {
+  "actions.otherUnavailable": "Other unavailable actions: %1.",
+  "savedAddresses.row": "⁨%1⁩ · %2%3\nKDE ID: ⁨%4⁩",
+  "discovery.bth-ipv6-disabled": "BTH IPv6 addresses are disabled by the current policy.",
   "networkSection.checking": "Checking…",
   "nativeFeatures.localCommands": "Commands on this computer",
   "nativeFeatures.localCommandsHelp": "Choose commands on this computer that the selected device can run.",
@@ -203,6 +206,7 @@
   "kde.status.current": "Device state is current",
   "kde.status.empty": "No KDE Connect devices",
   "kde.status.unavailable": "KDE Connect unavailable",
+  "kde.status.ownerChangedDuringAction": "KDE Connect changed while an action was pending. Check its result before retrying.",
   "kde.status.busy": "Another action is already running",
   "kde.status.messageTooLong": "Use at most 8192 characters",
   "kde.status.noRing": "Ring not supported by device",

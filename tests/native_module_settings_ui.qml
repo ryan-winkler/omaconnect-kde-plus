@@ -112,9 +112,17 @@ ShellRoot {
                 test.phase=301
             } else if(test.phase===301 && !backend.busy) {
                 if (!test.check(test.find(view,"native-module-refresh").activeFocus,"Refresh retains keyboard focus through native read")) return
-                backend.setEnabled("native_mismatch",true);test.phase=4
+                backend.setEnabled("native_mismatch",true)
+                var generation = backend.generation
+                view.modules = view.modules.slice().reverse().map(function(row) {
+                    return Object.assign({}, row, {name: "Translated " + row.name})
+                })
+                if (!test.check(backend.generation === generation, "relabeling and reordering the same IDs keeps the pending write")) return
+                test.phase=4
             } else if (test.phase === 4 && !backend.busy) {
                 if (!test.check(backend.error === "readback-mismatch" && backend.enabledStates.native_mismatch === false,"mismatch shows actual native state")) return
+                if (!test.check(backend.message === "KDE Connect reports a different value. The observed setting is shown.",
+                                "the catalogue loads from a path with spaces and a percent sign")) return
                 backend.setEnabled("native_unknown",true);test.phase=5
             } else if (test.phase === 5 && !backend.busy) {
                 if (!test.check(backend.error === "submission-unknown" && !backend.known("native_unknown") && !test.toggle("native_unknown").enabled,"uncertain write clears only its observed value")) return

@@ -139,7 +139,11 @@ Column {
             Text {
                 textFormat: Text.PlainText
                 width: parent.width
-                text: modelData.address + " · " + modelData.source + (modelData.registered ? Locale.Strings.t("savedAddresses.savedInKde") : Locale.Strings.t("savedAddresses.registrationUnconfirmed")) + "\nKDE ID: " + modelData.peer_id
+                text: Locale.Strings.format("savedAddresses.row", [
+                    modelData.address, root.sourceLabel(modelData.source),
+                    Locale.Strings.t(modelData.registered ? "savedAddresses.savedInKde" : "savedAddresses.registrationUnconfirmed"),
+                    modelData.peer_id
+                ])
 
                 wrapMode: Text.WrapAnywhere
                 color: root.foreground

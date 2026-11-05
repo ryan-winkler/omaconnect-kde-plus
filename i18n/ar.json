@@ -1,4 +1,8 @@
 {
+  "actions.otherUnavailable": "إجراءات أخرى غير متاحة: %1.",
+  "savedAddresses.row": "⁨%1⁩ · %2%3\nمعرّف KDE: ⁨%4⁩",
+  "savedAddresses.source.manual": "الشبكة المحلية / يدوي",
+  "discovery.bth-ipv6-disabled": "تعطّل السياسة الحالية عناوين IPv6 لخدمة BTH.",
   "preferences.saved": "تم حفظ الإعداد.",
   "kde.action.requesting": "جارٍ طلب %1",
   "kde.operation.ping": "اختبار الاتصال",

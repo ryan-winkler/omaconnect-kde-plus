@@ -492,7 +492,7 @@ request has exactly `{key,enabled:boolean}`. A string request has exactly
 is empty or absolute, ends in `/remote-access-mode`, has no `..` component and
 no C0/DEL controls. Quick-action CSV is at most 512 characters, has known IDs
 and no duplicates. Section-order validation uses `section_order.py` and the
-catalogue below. Replies are `{ok:boolean,message:string}` with fixed feedback.
+catalogue below. Replies are `{ok:boolean,code:string,message:string}` with fixed feedback.
 
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
 keys, four bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`, `sectionOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed

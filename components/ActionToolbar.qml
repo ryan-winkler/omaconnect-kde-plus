@@ -100,7 +100,9 @@ Column {
         width: parent.width
         visible: root.blockedActions.length > 0
         text: root.blockedActions.length > 0 ? Locale.Strings.t(Actions.availabilityKey(root.blockedActions[0],root.device,root.service))
-            + (root.blockedActions.length > 1 ? " Other unavailable actions: " + root.blockedActions.slice(1).map(function(id) { return Locale.Strings.t(Actions.entry(id).labelKey); }).join(", ") + "." : "") : ""
+            + (root.blockedActions.length > 1 ? " " + Locale.Strings.format("actions.otherUnavailable", [
+                root.blockedActions.slice(1).map(function(id) { return Locale.Strings.t(Actions.entry(id).labelKey) }).join(", ")
+            ]) : "") : ""
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: root.foreground
