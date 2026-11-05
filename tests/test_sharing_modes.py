@@ -2,8 +2,10 @@
 import json
 from pathlib import Path
 import shutil
+import struct
 import subprocess
 import unittest
+import zlib
 
 if __package__:
     from . import test_native_ui as native_ui
@@ -29,15 +31,15 @@ class SharingPolicy(unittest.TestCase):
     def node(self, assertions):
         """Run real policy and controller functions with observable process doubles."""
         source = (ROOT / 'controller/FileTransferController.qml').read_text()
-        names = ('chooseFiles', 'applySelection', 'selectionErrorText', 'cancelDraft',
+        names = ('chooseFiles', 'launchChooser', 'validPreviewPaths', 'backToFiles', 'confirmPreview', 'applySelection', 'selectionErrorText', 'cancelDraft',
                  'submitSelection', 'submitNextFile', 'updateOperation', 'finishOperation',
-                 'cancelRemaining', 'cancelOperation', 'stageDroppedFiles')
+                 'cancelRemaining', 'cancelOperation', 'cancelFileTransfer', 'stageDroppedFiles')
         functions = '\n'.join(block(source, '    function ' + name + '(') for name in names)
         panel = (ROOT / 'Panel.qml').read_text()
         options = block(panel, '    readonly property var fileChooserOptions:')
         options = 'function chooserOptions() ' + options[options.index('{'):]
         panel_functions = options + '\n' + '\n'.join(block(panel, '    function ' + name + '(')
-                                                    for name in ('getSetting', 'chooseFiles'))
+                                                    for name in ('getSetting', 'chooseFiles', 'backToFiles', 'releasePreview'))
         script = r'''
 const vm=require('node:vm'),assert=require('node:assert/strict');
 const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
@@ -46,7 +48,7 @@ function fresh(){
  const later=[],calls=[];
  const process=()=>({running:false,signals:[],signal(n){this.signals.push(n)}});
  const ctx={operationBusy:false,fileBusy:false,selection:[],selectionBytes:0,selectionState:'idle',selectionError:'',draftTarget:null,
-  selectionGeneration:0,chooserSubmits:false,operationSequence:0,fileTransferGeneration:0,operations:[],activeOperation:null,
+  selectionGeneration:0,chooserSubmits:false,previewCandidates:[],operationSequence:0,fileTransferGeneration:0,operations:[],activeOperation:null,
   submissionQueue:[],submissionIndex:0,cancellationRequested:false,fileTransferMessage:'',fileTransferError:'',
   fileTransferProcess:process(),filePickerProcess:process(),fileInspectProcess:process(),
   selectionCancellationTimer:{restart(){},stop(){}},cancellationTimer:{restart(){this.started=true}},TransferModel:model,Qt:{callLater(fn){later.push(fn)}},
@@ -59,7 +61,7 @@ function fresh(){
  return {ctx,later,calls,flush(){while(later.length)later.shift()()},selected(){ctx.filePickerProcess.running=false;ctx.applySelection(JSON.stringify({state:'selected',files:[{path:'/fixture/example.txt',name:'example.txt',size:3}]}),0,ctx.selectionGeneration)}};
 }
 function panel(settings,service,device){
- const ctx={settings,service,device};ctx.root=ctx;vm.createContext(ctx);vm.runInContext(input.panel,ctx);
+ const ctx={settings,service,device,previewGeneration:-1};ctx.root=ctx;vm.createContext(ctx);vm.runInContext(input.panel,ctx);
  Object.defineProperty(ctx,'fileChooserOptions',{get(){return ctx.chooserOptions()}});return ctx;
 }
 const immediate={useDesktopFileChooser:false,reviewFilesBeforeSend:false};
@@ -132,8 +134,150 @@ assert.equal(active.ctx.cancelOperation(),true);assert.equal(active.ctx.cancelOp
 assert.deepEqual(active.ctx.fileTransferProcess.signals,[15]);assert.equal(active.calls.length,1);
 ''')
 
+    def test_preview_handoff_bounds_and_exact_candidate_before_inspection(self):
+        """Reject unsafe handoffs before display and unoffered confirmations before inspection."""
+        self.node(r'''
+const f=fresh(),c=f.ctx;const paths=['/fixture/folder/photo #1 ☃.PNG','/fixture/other/photo #1 ☃.PNG'];
+assert.equal(c.chooseFiles('A',immediate),true);c.filePickerProcess.running=false;
+c.applySelection(JSON.stringify({state:'preview',paths}),0,c.selectionGeneration);
+assert.equal(c.selectionState,'preview');assert.deepEqual(JSON.parse(JSON.stringify(c.previewCandidates)),paths);
+assert.equal(c.draftTarget.peerId,'A');assert.equal(c.chooserSubmits,true);assert.equal(f.calls.length,0);
+assert.equal(c.confirmPreview('/fixture/unoffered.png'),false);assert.equal(c.fileInspectProcess.running,false);
+assert.equal(c.chooseFiles('B',immediate),false);assert.equal(c.stageDroppedFiles('B',['file:///fixture/x.png']),false);
+for(const invalid of [null,{},[],[null],new Array(201).fill('/fixture/x.png'),['relative.png'],['file:///fixture/x.png'],
+ ['/fixture/x.svg'],['/fixture/../x.png'],['/fixture//x.png'],['/fixture/control\n.png'],['/fixture/\u202ex.png'],
+ ['/fixture/\u200dx.png'],['/fixture/\ud800.png'],['/fixture/'+'☃'.repeat(1400)+'.png'],['/fixture/x.png','/fixture/x.png'],
+ Array.from({length:20},(_,i)=>'/fixture/'+i+'x'.repeat(3000)+'.png')]) {
+ assert.equal(c.validPreviewPaths(invalid),false,JSON.stringify(invalid).slice(0,100));
+}
+assert.equal(c.validPreviewPaths(['/fixture/emoji 😀.jpg']),true);
+const g=fresh();g.ctx.chooseFiles('A',review);g.ctx.filePickerProcess.running=false;
+g.ctx.applySelection(JSON.stringify({state:'preview',paths}),0,g.ctx.selectionGeneration);
+assert.notEqual(g.ctx.selectionState,'preview');assert.equal(g.calls.length,0);
+''')
+
+    def test_preview_back_freezes_recipient_policy_and_invalidates_old_generation(self):
+        """Return to the native list without adopting changed settings or another recipient."""
+        self.node(r'''
+for(const reviewFirst of [false,true]) {
+ const f=fresh(),c=f.ctx,options={useDesktopFileChooser:false,reviewFilesBeforeSend:reviewFirst};
+ c.chooseFiles('A',options);c.filePickerProcess.running=false;
+ const generation=c.selectionGeneration;
+ c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,generation);
+ options.reviewFilesBeforeSend=!reviewFirst;options.useDesktopFileChooser=true;
+ c.selectedDeviceId='B';c.devices[0].name='Renamed later';
+ assert.equal(c.backToFiles(),true);assert.equal(c.selectionGeneration,generation+1);
+ assert.equal(c.filePickerProcess.command[2],'recent');assert.equal(c.draftTarget.peerId,'A');
+ assert.equal(JSON.parse(c.filePickerProcess.payload).recipient,'Original phone');
+ assert.equal(c.chooserSubmits,!reviewFirst);assert.equal(c.previewCandidates.length,0);
+ c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/stale.png']}),0,generation);
+ assert.equal(c.selectionState,'choosing');assert.equal(c.previewCandidates.length,0);assert.equal(f.calls.length,0);
+}
+const f=fresh(),c=f.ctx;c.chooseFiles('A',immediate);c.filePickerProcess.running=false;
+c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+c.devices[0].reachable=false;c.selectedDeviceId='B';assert.equal(c.backToFiles(),true);
+assert.equal(c.draftTarget.peerId,'A');assert.equal(c.chooserSubmits,true);
+assert.equal(JSON.parse(c.filePickerProcess.payload).recipient,'Original phone');
+f.selected();f.flush();assert.equal(f.calls.length,0);assert.equal(c.selectionState,'draft');
+assert.equal(c.draftTarget.peerId,'A');assert.match(c.selectionError,/no longer paired and reachable/);
+''')
+
+    def test_panel_generation_owner_is_single_and_destruction_cancels_only_its_preview(self):
+        """Multiple panels keep one origin and release only their unfinished selection."""
+        self.node(r'''
+const f=fresh(),c=f.ctx,a=panel({},c,c.devices[0]),b=panel({},c,c.devices[0]);
+assert.equal(a.chooseFiles(),true);assert.equal(a.previewGeneration,c.selectionGeneration);assert.equal(b.previewGeneration,-1);
+c.filePickerProcess.running=false;c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+assert.equal(b.chooseFiles(),false);assert.equal(b.previewGeneration,-1);assert.equal(b.backToFiles(),false);
+b.releasePreview();assert.equal(c.selectionState,'preview');
+assert.equal(a.backToFiles(),true);assert.equal(a.previewGeneration,c.selectionGeneration);
+c.filePickerProcess.running=false;c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+a.releasePreview();assert.equal(c.selectionState,'idle');assert.equal(c.draftTarget,null);
+assert.equal(b.chooseFiles(),true);assert.equal(b.previewGeneration,c.selectionGeneration);
+a.releasePreview();assert.equal(c.selectionState,'choosing');assert.equal(c.draftTarget.peerId,'A');
+c.filePickerProcess.running=false;c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+assert.equal(c.confirmPreview('/fixture/a.png'),true);b.releasePreview();
+assert.equal(c.selectionState,'choosing');assert.equal(c.fileInspectProcess.running,true);
+c.fileInspectProcess.running=false;c.applySelection(JSON.stringify({state:'selected',files:[{path:'/fixture/a.png',size:3}]}),0,c.selectionGeneration);
+f.flush();assert.equal(f.calls.length,1);b.releasePreview();assert.equal(c.operationBusy,true);
+const g=fresh(),d=g.ctx,p=panel({reviewFilesBeforeSend:true},d,d.devices[0]);
+p.chooseFiles();g.selected();p.releasePreview();assert.equal(d.selectionState,'draft');assert.equal(d.selection.length,1);
+const none=panel({},null,null);none.releasePreview();assert.equal(none.backToFiles(),false);
+''')
+
+    def test_preview_explicit_confirmation_uses_inspector_then_captured_send_or_review(self):
+        """Browsing cannot send; only an exact explicit confirmation enters inspected submission."""
+        self.node(r'''
+for(const reviewFirst of [false,true]) {
+ const f=fresh(),c=f.ctx,path='/fixture/photo #1 ☃.png';
+ c.chooseFiles('A',{useDesktopFileChooser:false,reviewFilesBeforeSend:reviewFirst});c.filePickerProcess.running=false;
+ c.applySelection(JSON.stringify({state:'preview',paths:[path]}),0,c.selectionGeneration);
+ f.flush();assert.equal(f.calls.length,0);assert.equal(c.selection.length,0);
+ c.selectedDeviceId='B';assert.equal(c.confirmPreview(path),true);assert.equal(c.previewCandidates.length,0);
+ assert.equal(c.confirmPreview(path),false);assert.equal(c.fileInspectProcess.running,true);
+ const uri=JSON.parse(c.fileInspectProcess.payload)[0];assert.equal(decodeURIComponent(new URL(uri).pathname),path);
+ assert.equal(f.calls.length,0);c.fileInspectProcess.running=false;
+ c.applySelection(JSON.stringify({state:'selected',files:[{path,name:'photo #1 ☃.png',size:3}]}),0,c.selectionGeneration);
+ f.flush();assert.equal(f.calls.length,reviewFirst?0:1);
+ if(reviewFirst){assert.equal(c.selectionState,'draft');assert.equal(c.submitSelection(),true);f.flush()}
+ assert.equal(f.calls.length,1);assert.equal(f.calls[0].peerId,'A');assert.equal(c.activeOperation.peerName,'Original phone');
+}
+''')
+
+    def test_preview_cancel_stale_inspection_and_unreachable_original_never_submit(self):
+        """Cancel removes preview state; changed peer availability blocks confirmation."""
+        self.node(r'''
+for(const confirm of [false,true]) {
+ const f=fresh(),c=f.ctx,path='/fixture/a.png';c.chooseFiles('A',immediate);c.filePickerProcess.running=false;
+ c.applySelection(JSON.stringify({state:'preview',paths:[path]}),0,c.selectionGeneration);
+ if(confirm)assert.equal(c.confirmPreview(path),true);
+ const generation=c.selectionGeneration;c.cancelDraft();c.fileInspectProcess.running=false;
+ c.applySelection(JSON.stringify({state:'selected',files:[{path,size:3}]}),0,generation);f.flush();
+ assert.equal(c.selectionState,'idle');assert.equal(c.previewCandidates.length,0);assert.equal(c.draftTarget,null);assert.equal(f.calls.length,0);
+}
+const f=fresh(),c=f.ctx;c.chooseFiles('A',immediate);c.filePickerProcess.running=false;
+c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+c.devices[0].reachable=false;assert.equal(c.confirmPreview('/fixture/a.png'),false);
+assert.equal(c.selectionState,'preview');assert.match(c.selectionError,/original recipient/);assert.equal(f.calls.length,0);
+''')
+
 
 class SharingNative(unittest.TestCase):
+    def test_native_preview_has_one_origin_across_panels_and_releases_destroyed_owner(self):
+        """Load two real Panels sharing one service and exercise scoped generation ownership."""
+        runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
+        runner.qml_fixture = 'preview_owner_ui.qml'
+        runner.force_offscreen = True
+
+        def configure(fixture, plugin, home, fake_bin):
+            """Offer one owned raster through the logged native-menu double."""
+            def chunk(kind, data):
+                return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
+            pictures = home / 'Pictures'
+            pictures.mkdir()
+            (pictures / 'owned.png').write_bytes(
+                b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
+                + chunk(b'IDAT', zlib.compress(b'\x00\x80\xc0\x70')) + chunk(b'IEND', b''))
+            menu = fake_bin / 'omarchy-menu-select'
+            menu.write_text('''#!/usr/bin/python3
+import json,os,sys
+with open(os.environ['NATIVE_COMMAND_LOG'],'a') as out:
+ out.write(json.dumps({'tool':'omarchy-menu-select','args':sys.argv[1:]})+'\\n')
+print('Image previews…')
+''')
+            menu.chmod(0o700)
+
+        def checked(fixture, home, output, calls):
+            """Ownership navigation and destruction must never start a native transfer."""
+            self.assertIn('PREVIEW_OWNER_PASS', output)
+            self.assertGreaterEqual(sum(row['tool'] == 'omarchy-menu-select' for row in calls), 4)
+            self.assertFalse(any(row['tool'] in ('kdeconnect-share', 'kdeconnect-cli') for row in calls), calls)
+            self.assertEqual(json.loads((fixture / 'portal-receipt.json').read_text()), [])
+
+        runner.configure_fixture = configure
+        runner.assert_fixture = checked
+        runner.test_actual_service_bar_panel_and_controls()
+
     def test_native_default_menu_immediate_review_and_global_cancel(self):
         """Exercise actual chooser modes and accessible cancellation on a private native bus."""
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')

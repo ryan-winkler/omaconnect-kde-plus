@@ -37,7 +37,7 @@ Column {
         objectName: "cancel-pending-files"
         width: parent.width
         implicitHeight: Math.max(44, Style.space(44))
-        visible: !!root.panel.service && (root.panel.service.operationBusy || root.panel.service.selectionState === "choosing" || root.panel.service.selectionCancelling === true)
+        visible: !!root.panel.service && (root.panel.service.operationBusy || root.panel.service.selectionState === "choosing" || root.panel.service.selectionState === "preview" || root.panel.service.selectionCancelling === true)
         text: root.panel.service && (root.panel.service.selectionCancelling === true || (root.panel.service.operationBusy && root.panel.service.cancellationRequested === true)) ? "Cancelling pending files…" : "Cancel pending files"
         enabled: !!root.panel.service && root.panel.service.selectionCancelling !== true && (!root.panel.service.operationBusy || root.panel.service.cancellationRequested !== true)
         foreground: Commons.Color.popups.text

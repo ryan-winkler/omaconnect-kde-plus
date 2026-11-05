@@ -17,9 +17,10 @@ Window {
     readonly property var target: service ? service.draftTarget : null
     readonly property bool canChoose: !!(service && device && device.paired && device.reachable
         && device.capabilities && device.capabilities.file && !service.operationBusy && !service.selectionCancelling
-        && service.selectionState !== "choosing" && service.selectionState !== "draft"
+        && service.selectionState !== "choosing" && service.selectionState !== "draft" && service.selectionState !== "preview"
         && (!service.selection || service.selection.length === 0))
     signal returnToPanelRequested()
+    signal chooserStarted()
     title: "Omaconnect KDE Plus — Send files"
     transientParent: null
     flags: Qt.Window
@@ -31,6 +32,11 @@ Window {
     visible: false
 
     function openSend() { show(); raise(); requestActivate() }
+    function chooseFiles() {
+        if (!canChoose || !service.chooseFiles(device.id, chooserOptions)) return false
+        chooserStarted()
+        return true
+    }
     function returnToDevices() { hide(); returnToPanelRequested() }
     Shortcut { sequence: "Escape"; context: Qt.WindowShortcut; onActivated: root.close() }
     Shortcut { sequence: "Ctrl+W"; context: Qt.WindowShortcut; onActivated: root.close() }
@@ -78,7 +84,7 @@ Window {
                 focusable: true
                 foreground: Commons.Color.popups.text
                 enabled: root.canChoose
-                onClicked: root.service.chooseFiles(root.device.id, root.chooserOptions)
+                onClicked: root.chooseFiles()
             }
         }
         Text {

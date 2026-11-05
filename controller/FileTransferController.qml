@@ -30,6 +30,8 @@ Item {
     property bool chooserSubmits: false
     property bool selectionCancelling: false
     property bool chooserUsesNativeMenu: false
+    property var previewCandidates: []
+    readonly property bool previewSubmits: chooserSubmits
 
     onFileTransferMessageChanged: {
         if (root.fileBusy || root.fileTransferState === "transferring") {
@@ -54,7 +56,7 @@ Item {
     function chooseFiles(id, options) {
         var device = controller.deviceById(id)
         if (operationBusy || fileTransferProcess.running || filePickerProcess.running || fileInspectProcess.running) return false
-        if (selectionState === "draft" || selection.length) {
+        if (selectionState === "draft" || selectionState === "preview" || selection.length) {
             selectionError = "Review or clear the current file selection before choosing more files."
             return false
         }
@@ -62,11 +64,6 @@ Item {
             selectionError = "Select a paired, reachable device that supports files"
             return false
         }
-        selectionGeneration += 1
-        selection = []
-        selectionBytes = 0
-        selectionState = "choosing"
-        selectionError = ""
         // The recipient belongs to this draft. Later navigation cannot change it.
         draftTarget = Object.freeze({peerId: String(device.id), peerName: String(device.name || device.id), provider: "kdeconnect"})
         // Calls without typed options keep the previous portal/review contract.
@@ -74,7 +71,19 @@ Item {
             && typeof options.reviewFilesBeforeSend === "boolean"
         chooserSubmits = !!typed && !options.reviewFilesBeforeSend
         chooserUsesNativeMenu = !!typed && !options.useDesktopFileChooser
-        filePickerProcess.command = typed && !options.useDesktopFileChooser
+        return launchChooser(chooserUsesNativeMenu)
+    }
+
+    function launchChooser(nativeMenu) {
+        if (!draftTarget || operationBusy || fileTransferProcess.running || filePickerProcess.running || fileInspectProcess.running) return false
+        selectionGeneration += 1
+        chooserUsesNativeMenu = nativeMenu === true
+        selection = []
+        selectionBytes = 0
+        previewCandidates = []
+        selectionState = "choosing"
+        selectionError = ""
+        filePickerProcess.command = chooserUsesNativeMenu
             ? ["python3", controller.scriptPath("scripts/portal_files.py"), "recent"]
             : ["bash", controller.getPickerScriptPath()]
         filePickerProcess.payload = JSON.stringify({recipient: draftTarget.peerName.slice(0, 256)}) + "\n"
@@ -83,11 +92,63 @@ Item {
         return true
     }
 
+    function validPreviewPaths(paths) {
+        if (!Array.isArray(paths) || !paths.length || paths.length > 200) return false
+        var seen = ({})
+        for (var path of paths) {
+            if (typeof path !== "string" || path.charAt(0) !== "/" || path.indexOf("//") !== -1
+                    || /\/(?:\.{1,2})(?:\/|$)/.test(path) || !/\.(?:jpe?g|png|webp|gif)$/i.test(path)
+                    || /[\u0000-\u001f\u007f-\u009f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u0890-\u0891\u08e2\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb]/.test(path)
+                    || Object.prototype.hasOwnProperty.call(seen, path)) return false
+            try { if (encodeURIComponent(path).replace(/%[0-9A-F]{2}/g, "x").length > 4096) return false }
+            catch (error) { return false }
+            seen[path] = true
+        }
+        // Match the helper's conservative ASCII-escaped JSON byte budget.
+        return JSON.stringify(paths).replace(/[\u007f-\uffff]/g, function(c) {
+            return "\\u" + ("000" + c.charCodeAt(0).toString(16)).slice(-4)
+        }).length <= 48 * 1024
+    }
+
+    function backToFiles() {
+        if (selectionState !== "preview") return false
+        return launchChooser(true)
+    }
+
+    function confirmPreview(path) {
+        if (selectionState !== "preview" || previewCandidates.indexOf(path) === -1 || !draftTarget
+                || operationBusy || filePickerProcess.running || fileInspectProcess.running) return false
+        var device = controller.deviceById(draftTarget.peerId)
+        if (!device || !controller.canAct(draftTarget.peerId) || !device.capabilities || !device.capabilities.file) {
+            selectionError = "The original recipient is no longer paired and reachable"
+            return false
+        }
+        selectionGeneration += 1
+        previewCandidates = []
+        selectionState = "choosing"
+        selectionError = ""
+        fileInspectProcess.payload = JSON.stringify(["file://" + path.split("/").map(encodeURIComponent).join("/")]) + "\n"
+        fileInspectProcess.targetGeneration = selectionGeneration
+        fileInspectProcess.running = true
+        return true
+    }
+
     function applySelection(output, code, targetGeneration) {
         if (targetGeneration !== selectionGeneration) return
         selectionState = "idle"
         var result
         try { result = JSON.parse(output) } catch (error) { result = null }
+        if (code === 0 && result && result.state === "preview") {
+            if (!chooserUsesNativeMenu || !draftTarget || !validPreviewPaths(result.paths)) {
+                selectionError = "The image list could not be checked. Choose files again."
+                return
+            }
+            previewCandidates = result.paths.slice()
+            chooserUsesNativeMenu = false
+            selectionState = "preview"
+            selectionError = ""
+            return
+        }
         if (code === 0 && result && result.state === "cancelled") {
             cancelDraft()
             return
@@ -131,15 +192,16 @@ Item {
         if (code === "source-preparation-failed") return "Could not prepare a private copy. Check cache access and free space, then choose again."
         if (code === "source-changed") return "A selected file changed. Choose the files again."
         if (code === "recent-files-empty") return "No supported recent files found. Use the desktop chooser in Plus settings → Quick actions."
-        if (code === "recent-files-timeout") return "The file menu or image previews timed out. If still visible, press Escape. Use the desktop chooser to try again."
+        if (code === "recent-files-timeout") return "The file menu timed out. If still visible, press Escape. Use the desktop chooser to try again."
         if (code === "recent-files-unavailable") return "The Omarchy file picker is unavailable. Use the desktop chooser in Plus settings → Quick actions."
         return "Select readable local regular files. Folders and other locations are not supported."
     }
 
     function cancelDraft() {
-        var nativeMenuMayRemain = chooserUsesNativeMenu && selectionState === "choosing"
+        var nativeMenuMayRemain = chooserUsesNativeMenu && filePickerProcess.running
         selectionGeneration += 1
         chooserSubmits = false
+        previewCandidates = []
         if (filePickerProcess.running) filePickerProcess.signal(15)
         if (fileInspectProcess.running) fileInspectProcess.signal(15)
         selectionCancelling = filePickerProcess.running || fileInspectProcess.running
@@ -147,7 +209,7 @@ Item {
         selection = []
         selectionBytes = 0
         selectionState = "idle"
-        selectionError = nativeMenuMayRemain ? "Selection cancelled. If the file menu or image previews are still visible, press Escape. A later choice from that cancelled picker will not send." : ""
+        selectionError = nativeMenuMayRemain ? "Selection cancelled. If the file menu is still visible, press Escape. A later choice from that cancelled picker will not send." : ""
         draftTarget = null
         return true
     }
@@ -305,7 +367,7 @@ Item {
             selectionError = "Wait for the current file action, then drop the files again."
             return false
         }
-        if (selectionState === "draft" || selection.length) {
+        if (selectionState === "draft" || selectionState === "preview" || selection.length) {
             selectionError = "Review or clear the current file selection before dropping more files."
             return false
         }

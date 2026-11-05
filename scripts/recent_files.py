@@ -24,7 +24,6 @@ EXTENSIONS = frozenset(('jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'avif', 'sv
                         'pptx', 'odt', 'ods', 'csv', 'json', 'md', 'epub', 'zip',
                         'tar', 'gz', 'bz2', 'xz', '7z', 'zst', 'apk', 'iso'))
 MENU = 'omarchy-menu-select'
-SHELL = 'omarchy-shell'
 PROMPT = 'Select file to send'
 PREVIEW_LABEL = 'Image previews…'
 PREVIEW_EXTENSIONS = frozenset(('jpg', 'jpeg', 'png', 'webp', 'gif'))
@@ -59,17 +58,16 @@ def _file_row(path):
 
 
 def _preview_options(options):
-    """Bound native raster rows and keep the newest path for each duplicate basename."""
-    images, names, size = [], set(), 0
+    """Bound exact raster candidates while keeping every distinct canonical path."""
+    images, size = [], 0
     for path in options:
         candidate = Path(path)
-        if candidate.suffix[1:].lower() not in PREVIEW_EXTENSIONS or candidate.name in names:
+        if candidate.suffix[1:].lower() not in PREVIEW_EXTENSIONS:
             continue
         cost = len(json.dumps(path + '\n', ensure_ascii=True).encode('ascii'))
         if size + cost > PREVIEW_ROW_BUDGET:
             continue
         images.append(path)
-        names.add(candidate.name)
         size += cost
         if len(images) == MAX_PREVIEW_FILES:
             break
@@ -231,61 +229,7 @@ def _menu(options, cancelled, label):
                 raise RecentError('source-path-rejected')
         finally:
             _stop_group(process)
-    return _image_menu(images, cancelled) if selected == PREVIEW_LABEL else selected
-
-
-def _image_menu(images, cancelled):
-    """Choose from exact bounded raster paths through the existing native overlay."""
-    with tempfile.TemporaryDirectory(prefix='omaconnect-images-') as directory:
-        selection, done = Path(directory) / 'selection', Path(directory) / 'done'
-        payload = json.dumps({'imageRows': '\n'.join(images), 'selectionFile': str(selection),
-                              'doneFile': str(done), 'showLabels': True, 'filterable': True},
-                             ensure_ascii=True, separators=(',', ':'))
-        if not images or len(payload.encode('ascii')) > OPTION_BUDGET:
-            raise RecentError('recent-files-unavailable')
-        if cancelled():
-            raise Cancelled()
-        deadline = time.monotonic() + MENU_SECONDS
-        try:
-            process = subprocess.Popen([SHELL, 'shell', 'summon', 'omarchy.image-picker', payload],
-                                       stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                       stderr=subprocess.DEVNULL, start_new_session=True)
-        except OSError:
-            raise RecentError('recent-files-unavailable') from None
-        try:
-            reply = _read_output(process, cancelled, deadline)
-        finally:
-            # The IPC wrapper is short-lived; clean its group now, before
-            # waiting on the persistent shell's result, to avoid stale PGIDs.
-            _stop_group(process)
-        if process.returncode or reply != 'ok':
-            raise RecentError('recent-files-unavailable')
-        while not done.exists():
-            if cancelled():
-                raise Cancelled()
-            if time.monotonic() >= deadline:
-                raise RecentError('recent-files-timeout')
-            time.sleep(.05)
-        if cancelled():
-            raise Cancelled()
-        if time.monotonic() >= deadline:
-            raise RecentError('recent-files-timeout')
-        try:
-            with selection.open('rb') as stream:
-                raw = stream.read(MAX_OUTPUT + 1)
-        except FileNotFoundError:
-            raise Cancelled() from None
-        if not raw:
-            raise Cancelled()
-        if len(raw) > MAX_OUTPUT:
-            raise RecentError('source-path-rejected')
-        try:
-            selected = raw.decode('utf-8').removesuffix('\n')
-        except UnicodeError:
-            raise RecentError('source-path-rejected') from None
-        if selected not in images:
-            raise RecentError('source-path-rejected')
-        return selected
+    return selected
 
 
 def choose_recent(label=''):
@@ -307,6 +251,8 @@ def choose_recent(label=''):
         selected = _menu(options, lambda: cancelled, label)
         if cancelled:
             raise Cancelled()
+        if selected == PREVIEW_LABEL:
+            return {'state': 'preview', 'paths': _preview_options(options)}
         from portal_files import inspect_uris
         files = inspect_uris([Path(selected).as_uri()])
         if cancelled:

@@ -40,6 +40,8 @@ Item {
     property alias selectionCancelling: fileController.selectionCancelling
     property alias selectionError: fileController.selectionError
     property alias draftTarget: fileController.draftTarget
+    property alias previewCandidates: fileController.previewCandidates
+    property alias previewSubmits: fileController.previewSubmits
     property alias operations: fileController.operations
     property alias activeOperation: fileController.activeOperation
     property alias operationBusy: fileController.operationBusy
@@ -115,6 +117,8 @@ Item {
     // File state and processes live in controller/FileTransferController.qml.
     function startFileSelection(id, options) { return fileController.chooseFiles(id, options) }
     function chooseFiles(id, options) { return fileController.chooseFiles(id, options) }
+    function backToFiles() { return fileController.backToFiles() }
+    function confirmPreview(path) { return fileController.confirmPreview(path) }
     function cancelDraft() { return fileController.cancelDraft() }
     function cancelFileSelection() { return fileController.cancelDraft() }
     function submitSelection() { return fileController.submitSelection() }
