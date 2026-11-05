@@ -17,7 +17,7 @@ KEYS |= frozenset(("useDesktopFileChooser", "reviewFilesBeforeSend"))
 KEYS |= frozenset(("taskNotificationsEnabled", "taskNotificationDeviceName"))
 KEYS |= frozenset(BOOL_DEFAULTS)
 STRING_KEYS = frozenset(("defaultPingMessage", "bthHelperPath", "quickActionsOrder", "sectionOrder", "sectionVisibility"))
-ACTION_IDS = frozenset(('ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock', 'external-monitor'))
+ACTION_IDS = frozenset(('review-screenshot', 'ring', 'clipboard', 'file', 'sms', 'ping', 'text', 'native-features', 'plus-settings', 'quick-share', 'media', 'media-previous', 'media-play-pause', 'media-next', 'commands', 'browse-files', 'native-notifications', 'native-volume', 'native-input', 'native-lock', 'external-monitor'))
 MAX_REQUEST = 32768
 
 

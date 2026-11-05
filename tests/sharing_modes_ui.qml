@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Window
 import Quickshell
+import Quickshell.Io
 import "plugin" as Plugin
 
 ShellRoot {
@@ -16,7 +17,7 @@ ShellRoot {
     function find(object, name, seen) {
         if (!object || seen.indexOf(object) !== -1) return null
         seen.push(object)
-        if (object.objectName === name) return object
+        if (typeof name === "function" ? name(object) : object.objectName === name) return object
         for (var key of ["children", "data"]) {
             var values = object[key]
             if (!values || typeof values.length !== "number") continue
@@ -59,6 +60,14 @@ ShellRoot {
         visible: true; width: 520; height: 800
         Item { id: anchor; width: 26; height: 26 }
         Plugin.Panel { id: panel; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false}) }
+    }
+    Process {
+        id: replaceScreenshot
+        onExited: function(code) {
+            if (!test.check(code === 0, "fixture replaces the reviewed screenshot")) return
+            if (!test.check(service.submitSelection(), "explicit Send starts the reviewed transfer")) return
+            panel.currentView = "Activity"
+        }
     }
     Timer {
         interval: 25; running: true; repeat: true
@@ -109,6 +118,53 @@ ShellRoot {
                 test.phase=7
             } else if(test.phase===7 && !service.operationBusy) {
                 if(!test.check(service.activeOperation.state==="cancellation_unconfirmed" && service.activeOperation.unknown===1,"in-flight native cancellation reports uncertainty"))return
+                service.clearOperations()
+                service.selectDevice("A")
+                panel.currentView = "Devices"
+                panel.settings = {quickActionsOrder: "review-screenshot"}
+                test.phase = 8
+            } else if (test.phase === 8) {
+                var screenshotAction = test.find(panel, "quick-action-review-screenshot", [])
+                if (!screenshotAction || !screenshotAction.visible || !screenshotAction.enabled) return
+                screenshotAction.Accessible.pressAction()
+                if (!test.check(panel.currentView === "Send" && service.draftTarget.peerId === "A",
+                                "native screenshot action starts selection for the captured phone")) return
+                service.selectDevice("B")
+                test.phase = 9
+            } else if (test.phase === 9 && service.selectionState === "draft") {
+                if (!test.check(service.selection.length === 1 && service.selection[0].name === "owned-shot.png"
+                                && service.draftTarget.peerId === "A" && service.operations.length === 0,
+                                "one explicit screenshot reaches review without retargeting or submission")) return
+                service.cancelFileTransfer()
+                if (!test.check(service.selection.length === 0 && service.operations.length === 0,
+                                "cancelling screenshot review submits nothing")) return
+                service.selectDevice("A")
+                panel.currentView = "Devices"
+                test.phase = 10
+            } else if (test.phase === 10) {
+                var retryAction = test.find(panel, "quick-action-review-screenshot", [])
+                if (!retryAction || !retryAction.visible || !retryAction.enabled) return
+                retryAction.Accessible.pressAction()
+                test.phase = 11
+            } else if (test.phase === 11 && service.selectionState === "draft") {
+                var path = service.selection[0].path
+                replaceScreenshot.command = ["python3", "-c", "import os, sys; os.replace(sys.argv[1], sys.argv[2])",
+                                             path + ".replacement", path]
+                replaceScreenshot.running = true
+                test.phase = 12
+            } else if (test.phase === 12 && service.operations.length === 1 && !service.operationBusy) {
+                var operation = service.operations[0]
+                if (!test.check(operation.state === "submission_failed" && operation.error === "source-changed"
+                                && operation.accepted === 0 && operation.failed === 1 && operation.delivery === "unknown",
+                                "changed screenshot retains typed rejection and submission evidence")) return
+                var activity = test.find(panel, function(item) {
+                    return item.visible && typeof item.text === "string" && item.text.indexOf("KDE ID: A") >= 0
+                }, [])
+                if (!test.check(activity && activity.Accessible.name === activity.text
+                                && activity.text.includes("Submission failed for 1 file.")
+                                && activity.text.includes("A selected file changed. Choose the files again.")
+                                && activity.text.includes("0/1 requests accepted. Delivery unknown."),
+                                "Activity names the changed source and keeps failure, provider and delivery evidence")) return
                 console.log("SHARING_MODES_PASS "+JSON.stringify(test.checks));console.log("NATIVE_PASS sharing modes");Qt.quit()
             }
         }

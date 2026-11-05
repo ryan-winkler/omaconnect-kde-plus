@@ -248,6 +248,36 @@ class Files(unittest.TestCase):
                 if expected == 'selected':
                     self.assertEqual(result['files'][0]['path'], str(source))
 
+    def test_screenshot_picker_requests_one_png_and_respects_cancel(self):
+        with tempfile.TemporaryDirectory(prefix='owned captures ') as directory:
+            shot = Path(directory) / 'selected screenshot.PNG'
+            second_shot = Path(directory) / 'second screenshot.png'
+            other = Path(directory) / 'different.txt'
+            for path in (shot, second_shot, other):
+                path.write_bytes(b'owned file fixture')
+            fixture = ROOT / 'tests/fake_file_portal.py'
+            for response, uris, expected in [
+                ('0', [shot.as_uri()], 'selected'),
+                ('0', [shot.as_uri(), second_shot.as_uri()], 'failed'),
+                ('0', [other.as_uri()], 'failed'),
+                ('1', [shot.as_uri()], 'cancelled'),
+            ]:
+                with self.subTest(state=expected, uris=uris):
+                    env = dict(os.environ, OMASNAP_SCREENSHOT_DIR=directory,
+                               TEST_PORTAL_URIS=json.dumps(uris), TEST_PICKER=str(HELPER),
+                               TEST_PORTAL_RESPONSE=response, TEST_PORTAL_SCREENSHOT='1',
+                               TEST_PORTAL_TITLE='Choose a screenshot to review')
+                    run = subprocess.run(['dbus-run-session', '--', sys.executable, str(fixture)],
+                                         env=env, capture_output=True, text=True, timeout=15)
+                    self.assertEqual(run.returncode, 0, run.stderr)
+                    result = json.loads(run.stdout)
+                    self.assertEqual(result['state'], expected)
+                    if expected == 'selected':
+                        self.assertEqual([item['path'] for item in result['files']], [str(shot)])
+                    elif expected == 'failed':
+                        self.assertEqual(result['error'], 'source-path-rejected')
+                        self.assertNotIn('files', result)
+
     def test_private_portal_cancel_while_openfile_pending_returns_promptly(self):
         """Keep cancellation authoritative while OpenFile replies and optional late responses arrive."""
         with tempfile.TemporaryDirectory() as directory:

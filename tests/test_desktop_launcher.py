@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class DesktopLauncher(unittest.TestCase):
     @patch.dict(os.environ, {"GIO_USE_VFS": "local"})
     def test_routes_and_inactive_feedback_use_fixed_arguments(self):
+        """Check the three GLib routes, ignored file input, and inactive notice."""
         with tempfile.TemporaryDirectory(prefix="plus-launcher-") as directory:
             fixture = Path(directory)
             log = fixture / "calls.jsonl"
@@ -44,6 +45,7 @@ class DesktopLauncher(unittest.TestCase):
             untrusted = Gio.File.new_for_path(str(fixture / f"ignored %f; touch {unexpected.name}"))
 
             def expect(count):
+                """Wait for the asynchronous desktop commands to record their arguments."""
                 deadline = time.monotonic() + 3
                 while time.monotonic() < deadline:
                     if log.exists():
