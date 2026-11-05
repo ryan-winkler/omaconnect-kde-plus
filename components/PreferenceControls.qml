@@ -56,6 +56,7 @@ Column {
                 foreground: Commons.Color.popups.text
                 Accessible.role: Accessible.CheckBox
                 readonly property bool actionAvailable: enabled && visible && !!Window.window && Window.window.visible
+                Keys.enabled: preferenceToggle.actionAvailable
                 Accessible.onToggleAction: if (preferenceToggle.actionAvailable) preferenceToggle.clicked()
                 Accessible.onPressAction: if (preferenceToggle.actionAvailable) preferenceToggle.clicked()
                 Accessible.name: row.modelData.accessibleName || row.modelData.label

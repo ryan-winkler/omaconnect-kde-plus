@@ -35,6 +35,8 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Retained hidden preference toggles ignore Return, Enter and Space without
+  interrupting saves accepted before their window closed.
 - Retained hidden composer actions cannot send drafts. Closed popups and layout
   editing block submission; collapsing remote commands returns Refresh focus to
   its header and blocks stale activation.

@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Window
+import QtTest
 import Quickshell
 import "plugin/components" as Components
 
@@ -35,6 +36,7 @@ ShellRoot {
         id: preview
         visible: true
         width: 400; height: 700
+        Item { TestEvent { id: events } }
         Components.PreferenceControls { id: preferences; width: 220; panel: fakePanel; preferences: [{key:"showRemoteCommands",label:"A long settings label that must not hide state",defaultValue:false}] }
         Components.NetworkOptions { id: options; width: parent.width; panel: fakePanel; configuration: true }
         Components.NetworkOptions { id: daily; width: parent.width; panel: fakePanel }
@@ -75,7 +77,9 @@ ShellRoot {
                 var messageBefore=preferences.message
                 preference.enabled=false;preference.Accessible.toggleAction();preference.Accessible.pressAction()
                 if(!test.check(!preferences.busy && preferences.message===messageBefore,"disabled preference refuses Toggle and Press"))return
-                preference.enabled=true;preferences.visible=false
+                preference.enabled=true;preview.requestActivate();preference.forceActiveFocus();preferences.visible=false
+                if(!test.check(events.keyClick(Qt.Key_Return,Qt.NoModifier,1) && events.keyClick(Qt.Key_Enter,Qt.NoModifier,1) && events.keyClick(Qt.Key_Space,Qt.NoModifier,1),"native retained-focus preference key events delivered"))return
+                if(!test.check(!preferences.busy && preferences.message===messageBefore,"hidden focused preference rejects Return Enter and Space"))return
                 preference.Accessible.toggleAction();preference.Accessible.pressAction()
                 if(!test.check(!preferences.busy && preferences.message===messageBefore,"hidden ancestor prevents retained preference writes"))return
                 preferences.visible=true;preview.visible=false
