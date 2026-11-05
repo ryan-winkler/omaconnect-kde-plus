@@ -482,7 +482,9 @@ Neither the header gear nor paired-device gears launch KDE Connect implicitly.
 The explicit Native KDE Connect settings link retains the native launch boundary.
 
 The manifest's `settings` map is the source of preference names, types and
-defaults. `scripts/network_preferences.py:KEYS` and `STRING_KEYS` define the
+defaults. Settings and network-owner helpers return a stable result code with
+their existing success flag and bounded English fallback. The panel uses the
+code for live translation. `scripts/network_preferences.py:KEYS` and `STRING_KEYS` define the
 writable subset; retired/legacy display keys are not all writable. A boolean
 request has exactly `{key,enabled:boolean}`. A string request has exactly
 `{key,value:string}`. Extra request fields are rejected. Strings have at most
@@ -490,7 +492,7 @@ request has exactly `{key,enabled:boolean}`. A string request has exactly
 is empty or absolute, ends in `/remote-access-mode`, has no `..` component and
 no C0/DEL controls. Quick-action CSV is at most 512 characters, has known IDs
 and no duplicates. Section-order validation uses `section_order.py` and the
-catalogue below. Replies are `{ok:boolean,message:string}` with fixed feedback.
+catalogue below. Replies are `{ok:boolean,code:string,message:string}` with fixed feedback.
 
 The shared preference helper has a fixed fork ID, an allowlist of active boolean
 keys, four bounded strings (`defaultPingMessage`, `bthHelperPath`, `quickActionsOrder`, `sectionOrder`) and a 32 KiB request limit. Each string has its own validator. `setBarWidget` receives fixed
@@ -565,7 +567,7 @@ Hiding a section preserves provider configuration and local metadata. Collapsed
 or hidden BTH controls do not poll their controller.
 
 `PanelSections.json` is the fixed catalogue for the daily sections. It owns
-their IDs, labels, help, legacy visibility keys, default policies, expansion defaults and settings domain.
+their IDs, legacy visibility keys, default policies, expansion defaults and settings domain. Visible titles and help use the matching section IDs in the native string catalogue.
 `PanelSectionCatalog.qml` reads this trusted local file. `SectionOrder.js` and
 `scripts/section_order.py` validate the same catalogue and bounded `sectionOrder`
 CSV. The retired `information` ID is discarded for compatibility. Unknown or repeated active IDs are rejected on save. Missing known IDs append in

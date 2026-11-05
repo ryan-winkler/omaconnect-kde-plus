@@ -84,7 +84,7 @@ def validate_file(expected):
     return actual
 
 
-def choose():
+def choose(title='Select files to send'):
     """Return one portal result and close a cancelled request after registration."""
     from gi.repository import Gio, GLib
     bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
@@ -160,7 +160,7 @@ def choose():
     previous_signal = signal.signal(signal.SIGTERM, close_request)
     try:
         if not resolved:
-            reply = bus.call_sync('org.freedesktop.portal.Desktop', '/org/freedesktop/portal/desktop', 'org.freedesktop.portal.FileChooser', 'OpenFile', GLib.Variant('(ssa{sv})', ('', 'Select files to send', {'handle_token': GLib.Variant('s', token), 'multiple': GLib.Variant('b', True), 'directory': GLib.Variant('b', False), 'modal': GLib.Variant('b', True)})), GLib.VariantType.new('(o)'), Gio.DBusCallFlags.NONE, 5000, None)
+            reply = bus.call_sync('org.freedesktop.portal.Desktop', '/org/freedesktop/portal/desktop', 'org.freedesktop.portal.FileChooser', 'OpenFile', GLib.Variant('(ssa{sv})', ('', title, {'handle_token': GLib.Variant('s', token), 'multiple': GLib.Variant('b', True), 'directory': GLib.Variant('b', False), 'modal': GLib.Variant('b', True)})), GLib.VariantType.new('(o)'), Gio.DBusCallFlags.NONE, 5000, None)
             request_path = reply.unpack()[0]
             request_opened = True
             # SIGTERM during OpenFile is deferred until the real handle exists.
@@ -237,17 +237,27 @@ def submit(payload):
 
 def main():
     """Dispatch bounded chooser, inspection and submission requests with fixed errors."""
-    mode = sys.argv[1] if len(sys.argv) == 2 else ''
+    args = sys.argv[1:]
+    mode = args[0] if args else ''
     try:
-        if mode == 'recent':
+        if mode == 'choose':
+            if len(args) == 1:
+                choose()
+            elif len(args) == 2 and 0 < len(args[1]) <= 160 and args[1].isprintable():
+                choose(args[1])
+            else:
+                raise ValueError('source-path-rejected')
+        elif len(args) != 1:
+            raise ValueError('source-path-rejected')
+        elif mode == 'recent':
             from recent_files import choose_recent
             raw = sys.stdin.buffer.readline(2049)
             request = json.loads(raw) if len(raw) <= 2048 else None
-            if not isinstance(request, dict) or set(request) != {'recipient'} or not isinstance(request['recipient'], str):
+            if (not isinstance(request, dict) or 'recipient' not in request
+                    or request.keys() - {'recipient', 'title', 'previewLabel'}
+                    or not all(isinstance(value, str) for value in request.values())):
                 raise ValueError('source-path-rejected')
-            emit(choose_recent(request['recipient']))
-        elif mode == 'choose':
-            choose()
+            emit(choose_recent(request['recipient'], request.get('title', ''), request.get('previewLabel', '')))
         elif mode == 'sweep':
             from private_sources import sweep_expired
             sweep_expired()

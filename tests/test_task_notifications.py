@@ -82,6 +82,7 @@ print('{"ok":true}')
         self.assertEqual(notice.read_request(encode(request)), request)
         for invalid in (None, {}, {**request, 'extra': True}, {**request, 'includeDeviceName': 'true'},
                         {**request, 'deviceName': 'PRIVATE'}, {**request, 'body': 'x'*1025},
+                        {**request, 'actionLabel': 'x'*81}, {**request, 'actionLabel': True},
                         {**request, 'summary': '\ud800'}, {**request, 'body': 'a\0b'},
                         {**request, 'includeDeviceName': True, 'deviceName': 'x'*257}):
             with self.assertRaises((ValueError, UnicodeError)):

@@ -101,6 +101,19 @@ class RecentFiles(unittest.TestCase):
         self.assertEqual(self.helper.choose_recent(),
                          {'state': 'failed', 'error': 'source-path-rejected'})
 
+    def test_localized_menu_labels_preserve_preview_selection(self):
+        photo = self.file('Pictures/owned.png')
+        self.fake('import sys\n'
+                  'assert sys.argv[1] == "اختر ملفًا لإرساله إلى Phone"\n'
+                  'assert sys.argv[2] == "\uf03e\tمعاينات الصور…"\n'
+                  'print(sys.argv[2].split("\\t", 1)[1])')
+        result = self.helper.choose_recent('Phone', 'اختر ملفًا لإرساله إلى \u202ePhone', 'معاينات\tالصور…')
+        self.assertEqual(result, {'state': 'preview', 'paths': [str(photo)]})
+        self.fake(f'print({str(photo)!r})')
+        result = self.helper.choose_recent('Phone', preview_label=str(photo))
+        self.assertEqual(result['state'], 'selected')
+        self.assertEqual(result['files'][0]['path'], str(photo))
+
     def test_nonpreview_formats_keep_normal_menu_and_rendered_rows_fit_budget(self):
         """Keep vectors, video and optional codecs selectable without native raster decode."""
         for extension in ('svg', 'mp4', 'heic', 'avif'):

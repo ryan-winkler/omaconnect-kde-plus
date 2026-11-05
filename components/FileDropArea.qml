@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../i18n" as Locale
 
 // One review-only transfer boundary for the Send target and the bar icon.
 DropArea {
@@ -12,13 +13,13 @@ DropArea {
         && device.capabilities && device.capabilities.file && !service.operationBusy && !service.selectionCancelling
         && service.selectionState !== "choosing" && service.selectionState !== "draft" && service.selectionState !== "preview"
         && (!service.selection || service.selection.length === 0))
-    readonly property string instructions: !device ? "Select a device before dropping files."
+    readonly property string instructions: !device ? Locale.Strings.t("fileDropArea.selectADeviceBeforeDroppingFiles")
         : !device.paired || !device.reachable || !device.capabilities || !device.capabilities.file
-            ? "Select a paired, reachable device that supports files."
+            ? Locale.Strings.t("fileDropArea.selectAPairedReachableDeviceThat")
         : service && (service.operationBusy || service.selectionState === "choosing")
-            ? "Wait for the current file action before dropping files."
-        : service && (service.selectionState === "draft" || service.selectionState === "preview") ? "Review or clear the current selection to drop more files."
-        : "Drop up to 100 local files, 1 TiB total. No folders. Review before Send."
+            ? Locale.Strings.t("fileDropArea.waitForTheCurrentFileAction")
+        : service && (service.selectionState === "draft" || service.selectionState === "preview") ? Locale.Strings.t("fileDropArea.reviewOrClearTheCurrentSelection")
+        : Locale.Strings.t("fileDropArea.dropUpTo100LocalFiles")
     function canAccept(event) {
         if (!(ready && event && event.hasUrls && (event.supportedActions & Qt.CopyAction)
                 && event.urls && event.urls.length > 0 && event.urls.length <= 100)) return false

@@ -121,6 +121,8 @@ reported capability or configured local tools; they do not confirm delivery.
 
 Appearance holds bar and device identity choices and daily navigation preferences.
 
+Plus follows **Setup → Language**. Labels without a translation use English.
+
 ![Appearance settings with icon actions and popup navigation preferences](screenshots/appearance.png)
 
 Choose a preset, alias or installed icon, then preview before Apply.

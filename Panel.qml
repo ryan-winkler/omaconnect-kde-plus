@@ -12,6 +12,7 @@ import "./components"
 import "bridge" as OmaconnectBridge
 import "ActionCatalog.js" as Actions
 import "SectionOrder.js" as SectionOrder
+import "i18n" as Locale
 
 Panel {
     id: root
@@ -134,14 +135,14 @@ Panel {
     }
     function sectionAvailabilityText(id) {
         var state = sectionAvailability(id)
-        if (state === "checking") return "Checking availability. Waiting for current data."
-        if (id === "connections") return state === "available" ? "Available: at least one VPN tool is enabled in Plus settings. This does not report a VPN connection." : "Unavailable: no VPN tool is enabled in Plus settings."
-        if (id === "syncthing") return state === "available" ? "Available: local identity notes can be edited for this device. No Syncthing status check is needed." : "Unavailable: select a device to edit its local identity note."
-        if (id === "devices") return "Always shown. Select a device below."
-        if (id === "actions" && state === "available" && availableActions.some(function(id) { return Actions.entry(id).scope === "global" })) return "Available: a local shortcut can be used without a device connection."
-        if (id === "addresses") return state === "available" ? "Available: the saved address list is ready, including an empty list." : "Unavailable: the native address list could not be read."
-        if (id === "native") return state === "available" ? "Available: a paired device is selected. KDE Connect owns native settings." : "Unavailable: select a paired device."
-        return state === "available" ? "Available: the selected device reports the required capability or shortcut." : "Unavailable: no paired, reachable device reports the required capability or shortcut."
+        if (state === "checking") return Locale.Strings.t("layout.availability.checkingAvailabilityWaitingForCurrentData")
+        if (id === "connections") return state === "available" ? Locale.Strings.t("layout.availability.availableAtLeastOneVpnTool") : Locale.Strings.t("layout.availability.unavailableNoVpnToolIsEnabled")
+        if (id === "syncthing") return state === "available" ? Locale.Strings.t("layout.availability.availableLocalIdentityNotesCanBe") : Locale.Strings.t("layout.availability.unavailableSelectADeviceToEdit")
+        if (id === "devices") return Locale.Strings.t("layout.availability.alwaysShownSelectADeviceBelow")
+        if (id === "actions" && state === "available" && availableActions.some(function(id) { return Actions.entry(id).scope === "global" })) return Locale.Strings.t("layout.availability.availableALocalShortcutCanBe")
+        if (id === "addresses") return state === "available" ? Locale.Strings.t("layout.availability.availableTheSavedAddressListIs") : Locale.Strings.t("layout.availability.unavailableTheNativeAddressListCould")
+        if (id === "native") return state === "available" ? Locale.Strings.t("layout.availability.availableAPairedDeviceIsSelected") : Locale.Strings.t("layout.availability.unavailableSelectAPairedDevice")
+        return state === "available" ? Locale.Strings.t("layout.availability.availableTheSelectedDeviceReportsThe") : Locale.Strings.t("layout.availability.unavailableNoPairedReachableDeviceReports")
     }
     function sectionVisible(id) {
         if (id === "devices") return true
@@ -171,14 +172,14 @@ Panel {
     }
     function saveLayout(request, sectionId) {
         if (layoutPending) {
-            layoutGuardMessage = layoutReadbackTimedOut ? "Saved layout was not confirmed. Use the current saved layout to recover, or wait for readback." : "Waiting for saved layout readback. This change was not submitted."
+            layoutGuardMessage = layoutReadbackTimedOut ? Locale.Strings.live("layout.guardUnconfirmed") : Locale.Strings.live("layout.guardPending")
             return false
         }
         if (layoutSaver.busy) return false
         layoutPending = {key: request.key, value: request.value, sectionId: sectionId || ""}
         layoutFeedbackSectionId = sectionId || ""
         layoutReadbackTimedOut = false
-        layoutGuardMessage = "Saving layout and waiting for saved readback…"
+        layoutGuardMessage = Locale.Strings.t("panel.savingLayoutAndWaitingForSaved")
         if (!layoutSaver.save(request)) { layoutPending = null; return false }
         layoutReadbackTimer.restart()
         return true
@@ -196,7 +197,7 @@ Panel {
         layoutPending = null
         layoutReadbackTimedOut = false
         layoutReadbackTimer.stop()
-        layoutGuardMessage = "Layout saved and confirmed."
+        layoutGuardMessage = Locale.Strings.t("panel.layoutSavedAndConfirmed")
     }
     onSettingsChanged: confirmLayoutReadback()
     Timer {
@@ -204,13 +205,13 @@ Panel {
         interval: 6000
         onTriggered: if (root.layoutPending) {
             root.layoutReadbackTimedOut = true
-            root.layoutGuardMessage = "Saved layout was not confirmed. Further layout changes are blocked. Use the current saved layout to recover, or wait for readback."
+            root.layoutGuardMessage = Locale.Strings.t("panel.savedLayoutWasNotConfirmedFurther")
         }
     }
     function useCurrentSavedLayout() {
         if (!layoutReadbackTimedOut || layoutSaver.busy) return false
         layoutPending = null; layoutReadbackTimedOut = false; layoutReadbackTimer.stop()
-        layoutGuardMessage = "Using the current saved layout. Check the displayed choices before editing."
+        layoutGuardMessage = Locale.Strings.t("panel.usingTheCurrentSavedLayoutCheck")
         return true
     }
     function setLayoutEditing(value) {
@@ -222,8 +223,8 @@ Panel {
             else keyCatcher.forceActiveFocus()
         })
     }
-    function sectionTitle(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.label : id }
-    function sectionHelp(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.description : "" }
+    function sectionTitle(id) { return sectionCatalogModel.title(id) }
+    function sectionHelp(id) { var entry = sectionCatalogModel.entry(id); return entry ? Locale.Strings.t("section." + id + ".help") : "" }
     function reorderSections() {
         if (!sectionCatalogModel.ready) return
         var wanted = sectionCatalogModel.order
@@ -322,8 +323,8 @@ Panel {
         return {useDesktopFileChooser: valid ? desktop : true, reviewFilesBeforeSend: valid ? review : true}
     }
     readonly property string fileChoiceHint: fileChooserOptions.reviewFilesBeforeSend
-        ? "Choose files, review the recipient and files, then select Send. Drops always need review."
-        : "Selecting a file sends it to the selected recipient. To review first, use Plus settings → Quick actions. Drops always need review."
+        ? Locale.Strings.t("files.reviewHint")
+        : Locale.Strings.t("files.immediateHint")
     function chooseFiles() {
         if (!service || !device) return false
         if (!service.chooseFiles(device.id, fileChooserOptions)) return false
@@ -685,29 +686,29 @@ Panel {
     function openComposer(type) {
         if (type !== "ping" && type !== "text") return
         if (!service || !device || !device.paired || !device.reachable) {
-            composerError = "Device must be paired and reachable"
+            composerError = Locale.Strings.t("panel.deviceMustBePairedAndReachable")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Device must be paired and reachable"
+                service.actionError = Locale.Strings.t("panel.deviceMustBePairedAndReachable")
                 service.actionMessage = ""
             }
             return
         }
         var caps = device.capabilities || {}
         if (type === "ping" && !caps.ping) {
-            composerError = "Ping not supported by device"
+            composerError = Locale.Strings.t("panel.pingNotSupportedByDevice")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Ping not supported by device"
+                service.actionError = Locale.Strings.t("panel.pingNotSupportedByDevice")
                 service.actionMessage = ""
             }
             return
         }
         if (type === "text" && !caps.text) {
-            composerError = "Text share not supported by device"
+            composerError = Locale.Strings.t("panel.textShareNotSupportedByDevice")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Text share not supported by device"
+                service.actionError = Locale.Strings.t("panel.textShareNotSupportedByDevice")
                 service.actionMessage = ""
             }
             return
@@ -752,10 +753,10 @@ Panel {
         if (!composerCanSubmit("ping")) return false
         var val = draftPing.trim()
         if (!val) {
-            composerError = "Message cannot be empty"
+            composerError = Locale.Strings.t("panel.messageCannotBeEmpty")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Message cannot be empty"
+                service.actionError = Locale.Strings.t("panel.messageCannotBeEmpty")
                 service.actionMessage = ""
             }
             return false
@@ -766,11 +767,11 @@ Panel {
                 draftPing = ""
                 closeComposer()
             } else {
-                composerError = (service && service.actionError) ? service.actionError : "Failed to send ping"
+                composerError = (service && service.actionError) ? service.actionError : Locale.Strings.live("panel.pingFailed")
             }
             return success
         }
-        composerError = "Service unavailable"
+        composerError = Locale.Strings.t("panel.serviceUnavailable")
         return false
     }
 
@@ -778,10 +779,10 @@ Panel {
         if (!composerCanSubmit("text")) return false
         var val = draftText.trim()
         if (!val) {
-            composerError = "Message cannot be empty"
+            composerError = Locale.Strings.t("panel.messageCannotBeEmpty")
             if (service) {
                 service.actionState = "blocked"
-                service.actionError = "Message cannot be empty"
+                service.actionError = Locale.Strings.t("panel.messageCannotBeEmpty")
                 service.actionMessage = ""
             }
             return false
@@ -792,11 +793,11 @@ Panel {
                 draftText = ""
                 closeComposer()
             } else {
-                composerError = (service && service.actionError) ? service.actionError : "Failed to share text"
+                composerError = (service && service.actionError) ? service.actionError : Locale.Strings.live("panel.shareTextFailed")
             }
             return success
         }
-        composerError = "Service unavailable"
+        composerError = Locale.Strings.t("panel.serviceUnavailable")
         return false
     }
 
@@ -1019,8 +1020,8 @@ Panel {
                     spacing: Style.space(8)
                     Text {
                         width: parent.width
-                        text: root.service && root.service.draftTarget ? "Reviewed recipient: " + root.service.draftTarget.peerName + "\nKDE ID: " + root.service.draftTarget.peerId
-                            : root.device ? "Selected: " + root.deviceName + "\nKDE ID: " + root.device.id : "Choose a device in Devices first."
+                        text: root.service && root.service.draftTarget ? Locale.Strings.format("files.reviewedRecipient", [root.service.draftTarget.peerName, root.service.draftTarget.peerId])
+                            : root.device ? Locale.Strings.format("files.selectedDevice", [root.deviceName, root.device.id]) : Locale.Strings.t("panel.chooseADeviceInDevicesFirst")
                         textFormat: Text.PlainText
                         wrapMode: Text.WrapAnywhere
                         color: Commons.Color.popups.text
@@ -1028,7 +1029,7 @@ Panel {
                     SettingsButton {
                         focusable: true
                         width: parent.width
-                        text: "Choose files"
+                        text: Locale.Strings.t("files.choose")
                         Accessible.name: text
                         enabled: !!root.device && root.device.paired && root.device.reachable && root.device.capabilities && root.device.capabilities.file && root.service && !root.service.operationBusy && !root.service.selectionCancelling && root.service.selectionState !== "choosing" && root.service.selectionState !== "draft" && root.service.selectionState !== "preview"
                         onClicked: root.chooseFiles()
@@ -1043,7 +1044,7 @@ Panel {
                     SettingsButton {
                         focusable: true
                         width: parent.width
-                        text: "Open Send window"
+                        text: Locale.Strings.t("panel.openSendWindow")
                         Accessible.name: text
                         onClicked: root.openSendWindow()
                     }
@@ -1073,8 +1074,8 @@ Panel {
                         objectName: "edit-layout"
                         visible: root.editingLayout
                         height: Math.max(44, implicitHeight)
-                        text: "Done"
-                        Accessible.name: "Finish editing layout"
+                        text: Locale.Strings.t("layout.done")
+                        Accessible.name: Locale.Strings.t("layout.finish")
                         focusable: true
                         foreground: Commons.Color.popups.text
                         enabled: root.sectionCatalog.ready
@@ -1083,7 +1084,7 @@ Panel {
                     Text {
                         width: parent.width
                         visible: root.editingLayout
-                        text: "Set visibility or move each section below. All sections stay available here. Changes apply to every device. Loading data matches neither availability condition."
+                        text: Locale.Strings.t("layout.editorHelp")
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
                         color: Commons.Color.popups.text
@@ -1094,10 +1095,10 @@ Panel {
                         width: parent.width
                         height: Math.max(44, implicitHeight)
                         visible: root.editingLayout
-                        text: "Use default section order"
+                        text: Locale.Strings.t("layout.resetOrder")
                         enabled: !root.layoutSaveBusy || activeFocus
                         Accessible.name: text
-                        Accessible.description: "Reset order only. Keep visibility and expansion preferences."
+                        Accessible.description: Locale.Strings.t("layout.resetOrderHelp")
                         focusable: true
                         foreground: Commons.Color.popups.text
                         onClicked: root.saveLayout({key: "sectionOrder", value: ""})
@@ -1105,7 +1106,7 @@ Panel {
                     Text {
                         width: parent.width
                         visible: root.sectionVisibility === null
-                        text: "Saved section visibility is invalid. Earlier visibility choices are in use. Edit layout to save a valid choice."
+                        text: Locale.Strings.t("layout.invalidVisibility")
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
                         color: Commons.Color.popups.text
@@ -1117,7 +1118,7 @@ Panel {
                         visible: text !== ""
                         id: layoutStatus
                         objectName: "layout-message"
-                        text: root.layoutMessage ? "Status: " + root.layoutMessage : ""
+                        text: root.layoutMessage ? Locale.Strings.t("layout.status").arg(root.layoutMessage) : ""
                         font.bold: true
                         Accessible.role: Accessible.StaticText
                         Accessible.name: text
@@ -1131,9 +1132,9 @@ Panel {
                     SettingsButton {
                         width: parent.width
                         visible: root.layoutReadbackTimedOut
-                        text: "Use current saved layout"
+                        text: Locale.Strings.t("layout.useSaved")
                         Accessible.name: text
-                        Accessible.description: "Stop waiting for the previous request. Use the currently displayed host settings before making another change."
+                        Accessible.description: Locale.Strings.t("layout.useSavedHelp")
                         focusable: true
                         foreground: Commons.Color.popups.text
                         onClicked: root.useCurrentSavedLayout()

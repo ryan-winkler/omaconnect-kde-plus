@@ -5,6 +5,8 @@ import Quickshell.Io
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
+import "../i18n" as Locale
+import "PreferenceFeedback.js" as Feedback
 
 Column {
     id: root
@@ -18,9 +20,9 @@ Column {
     readonly property bool wireguardEnabled: valueFor("networkWireguardEnabled")
     readonly property string helperPath: localScript("open_network_owner.py")
     readonly property var providers: [
-        {key: "networkTailscaleEnabled", label: "Tailscale", description: "Adds an Open Tailscale panel button. Then save the other device's Tailscale IP under Saved addresses.", help: "https://tailscale.com/docs/how-to/quickstart"},
-        {key: "networkBthEnabled", label: "MikroTik Back to Home", description: "Adds Automatic, On and Off buttons when your Back to Home script is installed. Then save the other device's BTH IP under Saved addresses.", help: "https://manual.mikrotik.com/docs/network-management/cloud/back-to-home/"},
-        {key: "networkWireguardEnabled", label: "Other WireGuard profiles", description: "Adds an Open WireGuard profiles button for NetworkManager. Then save the other device's VPN IP under Saved addresses.", help: "https://www.wireguard.com/quickstart/"}
+        {key: "networkTailscaleEnabled", label: "Tailscale", description: Locale.Strings.t("networkOptions.tailscaleHelp"), help: "https://tailscale.com/docs/how-to/quickstart"},
+        {key: "networkBthEnabled", label: "MikroTik Back to Home", description: Locale.Strings.t("networkOptions.bthHelp"), help: "https://manual.mikrotik.com/docs/network-management/cloud/back-to-home/"},
+        {key: "networkWireguardEnabled", label: Locale.Strings.t("networkOptions.wireguard"), description: Locale.Strings.t("networkOptions.wireguardHelp"), help: "https://www.wireguard.com/quickstart/"}
     ]
     function localScript(name) {
         return decodeURIComponent(Qt.resolvedUrl("../scripts/" + name).toString().replace(/^file:\/\//, ""))
@@ -28,21 +30,19 @@ Column {
     function valueFor(key) { return !!(panel && panel.getSetting(key, false) === true) }
     function savePreference(key, enabled) {
         if (busy || !providers.some(function(p) { return p.key === key }) || typeof enabled !== "boolean") return
-        message = "Saving display setting…"
+        message = Locale.Strings.t("networkOptions.savingDisplaySetting")
         preferences.payload = JSON.stringify({key: key, enabled: enabled})
         preferences.running = true
     }
     function openOwner(owner) {
         if (busy || (owner === "tailscale" ? !tailscaleEnabled : owner === "wireguard" ? !wireguardEnabled : true)) return
-        message = "Opening the existing network manager…"
+        message = Locale.Strings.t("networkOptions.openingTheExistingNetworkManager")
         opener.command = ["/usr/bin/timeout", "5", "/usr/bin/python3", helperPath, owner]
         opener.running = true
     }
     function feedback(code, text, oversized) {
-        var result
-        try { result = !oversized ? JSON.parse(text) : null } catch (_) { result = null }
-        return result && typeof result.ok === "boolean" && typeof result.message === "string" && result.message.length < 512
-            && (code === 0) === result.ok ? result.message : "Request was not confirmed. Check the saved setting and try again."
+        var result = Feedback.parse(code, text, oversized)
+        return Feedback.display(Locale.Strings, result, "networkOptions.notConfirmed")
     }
     Column {
         width: parent.width
@@ -50,7 +50,7 @@ Column {
         spacing: Style.space(8)
         Text {
             width: parent.width
-            text: "Turn on the VPN tools you use. These switches only show or hide buttons in Devices. They never connect or disconnect a VPN."
+            text: Locale.Strings.t("networkOptions.turnOnTheVpnToolsYou")
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font.family: Style.font.family
@@ -66,13 +66,13 @@ Column {
                 Kit.Toggle {
                     id: providerToggle
                     width: parent.width
-                    label: "Show " + modelData.label
-                    description: root.valueFor(modelData.key) ? "On" : "Off"
+                    label: Locale.Strings.format("networkOptions.showProvider", [modelData.label])
+                    description: root.valueFor(modelData.key) ? Locale.Strings.t("common.on") : Locale.Strings.t("common.off")
                     descriptionSize: Style.font.bodySmall
                     Accessible.role: Accessible.CheckBox
                     Accessible.onToggleAction: if (providerToggle.enabled) providerToggle.clicked()
                     Accessible.onPressAction: if (providerToggle.enabled) providerToggle.clicked()
-                    Accessible.name: "Show " + modelData.label
+                    Accessible.name: Locale.Strings.format("networkOptions.showProvider", [modelData.label])
                     Accessible.checkable: true
                     Accessible.checked: checked
                     enabled: !root.busy
@@ -91,8 +91,8 @@ Column {
                 }
                 SettingsButton {
                     width: parent.width
-                    text: modelData.label + " help ↗"
-                    Accessible.name: "Open official " + modelData.label + " help in your browser"
+                    text: Locale.Strings.format("networkOptions.providerHelp", [modelData.label])
+                    Accessible.name: Locale.Strings.format("networkOptions.openProviderHelp", [modelData.label])
                     focusable: true
                     foreground: Commons.Color.popups.text
                     onClicked: Qt.openUrlExternally(modelData.help)
@@ -105,7 +105,7 @@ Column {
         visible: !root.configuration && root.tailscaleEnabled
         focusable: true
         foreground: Commons.Color.popups.text
-        text: "Open Tailscale panel"
+        text: Locale.Strings.t("networkOptions.openTailscalePanel")
         Accessible.name: text
         enabled: !root.busy
         onClicked: root.openOwner("tailscale")
@@ -115,7 +115,7 @@ Column {
         visible: !root.configuration && root.wireguardEnabled
         focusable: true
         foreground: Commons.Color.popups.text
-        text: "Open WireGuard profiles"
+        text: Locale.Strings.t("networkOptions.openWireguardProfiles")
         Accessible.name: text
         enabled: !root.busy
         onClicked: root.openOwner("wireguard")

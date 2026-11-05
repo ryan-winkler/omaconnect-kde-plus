@@ -5,6 +5,7 @@ import QtQuick.Effects
 import qs.Commons as Commons
 import qs.Ui as Kit
 import "../Appearance.js" as Appearance
+import "../i18n" as Locale
 
 Item {
     id: root
@@ -32,11 +33,11 @@ Item {
     readonly property bool softwareScene: GraphicsInfo.api === GraphicsInfo.Software
     readonly property bool tintOnGpu: !softwareScene && !sourceColours && !useGlyph
     readonly property bool fallback: !useGlyph && imageUnavailable
-    readonly property string warning: fontMissing ? qsTr("Font unavailable. Phone is shown.") : normalized.mode === "image" && fallback ? qsTr("Imported image is unavailable. Phone is shown.") : normalized.mode === "theme" && fallback ? qsTr("Theme icon is unavailable. Phone is shown.") : normalized.mode === "preset" && fallback ? qsTr("Icon fonts are unavailable. Phone is shown.") : ""
+    readonly property string warning: fontMissing ? Locale.Strings.t("appearanceIcon.fontUnavailablePhoneIsShown") : normalized.mode === "image" && fallback ? Locale.Strings.t("appearanceIcon.importedImageIsUnavailablePhoneIs") : normalized.mode === "theme" && fallback ? Locale.Strings.t("appearanceIcon.themeIconIsUnavailablePhoneIs") : normalized.mode === "preset" && fallback ? Locale.Strings.t("appearanceIcon.iconFontsAreUnavailablePhoneIs") : ""
     implicitWidth: iconSize
     implicitHeight: iconSize
     Accessible.role: Accessible.StaticText
-    Accessible.name: normalized.mode === "preset" ? normalized.value : qsTr("Custom device icon")
+    Accessible.name: normalized.mode === "preset" ? normalized.value : Locale.Strings.t("appearanceIcon.customDeviceIcon")
 
     Image {
         id: image

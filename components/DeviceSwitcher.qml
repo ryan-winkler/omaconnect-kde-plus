@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls as Controls
 import qs.Commons
 import qs.Commons as Commons
+import "../i18n" as Locale
 
 // Native selection and identity labels shared by daily and settings views.
 Controls.ComboBox {
@@ -17,14 +18,14 @@ Controls.ComboBox {
         return {value: entry.id, label: name + (duplicate ? " [" + entry.id + "]" : "") + " · " + root.deviceState(entry)}
     })
     readonly property string deviceStatus: {
-        if (!service) return "KDE Connect is unavailable. Open KDE Connect to check its setup."
+        if (!service) return Locale.Strings.t("deviceSwitcher.kdeConnectIsUnavailableOpenKde")
         if (devices.length === 0) {
-            if (service.scanning || service.discoveryState === "starting") return "Checking KDE Connect for devices…"
-            if (!service.daemonAvailable) return service.discoveryMessage || "KDE Connect is unavailable. Open it to check its setup."
-            return "No devices found. Open KDE Connect to pair a device."
+            if (service.scanning || service.discoveryState === "starting") return Locale.Strings.t("deviceSwitcher.checkingKdeConnectForDevices")
+            if (!service.daemonAvailable) return service.discoveryMessage || Locale.Strings.t("deviceSwitcher.kdeConnectIsUnavailableOpenIt")
+            return Locale.Strings.t("deviceSwitcher.noDevicesFoundOpenKdeConnect")
         }
-        if (!device) return "Choose a device above."
-        return root.deviceState(device) + ". Switching changes the device for actions; a file review keeps its recipient."
+        if (!device) return Locale.Strings.t("deviceSwitcher.chooseADeviceAbove")
+        return Locale.Strings.format("deviceSwitcher.selectionStatus", [root.deviceState(device)])
     }
     readonly property string deviceOptionsKey: JSON.stringify(deviceOptions)
     onDeviceOptionsKeyChanged: if (popup) popup.close()
@@ -35,7 +36,7 @@ Controls.ComboBox {
         return service && typeof service.displayName === "function" ? service.displayName(entry) : entry.name
     }
     function deviceState(entry) {
-        return !entry.paired ? "Not paired" : entry.reachable ? "Connected" : "Offline"
+        return !entry.paired ? Locale.Strings.t("deviceSwitcher.notPaired") : entry.reachable ? Locale.Strings.t("deviceSwitcher.connected") : Locale.Strings.t("deviceSwitcher.offline")
     }
     function selectDevice(id) {
         // Resolve the stable ID again: discovery may replace or reorder the list.
@@ -55,7 +56,7 @@ Controls.ComboBox {
     displayText: {
         var options = root.deviceOptions
         var selected = options.find(function(option) { return option.value === root.selectedId })
-        return selected ? selected.label : "Choose a device"
+        return selected ? selected.label : Locale.Strings.t("deviceSwitcher.choose")
     }
     enabled: root.devices.length > 0
     font.family: Style.font.family
@@ -68,7 +69,7 @@ Controls.ComboBox {
     palette.highlight: Commons.Color.accent
     palette.highlightedText: root.surfaceColor
     Accessible.role: Accessible.ComboBox
-    Accessible.name: "Device"
+    Accessible.name: Locale.Strings.t("settings.device")
     Accessible.description: root.deviceStatus
     Accessible.onPressAction: {
         if (!enabled) return

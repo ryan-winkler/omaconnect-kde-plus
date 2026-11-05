@@ -32,21 +32,29 @@ function remember(history, operation) {
     return [Object.assign({}, operation)].concat(history.filter(function(item) { return item.id !== operation.id })).slice(0, 50)
 }
 
-function formatBytes(value) {
+function formatBytes(value, formatNumber) {
     var units = ["B", "KiB", "MiB", "GiB", "TiB"], index = 0
     while (value >= 1024 && index < units.length - 1) { value /= 1024; index++ }
-    return (index ? value.toFixed(2) : String(value)) + " " + units[index]
+    var text = formatNumber ? formatNumber(value, index ? 2 : 0) : index ? value.toFixed(2) : String(value)
+    return text + " " + units[index]
 }
 
-function status(operation) {
+function status(operation, strings) {
     if (!operation) return ""
-    var evidence = operation.accepted + "/" + operation.count + " requests accepted. Delivery unknown."
-    if (operation.state === "preparing") return "Preparing a safe file handoff. No new request submitted yet. " + evidence
-    if (operation.state === "submitting") return "Submitting to KDE Connect. " + evidence
-    if (operation.state === "queued") return "Waiting to submit. " + evidence
-    if (operation.state === "cancellation_unconfirmed") return "Cancellation unconfirmed. " + evidence
-    if (operation.state === "submission_unknown") return "Submission unknown. Do not retry until you check for duplicates. " + evidence
-    if (operation.state === "submission_failed") return "Submission failed for " + operation.failed + " file(s). " + (operation.error === "source-preparation-failed" ? "Could not prepare a private copy. Check cache access and free space, then choose again. " : "") + evidence
-    if (operation.state === "cancelled_before_submit") return operation.cancelled + " file(s) cancelled before submission. " + evidence
-    return evidence
+    var evidence = strings.format("files.status.evidence", [strings.number(operation.accepted), strings.number(operation.count)])
+    if (operation.state === "submission_failed") {
+        var failure = strings.format("files.status.failed", [strings.fileCount(operation.failed)])
+        var prepare = operation.error === "source-preparation-failed" ? strings.t("files.couldNotPrepareAPrivateCopy") + " " : ""
+        return failure + " " + prepare + evidence
+    }
+    if (operation.state === "cancelled_before_submit")
+        return strings.format("files.status.cancelled", [strings.fileCount(operation.cancelled), evidence])
+    var labels = {
+        preparing: "files.status.preparing",
+        submitting: "files.status.submitting",
+        queued: "files.status.queued",
+        cancellation_unconfirmed: "files.status.unconfirmed",
+        submission_unknown: "files.status.unknown"
+    }
+    return labels[operation.state] ? strings.format(labels[operation.state], [evidence]) : evidence
 }

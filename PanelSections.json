@@ -1,8 +1,6 @@
 [
   {
     "id": "devices",
-    "label": "Devices",
-    "description": "Keep the selected device and quick switcher visible. Device details show status, battery, network, ID and pairing; this sets whether they start expanded.",
     "expandedKey": "devicesStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": true,
@@ -11,8 +9,6 @@
   },
   {
     "id": "actions",
-    "label": "Quick actions",
-    "description": "Show selected device shortcuts and their Ping or Text composer together. Hiding shortcuts does not change native modules.",
     "expandedKey": "actionsStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": true,
@@ -22,8 +18,6 @@
   },
   {
     "id": "drop",
-    "label": "File sharing",
-    "description": "Choose local files to send, or drop files for review. Enable Review files before Send to review chooser selections. Hiding this section preserves the draft.",
     "expandedKey": "inlineSendStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": false,
@@ -33,8 +27,6 @@
   },
   {
     "id": "native",
-    "label": "Native KDE Connect",
-    "description": "Show native feature links in Devices. The full inventory stays available in Device features settings.",
     "expandedKey": "nativeFeaturesStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": false,
@@ -44,8 +36,6 @@
   },
   {
     "id": "media",
-    "label": "Media controls",
-    "description": "Show reported players and media controls. Hiding this section does not stop playback.",
     "expandedKey": "mediaStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": false,
@@ -55,8 +45,6 @@
   },
   {
     "id": "commands",
-    "label": "Remote commands",
-    "description": "Show commands configured on the selected device. A command runs only after an explicit request.",
     "expandedKey": "commandsStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": false,
@@ -66,8 +54,6 @@
   },
   {
     "id": "connections",
-    "label": "Connection controls",
-    "description": "Show enabled VPN tool controls. Hiding or collapsing them does not connect or disconnect a VPN.",
     "expandedKey": "networkStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": false,
@@ -77,8 +63,6 @@
   },
   {
     "id": "addresses",
-    "label": "Saved addresses",
-    "description": "Keep approved addresses available for review. Hiding this section preserves saved records and rediscovery choices.",
     "expandedKey": "addressesStartExpanded",
     "defaultVisible": true,
     "defaultExpanded": false,
@@ -88,8 +72,6 @@
   },
   {
     "id": "syncthing",
-    "label": "Syncthing identity note",
-    "description": "Show the optional local identity note and existing owner controls. Hiding it does not change Syncthing.",
     "expandedKey": "syncthingStartExpanded",
     "defaultVisible": false,
     "defaultExpanded": false,

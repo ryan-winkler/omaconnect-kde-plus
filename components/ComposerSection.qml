@@ -4,6 +4,7 @@ import QtQuick.Controls
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "../i18n" as Locale
 
 Column {
     id: root
@@ -29,7 +30,7 @@ Column {
 
         Text {
             textFormat: Text.PlainText
-            text: "Ping " + root.deviceName
+            text: Locale.Strings.format("composer.pingPeer", [root.deviceName])
             color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -43,7 +44,7 @@ Column {
             TextField {
                 id: pingInput
                 width: Math.max(1, parent.width - sendPing.implicitWidth - cancelPing.implicitWidth - Style.space(12))
-                placeholderText: "Ping message"
+                placeholderText: Locale.Strings.t("composer.pingMessage")
                 placeholderTextColor: Qt.darker(root.foreground, 1.5)
                 text: panel.draftPing
                 color: root.foreground
@@ -70,7 +71,7 @@ Column {
             SettingsButton {
                 id: sendPing
                 focusable: true
-                text: "Send"
+                text: Locale.Strings.t("composer.send")
                 selected: true
                 foreground: root.foreground
                 fontFamily: root.fontFamily
@@ -81,7 +82,7 @@ Column {
             SettingsButton {
                 id: cancelPing
                 focusable: true
-                text: "Cancel"
+                text: Locale.Strings.t("common.cancel")
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 fontSize: Style.font.bodySmall
@@ -106,7 +107,7 @@ Column {
 
         Text {
             textFormat: Text.PlainText
-            text: "Share text with " + root.deviceName
+            text: Locale.Strings.format("composer.textPeer", [root.deviceName])
             color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -120,7 +121,7 @@ Column {
             TextField {
                 id: textInput
                 width: Math.max(1, parent.width - sendText.implicitWidth - cancelText.implicitWidth - Style.space(12))
-                placeholderText: "Text"
+                placeholderText: Locale.Strings.t("composer.text")
                 placeholderTextColor: Qt.darker(root.foreground, 1.5)
                 text: panel.draftText
                 color: root.foreground
@@ -147,7 +148,7 @@ Column {
             SettingsButton {
                 id: sendText
                 focusable: true
-                text: "Send"
+                text: Locale.Strings.t("composer.send")
                 selected: true
                 foreground: root.foreground
                 fontFamily: root.fontFamily
@@ -158,7 +159,7 @@ Column {
             SettingsButton {
                 id: cancelText
                 focusable: true
-                text: "Cancel"
+                text: Locale.Strings.t("common.cancel")
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 fontSize: Style.font.bodySmall
