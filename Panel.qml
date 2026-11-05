@@ -201,7 +201,12 @@ Panel {
     }
     function setLayoutEditing(value) {
         editingLayout = value === true
-        Qt.callLater(function() { editLayoutButton.forceActiveFocus() })
+        Qt.callLater(function() {
+            if (!root.opened) return
+            if (root.editingLayout) editLayoutButton.forceActiveFocus()
+            else if (dailyNavigation.layoutShortcut.visible) dailyNavigation.layoutShortcut.forceActiveFocus()
+            else keyCatcher.forceActiveFocus()
+        })
     }
     function sectionTitle(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.label : id }
     function sectionHelp(id) { var entry = sectionCatalogModel.entry(id); return entry ? entry.description : "" }
@@ -1053,14 +1058,14 @@ Panel {
                     SettingsButton {
                         id: editLayoutButton
                         objectName: "edit-layout"
-                        width: parent.width
+                        visible: root.editingLayout
                         height: Math.max(44, implicitHeight)
-                        text: root.editingLayout ? "Done" : "Edit layout"
-                        Accessible.name: root.editingLayout ? "Finish editing layout" : "Edit Devices layout"
+                        text: "Done"
+                        Accessible.name: "Finish editing layout"
                         focusable: true
                         foreground: Commons.Color.popups.text
                         enabled: root.sectionCatalog.ready
-                        onClicked: root.setLayoutEditing(!root.editingLayout)
+                        onClicked: root.setLayoutEditing(false)
                     }
                     Text {
                         width: parent.width

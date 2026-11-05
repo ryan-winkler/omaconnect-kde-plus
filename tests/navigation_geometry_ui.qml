@@ -88,11 +88,13 @@ ShellRoot {
             events.keyClick(Qt.Key_Tab,Qt.NoModifier,1)
             var settingsFocused=settings.activeFocus
             events.keyClick(Qt.Key_Tab,Qt.NoModifier,1)
+            var layoutFocused = !nav.layoutShortcut.visible || nav.layoutShortcut.activeFocus
+            if (nav.layoutShortcut.visible) events.keyClick(Qt.Key_Tab,Qt.NoModifier,1)
             var sendFocused=send.activeFocus
             events.keyClick(Qt.Key_Tab,Qt.NoModifier,1)
             var activityFocused=activity.activeFocus
-            var tabOrder=settingsFocused && sendFocused && activityFocused
-            if(!tabOrder){test.fail("Tab order must match View, Settings, Send, Activity");return}
+            var tabOrder=settingsFocused && layoutFocused && sendFocused && activityFocused
+            if(!tabOrder){test.fail("Tab order must match View, Settings, optional Edit layout, Send, Activity");return}
             test.samples.push({baseFont:Style.font.baseSize,spacingScale:Style.spacing.scale,wrapped:nav.shortcutsWrapped,viewTruncated:label.truncated,viewNominalFont:label.font.pixelSize,viewPaintedWidth:label.paintedWidth,wrappedBounds:wrappedBounds,tabOrder:tabOrder,view:panel.currentView,position:top?"Top":"Bottom",height:nav.parent.height,navigationY:nav.y,navigationHeight:nav.height,scrollY:scroll.y,scrollHeight:scroll.height,menuY:popup.y+nav.y,menuHeight:popup.height,triggerWidth:nav.focusItem.width,lastRouteVisible:lastVisible})
             if(!inside || !separate || !menuInside || !rowFits || !lastVisible){test.fail(JSON.stringify(test.samples));return}
             nav.closeMenu()

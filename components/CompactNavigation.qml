@@ -10,9 +10,12 @@ Column {
     id: root
     required property var panel
     readonly property Item focusItem: viewButton
+    readonly property Item layoutShortcut: editLayoutShortcut
     readonly property bool menuOpen: viewMenu.opened
     property real menuHeightLimit: 240
-    readonly property bool shortcutsWrapped: viewButton.implicitWidth + settingsButton.width + navigationControls.spacing
+    readonly property real utilityWidth: settingsButton.width + navigationControls.spacing
+        + (editLayoutShortcut.visible ? editLayoutShortcut.width + navigationControls.spacing : 0)
+    readonly property bool shortcutsWrapped: viewButton.implicitWidth + utilityWidth
         + (sendShortcut.visible ? sendShortcut.width + navigationControls.spacing : 0)
         + (activityShortcut.visible ? activityShortcut.width + navigationControls.spacing : 0) > width
     readonly property var entries: ["Devices", "Send", "Activity", "Plus settings"]
@@ -85,7 +88,7 @@ Column {
         Kit.Button {
             id: viewButton
             objectName: "daily-view-menu"
-            width: Math.max(0, parent.width - settingsButton.width - parent.spacing
+            width: Math.max(0, parent.width - root.utilityWidth
                 - (!root.shortcutsWrapped && sendShortcut.visible ? sendShortcut.width + parent.spacing : 0)
                 - (!root.shortcutsWrapped && activityShortcut.visible ? activityShortcut.width + parent.spacing : 0))
             implicitHeight: Math.max(44, Style.spacing.controlHeight)
@@ -116,6 +119,22 @@ Column {
             Accessible.name: "Open Plus settings"
             Accessible.onPressAction: clicked()
             onClicked: root.panel.openSettings()
+        }
+        SettingsButton {
+            id: editLayoutShortcut
+            objectName: "daily-edit-layout"
+            width: viewButton.implicitHeight
+            height: viewButton.implicitHeight
+            visible: root.panel.currentView === "Devices" && !root.panel.editingLayout
+                && root.panel.getSetting("showEditLayoutShortcut", true) === true
+            enabled: root.panel.sectionCatalog.ready
+            bordered: false
+            iconText: "󰏫"
+            foreground: Commons.Color.popups.text
+            focusable: true
+            tooltipText: "Edit layout"
+            Accessible.name: "Edit Devices layout"
+            onClicked: root.panel.setLayoutEditing(true)
         }
         Kit.Button {
             id: sendShortcut
