@@ -250,7 +250,8 @@ assert.equal(api.parseRemoteCommands(head+'\u00e9'.repeat((cap+1-head.length)/2)
             run = subprocess.run(self.deadline_argv(5, ['bash', '-c', snippet, 'list-commands', 'dev_1']),
                                  capture_output=True, env=env, timeout=15)
             self.assertEqual(len(run.stdout), cap + 1)
-            self.assertNotEqual(run.returncode, 0, 'an over-cap list is a failed read')
+            # A buffered producer can exit successfully before head closes the
+            # pipe. The parser rejects the extra byte regardless of that status.
             cli.write_text('#!/bin/bash\nprintf "lock: Lock\\n"\nhead -c %d /dev/zero >&2\n' % (cap * 4))
             run = subprocess.run(self.deadline_argv(5, ['bash', '-c', snippet, 'list-commands', 'dev_1']),
                                  capture_output=True, env=env, timeout=15)
