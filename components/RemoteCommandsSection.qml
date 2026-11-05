@@ -83,6 +83,10 @@ Column {
 
         PanelActionButton {
             id: refreshCmdBtn
+            focusable: true
+            Accessible.role: Accessible.Button
+            Accessible.name: "Refresh remote commands"
+            Accessible.onPressAction: if (enabled) clicked()
             visible: panel.commandsExpanded
             iconText: "󰑐"
             tooltipText: "Refresh commands"

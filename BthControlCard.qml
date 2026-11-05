@@ -6,6 +6,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui as Kit
 import "BthControlModel.js" as Control
+import "components" as Components
 
 Column {
     id: root
@@ -131,7 +132,7 @@ Column {
         spacing: Style.space(6)
         Repeater {
             model: ["auto", "on", "off"]
-            delegate: Kit.Button {
+            delegate: Components.SettingsButton {
                 required property string modelData
                 required property int index
                 width: (root.width - Style.space(12)) / 3

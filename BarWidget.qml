@@ -95,6 +95,9 @@ BarWidget {
 
     BarIconButton {
         id: buttonItem
+        Accessible.role: Accessible.Button
+        Accessible.name: "Omaconnect KDE Plus"
+        Accessible.onPressAction: if (buttonItem.enabled && buttonItem.interactive && buttonItem.pressable && !buttonItem.concealed) buttonItem.triggerPress(Qt.LeftButton)
         anchors.fill: parent
         bar: root.bar
         slotSize: Style.bar.iconSlot * (root.showBarBattery && (!root.bar || !root.bar.vertical) ? 2 : 1)

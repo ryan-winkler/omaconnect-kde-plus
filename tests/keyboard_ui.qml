@@ -149,6 +149,11 @@ ShellRoot {
                 test.phase = 4
             } else if (test.phase === 4) {
                 if (!test.check(panel.currentView === "Send", "keyboard activates Send view")) return
+                var choose=test.named("Choose files"),openSend=test.named("Open Send window")
+                if(!test.check(choose && openSend && choose.Accessible.role===Accessible.Button && openSend.Accessible.role===Accessible.Button
+                    && choose.Accessible.name===choose.text && openSend.Accessible.name===openSend.text,"Send-view actions expose named Button metadata"))return
+                panel.enabled=false;choose.Accessible.pressAction();openSend.Accessible.pressAction();panel.enabled=true
+                if(!test.check(panel.opened && panel.currentView==="Send" && service.selectionState==="idle","disabled Send-view actions cannot dispatch"))return
                 test.key(Qt.Key_Space)
                 test.phase = 41
             } else if (test.phase === 41) {
@@ -205,6 +210,13 @@ ShellRoot {
                 test.phase = 155
             } else if (test.phase === 155 && test.seek(test.named("Automatic"))) {
                 test.check(test.named("Automatic").enabled, "safe fake BTH controls are enabled")
+                for(var mode of ["Automatic","On","Off"]) {
+                    var modeButton=test.named(mode)
+                    if(!test.check(modeButton.Accessible.role===Accessible.Button && modeButton.Accessible.name==="Back To Home "+mode,"BTH "+mode+" exposes named Button metadata"))return
+                }
+                var card=test.find(panel,function(object){return "wantedMode" in object && "helperPathValid" in object},[])
+                card.enabled=false;test.named("On").Accessible.pressAction();card.enabled=true
+                if(!test.check(!card.busy && card.wantedMode==="","disabled BTH accessibility Press cannot request a mode change"))return
                 test.check(true, "Tab reaches BTH Automatic")
                 test.key(Qt.Key_Tab)
                 test.phase = 16
@@ -255,6 +267,8 @@ ShellRoot {
             } else if (test.phase === 28) {
                 var install = test.find(panel, function(object) { return object.objectName === "kdeconnect-install-command" }, [])
                 if (test.seek(install)) {
+                    var guide=test.named("KDE Connect setup guide ↗")
+                    if(!test.check(guide && guide.Accessible.role===Accessible.Button,"active setup guide retains its guarded Press and exposes Button role"))return
                     if (!test.check(install.readOnly && install.selectedText === install.text, "install command selects all on keyboard focus")) return
                     test.selectedBeforeTyping = service.selectedDeviceId
                     test.indexBeforeTyping = panel.selectedIndex

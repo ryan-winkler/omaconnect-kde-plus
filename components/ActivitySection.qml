@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 import qs.Commons as Commons
-import qs.Ui as Kit
 import "../TransferModel.js" as Transfers
 
 Column {
@@ -52,7 +51,7 @@ Column {
             Accessible.name: text
         }
     }
-    Kit.Button {
+    SettingsButton {
         width: parent.width
         text: "Clear finished activity"
         foreground: Commons.Color.popups.text

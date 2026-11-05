@@ -374,6 +374,7 @@ Column {
             height: Math.max(44, implicitHeight)
             text: "KDE Connect setup guide ↗"
             bordered: true
+            Accessible.role: Accessible.Button
             Accessible.name: "Open the official KDE Connect setup guide"
             Accessible.onPressAction: if (enabled) clicked()
             focusable: true

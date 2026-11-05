@@ -137,6 +137,18 @@ ShellRoot {
                 test.check(!!activityPanel && widget.opened, "notification action opens the current Activity view")
                 test.check(JSON.stringify(service.operations) === operationsBeforeNotice, "notification action does not replay file submission")
                 widget.close()
+                var barButton=widget.button
+                if(!test.check(barButton.Accessible.role===Accessible.Button && barButton.Accessible.name==="Omaconnect KDE Plus","Plus bar icon exposes a named native button"))return
+                barButton.Accessible.pressAction()
+                if(!test.check(widget.opened,"accessible bar press opens the existing panel route"))return
+                barButton.Accessible.pressAction()
+                if(!test.check(!widget.opened,"accessible bar press toggles the panel closed"))return
+                for(var gate of ["enabled","interactive","pressable","concealed"]) {
+                    var savedGate=barButton[gate];barButton[gate]=gate==="concealed"
+                    barButton.Accessible.pressAction()
+                    if(!test.check(!widget.opened,"bar accessibility Press respects "+gate))return
+                    barButton[gate]=savedGate
+                }
                 test.check(Bridge.Bridge.service === service, "own-service bridge")
                 test.check(widget.service === service && panel.service === service, "bar and panel bridge fallback")
                 test.check(!!test.find(widget,function(object) { return object.objectName === "bar-file-drop-area" },[]), "actual bar icon installs the shared file-drop target")

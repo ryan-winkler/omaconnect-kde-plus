@@ -35,6 +35,8 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Active Plus actions expose named accessible buttons and guarded Press actions,
+  including Activity, composers, Syncthing, home-access modes and the bar icon.
 - Layout menu selections use native popup colors so muted theme accents do not
   reduce the contrast of selected text.
 - Settings navigation responds to the accessibility Toggle action exposed by

@@ -998,7 +998,7 @@ Panel {
                         wrapMode: Text.WrapAnywhere
                         color: Commons.Color.popups.text
                     }
-                    Button {
+                    SettingsButton {
                         focusable: true
                         width: parent.width
                         text: "Choose files"
@@ -1013,7 +1013,7 @@ Panel {
                         wrapMode: Text.Wrap
                         color: Commons.Color.popups.text
                     }
-                    Button {
+                    SettingsButton {
                         focusable: true
                         width: parent.width
                         text: "Open Send window"
