@@ -113,7 +113,8 @@ class BrowseContract(unittest.TestCase):
         """Run each storage failure mode on a private bus with temporary home and runtime state."""
         modes = ["single", "multiple", "remote-name", "offline", "unpaired", "unsupported", "unsupported-method",
                  "unavailable", "no-shares", "share-limit", "escape", "symlink", "nonmount", "mount-failed",
-                 "remote-error", "changed-advertisement", "changed-name", "stale-mount", "stale-root",
+                 "remote-error", "mount-visible-late", "mount-never-visible", "mount-visibility-cancelled",
+                 "changed-advertisement", "changed-name", "stale-mount", "stale-root",
                  "owner-changed", "offline-open", "unpaired-open", "unmounted-open", "cancelled", "missing-opener",
                  "cancelled-mount", "offline-during-mount", "owner-lost-during-probe",
                  "owner-replaced-during-probe", "offline-during-probe", "timeout"]
