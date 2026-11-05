@@ -77,6 +77,8 @@ Window {
                 : root.device ? Locale.Strings.format("files.selectedRecipient", [
                     root.service && typeof root.service.displayName === "function" ? root.service.displayName(root.device) : root.device.name, root.device.id])
                 : Locale.Strings.t("sendWindow.selectADeviceInDevicesFirst")
+            Accessible.role: Accessible.StaticText
+            Accessible.name: text
             textFormat: Text.PlainText
             wrapMode: Text.WrapAnywhere
             color: Commons.Color.popups.text

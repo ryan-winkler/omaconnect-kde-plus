@@ -41,6 +41,21 @@ If a firewall blocks discovery, use its owner tool to allow KDE Connect ports
 [official troubleshooting guide](https://userbase.kde.org/KDEConnect/en#Troubleshooting).
 Plus does not change firewall policy.
 
+## Optional application launcher
+
+After adding Plus to the bar, copy the supplied desktop entry into your
+application directory. Run this from the installed Plus checkout.
+
+```bash
+install -Dm644 launcher/omaconnect.plus.desktop \
+  "${XDG_DATA_HOME:-$HOME/.local/share}/applications/omaconnect.plus.desktop"
+```
+
+Search for **Omaconnect KDE Plus** in the application launcher. Launchers that
+show desktop actions also offer **Send files** and **Activity**. To remove
+this optional entry, delete only the `omaconnect.plus.desktop` file you copied.
+The entry uses the running shell and needs Plus enabled and present in the bar.
+
 ## Update, disable and remove
 
 ```bash

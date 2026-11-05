@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Name=Omaconnect KDE Plus
+Comment=Open Plus device controls in Omarchy
+Icon=kdeconnect
+Categories=Utility;
+Terminal=false
+TryExec=/usr/bin/omarchy-shell
+Exec=/usr/bin/bash -c "/usr/bin/omarchy-shell omaconnect.plus open || exec /usr/bin/omarchy notification send 'Omaconnect KDE Plus unavailable' 'Check that Plus is enabled and present in the Omarchy bar.'"
+Actions=SendFiles;Activity;
+
+[Desktop Action SendFiles]
+Name=Send files
+Exec=/usr/bin/bash -c "/usr/bin/omarchy-shell omaconnect.plus sendWindow || exec /usr/bin/omarchy notification send 'Omaconnect KDE Plus unavailable' 'Check that Plus is enabled and present in the Omarchy bar.'"
+
+[Desktop Action Activity]
+Name=Activity
+Exec=/usr/bin/bash -c "/usr/bin/omarchy-shell omaconnect.plus activity || exec /usr/bin/omarchy notification send 'Omaconnect KDE Plus unavailable' 'Check that Plus is enabled and present in the Omarchy bar.'"

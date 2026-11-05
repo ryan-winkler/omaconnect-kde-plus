@@ -17,6 +17,8 @@ All notable changes are listed here. The format follows
   partial Plus translations. Other missing Plus copy uses English. Right-to-left reading
   order applies to the Send, Settings and image preview windows.
 
+- Optional desktop entry for the Plus panel, Send files and Activity.
+
 - File-type icons in the recent-file menu and an Image previews entry for the
   image preview window with the recipient, filename, Back and Cancel.
   Browsing never sends. Explicit Send image or Review image follows the captured
