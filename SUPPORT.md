@@ -7,7 +7,7 @@
 | Use the panel or find a feature | [README](README.md), [help map](docs/HELP.md) |
 | Choose or contribute an icon | [Icon sources and storage](docs/ICONS.md) |
 | Install, update or recover | [Install, update and recovery](docs/INSTALL.md) |
-| Understand device features and native settings | [Help map](docs/HELP.md), [KDE Connect handbook](https://docs.kde.org/stable5/en/kdeconnect/kdeconnect/) |
+| Understand device features and native settings | [Help map](docs/HELP.md), [KDE Connect support](https://kdeconnect.kde.org/users.html) |
 | Understand connection options | [Connections help](docs/HELP.md#connections) |
 | Contribute or change a domain | [Contributing](CONTRIBUTING.md), [contracts](docs/CONTRACTS.md) |
 | Report a security issue | [Private security report](SECURITY.md) |

@@ -58,9 +58,21 @@ The entry uses the running shell and needs Plus enabled and present in the bar.
 
 ## Update, disable and remove
 
+### Update Plus
+
 ```bash
 omarchy plugin update omaconnect.plus
+```
+
+### Disable Plus
+
+```bash
 omarchy plugin disable omaconnect.plus
+```
+
+### Remove Plus
+
+```bash
 omarchy plugin remove omaconnect.plus
 ```
 
