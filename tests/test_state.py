@@ -2161,8 +2161,8 @@ class QmlWiringAndContractTests(unittest.TestCase):
     picker = (ROOT / "components" / "DeviceSwitcher.qml").read_text()
     self.assertIn('selectedId: device ? device.id : ""', picker)
     self.assertIn('"appearance" in root.service', picker)
-    self.assertIn('typeof root.service.appearance.deviceIcon === "function"', picker)
-    self.assertIn("root.service.appearance.deviceIcon", picker)
+    self.assertIn('appearance && typeof appearance.deviceIcon === "function"', picker)
+    self.assertIn('icon: hasIcon ? appearance.deviceIcon(', picker)
     self.assertIn("!!root.device && root.device.paired", device_section_source)
 
   def test_missing_dependency_state_retains_native_setup_guidance(self):

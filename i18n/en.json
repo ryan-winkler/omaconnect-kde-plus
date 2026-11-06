@@ -399,6 +399,7 @@
   "composer.text": "Text",
   "deviceInformation.information": "Information",
   "device.refreshDevices": "Refresh devices",
+  "device.refreshDiscoveryHelp": "Refresh devices. If a device is still missing, check the device list in native KDE Connect.",
   "device.plusDeviceSettings": "Plus device settings",
   "device.openThisDeviceSPlusSettings": "Open this device's Plus settings, with a link to native KDE Connect settings.",
   "device.dismissDeviceStatus": "Dismiss device status",

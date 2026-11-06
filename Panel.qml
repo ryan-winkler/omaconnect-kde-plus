@@ -361,7 +361,10 @@ Panel {
     onCurrentViewChanged: { root.cursorActive = false; if (currentView !== "Devices") root.activeComposer = "none" }
 
     property string focusSection: "devices"
-    property int selectedIndex: 0
+    readonly property string selectedPeerId: service ? service.selectedDeviceId || "" : ""
+    readonly property int selectedIndex: service ? service.devices.findIndex(function(peer) {
+        return peer.id === selectedPeerId
+    }) : -1
     property int actionSelectedIndex: 0
     property bool cursorActive: false
     property bool mediaExpanded: getSetting("mediaStartExpanded", false)
@@ -375,6 +378,26 @@ Panel {
     property string activeComposer: "none"
     property string draftPing: ""
     property string draftText: ""
+    property string draftPeerId: ""
+    property var peerDrafts: Object.create(null)
+    property var pendingComposer: null
+    onSelectedPeerIdChanged: {
+        if (unpairConfirmingId && unpairConfirmingId !== selectedPeerId) cancelUnpairConfirm(unpairConfirmingId)
+        restorePeerDraft(selectedPeerId)
+    }
+    Connections {
+        target: root.service
+        ignoreUnknownSignals: true
+        function onComposerRequestFinished(generation, accepted) {
+            var pending = root.pendingComposer
+            if (!pending || pending.generation !== generation) return
+            root.pendingComposer = null
+            if (!accepted) return
+            if (pending.operation === "ping") root.draftPing = ""
+            else root.draftText = ""
+        }
+    }
+    Component.onCompleted: restorePeerDraft(selectedPeerId)
     property string composerError: ""
 
     readonly property var availableActions: Actions.available(root.getSetting("quickActionsOrder", Actions.DEFAULT_ORDER), root.device)
@@ -426,26 +449,16 @@ Panel {
     }
 
     onDraftPingChanged: {
+        if (pendingComposer && pendingComposer.operation === "ping") pendingComposer = null
         if (composerSection && composerSection.pingInput && composerSection.pingInput.text !== draftPing) {
             composerSection.pingInput.text = draftPing
         }
     }
 
     onDraftTextChanged: {
+        if (pendingComposer && pendingComposer.operation === "text") pendingComposer = null
         if (composerSection && composerSection.textInput && composerSection.textInput.text !== draftText) {
             composerSection.textInput.text = draftText
-        }
-    }
-
-    Connections {
-        target: root.service
-        function onDevicesChanged() {
-            var list = root.service ? root.service.devices : []
-            if (!list.length) {
-                root.selectedIndex = 0
-                return
-            }
-            root.selectedIndex = Math.max(0, Math.min(list.length - 1, root.selectedIndex))
         }
     }
 
@@ -647,16 +660,15 @@ Panel {
     }
 
     function confirmUnpair(id) {
-        if (unpairConfirmingId && unpairConfirmingId !== id) return
+        if (!service || !id || unpairConfirmingId !== id || !device || device.id !== id || !device.paired) return
         unpairConfirmingId = ""
-        if (service) service.unpairDevice(id)
+        service.unpairDevice(id)
     }
 
     function selectDevice(id) {
-        if (!service) return
+        if (!service || id === selectedPeerId || !service.devices.some(function(peer) { return peer.id === id })) return
         if (unpairConfirmingId && unpairConfirmingId !== id) cancelUnpairConfirm(unpairConfirmingId)
         unpairConfirmingId = ""
-        resetComposer()
         mediaActionRevealed = false
         commandsActionRevealed = false
         commandSelectedIndex = 0
@@ -664,13 +676,6 @@ Panel {
         mediaControlIndex = 1
         if (focusSection === "ping" || focusSection === "text") focusSection = availableActions.length > 0 ? "actions" : "devices"
         service.selectDevice(id)
-        var list = service.devices || []
-        for (var i = 0; i < list.length; i++) {
-            if (list[i].id === String(id)) {
-                selectedIndex = i
-                break
-            }
-        }
         var acts = availableActions
         if (acts.length > 0) {
             actionSelectedIndex = Math.max(0, Math.min(acts.length - 1, actionSelectedIndex))
@@ -683,8 +688,8 @@ Panel {
     function select(delta) {
         var list = service ? service.devices : []
         if (!list.length) return
-        selectedIndex = Math.max(0, Math.min(list.length - 1, selectedIndex + delta))
-        if (cursorActive) selectDevice(list[selectedIndex].id)
+        var nextIndex = Math.max(0, Math.min(list.length - 1, selectedIndex + delta))
+        if (cursorActive) selectDevice(list[nextIndex].id)
     }
 
     function openComposer(type) {
@@ -724,12 +729,14 @@ Panel {
                 var defPing = root.getSetting("defaultPingMessage", "")
                 if (defPing) draftPing = defPing
             }
-            focusSection = "ping"
-            Qt.callLater(function() { if (composerSection && composerSection.pingInput) composerSection.pingInput.forceActiveFocus() })
-        } else if (type === "text") {
-            focusSection = "text"
-            Qt.callLater(function() { if (composerSection && composerSection.textInput) composerSection.textInput.forceActiveFocus() })
         }
+        focusSection = type
+        var recipient = draftPeerId
+        Qt.callLater(function() {
+            if (root.activeComposer !== type || root.draftPeerId !== recipient || !composerSection) return
+            var input = type === "ping" ? composerSection.pingInput : composerSection.textInput
+            if (input && input.visible) input.forceActiveFocus()
+        })
     }
 
     function closeComposer(restorePanelFocus) {
@@ -739,17 +746,31 @@ Panel {
         if (restorePanelFocus !== false && keyCatcher) keyCatcher.forceActiveFocus()
     }
 
-    function resetComposer() {
-        activeComposer = "none"
-        draftPing = ""
-        draftText = ""
-        composerError = ""
+    function restorePeerDraft(id) {
+        if (id === draftPeerId) return
+        if (draftPeerId) {
+            if (draftPing || draftText) peerDrafts[draftPeerId] = {ping: draftPing, text: draftText}
+            else delete peerDrafts[draftPeerId]
+        }
+        var next = id ? peerDrafts[id] : null
+        pendingComposer = null
+        if (activeComposer !== "none") {
+            var window = composerSection ? composerSection.Window.window : null
+            var focused = window ? window.activeFocusItem : null
+            while (focused && focused !== composerSection) focused = focused.parent
+            closeComposer(!!focused)
+        } else {
+            composerError = ""
+        }
+        draftPeerId = id
+        draftPing = next ? next.ping : ""
+        draftText = next ? next.text : ""
     }
 
     function composerCanSubmit(type) {
         return opened && currentView === "Devices" && !editingLayout && activeComposer === type
             && sectionBodyVisible("actions") && !!composerSection && composerSection.visible
-            && !!service && !!device && device.paired && device.reachable
+            && !!service && service.actionState !== "running" && !!device && draftPeerId === device.id && device.paired && device.reachable
             && !!device.capabilities && !!device.capabilities[type]
     }
 
@@ -768,7 +789,7 @@ Panel {
         if (service && device) {
             var success = service.pingDevice(device.id, val)
             if (success) {
-                draftPing = ""
+                pendingComposer = {generation: service.actionGeneration, operation: "ping"}
                 closeComposer()
             } else {
                 composerError = (service && service.actionError) ? service.actionError : Locale.Strings.live("panel.pingFailed")
@@ -794,7 +815,7 @@ Panel {
         if (service && device) {
             var success = service.shareText(device.id, val)
             if (success) {
-                draftText = ""
+                pendingComposer = {generation: service.actionGeneration, operation: "text"}
                 closeComposer()
             } else {
                 composerError = (service && service.actionError) ? service.actionError : Locale.Strings.live("panel.shareTextFailed")
@@ -838,24 +859,7 @@ Panel {
     function activate() {
         if (editingLayout) return
         if (focusSection === "devices") {
-            var list = service ? service.devices : []
-            var dev = list[selectedIndex]
-            if (dev && service) {
-                selectDevice(dev.id)
-                var pending = (service.pendingPairing && service.pendingPairing[dev.id]) ? service.pendingPairing[dev.id] : ""
-                if (root.unpairConfirmingId === dev.id || pending === "unpair_confirm") {
-                    root.confirmUnpair(dev.id)
-                } else if (!dev.paired) {
-                    if (pending === "requesting") {
-                        service.setPendingPairing(dev.id, "")
-                        if (typeof service.clearActionState === "function") service.clearActionState()
-                    } else {
-                        service.pairDevice(dev.id)
-                    }
-                } else {
-                    if (pending !== "removing") root.requestUnpairConfirm(dev.id)
-                }
-            }
+            if (deviceSection) deviceSection.openDevicePicker(keyCatcher)
         } else if (focusSection === "refresh") {
             if (service) service.refresh(true)
         } else if (focusSection === "actions") {
@@ -938,7 +942,21 @@ Panel {
                 else if (dx > 0) root.moveRight()
                 else if (dx < 0) root.moveLeft()
             }
-            onActivateRequested: root.activate()
+            // Move focus after the opening key is released. Otherwise the combo
+            // box can interpret that release as a second activation.
+            property bool pickerOpenOnRelease: false
+            onActiveFocusChanged: if (!activeFocus) pickerOpenOnRelease = false
+            onActivateRequested: {
+                if (root.focusSection === "devices") pickerOpenOnRelease = true
+                else root.activate()
+            }
+            Keys.onReleased: function(event) {
+                if (!pickerOpenOnRelease || event.isAutoRepeat) return
+                if (event.key !== Qt.Key_Return && event.key !== Qt.Key_Enter && event.key !== Qt.Key_Space) return
+                pickerOpenOnRelease = false
+                if (!blocked && root.focusSection === "devices") root.activate()
+                event.accepted = true
+            }
             onCloseRequested: {
                 if (root.unpairConfirmingId) root.cancelUnpairConfirm(root.unpairConfirmingId)
                 else if (root.activeComposer !== "none") root.closeComposer()
@@ -964,22 +982,19 @@ Panel {
                 } else if (key === "h" || key === "left") {
                     root.moveLeft()
                 } else if (key === "p" && root.focusSection === "devices") {
-                    var listP = root.service ? root.service.devices : []
-                    var devP = listP[root.selectedIndex]
+                    var devP = root.device
                     if (devP && !devP.paired && root.service) {
                         var pendP = (root.service.pendingPairing && root.service.pendingPairing[devP.id]) ? root.service.pendingPairing[devP.id] : ""
                         if (pendP !== "requesting") root.service.pairDevice(devP.id)
                     }
                 } else if (key === "u" && root.focusSection === "devices") {
-                    var listU = root.service ? root.service.devices : []
-                    var devU = listU[root.selectedIndex]
+                    var devU = root.device
                     if (devU && devU.paired && root.service) {
                         var pendU = (root.service.pendingPairing && root.service.pendingPairing[devU.id]) ? root.service.pendingPairing[devU.id] : ""
                         if (pendU !== "removing") root.requestUnpairConfirm(devU.id)
                     }
                 } else if (key === "y" && root.unpairConfirmingId) {
-                    var listY = root.service ? root.service.devices : []
-                    var devY = listY[root.selectedIndex]
+                    var devY = root.device
                     if (devY && devY.id === root.unpairConfirmingId) root.confirmUnpair(root.unpairConfirmingId)
                 } else if (key === "c" || key === "escape") {
                     var targetIdC = root.unpairConfirmingId || (root.service ? root.service.selectedDeviceId : "")

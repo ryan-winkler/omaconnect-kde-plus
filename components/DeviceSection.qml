@@ -26,6 +26,27 @@ Column {
     readonly property var incomingRequest: device && device.pairRequestedByPeer ? device : panel ? panel.incomingRequest : null
     readonly property bool isUnpairConfirming: !!(device && (panel.unpairConfirmingId === device.id || pendingState === "unpair_confirm"))
 
+    property Item pickerReturnFocus: null
+
+    function openDevicePicker(returnFocus) {
+        if (!devicePicker.enabled || devicePicker.popup.visible) return
+        pickerReturnFocus = returnFocus
+        devicePicker.forceActiveFocus()
+        devicePicker.popup.open()
+    }
+
+    Connections {
+        target: devicePicker.popup
+        function onClosed() {
+            var returnFocus = root.pickerReturnFocus
+            root.pickerReturnFocus = null
+            if (returnFocus && root.panel.opened && root.panel.currentView === "Devices"
+                    && !root.panel.editingLayout && devicePicker.activeFocus) {
+                returnFocus.forceActiveFocus(Qt.PopupFocusReason)
+            }
+        }
+    }
+
     Row {
         width: parent.width
         spacing: Style.space(4)
@@ -39,10 +60,11 @@ Column {
             id: refreshButton
             enabled: !!root.service && !root.service.scanning
             iconText: "󰑐"
-            tooltipText: Locale.Strings.t("device.refreshDevices")
+            tooltipText: Locale.Strings.t("device.refreshDiscoveryHelp")
             focusable: true
             Accessible.role: Accessible.Button
             Accessible.name: Locale.Strings.t("device.refreshDevices")
+            Accessible.description: Locale.Strings.t("device.refreshDiscoveryHelp")
             Accessible.onPressAction: if (enabled) clicked()
             size: Math.max(44, Style.space(22))
             foreground: root.foreground

@@ -16,10 +16,30 @@ class DeviceSwitcherTests(unittest.TestCase):
         runner.qml_fixture='daily_device_picker_ui.qml'
         runner.force_offscreen=True
         def configure(fixture,plugin,home,fake_bin):
-            (fake_bin/'busctl').symlink_to(fake_bin/'fake')
+            fake = fake_bin/'fake'
+            fake.write_text(fake.read_text().replace("if name == 'kdeconnect-cli':",
+                                                     "if name == 'kdeconnect-cli':\n if '--pair' in sys.argv: raise SystemExit(1)"))
+            (fake_bin/'busctl').symlink_to(fake)
+            (plugin/'scripts/send_text.py').write_text('''import json
+import sys
+import time
+
+request = json.loads(sys.stdin.readline())
+if request["text"] in ("Fixture pending switch", "Fixture same text"):
+    time.sleep(2)
+if request["text"] == "Fixture failed":
+    print(json.dumps({"state": "failed", "error": "submission-failed"}))
+    sys.exit(1)
+if request["text"] == "Fixture unknown":
+    print(json.dumps({"state": "failed", "error": "submission-unknown"}))
+    sys.exit(1)
+print(json.dumps({"state": "request_accepted"}))
+''')
         def assert_picker(fixture,home,output,calls):
             self.assertIn('DAILY_PICKER_PASS',output)
-            self.assertFalse(any(row['tool'] in ('kdeconnect-cli','nmcli','omarchy-shell','remote-access-mode') for row in calls),calls)
+            self.assertEqual([row['args'] for row in calls if row['tool'] == 'kdeconnect-cli'],
+                             [['-d', 'B', '--unpair'], ['-d', 'A', '--unpair'], ['-d', 'C', '--pair']])
+            self.assertFalse(any(row['tool'] in ('nmcli','omarchy-shell','remote-access-mode') for row in calls),calls)
             self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()),[])
         original_run=native_ui.subprocess.run
         def isolated_run(command,*args,**kwargs):
