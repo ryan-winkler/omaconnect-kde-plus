@@ -326,10 +326,20 @@ ShellRoot {
                         && service.actionMessage==="Device unpaired",
                         "a fresh native unpaired row confirms removal"))return
                     var partial=test.find(test.section,"partial-roster-warning",[])
-                    if(!test.check(service.discoveryState==="partial" && partial && partial.visible && test.picker.count===2,
+                    if(!test.check(service.discoveryState==="partial" && partial && partial.visible && test.picker.count===3,
                         "partial scan keeps readable rows and displays its warning outside collapsed details"))return
                     if(!test.check(test.picker.textAt(test.picker.indexOfValue("B")).indexOf("Status unavailable")>=0,
                         "an unreadable trust flag is distinct from an observed unpaired row"))return
+                    panel.selectDevice("C")
+                    var share=test.find(panel,"quick-action-file",[])
+                    if(!test.check(service.selectedDevice.id==="C" && share && share.visible && share.enabled
+                        && panel.sectionAvailability("drop")==="available",
+                        "partial discovery keeps daily file actions for the known paired reachable device"))return
+                    panel.selectDevice("B")
+                    if(!test.check(panel.sectionAvailability("actions")==="unavailable"
+                        && panel.sectionAvailability("drop")==="unavailable",
+                        "partial discovery keeps device actions blocked when pairing is unknown"))return
+                    panel.selectDevice("A")
                     var handoffAfterScan=test.find(test.section,"pairing-native-handoff",[])
                     if(!test.check(handoffAfterScan && handoffAfterScan.visible && handoffAfterScan.enabled && handoffAfterScan.text==="Pair in KDE Connect",
                         "the native recovery remains available after partial discovery"))return
@@ -345,7 +355,8 @@ ShellRoot {
                     test.phase=26
                 }else if(test.phase===26 && !service.nativeAppOpening && !service.scanning){
                     if(!test.check(service.discoveryState==="partial" && service.selectedDeviceId==="A"
-                        && !service.selectedDevice && panel.draftText==="Retained through partial scan",
+                        && !service.selectedDevice && panel.draftText==="Retained through partial scan"
+                        && panel.sectionAvailability("actions")==="unavailable",
                         "one queued read-only scan preserves the missing selected ID and its draft"))return
                     service.selectDevice("B")
                     if(!test.check(service.selectedDevice.paired && !service.selectedDevice.reachable,
@@ -359,6 +370,30 @@ ShellRoot {
                         && service.actionState==="unknown" && service.actionMessage!=="Device unpaired"
                         && service.actionError.indexOf("could not confirm removal")>=0,
                         "a complete readback missing the reviewed target preserves selection and reports unknown"))return
+                    var provider=service.children.find(function(child){return typeof child.applyScan==="function"})
+                    var unownedRow=["DEVICE","C","Connected phone","phone","true","true","90","false","kdeconnect_share"].join("\t")
+                    provider.applyScan(unownedRow+"\nDEVICE\tunreadable",provider.generation)
+                    panel.selectDevice("C")
+                    if(!test.check(service.discoveryState==="partial" && !service.discoveryOwner && service.selectedDevice.paired
+                        && panel.sectionAvailability("actions")==="unavailable" && panel.sectionAvailability("drop")==="unavailable",
+                        "a partial scan without a verified owner cannot enable daily device actions"))return
+                    service.devices=[]
+                    service.discoveryState="unavailable"
+                    test.phase=28
+                }else if(test.phase===28){
+                    if(!test.check(!test.find(test.section,"pairing-native-handoff",[]).visible,
+                        "unavailable discovery does not look like an empty healthy roster"))return
+                    service.discoveryState="ready"
+                    test.phase=29
+                }else if(test.phase===29){
+                    var emptyHandoff=test.find(test.section,"pairing-native-handoff",[])
+                    if(!test.check(emptyHandoff.visible && emptyHandoff.enabled && emptyHandoff.text==="Open KDE Connect",
+                        "healthy empty roster offers a native setup action"))return
+                    emptyHandoff.Accessible.pressAction()
+                    test.phase=30
+                }else if(test.phase===30 && !service.nativeAppOpening){
+                    if(!test.check(!service.selectedDevice,
+                        "the empty-roster handoff does not select or trust a peer"))return
                     console.log("DAILY_PICKER_PASS count="+test.checks.length);console.log("NATIVE_PASS daily device picker");Qt.quit()
                 }
             }finally{test.dispatching=false}

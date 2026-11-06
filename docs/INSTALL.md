@@ -23,8 +23,9 @@ If you already use the uppercase ID from releases through 0.1.2, read
    omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --enable
    ```
 
-3. Review the trust and bar placement prompts. Open the new bar icon, select
-   **Native KDE Connect settings** and pair your device in KDE Connect if necessary.
+3. Review the trust and bar placement prompts. Open the new bar icon. If you
+   need to pair a device, select **Pair in KDE Connect** or **Open KDE Connect**.
+   Compare the verification key on both devices before accepting.
 
 The add command clones the repository and validates its manifest. It does not
 run a repository install script. Optional integrations start hidden. Existing

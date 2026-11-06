@@ -74,7 +74,9 @@ if [[ $(<"$HOME/pairing-launch-state") == launching ]]; then
     sleep .35
 fi
 if [[ -f "$HOME/a-unpaired" ]]; then
-    printf '%s\n' "$unpaired_a" "$unknown_peer" $'DEVICE_SCAN\t3\t2'
+    printf '%s\n' "$unpaired_a" "$unknown_peer" \
+        $'DEVICE\tC\tConnected phone\tphone\ttrue\ttrue\t90\tfalse\tkdeconnect_share,kdeconnect_battery'"$state_suffix" \
+        $'DEVICE_SCAN\t4\t3'
     exit 0
 fi
 printf '%s\n' \
@@ -114,7 +116,7 @@ print(json.dumps({"state": "request_accepted"}))
                 ])
             self.assertEqual([row['args'] for row in calls if row['tool'] == 'busctl'],
                              expected_unpairs)
-            self.assertEqual([row['args'] for row in calls if row['tool'] == 'open-app'], [[], [], []])
+            self.assertEqual([row['args'] for row in calls if row['tool'] == 'open-app'], [[], [], [], []])
             self.assertEqual((home/'return-scans').read_text().splitlines(), ['before:0:', 'after:0:'])
             self.assertFalse(any(row['tool'] in ('gdbus','kdeconnect-cli','nmcli','omarchy-shell','remote-access-mode') for row in calls),calls)
             self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()),[])
