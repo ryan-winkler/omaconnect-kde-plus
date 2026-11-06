@@ -147,9 +147,10 @@ controls but never loads provider-supplied album art.
 
 ## Contributing
 
-Code, docs, design, accessibility and device testing are all welcome. Start with
-[CONTRIBUTING.md](CONTRIBUTING.md) and run `./scripts/validate.sh`. Ask questions in
-[Discussions](https://github.com/ryan-winkler/omaconnect-kde-plus/discussions),
+Code, docs, design, accessibility and device testing are all welcome. Read the
+[contribution guide](CONTRIBUTING.md) or choose a
+[good first issue](https://github.com/ryan-winkler/omaconnect-kde-plus/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+Ask questions in [Discussions](https://github.com/ryan-winkler/omaconnect-kde-plus/discussions),
 see [SUPPORT.md](SUPPORT.md) for help, and report vulnerabilities privately through
 [SECURITY.md](SECURITY.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
@@ -157,8 +158,10 @@ see [SUPPORT.md](SUPPORT.md) for help, and report vulnerabilities privately thro
 
 Plus starts from OmaConnect 1.5.0
 ([`71282d2`](https://github.com/jitendradara12/omaconnect/tree/71282d2042b1a1cda1cb1cac84251694eaabb7cb))
-and keeps its history and MIT license. KDE Connect owns pairing, permissions and
-the device protocol. The Back to Home card keeps its
+and keeps its history and MIT license. [KDE Connect](https://kdeconnect.kde.org/)
+owns pairing, permissions and the device protocol. See
+[where to contribute upstream](CONTRIBUTING.md#share-reusable-improvements-upstream).
+The Back to Home card keeps its
 [Bananet](https://plugins.omarchy.org/plugin.html?id=banan.bananet) notice in
 `BthControlCard.qml`. This is an independent community project, not an official
 KDE or Omarchy one. See [AUTHORS.md](AUTHORS.md) and [LICENSE](LICENSE).
