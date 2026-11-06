@@ -348,6 +348,7 @@ Panel {
             if (service && typeof service.cancelPhoneFiles === "function") service.cancelPhoneFiles()
         }
         if (opened) {
+            if (service && typeof service.refreshAfterPairingHandoff === "function") service.refreshAfterPairingHandoff()
             root.restoreSectionExpansion()
             mediaActionRevealed = false
             commandsActionRevealed = false
@@ -374,6 +375,12 @@ Panel {
     property bool networkExpanded: false
     property int networkSelectedIndex: 0
     property string unpairConfirmingId: ""
+    property int unpairConfirmingOwner: -1
+    property string unpairConfirmingBusOwner: ""
+    onDeviceChanged: {
+        if (unpairConfirmingId && (!device || device.id !== unpairConfirmingId || !device.paired
+                || device.pairingReported !== true)) cancelUnpairConfirm(unpairConfirmingId)
+    }
 
     property string activeComposer: "none"
     property string draftPing: ""
@@ -388,6 +395,8 @@ Panel {
     Connections {
         target: root.service
         ignoreUnknownSignals: true
+        function onOwnerGenerationChanged() { root.cancelUnpairConfirm(root.unpairConfirmingId) }
+        function onDiscoveryOwnerChanged() { root.cancelUnpairConfirm(root.unpairConfirmingId) }
         function onComposerRequestFinished(generation, accepted) {
             var pending = root.pendingComposer
             if (!pending || pending.generation !== generation) return
@@ -649,20 +658,25 @@ Panel {
     }
 
     function requestUnpairConfirm(id) {
-        if (unpairConfirmingId && unpairConfirmingId !== id) cancelUnpairConfirm(unpairConfirmingId)
+        if (!opened || currentView !== "Devices" || editingLayout || !service || !device || device.id !== id || !device.paired || device.pairingReported !== true
+                || !service.discoveryOwner || service.unpairPendingId === id) return
         unpairConfirmingId = id
-        if (service && typeof service.setPendingPairing === "function") service.setPendingPairing(id, "unpair_confirm")
+        unpairConfirmingOwner = service.ownerGeneration
+        unpairConfirmingBusOwner = service.discoveryOwner
     }
 
     function cancelUnpairConfirm(id) {
-        if (!id || unpairConfirmingId === id) unpairConfirmingId = ""
-        if (service && id && typeof service.setPendingPairing === "function") service.setPendingPairing(id, "")
+        if (!id || unpairConfirmingId === id) {
+            unpairConfirmingId = ""
+            unpairConfirmingOwner = -1
+            unpairConfirmingBusOwner = ""
+        }
     }
 
     function confirmUnpair(id) {
-        if (!service || !id || unpairConfirmingId !== id || !device || device.id !== id || !device.paired) return
-        unpairConfirmingId = ""
-        service.unpairDevice(id)
+        if (!opened || currentView !== "Devices" || editingLayout || !service || !id || unpairConfirmingId !== id || unpairConfirmingOwner !== service.ownerGeneration
+                || !device || device.id !== id || !device.paired || device.pairingReported !== true) return
+        if (service.unpairDevice(id, unpairConfirmingBusOwner)) cancelUnpairConfirm(id)
     }
 
     function selectDevice(id) {
@@ -982,28 +996,13 @@ Panel {
                 } else if (key === "h" || key === "left") {
                     root.moveLeft()
                 } else if (key === "p" && root.focusSection === "devices") {
-                    var devP = root.device
-                    if (devP && !devP.paired && root.service) {
-                        var pendP = (root.service.pendingPairing && root.service.pendingPairing[devP.id]) ? root.service.pendingPairing[devP.id] : ""
-                        if (pendP !== "requesting") root.service.pairDevice(devP.id)
-                    }
+                    if (deviceSection) deviceSection.openPairingSettings()
                 } else if (key === "u" && root.focusSection === "devices") {
-                    var devU = root.device
-                    if (devU && devU.paired && root.service) {
-                        var pendU = (root.service.pendingPairing && root.service.pendingPairing[devU.id]) ? root.service.pendingPairing[devU.id] : ""
-                        if (pendU !== "removing") root.requestUnpairConfirm(devU.id)
-                    }
+                    if (root.device) root.requestUnpairConfirm(root.device.id)
                 } else if (key === "y" && root.unpairConfirmingId) {
-                    var devY = root.device
-                    if (devY && devY.id === root.unpairConfirmingId) root.confirmUnpair(root.unpairConfirmingId)
+                    root.confirmUnpair(root.unpairConfirmingId)
                 } else if (key === "c" || key === "escape") {
-                    var targetIdC = root.unpairConfirmingId || (root.service ? root.service.selectedDeviceId : "")
-                    if (root.unpairConfirmingId || (root.service && targetIdC && root.service.pendingPairing && root.service.pendingPairing[targetIdC] === "unpair_confirm")) {
-                        root.cancelUnpairConfirm(targetIdC)
-                    } else if (root.service && targetIdC && root.service.pendingPairing && root.service.pendingPairing[targetIdC] === "requesting") {
-                        root.service.setPendingPairing(targetIdC, "")
-                        if (typeof root.service.clearActionState === "function") root.service.clearActionState()
-                    }
+                    root.cancelUnpairConfirm(root.unpairConfirmingId)
                 }
             }
         }

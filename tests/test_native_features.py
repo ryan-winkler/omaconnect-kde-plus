@@ -16,6 +16,7 @@ BASH = shutil.which('bash')
 
 class NativeFeaturesTests(unittest.TestCase):
     def discovery(self, supported, loaded=None, owner=True, activatable=None, cli=False):
+        """Run the discovery helper against a private, scripted busctl replacement."""
         with tempfile.TemporaryDirectory() as tmp:
             bindir = Path(tmp)
             (bindir / 'python3').symlink_to(sys.executable)
@@ -30,6 +31,7 @@ if 'NameHasOwner' in args:
     if os.environ['OWNER'] == 'error': sys.exit(1)
     if os.environ['OWNER'] == 'malformed': reply('s', 'unknown')
     else: reply('b', os.environ['OWNER'] == 'true')
+elif 'GetNameOwner' in args: reply('s', ':1.42')
 elif 'ListActivatableNames' in args:
     if os.environ['ACTIVATABLE'] == 'error': sys.exit(1)
     print(os.environ['ACTIVATABLE'])
@@ -95,13 +97,13 @@ else: sys.exit(1)
     def test_future_native_feature_survives_and_loading_is_separate(self):
         row = self.discover(['kdeconnect_notifications', 'kdeconnect_sftp', 'kdeconnect_future_feature', 'thirdparty.custom-addon', 'kdeconnect_remotecommands'], '{"type":"as","data":[["kdeconnect_sftp"]]}')
         self.assertEqual(row[8].split(','), ['kdeconnect_notifications', 'kdeconnect_sftp', 'kdeconnect_future_feature', 'thirdparty.custom-addon', 'kdeconnect_remotecommands'])
-        self.assertEqual(row[13:], ['fixture-key', 'kdeconnect_sftp', 'true'])
+        self.assertEqual(row[13:16], ['fixture-key', 'kdeconnect_sftp', 'true'])
         old = self.discover(['kdeconnect_sftp'])
-        self.assertEqual(old[14:], ['', 'false'])
+        self.assertEqual(old[14:16], ['', 'false'])
         malformed = self.discover(['kdeconnect_sftp'], '{"type":"b","data":[false]}')
-        self.assertEqual(malformed[14:], ['', 'false'])
+        self.assertEqual(malformed[14:16], ['', 'false'])
         empty = self.discover([], '{"type":"as","data":[[]]}')
-        self.assertEqual(empty[14:], ['', 'true'])
+        self.assertEqual(empty[14:16], ['', 'true'])
 
     def test_invalid_or_oversized_plugin_arrays_do_not_reach_qml(self):
         for supported in (['kdeconnect_valid', 'bad;$(command)'], ['kdeconnect_a' * 4000], ['kdeconnect_p' + str(i) for i in range(257)]):
@@ -260,21 +262,6 @@ assert.equal(api.parseRemoteCommands(head+'\u00e9'.repeat((cap+1-head.length)/2)
             run = subprocess.run(self.deadline_argv(5, ['bash', '-c', snippet, 'list-commands', 'dev_1']),
                                  capture_output=True, env=env, timeout=15)
             self.assertEqual((run.returncode, run.stdout), (0, b'lock: Lock\n'))
-
-    @unittest.skipUnless(shutil.which('node'), 'node unavailable')
-    def test_pairing_response_rejects_ids_unsafe_for_a_dbus_path(self):
-        # D-Bus object-path elements allow only ASCII letters, digits and '_'.
-        source = (ROOT / 'KdeConnectController.qml').read_text()
-        function = source[source.index('    function validDeviceId('):source.index('    function respondToPairingRequest(')]
-        self.assertIn('if (!validDeviceId(id)) return false', source[source.index('    function respondToPairingRequest('):])
-        script = '''const assert=require('node:assert/strict');
-const vm=require('node:vm');const api=vm.createContext({});
-vm.runInContext(require('node:fs').readFileSync(0,'utf8'),api);
-for (const id of ['0123456789abcdef0123456789abcdef','a1b2c3d4_e5f6_4a1b_9c2d_0123456789ab','peer_123_abc']) assert.equal(api.validDeviceId(id),true,id);
-for (const id of ['','_peer','peer-123','../peer','peer/sub','peer.name','peer id','peer;x',null]) assert.equal(api.validDeviceId(id),false,String(id));
-'''
-        result = subprocess.run([shutil.which('node'), '-e', script], input=function, text=True, capture_output=True, timeout=5)
-        self.assertEqual(result.returncode, 0, result.stderr)
 
     def launch(self, app, args, config_support=True):
         with tempfile.TemporaryDirectory() as tmp:

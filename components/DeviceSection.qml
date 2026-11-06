@@ -22,9 +22,25 @@ Column {
     readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
     readonly property bool showBattery: !panel || (typeof panel.getSetting === "function" ? panel.getSetting("showBatteryStats", true) : true)
     readonly property bool showNetwork: !panel || (typeof panel.getSetting === "function" ? panel.getSetting("showNetworkStats", true) : true)
-    readonly property string pendingState: service && service.pendingPairing && device ? service.pendingPairing[device.id] || "" : ""
-    readonly property var incomingRequest: device && device.pairRequestedByPeer ? device : panel ? panel.incomingRequest : null
-    readonly property bool isUnpairConfirming: !!(device && (panel.unpairConfirmingId === device.id || pendingState === "unpair_confirm"))
+    readonly property bool unpairPending: !!(service && device && service.unpairPendingId === device.id)
+    readonly property var incomingRequest: device && device.requestKnown !== false && device.pairRequestedByPeer ? device : panel ? panel.incomingRequest : null
+    readonly property var outgoingRequest: isOutgoing(device) ? device
+        : service ? service.devices.find(isOutgoing) || null : null
+    readonly property bool partialRoster: !!(service && service.discoveryState === "partial")
+    readonly property bool pairAvailable: !!(device && device.pairingKnown !== false && !device.paired && device.reachable)
+    readonly property bool handoffAvailable: !!(incomingRequest || outgoingRequest || partialRoster || pairAvailable
+        || (device && (device.pairingKnown === false || device.reachabilityKnown === false)))
+    readonly property bool isUnpairConfirming: !!(device && device.paired && device.pairingReported === true
+        && panel.unpairConfirmingId === device.id)
+
+    function isOutgoing(peer) {
+        return !!(peer && peer.requestKnown !== false && peer.pairRequested)
+    }
+
+    function openPairingSettings() {
+        if (root.visible && panel.opened && panel.currentView === "Devices" && !panel.editingLayout
+                && handoffAvailable && service && !service.nativeAppOpening) service.openPairingSettings()
+    }
 
     property Item pickerReturnFocus: null
 
@@ -154,76 +170,76 @@ Column {
         }
     }
 
-    Rectangle {
-        objectName: "incoming-pairing-warning"
-        visible: !!(panel && root.incomingRequest)
+    Column {
         width: parent.width
-        implicitHeight: incomingContent.implicitHeight + Style.space(16)
-        radius: Style.cornerRadius
-        color: Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.14)
-        border.color: Commons.Color.accent
-        border.width: 1
-
-        Column {
-            id: incomingContent
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.margins: Style.space(8)
-            spacing: Style.space(6)
-
-            Text {
-                textFormat: Text.PlainText
-                width: parent.width
-                text: (root.incomingRequest && root.incomingRequest.name) ? Locale.Strings.format("device.pairingFrom", [root.incomingRequest.name]) : Locale.Strings.t("device.pairingRequest")
-                color: root.foreground
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.body
-                font.bold: true
-                elide: Text.ElideRight
-            }
-
-            Text {
-                textFormat: Text.PlainText
-                visible: !!(root.incomingRequest && root.incomingRequest.verificationKey)
-                width: parent.width
-                wrapMode: Text.WrapAnywhere
-                text: Locale.Strings.format("device.verifyOnBoth", [root.incomingRequest && root.incomingRequest.verificationKey ? (root.service ? root.service.formatVerificationKey(root.incomingRequest.verificationKey) : root.incomingRequest.verificationKey) : ""])
-                color: root.foreground
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-            }
-
-            Row {
-                spacing: Style.space(6)
-                Button {
-                    height: Math.max(44, implicitHeight)
-                    focusable: true
-                    Accessible.role: Accessible.Button
-                    Accessible.name: Locale.Strings.t("device.acceptPairingRequest")
-                    Accessible.onPressAction: if (enabled) clicked()
-                    text: Locale.Strings.t("device.accept")
-                    bordered: true
-                    selected: true
-                    foreground: root.foreground
-                    fontFamily: root.fontFamily
-                    enabled: !!(root.service && root.incomingRequest && (!root.service.pendingPairing || !root.service.pendingPairing[root.incomingRequest.id]))
-                    onClicked: if (root.service && root.incomingRequest) root.service.acceptPairing(root.incomingRequest.id)
-                }
-                Button {
-                    height: Math.max(44, implicitHeight)
-                    focusable: true
-                    Accessible.role: Accessible.Button
-                    Accessible.name: Locale.Strings.t("device.rejectPairingRequest")
-                    Accessible.onPressAction: if (enabled) clicked()
-                    text: Locale.Strings.t("device.reject")
-                    bordered: true
-                    foreground: root.foreground
-                    fontFamily: root.fontFamily
-                    enabled: !!(root.service && root.incomingRequest && (!root.service.pendingPairing || !root.service.pendingPairing[root.incomingRequest.id]))
-                    onClicked: if (root.service && root.incomingRequest) root.service.rejectPairing(root.incomingRequest.id)
-                }
-            }
+        spacing: Style.space(6)
+        visible: root.handoffAvailable || !!(root.service && root.service.nativeAppFailed)
+        Text {
+            objectName: "partial-roster-warning"
+            width: parent.width
+            visible: root.partialRoster
+            text: Locale.Strings.t("kde.status.partialRoster")
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: root.foreground
+            font.family: root.fontFamily
+        }
+        Text {
+            objectName: "incoming-pairing-warning"
+            width: parent.width
+            visible: !!root.incomingRequest
+            text: root.incomingRequest ? Locale.Strings.format("device.pairingFrom", [devicePicker.disambiguatedName(root.incomingRequest)]) : ""
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: root.foreground
+            font.family: root.fontFamily
+            font.bold: true
+        }
+        Text {
+            width: parent.width
+            visible: !!root.incomingRequest
+            text: Locale.Strings.t(root.incomingRequest && root.incomingRequest.verificationKey ? "device.verifyInNative" : "device.keyUnavailable")
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: root.foreground
+            font.family: root.fontFamily
+        }
+        Text {
+            width: parent.width
+            visible: !!root.outgoingRequest
+            text: root.outgoingRequest ? Locale.Strings.format("device.waitForPairingPeer", [devicePicker.disambiguatedName(root.outgoingRequest)]) : ""
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: root.foreground
+            font.family: root.fontFamily
+        }
+        Button {
+            objectName: "pairing-native-handoff"
+            visible: root.handoffAvailable
+            enabled: !!root.service && !root.service.nativeAppOpening
+            height: Math.max(44, implicitHeight)
+            focusable: true
+            bordered: true
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            text: Locale.Strings.t(root.pairAvailable && root.device.requestKnown !== false && !root.incomingRequest && !root.outgoingRequest
+                ? "device.pairInKdeConnect" : "device.openKdeConnect")
+            Accessible.role: Accessible.Button
+            Accessible.name: text
+            tooltipText: Locale.Strings.t("device.pairingHandoffHelp")
+            Accessible.description: tooltipText
+            Accessible.onPressAction: if (visible && enabled) clicked()
+            onClicked: root.openPairingSettings()
+        }
+        Text {
+            width: parent.width
+            visible: !!(root.service && root.service.nativeAppMessage)
+            text: root.service ? root.service.nativeAppMessage + (root.service.nativeAppFailed
+                ? " " + Locale.Strings.t("device.openFromLauncher") : "") : ""
+            textFormat: Text.PlainText
+            wrapMode: Text.Wrap
+            color: root.service && root.service.nativeAppFailed ? Commons.Color.urgent : root.foreground
+            font.family: root.fontFamily
         }
     }
 
@@ -252,7 +268,7 @@ Column {
                 focusable: true
                 Accessible.role: Accessible.Button
                 Accessible.name: Locale.Strings.t("device.confirmUnpairSelectedDevice")
-                Accessible.onPressAction: if (enabled) clicked()
+                Accessible.onPressAction: if (visible && enabled) clicked()
                 foreground: Commons.Color.urgent
                 accent: Commons.Color.urgent
                 fontFamily: root.fontFamily
@@ -265,13 +281,23 @@ Column {
                 focusable: true
                 Accessible.role: Accessible.Button
                 Accessible.name: Locale.Strings.t("device.cancelUnpairSelectedDevice")
-                Accessible.onPressAction: if (enabled) clicked()
+                Accessible.onPressAction: if (visible && enabled) clicked()
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: if (root.device) panel.cancelUnpairConfirm(root.device.id)
             }
         }
     }
+    Text {
+        width: parent.width
+        visible: root.unpairPending
+        text: Locale.Strings.t("device.unpairing")
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: root.foreground
+        font.family: root.fontFamily
+    }
+
     // One region for everything about the selected device, styled like the other sections.
     DailySection {
         sectionId: "devices"
@@ -298,52 +324,15 @@ Column {
                 width: parent.width
                 spacing: Style.space(4)
                 Button {
-                    visible: root.pendingState === "requesting"
-                    text: Locale.Strings.t("device.cancelPairingRequest")
-                    bordered: true
-                    height: Math.max(44, implicitHeight)
-                    focusable: true
-                    Accessible.role: Accessible.Button
-                    Accessible.name: text
-                    Accessible.onPressAction: if (enabled) clicked()
-                    foreground: root.foreground
-                    fontFamily: root.fontFamily
-                    onClicked: if (root.service && root.device) {
-                        root.service.setPendingPairing(root.device.id, "")
-                        root.service.clearActionState()
-                    }
-                }
-                Button {
-                    visible: root.pendingState === "removing"
-                    enabled: false
-                    text: Locale.Strings.t("device.unpairing")
-                    bordered: true
-                    height: Math.max(44, implicitHeight)
-                    foreground: root.foreground
-                    fontFamily: root.fontFamily
-                }
-                Button {
-                    visible: !!root.device && !root.device.paired && root.pendingState === "" && !root.device.pairRequestedByPeer
-                    text: Locale.Strings.t("device.pair")
-                    bordered: true
-                    height: Math.max(44, implicitHeight)
-                    focusable: true
-                    Accessible.role: Accessible.Button
-                    Accessible.name: Locale.Strings.t("device.pairSelectedDevice")
-                    Accessible.onPressAction: if (enabled) clicked()
-                    foreground: root.foreground
-                    fontFamily: root.fontFamily
-                    onClicked: if (root.service && root.device) root.service.pairDevice(root.device.id)
-                }
-                Button {
-                    visible: !!root.device && root.device.paired && !root.isUnpairConfirming && root.pendingState !== "removing"
+                    visible: !!(root.device && root.service && root.service.discoveryOwner && root.device.paired
+                        && root.device.pairingReported === true && !root.isUnpairConfirming && !root.unpairPending)
                     text: Locale.Strings.t("device.unpair")
                     bordered: true
                     height: Math.max(44, implicitHeight)
                     focusable: true
                     Accessible.role: Accessible.Button
                     Accessible.name: Locale.Strings.t("device.unpairSelectedDevice")
-                    Accessible.onPressAction: if (enabled) clicked()
+                    Accessible.onPressAction: if (visible && enabled) clicked()
                     foreground: Commons.Color.urgent
                     accent: Commons.Color.urgent
                     fontFamily: root.fontFamily
@@ -362,6 +351,7 @@ Column {
             text: {
                 if (root.service && root.service.scanning) return Locale.Strings.t("device.scanning")
                 if (root.service && root.service.discoveryState === "not_installed") return Locale.Strings.t("device.packagesMissing")
+                if (root.partialRoster) return ""
                 if (root.service && root.service.discoveryState === "unavailable") return Locale.Strings.t("device.daemonUnavailable")
                 return Locale.Strings.t("device.noDevices")
             }

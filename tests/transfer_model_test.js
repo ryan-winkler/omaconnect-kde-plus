@@ -130,7 +130,7 @@ assert.equal(cancelledHelper(''),'cancellation_unconfirmed');
 assert.equal(cancelledHelper('cancelled_before_submit'),'cancelled_before_submit');
 
 // Private text and ping contents must remain on stdin, never argv.
-Object.assign(context, {actionProcess:{running:false},pairProcess:{running:false},
+Object.assign(context, {actionProcess:{running:false},pairProcess:{running:false},unpairOperation:null,
  scriptPath:p=>'/owned/'+p});
 context.devices[0].capabilities.text=true; context.devices[0].capabilities.ping=true;
 vm.runInContext(['startAction','shareText','pingDevice'].map(extract).join('\n'),context);

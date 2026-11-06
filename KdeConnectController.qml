@@ -15,7 +15,11 @@ Item {
     property string discoveryMessage: Locale.Strings.t("kde.status.checking")
     property int generation: 0
     property int ownerGeneration: 0
+    property string discoveryOwner: ""
     property bool scanQueued: false
+    property bool networkScanQueued: false
+    property bool pairingRosterRefreshPending: false
+    property bool pairingReopenedWhileLaunching: false
 
     property string selectedDeviceId: ""
     property var devices: []
@@ -55,8 +59,9 @@ Item {
     property alias selectionGeneration: fileController.selectionGeneration
     property alias cancellationRequested: fileController.cancellationRequested
 
-    property var pendingPairing: ({})
-    property var pairingRequestTimes: ({})
+    property var unpairOperation: null
+    property string unpairMissingId: ""
+    readonly property string unpairPendingId: unpairOperation ? unpairOperation.id : ""
 
     property bool tailscaleInstalled: false
     property bool tailscaleRunning: false
@@ -94,7 +99,7 @@ Item {
     readonly property var selectedDevice: deviceById(selectedDeviceId)
     readonly property var incomingPairRequest: {
         for (var i = 0; i < devices.length; i++) {
-            if (devices[i].pairRequestedByPeer) return devices[i]
+            if (devices[i].requestKnown !== false && devices[i].pairRequestedByPeer) return devices[i]
         }
         return null
     }
@@ -233,6 +238,7 @@ Item {
         if (!next) return
         if (selectedDeviceId === next.id) return
         selectedDeviceId = next.id
+        unpairMissingId = ""
         clearActionState()
         mediaState = emptyMediaState()
         mediaLoading = false
@@ -284,16 +290,17 @@ Item {
         return scriptPath("scripts/update_custom_address.sh")
     }
 
-    function refresh(forceNetwork) {
+    function refresh(forceNetwork, queueReadback) {
         if (forceNetwork) refreshTailscale()
         if (scanProcess.running) {
-            if (forceNetwork) scanQueued = true
+            if (forceNetwork || queueReadback) scanQueued = true
+            networkScanQueued = networkScanQueued || !!forceNetwork
             return
         }
         var nextGeneration = generation + 1
         generation = nextGeneration
         scanning = true
-        if (discoveryState !== "ready") {
+        if (discoveryState !== "ready" && discoveryState !== "partial") {
             discoveryState = "checking"
             discoveryMessage = Locale.Strings.live("kde.status.checking")
         }
@@ -311,6 +318,8 @@ Item {
         generation += 1
         actionGeneration += 1
         scanQueued = false
+        networkScanQueued = false
+        discoveryOwner = ""
         daemonAvailable = false
         discoveryState = "unavailable"
         discoveryMessage = Locale.Strings.live("kde.status.unavailable")
@@ -322,11 +331,11 @@ Item {
         mediaState = emptyMediaState()
         mediaLoading = false
         mediaRefreshPending = false
-        pendingPairing = ({})
-        pairingRequestTimes = ({})
-        pairingWatchdogTimer.stop()
+        var unpairInterrupted = !!(unpairOperation && unpairOperation.id === selectedDeviceId)
+        if (unpairInterrupted) unpairMissingId = selectedDeviceId
+        unpairOperation = null
         mediaDebounceTimer.stop()
-        if (actionProcess.running || pairProcess.running || pairResponseProcess.running || addressProcess.running) {
+        if (actionProcess.running || unpairInterrupted || addressProcess.running) {
             actionState = "unknown"
             actionMessage = ""
             actionError = Locale.Strings.live("kde.status.ownerChangedDuringAction")
@@ -335,10 +344,11 @@ Item {
         dbusDebounceTimer.restart()
     }
 
-    function parseScanLine(line) {
+    function parseScanLine(line, requireMetadata) {
         var cleanLine = String(line || "").trim()
         var parts = cleanLine.split("\t")
-        if (parts.length < 9 || parts[0] !== "DEVICE") return null
+        if (parts.length < 9 || parts.length > 17 || parts[0] !== "DEVICE"
+                || !/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(parts[1])) return null
         var plugins = String(parts[8] || "").split(",")
         function hasPlugin(name) { return plugins.indexOf(name) !== -1 }
         plugins = plugins.filter(function(id) { return /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(id) }).slice(0, 256)
@@ -348,9 +358,22 @@ Item {
         var netStrengthRaw = parts.length > 10 ? String(parts[10] || "").trim() : ""
         var netStrength = /^\d+$/.test(netStrengthRaw) ? Number(netStrengthRaw) : -1
         var info = {}
+        var metadataValid = parts.length <= 16
         if (parts.length > 16 && parts[16].length <= 16384) {
-            try { var parsed = JSON.parse(parts[16]); if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) info = parsed } catch (error) {}
+            try {
+                var parsed = JSON.parse(parts[16])
+                if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+                    info = parsed
+                    metadataValid = true
+                }
+            } catch (error) {}
         }
+        var nativeMetadata = "pairingKnown" in info || "reachabilityKnown" in info || "requestKnown" in info
+        requireMetadata = requireMetadata || nativeMetadata
+        function flagKnown(value) { return value === "true" || value === "false" }
+        var pairingKnown = metadataValid && flagKnown(parts[4]) && (info.pairingKnown === true || (!requireMetadata && !("pairingKnown" in info)))
+        var reachabilityKnown = metadataValid && flagKnown(parts[5]) && (info.reachabilityKnown === true || (!requireMetadata && !("reachabilityKnown" in info)))
+        var requestKnown = metadataValid && flagKnown(parts[11]) && flagKnown(parts[12]) && (info.requestKnown === true || (!requireMetadata && !("requestKnown" in info)))
         function infoList(value) {
             return Array.isArray(value) && value.length <= 16 && value.every(function(item) { return typeof item === "string" && item.length <= 256 }) ? value : []
         }
@@ -360,15 +383,20 @@ Item {
             id: parts[1],
             name: parts[2] || parts[1],
             type: parts[3] || "unknown",
-            paired: parts[4] === "true",
-            reachable: parts[5] === "true",
+            nativeMetadata: nativeMetadata,
+            pairingKnown: pairingKnown,
+            pairingReported: pairingKnown && info.pairingKnown === true,
+            reachabilityKnown: reachabilityKnown,
+            requestKnown: requestKnown,
+            paired: pairingKnown && parts[4] === "true",
+            reachable: reachabilityKnown && parts[5] === "true",
             battery: /^\d+$/.test(parts[6]) ? Number(parts[6]) : -1,
             isCharging: parts[7] === "true",
             charging: parts[7] === "true",
             networkType: netType,
             networkStrength: netStrength,
-            pairRequested: parts.length > 11 && parts[11] === "true",
-            pairRequestedByPeer: parts.length > 12 && parts[12] === "true",
+            pairRequested: requestKnown && parts[11] === "true",
+            pairRequestedByPeer: requestKnown && parts[12] === "true",
             verificationKey: parts.length > 13 ? String(parts[13] || "").trim() : "",
             pluginIds: plugins,
             loadedPluginIds: loadedPlugins,
@@ -396,9 +424,19 @@ Item {
         if (targetGeneration !== generation) return
         scanning = false
         var next = []
+        var parsedIds = new Set()
+        var invalidDeviceRow = false
         var nextAddresses = []
         var addressesReady = false
-        String(output || "").split("\n").forEach(function(line) {
+        var summarySeen = false
+        var summary = null
+        var ownerSeen = false
+        var busOwner = ""
+        var lines = String(output || "").split("\n")
+        var currentEnvelope = lines.some(function(line) {
+            return /^DEVICE_(OWNER|SCAN)(?:\t|$)/.test(line.trim())
+        })
+        lines.forEach(function(line) {
             var clean = String(line || "").trim()
             if (clean === "CUSTOM_ADDRESSES_READY") {
                 addressesReady = true
@@ -409,9 +447,38 @@ Item {
                 if (address && nextAddresses.indexOf(address) === -1) nextAddresses.push(address)
                 return
             }
-            var device = root.parseScanLine(line)
-            if (device) next.push(device)
+            if (clean === "DEVICE_OWNER" || clean.indexOf("DEVICE_OWNER\t") === 0) {
+                var ownerMatch = /^DEVICE_OWNER\t(:[0-9]{1,30}\.[0-9]{1,30})$/.exec(clean)
+                busOwner = !ownerSeen && ownerMatch ? ownerMatch[1] : ""
+                ownerSeen = true
+                return
+            }
+            if (clean === "DEVICE_SCAN" || clean.indexOf("DEVICE_SCAN\t") === 0) {
+                var match = /^DEVICE_SCAN\t(0|[1-9]\d{0,8})\t(0|[1-9]\d{0,8})$/.exec(clean)
+                summary = !summarySeen && match ? {enumerated: Number(match[1]), readable: Number(match[2])} : null
+                summarySeen = true
+                return
+            }
+            var device = root.parseScanLine(line, currentEnvelope)
+            if (!device || parsedIds.has(device.id)) {
+                if (clean === "DEVICE" || clean.indexOf("DEVICE\t") === 0) invalidDeviceRow = true
+                return
+            }
+            currentEnvelope = currentEnvelope || device.nativeMetadata
+            parsedIds.add(device.id)
+            next.push(device)
         })
+        var validEnvelope = !!(busOwner && summary && summary.enumerated >= summary.readable
+            && summary.readable === next.length && !invalidDeviceRow)
+        var partial = invalidDeviceRow || (currentEnvelope && (!validEnvelope || summary.enumerated !== summary.readable))
+        discoveryOwner = validEnvelope ? busOwner : ""
+        if (currentEnvelope && !validEnvelope) {
+            for (var row of next) {
+                row.pairingKnown = false
+                row.pairingReported = false
+                row.paired = false
+            }
+        }
         devices = next
         customAddressesReady = addressesReady
         if (addressesReady) customAddresses = nextAddresses
@@ -439,34 +506,10 @@ Item {
                 }
             }
         }
-        next.forEach(function(dev) {
-            if (dev.paired) {
-                if (root.pendingPairing[dev.id] === "requesting") {
-                    root.setPendingPairing(dev.id, "")
-                    if (root.selectedDeviceId === dev.id || !root.selectedDeviceId) {
-                        root.actionState = "accepted"
-                        root.actionMessage = Locale.Strings.live("kde.status.paired")
-                        root.actionError = ""
-                    }
-                } else if (root.pendingPairing[dev.id]) {
-                    root.setPendingPairing(dev.id, "")
-                }
-            } else {
-                if (root.pendingPairing[dev.id] === "removing" || root.pendingPairing[dev.id] === "unpair_confirm") {
-                    root.setPendingPairing(dev.id, "")
-                }
-            }
-        })
-        var stillRequesting = false
-        for (var pendingId in root.pendingPairing) {
-            if (root.pendingPairing[pendingId] === "requesting") {
-                stillRequesting = true
-                break
-            }
-        }
-        if (!stillRequesting) pairingWatchdogTimer.stop()
+        if (deviceById(unpairMissingId)) unpairMissingId = ""
         if (!deviceById(selectedDeviceId)) {
-            if (next.length) {
+            var retainSelection = selectedDeviceId && (partial || selectedDeviceId === unpairPendingId || selectedDeviceId === unpairMissingId)
+            if (next.length && !retainSelection) {
                 var preferred = null
                 for (var d = 0; d < next.length; d++) {
                     if (next[d].paired && next[d].reachable) {
@@ -483,10 +526,11 @@ Item {
                     }
                 }
                 selectDevice((preferred || next[0]).id)
-            } else if (actionState !== "unknown") {
+            } else if (!next.length && !unpairOperation && actionState !== "unknown") {
                 clearActionState()
             }
         }
+        finishUnpairReadback(targetGeneration)
         daemonAvailable = scanProcess.exitCode === 0
         sessionBusAvailable = scanProcess.exitCode !== 127 && scanProcess.exitCode !== 78
         if (scanProcess.exitCode === 127) {
@@ -496,21 +540,24 @@ Item {
             discoveryState = "unavailable"
             discoveryMessage = Locale.Strings.live("kde.status.dependencies")
         } else if (scanProcess.exitCode === 0) {
-            discoveryState = "ready"
-            discoveryMessage = next.length ? Locale.Strings.live("kde.status.current") : Locale.Strings.live("kde.status.empty")
+            discoveryState = partial ? "partial" : "ready"
+            discoveryMessage = partial ? Locale.Strings.live("kde.status.partialRoster")
+                : next.length ? Locale.Strings.live("kde.status.current") : Locale.Strings.live("kde.status.empty")
         } else {
             discoveryState = "unavailable"
             discoveryMessage = Locale.Strings.live("kde.status.unavailable")
         }
         if (scanQueued) {
+            var forceNetwork = networkScanQueued
             scanQueued = false
-            root.refresh(true)
+            networkScanQueued = false
+            root.refresh(forceNetwork)
         }
     }
 
     function startAction(id, command, acceptedKey, operation, payload) {
-        if (actionProcess.running || pairProcess.running || !canAct(id)) {
-            var busy = actionProcess.running || pairProcess.running
+        if (actionProcess.running || unpairOperation || pairProcess.running || !canAct(id)) {
+            var busy = actionProcess.running || unpairOperation || pairProcess.running
             actionState = "blocked"
             actionError = busy ? Locale.Strings.live("kde.status.busy") : Locale.Strings.live("panel.deviceMustBePairedAndReachable")
             actionMessage = ""
@@ -631,7 +678,7 @@ Item {
 
     function fetchRemoteCommands(id) {
         var device = deviceById(id)
-        if (commandsProcess.running || pairProcess.running || !canAct(id) || !device.capabilities.commands) {
+        if (commandsProcess.running || unpairOperation || pairProcess.running || !canAct(id) || !device.capabilities.commands) {
             if (device && !commandsProcess.running && !pairProcess.running && canAct(id) && !device.capabilities.commands) {
                 actionState = "blocked"
                 actionError = Locale.Strings.live("kde.status.noCommands")
@@ -731,79 +778,40 @@ Item {
         return startAction(id, ["kdeconnect-cli", "-d", String(id), "--execute-command", value], "kde.accepted.command", "command")
     }
 
-    function setPendingPairing(id, state) {
-        var copy = Object.assign({}, pendingPairing)
-        if (state) {
-            copy[String(id)] = state
-        } else {
-            delete copy[String(id)]
-            var times = Object.assign({}, pairingRequestTimes)
-            delete times[String(id)]
-            pairingRequestTimes = times
+    function unpairDevice(id, reviewedOwner) {
+        var peer = deviceById(id)
+        if (!peer || id !== selectedDeviceId || !peer.paired || peer.pairingReported !== true
+                || !discoveryOwner || reviewedOwner !== discoveryOwner || !/^[A-Za-z0-9_]{1,128}$/.test(id)) return false
+        if (unpairOperation || pairProcess.running || actionProcess.running) {
+            actionError = Locale.Strings.live("kde.status.busy")
+            return false
         }
-        pendingPairing = copy
-    }
-
-    function pairDevice(id) {
-        var device = deviceById(id)
-        if (!device || pairProcess.running || actionProcess.running || !device.capabilities.pair) return false
-        if (pendingPairing[String(id)] === "requesting" || pendingPairing[String(id)] === "removing" || pendingPairing[String(id)] === "unpair_confirm") return false
-        setPendingPairing(id, "requesting")
-        var times = Object.assign({}, pairingRequestTimes)
-        times[String(id)] = Date.now()
-        pairingRequestTimes = times
-        actionState = "accepted"
-        actionMessage = Locale.Strings.live("kde.status.pairSent")
-        actionError = ""
-        if (!pairingWatchdogTimer.running) pairingWatchdogTimer.start()
-        pairProcess.targetDeviceId = String(id)
-        pairProcess.command = ["kdeconnect-cli", "-d", String(id), "--pair"]
-        pairProcess.targetOwnerGeneration = ownerGeneration
-        pairProcess.running = true
-        return true
-    }
-
-    function validDeviceId(id) {
-        return /^[A-Za-z0-9][A-Za-z0-9_]*$/.test(String(id || ""))
-    }
-
-    function respondToPairingRequest(id, accept) {
-        if (!validDeviceId(id)) return false
-        var device = deviceById(id)
-        if (!device || !device.pairRequestedByPeer || pairResponseProcess.running || pairProcess.running) return false
-        selectDevice(id)
-        setPendingPairing(id, accept ? "accepting" : "rejecting")
-        pairResponseProcess.targetDeviceId = String(id)
-        pairResponseProcess.accepting = accept
-        pairResponseProcess.command = ["gdbus", "call", "--session", "--dest", "org.kde.kdeconnect", "--object-path", "/modules/kdeconnect/devices/" + String(id), "--method", accept ? "org.kde.kdeconnect.device.acceptPairing" : "org.kde.kdeconnect.device.cancelPairing"]
+        var duplicate = devices.some(function(device) { return device.id !== id && device.name === peer.name })
+        var label = peer.name + (duplicate ? " [" + id + "]" : "")
+        unpairOperation = {id: id, label: label, owner: ownerGeneration, busOwner: reviewedOwner, readbackGeneration: 0}
         actionState = "running"
-        actionMessage = accept ? Locale.Strings.live("kde.status.pairAccepting") : Locale.Strings.live("kde.status.pairRejecting")
+        actionMessage = Locale.Strings.live("kde.status.unpairRequested")
         actionError = ""
-        pairResponseProcess.targetOwnerGeneration = ownerGeneration
-        pairResponseProcess.running = true
-        return true
-    }
-
-    function acceptPairing(id) {
-        return respondToPairingRequest(id, true)
-    }
-
-    function rejectPairing(id) {
-        return respondToPairingRequest(id, false)
-    }
-
-    function unpairDevice(id) {
-        var device = deviceById(id)
-        if (!device || !device.paired || pairProcess.running || actionProcess.running || !device.capabilities.pair) return false
-        setPendingPairing(id, "removing")
-        actionState = "accepted"
-        actionMessage = Locale.Strings.live("kde.status.unpaired")
-        actionError = ""
-        pairProcess.targetDeviceId = String(id)
-        pairProcess.command = ["kdeconnect-cli", "-d", String(id), "--unpair"]
         pairProcess.targetOwnerGeneration = ownerGeneration
+        pairProcess.command = withDeadline(10, ["bash", scriptPath("scripts/unpair_device.sh"), reviewedOwner, id])
         pairProcess.running = true
         return true
+    }
+
+    function finishUnpairReadback(scanGeneration) {
+        var pending = unpairOperation
+        if (!pending || pending.owner !== ownerGeneration || !pending.readbackGeneration
+                || scanGeneration < pending.readbackGeneration) return
+        unpairOperation = null
+        if (pending.id !== selectedDeviceId) return
+        var peer = deviceById(pending.id)
+        if (!peer) unpairMissingId = pending.id
+        var known = scanProcess.exitCode === 0 && discoveryOwner === pending.busOwner && peer && peer.pairingReported === true
+        var unpaired = known && !peer.paired
+        actionState = unpaired ? "accepted" : known ? "failed" : "unknown"
+        actionMessage = unpaired ? Locale.Strings.live("kde.status.unpaired") : ""
+        actionError = unpaired ? "" : known ? Locale.Strings.live("kde.status.stillPaired")
+            : Qt.binding(function() { return Locale.Strings.format("kde.status.unpairUnknown", [pending.label]) })
     }
 
     function fetchMediaStatus(id) {
@@ -1028,16 +1036,36 @@ Item {
     }
 
     function openKdeConnectApp(pluginId) {
-        if (appProcess.running) return false
         if (pluginId !== undefined && typeof pluginId !== "string") return false
         pluginId = pluginId || ""
         if (pluginId && (!selectedDevice || !selectedDevice.paired || !/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(pluginId))) return false
-        appProcess.targetDeviceId = selectedDeviceId
+        return startNativeApp(selectedDeviceId, pluginId)
+    }
+
+    function openPairingSettings() {
+        if (!startNativeApp("", "")) return false
+        pairingRosterRefreshPending = true
+        return true
+    }
+
+    function refreshAfterPairingHandoff() {
+        if (!pairingRosterRefreshPending) return
+        if (appProcess.running) {
+            pairingReopenedWhileLaunching = true
+            return
+        }
+        pairingRosterRefreshPending = false
+        refresh(false, true)
+    }
+
+    function startNativeApp(deviceId, pluginId) {
+        if (appProcess.running) return false
+        appProcess.targetDeviceId = deviceId
         appProcess.configurationRequested = pluginId !== ""
         nativeAppMessage = pluginId ? Locale.Strings.live("kde.status.nativeFeatureOpening") : Locale.Strings.live("kde.status.nativeAppOpening")
         nativeAppFailed = false
         appProcess.command = ["bash", getAppScriptPath()]
-        if (selectedDeviceId) appProcess.command = appProcess.command.concat([selectedDeviceId])
+        if (deviceId) appProcess.command = appProcess.command.concat([deviceId])
         if (pluginId) appProcess.command = appProcess.command.concat([pluginId])
         appProcess.running = true
         return true
@@ -1056,7 +1084,7 @@ Item {
     Timer {
         id: dbusDebounceTimer; interval: 500
         repeat: false
-        onTriggered: root.refresh()
+        onTriggered: root.refresh(false, true)
     }
 
     Timer {
@@ -1065,33 +1093,6 @@ Item {
         onTriggered: if (root.selectedDeviceId) root.fetchMediaStatus(root.selectedDeviceId)
     }
 
-    Timer {
-        id: pairingWatchdogTimer
-        interval: 1000
-        repeat: true
-        onTriggered: {
-            var now = Date.now()
-            var anyRequesting = false
-            var timedOutSelected = false
-            for (var devId in root.pendingPairing) {
-                if (root.pendingPairing[devId] === "requesting") {
-                    var reqTime = root.pairingRequestTimes[devId] || 0
-                    if (now - reqTime >= 30000) {
-                        root.setPendingPairing(devId, "")
-                        if (devId === root.selectedDeviceId) timedOutSelected = true
-                    } else {
-                        anyRequesting = true
-                    }
-                }
-            }
-            if (timedOutSelected) {
-                root.actionState = "failed"
-                root.actionMessage = ""
-                root.actionError = Locale.Strings.live("kde.status.pairTimeout")
-            }
-            if (!anyRequesting) pairingWatchdogTimer.stop()
-        }
-    }
 
     Timer {
         id: monitorStabilityTimer
@@ -1128,7 +1129,7 @@ Item {
                 if (!dbusDebounceTimer.running) dbusDebounceTimer.restart()
                 return
             }
-            // Only a complete scan is applied; a failed or stopped scan shows no devices.
+            // A successful enumeration may contain unreadable rows; a failed scan shows no devices.
             root.applyScan(code === 0 ? stdout.text : "", targetGeneration)
         }
     }
@@ -1190,63 +1191,12 @@ Item {
     Process {
         id: pairProcess
         property int targetOwnerGeneration: 0
-        property string targetDeviceId: ""
-        stderr: StdioCollector { waitForEnd: true }
-        onExited: function(code) {
-            if (targetOwnerGeneration !== root.ownerGeneration) return
-            var isPair = pairProcess.command && pairProcess.command.indexOf("--pair") !== -1
-            var op = isPair ? "pairing" : "unpairing"
-            if (isPair) {
-                if (code === 0) {
-                    root.setPendingPairing(targetDeviceId, "requesting")
-                } else {
-                    root.setPendingPairing(targetDeviceId, "")
-                    var stillRequesting = false
-                    for (var pendingId in root.pendingPairing) {
-                        if (root.pendingPairing[pendingId] === "requesting") {
-                            stillRequesting = true
-                            break
-                        }
-                    }
-                    if (!stillRequesting) pairingWatchdogTimer.stop()
-                }
-            } else {
-                root.setPendingPairing(targetDeviceId, "")
-            }
-            if (targetDeviceId !== root.selectedDeviceId) {
-                root.refresh()
-                return
-            }
-            if (code === 0) {
-                root.actionState = "accepted"
-                root.actionMessage = isPair ? Locale.Strings.live("kde.status.pairSent") : Locale.Strings.live("kde.status.unpaired")
-                root.actionError = ""
-            } else {
-                root.actionState = "failed"
-                root.actionMessage = ""
-                root.actionError = root.safeError(code, op)
-            }
-            root.refresh()
-        }
-    }
-
-    Process {
-        id: pairResponseProcess
-        property int targetOwnerGeneration: 0
-        property string targetDeviceId: ""
-        property bool accepting: false
-        stderr: StdioCollector { waitForEnd: true }
-        onExited: function(code) {
-            if (targetOwnerGeneration !== root.ownerGeneration) return
-            root.setPendingPairing(targetDeviceId, "")
-            if (targetDeviceId !== root.selectedDeviceId) {
-                root.refresh()
-                return
-            }
-            root.actionState = code === 0 ? "accepted" : "failed"
-            root.actionMessage = code === 0 ? (accepting ? Locale.Strings.live("kde.status.pairResponseSent") : Locale.Strings.live("kde.status.pairRejected")) : ""
-            root.actionError = code === 0 ? "" : root.safeError(code, accepting ? "pairing" : "pairingRejection")
-            root.refresh()
+        onExited: {
+            var pending = root.unpairOperation
+            if (targetOwnerGeneration !== root.ownerGeneration || !pending) return
+            root.unpairOperation = {id: pending.id, label: pending.label, owner: pending.owner,
+                busOwner: pending.busOwner, readbackGeneration: root.generation + 1}
+            root.refresh(false, true)
         }
     }
 
@@ -1372,7 +1322,12 @@ Item {
         property string targetDeviceId: ""
         property bool configurationRequested: false
         onExited: function(code) {
-            if (targetDeviceId !== root.selectedDeviceId) return
+            if (root.pairingReopenedWhileLaunching) {
+                root.pairingReopenedWhileLaunching = false
+                root.pairingRosterRefreshPending = false
+                root.refresh(false, true)
+            }
+            if (targetDeviceId && targetDeviceId !== root.selectedDeviceId) return
             root.nativeAppFailed = code !== 0
             root.nativeAppMessage = code === 0 ? (configurationRequested ? Locale.Strings.live("kde.status.nativeFeatureRequested") : Locale.Strings.live("kde.status.nativeAppRequested"))
                 : configurationRequested && code === 69 ? Locale.Strings.live("kde.status.directConfigurationUnavailable")
@@ -1459,7 +1414,6 @@ Item {
         actionDismissTimer.stop()
         dbusDebounceTimer.stop()
         mediaDebounceTimer.stop()
-        pairingWatchdogTimer.stop()
         monitorStabilityTimer.stop()
         signalRestart.stop()
         signalProcess.running = false
@@ -1467,7 +1421,6 @@ Item {
         commandsProcess.running = false
         actionProcess.running = false
         pairProcess.running = false
-        pairResponseProcess.running = false
         tailscaleProcess.running = false
         addressProcess.running = false
         appProcess.running = false
