@@ -32,7 +32,8 @@ Column {
     Text {
         textFormat: Text.PlainText
         width: parent.width
-        text: Locale.Strings.t("activity.acceptedMeansKdeConnectTookThe")
+        objectName: "activity-delivery-help"
+        text: Locale.Strings.t("activity.deliveryHelp")
 
         wrapMode: Text.Wrap
         color: Commons.Color.popups.text
