@@ -192,6 +192,7 @@ Item {
 
     KdeConnectController {
         id: controller
+        onComposerRequestFinished: function(generation, accepted) { root.composerRequestFinished(generation, accepted) }
         onOperationFinished: function(operation) { taskNotices.notify(operation) }
     }
 
@@ -200,6 +201,8 @@ Item {
     property alias scanning: controller.scanning
     property alias discoveryState: controller.discoveryState
     property alias discoveryMessage: controller.discoveryMessage
+    readonly property int actionGeneration: controller.actionGeneration
+    signal composerRequestFinished(int generation, bool accepted)
     property alias actionState: controller.actionState
     property alias actionMessage: controller.actionMessage
     property alias actionError: controller.actionError

@@ -11,8 +11,10 @@ Disabled controls do not submit a request. A switch follows the saved value;
 requesting a save does not change its displayed state before readback.
 
 Use the **Device** dropdown below the Settings title to change devices without
-leaving the page. It also changes the selected device in Devices and clears the
-old device's unsent text draft. Connected, offline and unpaired devices stay in
+leaving the page. It also changes the selected device in Devices. Unsent Text
+and Ping stay with their original device for this panel session. Switch back and
+reopen the composer to continue. A file review keeps its original recipient.
+Connected, offline and unpaired devices stay in
 the list. Devices with the same local name also show their IDs. Offline devices
 can still have a local icon or alias. Pairing and native permissions stay in KDE
 Connect. Display preferences apply to Plus on this computer.
@@ -29,6 +31,9 @@ list in the daily view. The gear beside it opens **Device features** for that
 exact device in Plus. Collapse **Device details** to keep the switcher compact.
 Pairing warnings and an active unpair confirmation remain visible. Use **Native
 KDE Connect settings** inside Plus for KDE Connect's full settings and permissions.
+If a device is missing, use **Refresh devices** beside the picker. If it is
+still missing, check the device list in native KDE Connect on both computers.
+Plus can show only peers reported by KDE Connect on this computer.
 
 ## Screenshots
 

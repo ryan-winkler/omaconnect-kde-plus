@@ -22,6 +22,7 @@ Item {
     property var remoteCommands: []
     property bool commandsLoading: false
 
+    signal composerRequestFinished(int generation, bool accepted)
     property string actionState: "idle"
     property string actionMessage: ""
     property string actionError: ""
@@ -1170,12 +1171,18 @@ Item {
         property string operation: "default"
         stderr: StdioCollector { waitForEnd: true }
         onExited: function(code) {
-            if (targetGeneration !== root.actionGeneration || targetDeviceId !== root.selectedDeviceId) return
+            var current = targetGeneration === root.actionGeneration && targetDeviceId === root.selectedDeviceId
+            var composer = operation === "ping" || operation === "text"
+            if (!current) {
+                if (composer) root.composerRequestFinished(targetGeneration, false)
+                return
+            }
             var accepted = code === 0 && (!privateSubmission || resultState === "request_accepted")
             var unknown = privateSubmission && (resultError === "submission-unknown" || !resultState)
             root.actionState = unknown ? "unknown" : accepted ? "accepted" : "failed"
             root.actionMessage = accepted ? Locale.Strings.live(acceptedKey) : ""
             root.actionError = unknown ? Locale.Strings.live("kde.status.submissionUnknown") : accepted ? "" : resultError === "capability-unavailable" ? Locale.Strings.live("kde.status.featureUnavailable") : root.safeError(code, operation)
+            if (composer) root.composerRequestFinished(targetGeneration, accepted && !unknown)
             if (operation === "virtualMonitor") root.refresh()
         }
     }

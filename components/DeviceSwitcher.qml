@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls as Controls
+import QtQuick.Layouts
 import qs.Commons
 import qs.Commons as Commons
 import "../i18n" as Locale
@@ -15,7 +16,10 @@ Controls.ComboBox {
     readonly property var deviceOptions: devices.map(function(entry) {
         var name = root.deviceName(entry)
         var duplicate = root.devices.some(function(other) { return other.id !== entry.id && root.deviceName(other) === name })
-        return {value: entry.id, label: name + (duplicate ? " [" + entry.id + "]" : "") + " · " + root.deviceState(entry)}
+        var displayName = name + (duplicate ? " [" + entry.id + "]" : "")
+        var state = root.deviceState(entry)
+        return {value: entry.id, name: displayName, state: state, type: entry.type,
+            active: entry.paired && entry.reachable, label: displayName + " · " + state}
     })
     readonly property string deviceStatus: {
         if (!service) return Locale.Strings.t("deviceSwitcher.kdeConnectIsUnavailableOpenKde")
@@ -27,8 +31,20 @@ Controls.ComboBox {
         if (!device) return Locale.Strings.t("deviceSwitcher.chooseADeviceAbove")
         return Locale.Strings.format("deviceSwitcher.selectionStatus", [root.deviceState(device)])
     }
-    readonly property string deviceOptionsKey: JSON.stringify(deviceOptions)
-    onDeviceOptionsKeyChanged: if (popup) popup.close()
+    readonly property string deviceOptionsKey: JSON.stringify(deviceOptions.map(function(option) {
+        return [option.value, option.label]
+    }))
+    property bool popupInvalidated: false
+    onDeviceOptionsKeyChanged: {
+        if (popup && popup.visible) {
+            popupInvalidated = true
+            popup.close()
+        }
+    }
+    Connections {
+        target: root.popup
+        function onAboutToShow() { root.popupInvalidated = false }
+    }
     readonly property color surfaceColor: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     signal aboutToSelect(string deviceId)
 
@@ -53,11 +69,8 @@ Controls.ComboBox {
     textRole: "label"
     valueRole: "value"
     currentValue: root.selectedId
-    displayText: {
-        var options = root.deviceOptions
-        var selected = options.find(function(option) { return option.value === root.selectedId })
-        return selected ? selected.label : Locale.Strings.t("deviceSwitcher.choose")
-    }
+    readonly property var selectedOption: deviceOptions.find(function(option) { return option.value === root.selectedId })
+    displayText: selectedOption ? selectedOption.label : Locale.Strings.t("deviceSwitcher.choose")
     enabled: root.devices.length > 0
     font.family: Style.font.family
     font.pixelSize: Style.font.body
@@ -70,34 +83,48 @@ Controls.ComboBox {
     palette.highlightedText: root.surfaceColor
     Accessible.role: Accessible.ComboBox
     Accessible.name: Locale.Strings.t("settings.device")
-    Accessible.description: root.deviceStatus
+    Accessible.description: root.selectedOption ? root.selectedOption.name + ". " + root.deviceStatus : root.deviceStatus
     Accessible.onPressAction: {
         if (!enabled) return
         forceActiveFocus()
         popup.visible ? popup.close() : popup.open()
     }
-    contentItem: Text {
-        text: root.displayText
-        textFormat: Text.PlainText
-        color: Commons.Color.popups.text
-        font: root.font
-        verticalAlignment: Text.AlignVCenter
-        // Elide inside the name so the trailing device state stays visible.
-        elide: Text.ElideMiddle
-        leftPadding: selectedIcon.visible ? selectedIcon.width + Style.space(6) : 0
+    component DeviceLabel: RowLayout {
+        id: row
+        property var option
+        spacing: Style.space(6)
         AppearanceIcon {
-            id: selectedIcon
-            visible: !!(root.device && root.service && "appearance" in root.service && root.service.appearance && typeof root.service.appearance.deviceIcon === "function")
-            width: Style.space(20)
-            height: width
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            icon: visible ? root.service.appearance.deviceIcon(root.device.id, root.device.type) : ({mode:"preset",value:"phone"})
-            assetBaseUrl: visible && typeof root.service.appearance.assetBaseUrl === "string" ? root.service.appearance.assetBaseUrl : ""
-            foreground: root.device && root.device.paired && root.device.reachable ? Commons.Color.accent : Commons.Color.popups.text
+            readonly property var appearance: root.service && "appearance" in root.service ? root.service.appearance : null
+            readonly property bool hasIcon: !!(row.option && appearance && typeof appearance.deviceIcon === "function")
+            Layout.preferredWidth: Style.space(20)
+            Layout.preferredHeight: Style.space(20)
+            opacity: hasIcon ? 1 : 0
+            icon: hasIcon ? appearance.deviceIcon(row.option.value, row.option.type) : ({mode: "preset", value: "phone"})
+            assetBaseUrl: hasIcon && typeof appearance.assetBaseUrl === "string" ? appearance.assetBaseUrl : ""
+            foreground: row.option && row.option.active ? Commons.Color.accent : Commons.Color.popups.text
             fontFamily: root.font.family
         }
+        Text {
+            objectName: "device-label-name"
+            Layout.fillWidth: true
+            Layout.minimumWidth: 0
+            text: row.option ? row.option.name : Locale.Strings.t("deviceSwitcher.choose")
+            textFormat: Text.PlainText
+            color: Commons.Color.popups.text
+            font: root.font
+            elide: Text.ElideMiddle
+        }
+        Text {
+            visible: !!row.option
+            Layout.maximumWidth: Math.floor(row.width * 0.48)
+            text: row.option ? row.option.state : ""
+            textFormat: Text.PlainText
+            color: Commons.Color.popups.text
+            font: root.font
+            elide: Text.ElideRight
+        }
     }
+    contentItem: DeviceLabel { option: root.selectedOption }
     // Same chevron and hover fill as the Omarchy Dropdown.
     indicator: Text {
         id: chevron
@@ -116,6 +143,7 @@ Controls.ComboBox {
         border.color: root.activeFocus ? Commons.Color.accent : Commons.Color.popups.border
     }
     delegate: Controls.ItemDelegate {
+        id: optionDelegate
         required property var modelData
         required property int index
         objectName: "device-option-" + index
@@ -123,20 +151,32 @@ Controls.ComboBox {
         Accessible.name: text
         Accessible.onPressAction: if (enabled && root.popup.visible) clicked()
         width: root.width
-        height: Math.max(44, implicitHeight)
+        leftPadding: root.leftPadding
+        rightPadding: root.rightPadding
+        height: root.height
         highlighted: root.highlightedIndex === index
-        contentItem: Text {
-            text: modelData.label
+        contentItem: DeviceLabel { option: optionDelegate.modelData }
+        Text {
+            anchors.right: parent.right
+            anchors.rightMargin: Style.spacing.controlGap
+            anchors.verticalCenter: parent.verticalCenter
+            visible: !!optionDelegate.modelData && optionDelegate.modelData.value === root.selectedId
+            text: "✓"
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font: root.font
-            wrapMode: Text.Wrap
+            Accessible.ignored: true
         }
         background: Rectangle {
             color: parent.highlighted ? Style.hoverFillFor(Commons.Color.popups.text, Commons.Color.accent) : root.surfaceColor
         }
     }
     onActivated: function(index) {
+        if (root.popupInvalidated) {
+            // A closed ComboBox can move its native index before emitting activated.
+            root.currentIndex = root.indexOfValue(root.selectedId)
+            return
+        }
         var option = root.deviceOptions[index]
         if (option) root.selectDevice(option.value)
     }
