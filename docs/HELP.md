@@ -29,11 +29,18 @@ window. Older KDE Connect settings frontends can open the device list instead.
 In Devices, use the **Device** dropdown to switch devices. It is the only device
 list in the daily view. The gear beside it opens **Device features** for that
 exact device in Plus. Collapse **Device details** to keep the switcher compact.
-Pairing warnings and an active unpair confirmation remain visible. Use **Native
-KDE Connect settings** inside Plus for KDE Connect's full settings and permissions.
-If a device is missing, use **Refresh devices** beside the picker. If it is
-still missing, check the device list in native KDE Connect on both computers.
-Plus can show only peers reported by KDE Connect on this computer.
+Pairing notices and an active unpair confirmation remain visible. **Pair in
+KDE Connect** opens the native device list. Find the intended peer and compare
+the verification key on both devices before accepting. If the request changed
+or the key is missing or differs, decline it or back out and start again from
+the known device. Use native KDE Connect to check or cancel a pending request.
+If Plus cannot launch KDE Connect, open it from your application launcher.
+
+If a device is missing, use **Refresh devices** beside the picker. **Some
+devices are unavailable** means KDE Connect listed devices that Plus could
+not read. Check the native device list on both computers. **Status unavailable**
+means Plus could not establish a device's status. KDE Connect can keep a pairing
+while the device is offline.
 
 ## Screenshots
 
@@ -209,8 +216,10 @@ VPN modes or accepted file operations, and preserves file and text drafts.
 
 The device switcher shows the device state and stays available when **Device
 details** collapse. Device details show the battery, cellular state, ID, reported
-addresses, connection providers and **Pair** or **Unpair**. Rows the device does
-not report are hidden. Switching devices does not change the recipient of a file
+addresses, connection providers and **Unpair**. Choose **Confirm unpair**
+for the displayed device. Plus reports removal after KDE Connect reports the
+device as unpaired. If Plus cannot confirm removal, check the native device
+list before retrying. Device details omit information KDE Connect did not report. Switching devices does not change the recipient of a file
 review. Devices and Quick actions start expanded; the other sections start
 collapsed. Section headings show a short description on hover and to screen
 readers; this guide has the full help. Hiding a section keeps
@@ -262,8 +271,10 @@ range is accepted only with the Tailscale source, and the BTH source accepts IPv
 ## Keyboard
 
 In the Devices view, use the arrow keys or `h` `j` `k` `l` to move, and `Enter`
-or `Space` to activate. Press `r` to refresh, `p` to pair the selected device,
-`u` to unpair it and `y` to confirm, `c` to cancel, and `Esc` to close. `Tab`
+or `Space` to activate. Press `r` to refresh or `p` to open the native pairing
+view when **Pair in KDE Connect** or **Open KDE Connect** is available. Press
+`u` to review Unpair, `y` to confirm, or `c` to dismiss the confirmation.
+Press `Esc` to close. `Tab`
 moves into the normal control order. The View menu supports Enter or Space to
 open, Up or Down to choose, and Enter or Space to select. Escape closes the menu
 and returns focus to its trigger. Choosing Devices returns to device navigation.

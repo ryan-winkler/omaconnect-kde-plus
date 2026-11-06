@@ -396,14 +396,46 @@ receipt.
 
 ### Native information, metadata and virtual monitor
 
-Discovery preserves the original first 16 DEVICE fields. An optional trailing JSON
-field carries up to 16 addresses and 16 provider names of at most 256 characters each,
-plus native virtual-monitor known/active/available booleans. QML revalidates these
-bounds. Legacy 16-field records remain valid. Unknown reads never mean false or
-available. Virtual-monitor properties are read only for reported support, with a
+Discovery preserves the original first 16 DEVICE fields. The current producer
+always emits a trailing JSON field. It carries up to 16 addresses and 16 provider
+names of at most 256 characters each, plus native virtual-monitor
+known/active/available booleans. It also carries `pairingKnown`,
+`reachabilityKnown`, and `requestKnown`. A flag is true only when KDE Connect
+returned a boolean for the corresponding property. `requestKnown` requires both
+incoming and outgoing request flags. QML revalidates these bounds and accepts
+legacy 16-field records. A missing native property does not establish a false
+value. Virtual-monitor properties are read only for reported support, with a
 five-second native-call timeout shared by discovery properties.
 The serialized information field is at most 16,384 characters after JSON escaping.
 Oversized information lists are omitted as needed; valid monitor state is retained.
+
+The helper resolves the KDE Connect daemon to its unique D-Bus connection
+before enumeration. All enumeration and property reads address that connection.
+After the reads, the helper checks the owner again and emits
+`DEVICE_OWNER<TAB><unique-name>` only if the owner still matches. The name is at
+most 64 characters and uses the form `:1.42` with two decimal components.
+An owner change or owner lookup failure exits nonzero. Consumers must discard
+all records from a failed scan, including any rows written before the final
+owner check.
+
+After a successful enumeration the helper ends its output with
+`DEVICE_SCAN<TAB><enumerated><TAB><readable>`. Counts are nonnegative decimal
+integers. The first count is the number of distinct device IDs and the second is
+the number of DEVICE records emitted. IDs use 1–128 ASCII characters from the
+letters, digits, underscore, dot, and hyphen, and start with a letter, digit, or
+underscore. A canonical device object path and its bare ID count once. A failed
+device-object read or format produces no DEVICE row and makes the scan partial.
+Optional plugin reads do not affect these counts. An empty enumeration emits
+`0<TAB>0`. An unavailable or malformed top-level enumeration exits nonzero and
+emits no scan summary. Legacy helper output without this summary remains valid.
+
+Unpair requires a current snapshot with an explicit paired flag and a reviewed
+peer ID. The Unpair helper rechecks the paired flag on the reviewed unique
+connection and verifies that connection still owns the KDE Connect service
+name. It addresses the write to the same unique connection with auto-start
+disabled. A later scan must report the same owner and explicit unpaired state
+before Plus confirms removal. A missing peer or failed readback leaves the
+outcome unknown. KDE Connect owns the trust record.
 
 Feature display names use the installed `PluginModel.pluginDisplayName` API in an
 optional loader. The metadata model has no device target. Its Instantiator requests

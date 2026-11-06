@@ -16,7 +16,8 @@ ShellRoot {
     property string selectedBeforeTyping: ""
     property int indexBeforeTyping: -1
     property bool cursorBeforeTyping: false
-    property string pairingBeforeTyping: ""
+    property string unpairBeforeTyping: ""
+    property string nativeAppBeforeTyping: ""
     readonly property string typedText: "hjklpruyx"
 
     function check(value, message) {
@@ -83,7 +84,8 @@ ShellRoot {
         selectedBeforeTyping = service.selectedDeviceId
         indexBeforeTyping = panel.selectedIndex
         cursorBeforeTyping = panel.cursorActive
-        pairingBeforeTyping = JSON.stringify(service.pendingPairing)
+        unpairBeforeTyping = panel.unpairConfirmingId
+        nativeAppBeforeTyping = service.nativeAppMessage
         for (var i = 0; i < typedText.length; i++)
             if (!events.keyClickChar(typedText[i], Qt.NoModifier, 1)) check(false, "Qt text event delivered")
     }
@@ -91,7 +93,8 @@ ShellRoot {
         check(textTarget.text === typedText, label + " accepts hjkl and action letters")
         check(service.selectedDeviceId === selectedBeforeTyping && panel.selectedIndex === indexBeforeTyping,
               label + " does not navigate devices")
-        check(panel.cursorActive === cursorBeforeTyping && JSON.stringify(service.pendingPairing) === pairingBeforeTyping,
+        check(panel.cursorActive === cursorBeforeTyping && panel.unpairConfirmingId === unpairBeforeTyping
+              && service.nativeAppMessage === nativeAppBeforeTyping,
               label + " does not trigger panel shortcuts")
     }
 

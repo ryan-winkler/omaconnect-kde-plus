@@ -216,7 +216,9 @@ Item {
     property alias incomingPairRequest: controller.incomingPairRequest
     property alias remoteCommands: controller.remoteCommands
     property alias commandsLoading: controller.commandsLoading
-    property alias pendingPairing: controller.pendingPairing
+    readonly property int ownerGeneration: controller.ownerGeneration
+    readonly property string discoveryOwner: controller.discoveryOwner
+    readonly property string unpairPendingId: controller.unpairPendingId
     property alias fileBusy: controller.fileBusy
     property alias fileTransferState: controller.fileTransferState
     property alias fileTransferMessage: controller.fileTransferMessage
@@ -245,10 +247,6 @@ Item {
         controller.clearActionState()
     }
 
-    function setPendingPairing(id, state) {
-        controller.setPendingPairing(id, state)
-    }
-
     function pingDevice(id, text) {
         return controller.pingDevice(id, text)
     }
@@ -265,20 +263,8 @@ Item {
         return controller.executeRemoteCommand(id, key)
     }
 
-    function pairDevice(id) {
-        return controller.pairDevice(id)
-    }
-
-    function unpairDevice(id) {
-        return controller.unpairDevice(id)
-    }
-
-    function acceptPairing(id) {
-        return controller.acceptPairing(id)
-    }
-
-    function rejectPairing(id) {
-        return controller.rejectPairing(id)
+    function unpairDevice(id, reviewedOwner) {
+        return controller.unpairDevice(id, reviewedOwner)
     }
 
     function ringDevice(id) {
@@ -308,6 +294,9 @@ Item {
     function openSmsApp(id) {
         return controller.openSmsApp(id)
     }
+
+    function openPairingSettings() { return controller.openPairingSettings() }
+    function refreshAfterPairingHandoff() { controller.refreshAfterPairingHandoff() }
 
     function openKdeConnectApp(pluginId) {
         return controller.openKdeConnectApp(pluginId)

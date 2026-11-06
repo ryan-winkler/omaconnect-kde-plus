@@ -102,6 +102,33 @@ class ParseStringListTests(unittest.TestCase):
         raw = json.dumps({"type": "as", "data": [["ok", 42, None, ""]]})
         self.assertEqual(discover_report.parse_string_list(raw), ["ok"])
 
+    def test_device_ids_are_safe_unique_and_canonical(self):
+        """Deduplicate device IDs and reject malformed paths and reply types."""
+        raw = json.dumps({"type": "as", "data": [["one", "two", "/modules/kdeconnect/devices/one"]]})
+        self.assertEqual(discover_report.parse_device_ids(raw), ["one", "two"])
+        for reply in (
+            {"type": "b", "data": [[]]},
+            {"type": "as", "data": [["/other/devices/one"]]},
+            {"type": "as", "data": [["one\ntwo"]]},
+            {"type": "as", "data": [[1]]},
+        ):
+            with self.subTest(reply=reply):
+                self.assertIsNone(discover_report.parse_device_ids(json.dumps(reply)))
+
+    def test_owner_reply_requires_one_bounded_unique_name(self):
+        """Reject well-known names, malformed replies and unsafe owner strings."""
+        self.assertEqual(discover_report.parse_unique_owner('{"type":"s","data":[":1.42"]}'), ":1.42")
+        for kind, data in (
+            ("s", ["org.kde.kdeconnect"]),
+            ("s", [":1.42\n"]),
+            ("s", [":" + "1" * 64 + ".42"]),
+            ("s", [":1.42", ":1.43"]),
+            ("s", [":1.²"]),
+            ("as", [":1.42"]),
+        ):
+            with self.subTest(kind=kind, data=data):
+                self.assertIsNone(discover_report.parse_unique_owner(json.dumps({"type": kind, "data": data})))
+
 
 class MediaStatusBuilderTests(unittest.TestCase):
     def test_clean_fixture_exact_contract(self):
@@ -199,6 +226,9 @@ class DeviceTsvFormatterTests(unittest.TestCase):
         self.assertEqual(info['addresses'], ['192.168.1.42:1716'])
         self.assertEqual(info['providers'], ['LanLinkProvider'])
         self.assertEqual(info['monitor'], {'known': False, 'active': False, 'available': False})
+        self.assertIs(info["pairingKnown"], True)
+        self.assertIs(info["reachabilityKnown"], True)
+        self.assertIs(info["requestKnown"], True)
 
     def test_unknown_loaded_state_is_distinct_from_none_loaded(self):
         device = props("busctl-device-getall.json")
@@ -251,10 +281,11 @@ class DeviceTsvFormatterTests(unittest.TestCase):
                 self.assertEqual(discover_report.format_device("d", device).split("\t")[8], "")
 
     def test_hostile_name_cannot_forge_tsv_records(self):
+        """Keep a remote name within one device record even when it contains delimiters."""
         line = discover_report.format_device(
             "evil-1", props("busctl-device-getall-hostile.json"), None, None)
         fields = line.split("\t")
-        self.assertEqual(len(fields), 16)
+        self.assertEqual(len(fields), 17)
         self.assertEqual(fields[2], "Evil <[]> Name Second Row")
         self.assertEqual(fields[13], "EVIL KEY !")
         for field in fields:
@@ -300,6 +331,24 @@ class DeviceTsvFormatterTests(unittest.TestCase):
         self.assertEqual(fields[2], "")
         self.assertEqual(fields[3], "")
         self.assertEqual(fields[4], "false")
+        info = json.loads(fields[16])
+        self.assertIs(info["pairingKnown"], False)
+        self.assertIs(info["reachabilityKnown"], True)
+        self.assertIs(info["requestKnown"], False)
+
+    def test_wrong_variant_types_do_not_establish_trust_or_request_state(self):
+        raw = json.dumps({"type": "a{sv}", "data": [{
+            "isPaired": {"type": "s", "data": True},
+            "isReachable": {"type": "b", "data": False},
+            "isPairRequested": {"type": "b", "data": False},
+            "isPairRequestedByPeer": {"type": "u", "data": 0},
+        }]})
+        fields = discover_report.format_device("peer", discover_report.parse_device_properties(raw)).split("\t")
+        self.assertEqual((fields[4], fields[5], fields[11], fields[12]), ("false",) * 4)
+        info = json.loads(fields[16])
+        self.assertIs(info["pairingKnown"], False)
+        self.assertIs(info["reachabilityKnown"], True)
+        self.assertIs(info["requestKnown"], False)
 
     def test_sanitize_folds_tabs_and_newlines_only(self):
         self.assertEqual(discover_report.sanitize("a\tb\nc"), "a b c")
@@ -318,6 +367,125 @@ class SanitizeParityTests(unittest.TestCase):
 
 
 class ScriptLevelGracefulFailureTests(unittest.TestCase):
+    def run_discovery(self, reply, final_owner=":1.42"):
+        """Exercise discovery with an isolated fake bus and no other KDE tools."""
+        with tempfile.TemporaryDirectory() as tmp:
+            bin_dir = Path(tmp)
+            for name in ("python3", "dirname", "head"):
+                (bin_dir / name).symlink_to(shutil.which(name))
+            stub = bin_dir / "busctl"
+            stub.write_text("#!" + PYTHON + "\n" + '''import json
+import os
+from pathlib import Path
+import sys
+
+args = sys.argv[1:]
+if "NameHasOwner" in args:
+    print('{"type":"b","data":[true]}')
+elif "GetNameOwner" in args:
+    marker = Path(__file__).with_suffix(".owner")
+    owner = os.environ["FINAL_OWNER"] if marker.exists() else ":1.42"
+    marker.touch()
+    print(json.dumps({"type": "s", "data": [owner]}))
+elif ":1.42" not in args:
+    sys.exit(1)
+elif "devices" in args:
+    print(os.environ["DEVICE_REPLY"])
+elif "customDevices" in args:
+    print('{"type":"as","data":[]}')
+elif args[-1] == "org.kde.kdeconnect.device" and "GetAll" in args:
+    if "/modules/kdeconnect/devices/readable" in args:
+        print('{"type":"a{sv}","data":[{"isPaired":{"type":"b","data":true},"isReachable":{"type":"b","data":false}}]}')
+    elif "/modules/kdeconnect/devices/malformed" in args:
+        print('{"type":"s","data":["not GetAll"]}')
+    else:
+        sys.exit(1)
+else:
+    sys.exit(1)
+''')
+            stub.chmod(0o700)
+            return subprocess.run(
+                [shutil.which("bash"), str(SCRIPTS / "discover_devices.sh")],
+                env={**os.environ, "PATH": tmp, "DEVICE_REPLY": reply, "FINAL_OWNER": final_owner},
+                capture_output=True, text=True, timeout=10,
+            )
+
+    def test_discovery_counts_unique_ids_and_keeps_readable_offline_peer(self):
+        reply = json.dumps({"type": "as", "data": [[
+            "readable", "missing", "malformed", "/modules/kdeconnect/devices/readable",
+        ]]})
+        result = self.run_discovery(reply)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lines = result.stdout.splitlines()
+        self.assertEqual(len(lines), 4)
+        self.assertEqual(lines[0], "CUSTOM_ADDRESSES_READY")
+        self.assertEqual(lines[1].split("\t")[:6], ["DEVICE", "readable", "", "", "true", "false"])
+        self.assertEqual(lines[2:], ["DEVICE_OWNER\t:1.42", "DEVICE_SCAN\t3\t1"])
+
+    def test_discovery_distinguishes_empty_unreadable_and_failed_rosters(self):
+        """Keep successful empty, unreadable, and malformed replies distinct."""
+        for device_ids, expected in (([], "0\t0"), (["missing"], "1\t0")):
+            with self.subTest(device_ids=device_ids):
+                result = self.run_discovery(json.dumps({"type": "as", "data": [device_ids]}))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.splitlines(), [
+                    "CUSTOM_ADDRESSES_READY", "DEVICE_OWNER\t:1.42", f"DEVICE_SCAN\t{expected}",
+                ])
+        malformed = self.run_discovery('{"type":"b","data":[false]}')
+        self.assertEqual(malformed.returncode, 70, malformed.stderr)
+        self.assertEqual(malformed.stdout, "")
+
+    def test_discovery_rejects_owner_change_after_reads(self):
+        result = self.run_discovery('{"type":"as","data":[["readable"]]}', final_owner=":1.43")
+        self.assertEqual(result.returncode, 69, result.stderr)
+        self.assertNotIn("DEVICE_OWNER\t", result.stdout)
+        self.assertNotIn("DEVICE_SCAN\t", result.stdout)
+
+    def test_unpair_preflight_pins_the_reviewed_owner_and_requires_live_pairing(self):
+        """Allow one exact mutation only for a still-paired peer on the reviewed connection."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "head").symlink_to(shutil.which("head"))
+            stub = root / "busctl"
+            stub.write_text("#!" + PYTHON + "\n" + """import json
+import os
+import sys
+from pathlib import Path
+
+args = sys.argv[1:]
+if args[-1] == "isPaired":
+    print(os.environ["PAIR_REPLY"])
+    sys.exit(int(os.environ["PAIR_EXIT"]))
+elif "GetNameOwner" in args:
+    print('s "' + os.environ["LIVE_OWNER"] + '"')
+    sys.exit(int(os.environ["OWNER_EXIT"]))
+else:
+    Path(os.environ["MUTATION"]).write_text(json.dumps(args))
+""")
+            stub.chmod(0o700)
+            receipt = root / "mutation.json"
+            for pair_reply, pair_exit, live_owner, owner_exit, expected in (
+                ("b false", 0, ":1.42", 0, 69),
+                ('s "true"', 0, ":1.42", 0, 69),
+                ("b true", 1, ":1.42", 0, 69),
+                ("b true", 0, ":1.42", 1, 69),
+                ("b true", 0, ":1.43", 0, 69),
+                ("b true", 0, ":1.42", 0, 0),
+            ):
+                with self.subTest(pair_reply=pair_reply, live_owner=live_owner):
+                    result = subprocess.run(
+                        [shutil.which("bash"), str(SCRIPTS / "unpair_device.sh"), ":1.42", "peer_A"],
+                        env={"PATH": tmp, "PAIR_REPLY": pair_reply, "PAIR_EXIT": str(pair_exit),
+                             "LIVE_OWNER": live_owner, "OWNER_EXIT": str(owner_exit), "MUTATION": str(receipt)},
+                        capture_output=True, text=True, timeout=5,
+                    )
+                    self.assertEqual(result.returncode, expected, result.stderr)
+                    self.assertEqual(receipt.exists(), expected == 0)
+            self.assertEqual(json.loads(receipt.read_text()), [
+                "--user", "--timeout=5", "--auto-start=no", "call", ":1.42",
+                "/modules/kdeconnect/devices/peer_A", "org.kde.kdeconnect.device", "unpair",
+            ])
+
     def test_media_status_emits_valid_empty_json_on_garbage_busctl(self):
         with tempfile.TemporaryDirectory() as tmp:
             stub = Path(tmp) / "busctl"

@@ -389,162 +389,6 @@ class RemoteCommandsState:
         self.command_selected_index = max(0, min(len(self.remote_commands) - 1, self.command_selected_index + delta))
 
 
-class PairingState:
-    def __init__(self, devices=None, selected_device_id=""):
-        self.devices = devices or []
-        self.selected_device_id = selected_device_id or (self.devices[0]["id"] if self.devices else "")
-        self.pending_pairing = {}
-        self.pairing_request_times = {}
-        self.unpair_confirming_id = ""
-        self.action_state = "idle"
-        self.action_message = ""
-        self.action_error = ""
-        self.generation = 1
-
-    def select_device(self, device_id):
-        device = next((d for d in self.devices if d["id"] == device_id), None)
-        if not device:
-            return False
-        if self.selected_device_id != device["id"]:
-            self.action_state = "idle"
-            self.action_message = ""
-            self.action_error = ""
-            self.unpair_confirming_id = ""
-        self.selected_device_id = device["id"]
-        return True
-
-    def refresh(self, force_network=False, current_time=0):
-        if force_network:
-            to_del = []
-            for dev_id, state in self.pending_pairing.items():
-                if state == "requesting":
-                    req_time = self.pairing_request_times.get(dev_id, 0)
-                    if not req_time or (current_time - req_time >= 10000):
-                        to_del.append(dev_id)
-            for dev_id in to_del:
-                del self.pending_pairing[dev_id]
-
-    def apply_scan(self, device_lines, target_generation):
-        if target_generation != self.generation:
-            return False
-        next_devices = []
-        for line in device_lines:
-            dev = parse_device(line)
-            if dev:
-                next_devices.append(dev)
-        self.devices = next_devices
-        for dev in next_devices:
-            if dev.get("paired"):
-                if self.pending_pairing.get(dev["id"]) == "requesting":
-                    del self.pending_pairing[dev["id"]]
-                    if self.selected_device_id == dev["id"] or not self.selected_device_id:
-                        self.action_state = "accepted"
-                        self.action_message = "Device paired"
-                        self.action_error = ""
-                elif dev["id"] in self.pending_pairing:
-                    del self.pending_pairing[dev["id"]]
-            else:
-                if self.pending_pairing.get(dev["id"]) in ("removing", "unpair_confirm"):
-                    del self.pending_pairing[dev["id"]]
-        if not any(d["id"] == self.selected_device_id for d in self.devices):
-            preferred = next((d for d in self.devices if d.get("paired") and d.get("reachable")), None)
-            if not preferred:
-                preferred = next((d for d in self.devices if d.get("paired")), None)
-            self.selected_device_id = (preferred or self.devices[0])["id"] if self.devices else ""
-        return True
-
-    def pair_device(self, device_id, timestamp=0):
-        dev = next((d for d in self.devices if d["id"] == device_id), None)
-        if not dev or not dev.get("capabilities", {}).get("pair"):
-            return False
-        if self.pending_pairing.get(device_id) in ("requesting", "removing", "unpair_confirm"):
-            return False
-        self.pending_pairing[device_id] = "requesting"
-        self.pairing_request_times[device_id] = timestamp
-        self.action_state = "accepted"
-        self.action_message = "Pair request sent"
-        self.action_error = ""
-        return True
-
-    def handle_timeout(self, device_id=None):
-        target = device_id or self.selected_device_id
-        if target in self.pending_pairing and self.pending_pairing[target] == "requesting":
-            del self.pending_pairing[target]
-        self.action_state = "failed"
-        self.action_message = ""
-        self.action_error = "Pairing timed out or rejected"
-
-    def check_watchdog(self, current_time):
-        timed_out = []
-        for dev_id, state in list(self.pending_pairing.items()):
-            if state == "requesting":
-                req_time = self.pairing_request_times.get(dev_id, 0)
-                if current_time - req_time >= 30000:
-                    del self.pending_pairing[dev_id]
-                    self.pairing_request_times.pop(dev_id, None)
-                    timed_out.append(dev_id)
-        if self.selected_device_id in timed_out:
-            self.action_state = "failed"
-            self.action_message = ""
-            self.action_error = "Pairing timed out or rejected"
-        return timed_out
-
-    def request_unpair_confirm(self, device_id):
-        dev = next((d for d in self.devices if d["id"] == device_id), None)
-        if not dev or not dev.get("paired") or not dev.get("capabilities", {}).get("pair"):
-            return False
-        if self.pending_pairing.get(device_id) in ("requesting", "removing"):
-            return False
-        self.unpair_confirming_id = device_id
-        self.pending_pairing[device_id] = "unpair_confirm"
-        return True
-
-    def cancel_unpair_confirm(self, device_id=None):
-        target = device_id or self.unpair_confirming_id
-        if self.unpair_confirming_id == target:
-            self.unpair_confirming_id = ""
-        if target in self.pending_pairing and self.pending_pairing[target] == "unpair_confirm":
-            del self.pending_pairing[target]
-
-    def confirm_unpair(self, device_id):
-        dev = next((d for d in self.devices if d["id"] == device_id), None)
-        if not dev or not dev.get("capabilities", {}).get("pair"):
-            return False
-        if self.pending_pairing.get(device_id) in ("requesting", "removing"):
-            return False
-        if self.unpair_confirming_id == device_id:
-            self.unpair_confirming_id = ""
-        self.pending_pairing[device_id] = "removing"
-        self.action_state = "accepted"
-        self.action_message = "Device unpaired"
-        self.action_error = ""
-        return True
-
-    def handle_pair_process_completed(self, target_generation, target_device_id, exit_code, is_pair=True):
-        op = "pairing" if is_pair else "unpairing"
-        if exit_code == 0:
-            self.pending_pairing[target_device_id] = "requesting" if is_pair else "accepted"
-        else:
-            if is_pair:
-                if target_device_id in self.pending_pairing:
-                    del self.pending_pairing[target_device_id]
-            else:
-                self.pending_pairing[target_device_id] = "failed"
-        if target_generation != self.generation or target_device_id != self.selected_device_id:
-            return False
-        if exit_code == 0:
-            self.action_state = "accepted"
-            self.action_message = "Pair request sent" if is_pair else "Device unpaired"
-            self.action_error = ""
-        else:
-            self.action_state = "failed"
-            self.action_message = ""
-            self.action_error = "Pairing timed out or rejected" if is_pair else categorize(exit_code, op)
-        return True
-
-
-
-
 class DeviceParsingAndFormattingTests(unittest.TestCase):
   def test_authoritative_snapshot_is_stable_and_capability_aware(self):
     # Full capability set
@@ -862,15 +706,6 @@ class ActionAndComposerTests(unittest.TestCase):
     self.assertFalse(accept_completion(5, 5, "old", "new"))
     self.assertTrue(accept_completion(5, 5, "new", "new"))
 
-  def test_conflicting_pair_unpair_actions_blocked(self):
-    dev = parse_device("DEVICE\tdev-1\tPhone\tphone\tfalse\ttrue\t-1\tfalse\tkdeconnect_battery")
-    state = PairingState(devices=[dev])
-    state.pair_device("dev-1")
-    self.assertFalse(state.pair_device("dev-1"))
-    self.assertFalse(state.request_unpair_confirm("dev-1"))
-
-
-
 class RemoteCommandsStateTests(unittest.TestCase):
   def test_empty_command_output_is_a_valid_empty_list(self):
     self.assertEqual(json.loads("[]"), [])
@@ -880,8 +715,6 @@ class RemoteCommandsStateTests(unittest.TestCase):
     self.assertEqual(categorize(69, "ring"), "ring unavailable")
     self.assertEqual(categorize(127, "clipboard"), "clipboard unavailable")
     self.assertEqual(categorize(127, "file transfer"), "file transfer unavailable")
-    self.assertEqual(categorize(2, "pairing"), "pairing rejected")
-    self.assertEqual(categorize(3, "pairing"), "pairing timed out")
     self.assertEqual(categorize(3, "remote command"), "remote command timed out")
     self.assertNotIn("stderr", categorize(1, "action"))
 
@@ -1058,154 +891,6 @@ class RemoteCommandsStateTests(unittest.TestCase):
     state.toggle_commands_expanded(dev["capabilities"])
     self.assertTrue(state.commands_expanded)
     self.assertTrue(state.commands_loading)
-
-
-
-class PairingStateMachineTests(unittest.TestCase):
-  def test_pairing_success_transition_and_local_acceptance(self):
-    unpaired_dev = parse_device("DEVICE\tdev-1\tNearby Phone\tphone\tfalse\ttrue\t-1\tfalse\tkdeconnect_battery,kdeconnect_ping")
-    state = PairingState(devices=[unpaired_dev])
-    self.assertTrue(state.pair_device("dev-1"))
-    self.assertEqual(state.pending_pairing["dev-1"], "requesting")
-    self.assertEqual(state.action_state, "accepted")
-    self.assertEqual(state.action_message, "Pair request sent")
-    self.assertEqual(state.action_error, "")
-
-    completed = state.handle_pair_process_completed(state.generation, "dev-1", 0, is_pair=True)
-    self.assertTrue(completed)
-    self.assertEqual(state.pending_pairing["dev-1"], "requesting")
-    self.assertEqual(state.action_message, "Pair request sent")
-
-    state.apply_scan([
-        "DEVICE\tdev-1\tNearby Phone\tphone\ttrue\ttrue\t-1\tfalse\tkdeconnect_battery,kdeconnect_ping"
-    ], state.generation)
-    self.assertNotIn("dev-1", state.pending_pairing)
-    self.assertEqual(state.action_message, "Device paired")
-
-  def test_pairing_rejection_and_timeout_error_categorization(self):
-    unpaired_dev = parse_device("DEVICE\tdev-1\tNearby Phone\tphone\tfalse\ttrue\t-1\tfalse\tkdeconnect_battery")
-    state = PairingState(devices=[unpaired_dev])
-
-    # Rejection (exit code 2)
-    state.pair_device("dev-1")
-    state.handle_pair_process_completed(state.generation, "dev-1", 2, is_pair=True)
-    self.assertNotIn("dev-1", state.pending_pairing)
-    self.assertEqual(state.action_state, "failed")
-    self.assertEqual(state.action_error, "Pairing timed out or rejected")
-
-    # Timeout (exit code 3)
-    state.pair_device("dev-1")
-    state.handle_pair_process_completed(state.generation, "dev-1", 3, is_pair=True)
-    self.assertNotIn("dev-1", state.pending_pairing)
-    self.assertEqual(state.action_state, "failed")
-    self.assertEqual(state.action_error, "Pairing timed out or rejected")
-
-    # Watchdog timeout trigger
-    state.pair_device("dev-1")
-    state.handle_timeout("dev-1")
-    self.assertNotIn("dev-1", state.pending_pairing)
-    self.assertEqual(state.action_state, "failed")
-    self.assertEqual(state.action_error, "Pairing timed out or rejected")
-
-  def test_stale_pairing_cleanup_on_refresh(self):
-    unpaired_dev = parse_device("DEVICE\tdev-1\tNearby Phone\tphone\tfalse\ttrue\t-1\tfalse\tkdeconnect_battery")
-    state = PairingState(devices=[unpaired_dev])
-
-    # Pair requested at timestamp 1000
-    state.pair_device("dev-1", timestamp=1000)
-    self.assertEqual(state.pending_pairing.get("dev-1"), "requesting")
-
-    # Refresh at timestamp 5000 (<10s) -> still requesting
-    state.refresh(force_network=True, current_time=5000)
-    self.assertEqual(state.pending_pairing.get("dev-1"), "requesting")
-
-    # Refresh at timestamp 12000 (>10s) -> stale request cleared
-    state.refresh(force_network=True, current_time=12000)
-    self.assertNotIn("dev-1", state.pending_pairing)
-
-  def test_inline_destructive_unpairing_confirmation_and_cancellation(self):
-    paired_dev = parse_device("DEVICE\tdev-1\tMy Phone\tphone\ttrue\ttrue\t80\tfalse\tkdeconnect_battery")
-    state = PairingState(devices=[paired_dev])
-
-    # Request confirmation
-    self.assertTrue(state.request_unpair_confirm("dev-1"))
-    self.assertEqual(state.unpair_confirming_id, "dev-1")
-    self.assertEqual(state.pending_pairing["dev-1"], "unpair_confirm")
-
-    # Cancel confirmation
-    state.cancel_unpair_confirm("dev-1")
-    self.assertEqual(state.unpair_confirming_id, "")
-    self.assertNotIn("dev-1", state.pending_pairing)
-
-    # Request again and confirm
-    state.request_unpair_confirm("dev-1")
-    self.assertTrue(state.confirm_unpair("dev-1"))
-    self.assertEqual(state.pending_pairing["dev-1"], "removing")
-    self.assertEqual(state.action_message, "Device unpaired")
-
-    # Exit code 1 (failure)
-    state.handle_pair_process_completed(state.generation, "dev-1", 1, is_pair=False)
-    self.assertEqual(state.pending_pairing["dev-1"], "failed")
-    self.assertEqual(state.action_error, "unpairing failed")
-
-  def test_selection_and_keyboard_cursor_retention_on_state_changes(self):
-    dev1 = parse_device("DEVICE\tdev-1\tPhone One\tphone\tfalse\ttrue\t-1\tfalse\tkdeconnect_battery")
-    dev2 = parse_device("DEVICE\tdev-2\tPhone Two\tphone\ttrue\ttrue\t90\tfalse\tkdeconnect_battery")
-    state = PairingState(devices=[dev1, dev2], selected_device_id="dev-2")
-
-    state.apply_scan([
-        "DEVICE\tdev-2\tPhone Two\tphone\tfalse\ttrue\t90\tfalse\tkdeconnect_battery",
-        "DEVICE\tdev-1\tPhone One\tphone\ttrue\ttrue\t-1\tfalse\tkdeconnect_battery"
-    ], state.generation)
-
-    self.assertEqual(state.selected_device_id, "dev-2")
-
-  def test_multi_device_pairing_watchdog_isolation(self):
-    dev1 = parse_device("DEVICE\tdev-1\tPhone One\tphone\tfalse\ttrue\t-1\tfalse\tkdeconnect_battery,kdeconnect_ping")
-    dev2 = parse_device("DEVICE\tdev-2\tPhone Two\tphone\tfalse\ttrue\t-1\tfalse\tkdeconnect_battery,kdeconnect_ping")
-    state = PairingState(devices=[dev1, dev2], selected_device_id="dev-1")
-
-    self.assertTrue(state.pair_device("dev-1", timestamp=1000))
-    self.assertEqual(state.pending_pairing.get("dev-1"), "requesting")
-    self.assertEqual(state.pairing_request_times.get("dev-1"), 1000)
-
-    state.select_device("dev-2")
-    self.assertTrue(state.pair_device("dev-2", timestamp=20000))
-    self.assertEqual(state.pending_pairing.get("dev-2"), "requesting")
-    self.assertEqual(state.pairing_request_times.get("dev-2"), 20000)
-
-    timed_out = state.check_watchdog(30000)
-    self.assertEqual(timed_out, [])
-    self.assertEqual(state.pending_pairing.get("dev-1"), "requesting")
-    self.assertEqual(state.pending_pairing.get("dev-2"), "requesting")
-
-    timed_out = state.check_watchdog(32000)
-    self.assertEqual(timed_out, ["dev-1"])
-    self.assertNotIn("dev-1", state.pending_pairing)
-    self.assertEqual(state.pending_pairing.get("dev-2"), "requesting")
-
-    state.select_device("dev-2")
-    timed_out2 = state.check_watchdog(51000)
-    self.assertEqual(timed_out2, ["dev-2"])
-    self.assertNotIn("dev-2", state.pending_pairing)
-    self.assertEqual(state.action_state, "failed")
-    self.assertEqual(state.action_error, "Pairing timed out or rejected")
-
-  def test_device_selection_prioritizes_paired_and_reachable(self):
-    unpaired = parse_device("DEVICE\tdev-unpaired\tDesktop\tdesktop\tfalse\ttrue\t-1\tfalse\tkdeconnect_battery")
-    offline = parse_device("DEVICE\tdev-offline\tTablet\ttablet\ttrue\tfalse\t50\tfalse\tkdeconnect_battery")
-    paired_online = parse_device("DEVICE\tdev-paired\tPhone\tphone\ttrue\ttrue\t80\ttrue\tkdeconnect_battery,kdeconnect_mprisremote")
-
-    state = PairingState()
-    state.selected_device_id = ""
-    state.devices = []
-    state.apply_scan([
-        "DEVICE\tdev-unpaired\tDesktop\tdesktop\tfalse\ttrue\t-1\tfalse\tkdeconnect_battery",
-        "DEVICE\tdev-offline\tTablet\ttablet\ttrue\tfalse\t50\tfalse\tkdeconnect_battery",
-        "DEVICE\tdev-paired\tPhone\tphone\ttrue\ttrue\t80\ttrue\tkdeconnect_battery,kdeconnect_mprisremote",
-    ], state.generation)
-
-    self.assertEqual(state.selected_device_id, "dev-paired")
 
 
 
@@ -1416,10 +1101,12 @@ class ScriptIntegrationTests(unittest.TestCase):
     ])
 
   def test_discovery_accepts_typed_empty_device_array(self):
+    """Keep a complete empty roster separate from unavailable saved addresses."""
     with tempfile.TemporaryDirectory() as tmp:
       stub_dir = Path(tmp)
       write_busctl_stub(stub_dir, [
           ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+          ("*GetNameOwner*", json.dumps({"type": "s", "data": [":1.42"]})),
           ("*get-property*customDevices*", FIXTURES / "busctl-custom-devices-empty.json"),
           ("*daemon devices*", FIXTURES / "busctl-devices-empty.json"),
       ])
@@ -1435,11 +1122,12 @@ class ScriptIntegrationTests(unittest.TestCase):
       )
 
       self.assertEqual(result.returncode, 0, result)
-      self.assertEqual(result.stdout, "CUSTOM_ADDRESSES_READY\n")
+      self.assertEqual(result.stdout, "CUSTOM_ADDRESSES_READY\nDEVICE_OWNER\t:1.42\nDEVICE_SCAN\t0\t0\n")
 
       # A saved-address reply that does not parse is not reported as an empty list.
       write_busctl_stub(stub_dir, [
           ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+          ("*GetNameOwner*", json.dumps({"type": "s", "data": [":1.42"]})),
           ("*get-property*customDevices*", '{"type":"as","data":["100.64.0.1"'),
           ("*daemon devices*", FIXTURES / "busctl-devices-empty.json"),
       ])
@@ -1450,7 +1138,7 @@ class ScriptIntegrationTests(unittest.TestCase):
           env={**os.environ, "PATH": f"{stub_dir}:{os.environ['PATH']}"},
       )
       self.assertEqual(result.returncode, 0, result)
-      self.assertEqual(result.stdout, "CUSTOM_ADDRESSES_UNAVAILABLE\n")
+      self.assertEqual(result.stdout, "CUSTOM_ADDRESSES_UNAVAILABLE\nDEVICE_OWNER\t:1.42\nDEVICE_SCAN\t0\t0\n")
 
   def test_media_player_script_argument_validation(self):
     script_path = ROOT / "scripts" / "media_control.sh"
@@ -1707,6 +1395,7 @@ class ScriptIntegrationTests(unittest.TestCase):
       self.assertEqual(missing.stdout + stopped.stdout, b"")
 
   def test_discover_devices_end_to_end(self):
+    """Verify the discovery helper emits one pinned snapshot with device and scan records."""
     script = ROOT / "scripts" / "discover_devices.sh"
 
     # Missing helper dependencies must not imply KDE is absent.
@@ -1735,6 +1424,7 @@ class ScriptIntegrationTests(unittest.TestCase):
       stub_dir = Path(tmp)
       write_busctl_stub(stub_dir, [
           ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+          ("*GetNameOwner*", json.dumps({"type": "s", "data": [":1.42"]})),
           ("*daemon devices*", FIXTURES / "busctl-devices-truncated.json"),
       ])
       res_malformed = subprocess.run(
@@ -1751,6 +1441,7 @@ class ScriptIntegrationTests(unittest.TestCase):
       # Route order matters: sub-objects must match before the bare device.
       write_busctl_stub(stub_dir, [
           ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+          ("*GetNameOwner*", json.dumps({"type": "s", "data": [":1.42"]})),
           ("*get-property*customDevices*", FIXTURES / "busctl-custom-devices.json"),
           ("*devices/dev-1/battery*", FIXTURES / "busctl-battery-getall.json"),
           ("*devices/dev-1/connectivity_report*", FIXTURES / "busctl-connectivity-getall.json"),
@@ -1792,7 +1483,7 @@ class ScriptIntegrationTests(unittest.TestCase):
       calls = read_busctl_calls(log_path)
       assert_busctl_argv_clean(self, calls)
       self.assertIn([
-          "--user", "--json=short", "--timeout=5", "call", "org.kde.kdeconnect",
+          "--user", "--json=short", "--timeout=5", "call", ":1.42",
           "/modules/kdeconnect/devices/dev-1",
           "org.freedesktop.DBus.Properties", "GetAll", "s",
           "org.kde.kdeconnect.device",
@@ -1800,6 +1491,7 @@ class ScriptIntegrationTests(unittest.TestCase):
       self.assertEqual(len([c for c in calls if "GetAll" in c]), 3)
 
   def test_discover_devices_drops_replies_over_the_cap(self):
+    """Reject oversized D-Bus responses at the appropriate scan boundary."""
     script = ROOT / "scripts" / "discover_devices.sh"
     source = script.read_text()
     report = (ROOT / "scripts" / "discover_report.py").read_text()
@@ -1811,26 +1503,29 @@ class ScriptIntegrationTests(unittest.TestCase):
       env = {**os.environ, "PATH": f"{tmp}:{os.environ['PATH']}"}
       write_busctl_stub(tmp, [
           ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+          ("*GetNameOwner*", json.dumps({"type": "s", "data": [":1.42"]})),
           ("*get-property*customDevices*", FIXTURES / "busctl-custom-devices-empty.json"),
           ("*GetAll*s*org.kde.kdeconnect.device", json.dumps(huge)),
           ("*daemon devices*", FIXTURES / "busctl-devices.json"),
       ])
       result = subprocess.run([BASH, str(script)], capture_output=True, text=True, env=env, timeout=10)
       self.assertEqual(result.returncode, 0, result.stderr)
-      self.assertEqual(result.stdout, "CUSTOM_ADDRESSES_READY\n")
+      self.assertEqual(result.stdout, "CUSTOM_ADDRESSES_READY\nDEVICE_OWNER\t:1.42\nDEVICE_SCAN\t1\t0\n")
 
       ids = json.dumps({"type": "as", "data": [["dev_%05d" % i for i in range(cap // 8)]]})
-      write_busctl_stub(tmp, [("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"), ("*daemon devices*", ids)])
+      write_busctl_stub(tmp, [("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"), ("*GetNameOwner*", json.dumps({"type": "s", "data": [":1.42"]})), ("*daemon devices*", ids)])
       result = subprocess.run([BASH, str(script)], capture_output=True, text=True, env=env, timeout=10)
       self.assertEqual(result.returncode, 69)
       self.assertEqual(result.stdout, "")
 
   def test_discover_devices_hostile_name_cannot_forge_records(self):
+    """Keep remote name text within its field when metadata is present."""
     script = ROOT / "scripts" / "discover_devices.sh"
     with tempfile.TemporaryDirectory() as tmp:
       stub_dir = Path(tmp)
       write_busctl_stub(stub_dir, [
           ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+          ("*GetNameOwner*", json.dumps({"type": "s", "data": [":1.42"]})),
           ("*get-property*customDevices*", FIXTURES / "busctl-custom-devices-empty.json"),
           ("*battery*", FIXTURES / "busctl-battery-getall.json"),
           ("*connectivity_report*", FIXTURES / "busctl-connectivity-getall.json"),
@@ -1846,9 +1541,9 @@ class ScriptIntegrationTests(unittest.TestCase):
 
     self.assertEqual(result.returncode, 0, result.stderr)
     device_lines = [line for line in result.stdout.splitlines() if line.startswith("DEVICE\t")]
-    # A name full of tabs, newlines and markup stays ONE 16-field record.
+    # A hostile name stays in one record with the original fields plus metadata.
     self.assertEqual(len(device_lines), 1)
-    self.assertEqual(len(device_lines[0].split("\t")), 16)
+    self.assertEqual(len(device_lines[0].split("\t")), 17)
     device = parse_device(device_lines[0])
     self.assertEqual(device["id"], "evil-1")
     self.assertEqual(device["name"], "Evil <[]> Name Second Row")
@@ -1857,6 +1552,7 @@ class ScriptIntegrationTests(unittest.TestCase):
     self.assertTrue(device["pairRequested"])
 
   def test_discover_devices_keeps_quotes_backslashes_and_folds_newlines(self):
+    """Keep provider names as data when the helper emits tab-separated records."""
     # The old gdbus text parser kept the quotes around "Sam's phone",
     # doubled backslashes and printed a newline as a literal \n.
     script = ROOT / "scripts" / "discover_devices.sh"
@@ -1866,6 +1562,7 @@ class ScriptIntegrationTests(unittest.TestCase):
                                              "isPaired": {"type": "b", "data": True}, "isReachable": {"type": "b", "data": True}}]}
         write_busctl_stub(tmp, [
             ("*NameHasOwner*", FIXTURES / "busctl-namehasowner-true.json"),
+            ("*GetNameOwner*", json.dumps({"type": "s", "data": [":1.42"]})),
             ("*get-property*customDevices*", FIXTURES / "busctl-custom-devices-empty.json"),
             ("*GetAll*s*org.kde.kdeconnect.device", json.dumps(device)),
             ("*daemon devices*", FIXTURES / "busctl-devices.json"),
@@ -2022,26 +1719,15 @@ class LocaleCatalogueTests(unittest.TestCase):
 
 
 class QmlWiringAndContractTests(unittest.TestCase):
-  def test_pairing_contracts(self):
+  def test_plus_only_dispatches_explicit_unpair(self):
+    """Pairing trust decisions belong to the native application."""
     source = controller_layer_source()
-    self.assertIn("setPendingPairing", source)
-    self.assertIn("pairDevice", source)
-    self.assertIn("unpairDevice", source)
-    self.assertIn('"Pair request sent"', english_copy(source))
-    self.assertIn('"Device paired"', english_copy(source))
-    self.assertIn('"Device unpaired"', english_copy(source))
-    self.assertIn('"Pairing timed out or rejected"', english_copy(source))
-    self.assertIn("pairingWatchdogTimer", source)
-    self.assertIn("root.pairingRequestTimes[devId]", source)
-    self.assertIn("now - reqTime >= 30000", source)
-
-    ui_source = (ROOT / "Panel.qml").read_text() + "\n" + "\n".join(p.read_text() for p in (ROOT / "components").glob("*.qml"))
-    self.assertIn("unpairConfirmingId", ui_source)
-    self.assertIn("requestUnpairConfirm", ui_source)
-    self.assertIn("cancelUnpairConfirm", ui_source)
-    self.assertIn("confirmUnpair", ui_source)
-    self.assertIn("readonly property string pendingState:", (ROOT / "components" / "DeviceSection.qml").read_text())
-    self.assertIn("isUnpairConfirming", ui_source)
+    self.assertIn('scriptPath("scripts/unpair_device.sh")', source)
+    self.assertNotIn('"--unpair"', source)
+    self.assertNotIn('"--pair"', source)
+    self.assertNotIn("org.kde.kdeconnect.device.acceptPairing", source)
+    self.assertNotIn("org.kde.kdeconnect.device.cancelPairing", source)
+    self.assertNotIn("pairingWatchdogTimer", source)
 
   def test_tailscale_and_custom_address_contracts(self):
     controller = controller_layer_source()
@@ -2069,18 +1755,16 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn('function toggleNetworkExpanded', panel)
     self.assertIn('showBarBattery', bar_widget)
 
-  def test_incoming_pairing_contracts(self):
-    controller = controller_layer_source()
+  def test_incoming_pairing_uses_native_handoff(self):
+    """Keep request metadata for guidance while the native app handles verification."""
     ui = (ROOT / "components" / "DeviceSection.qml").read_text()
     self.assertIn('isPairRequestedByPeer', (ROOT / "scripts" / "discover_devices.sh").read_text())
-    self.assertIn('function acceptPairing(id)', controller)
-    self.assertIn('org.kde.kdeconnect.device.acceptPairing', controller)
-    self.assertIn('function rejectPairing(id)', controller)
-    self.assertIn('org.kde.kdeconnect.device.cancelPairing', controller)
-    self.assertIn('Locale.Strings.format("device.verifyOnBoth"', ui)
-    self.assertEqual(ENGLISH_COPY["device.verifyOnBoth"], "Verify on both devices: %1")
+    self.assertIn('openPairingSettings', ui)
+    self.assertNotIn('acceptPairing', ui)
+    self.assertNotIn('rejectPairing', ui)
 
   def test_service_forwards_all_controller_actions(self):
+    """Keep the controller as the owner of provider operations."""
     service_source = (ROOT / "Service.qml").read_text()
     self.assertIn("openSmsApp", service_source)
     self.assertIn("controller.openSmsApp", service_source)
@@ -2088,11 +1772,10 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("controller.openKdeConnectApp", service_source)
     self.assertNotIn("configureFirewall", service_source)
     self.assertNotIn("installDependencies", service_source)
-    self.assertIn("setPendingPairing", service_source)
+    self.assertIn("controller.openPairingSettings", service_source)
     self.assertIn("deviceNetworkIcon", service_source)
     self.assertIn("refreshTailscale", service_source)
     self.assertIn("addCustomAddress", service_source)
-    self.assertIn("acceptPairing", service_source)
 
   def test_open_kdeconnect_app_contract(self):
     controller_source = controller_layer_source()
@@ -2151,9 +1834,10 @@ class QmlWiringAndContractTests(unittest.TestCase):
     picker_sh = (ROOT / "scripts" / "pick_file.sh").read_text()
     self.assertIn("portal_files.py", picker_sh)
 
-  def test_refresh_does_not_reset_discovery_state_when_ready(self):
+  def test_refresh_does_not_reset_ready_or_partial_discovery(self):
+    """Retain the last readable roster state while the next scan runs."""
     controller_source = controller_layer_source()
-    self.assertIn('if (discoveryState !== "ready")', controller_source)
+    self.assertIn('discoveryState !== "ready" && discoveryState !== "partial"', controller_source)
     self.assertIn('dbusDebounceTimer', controller_source)
 
   def test_shared_picker_null_guards_preserve_optional_appearance(self):
@@ -2163,7 +1847,7 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn('"appearance" in root.service', picker)
     self.assertIn('appearance && typeof appearance.deviceIcon === "function"', picker)
     self.assertIn('icon: hasIcon ? appearance.deviceIcon(', picker)
-    self.assertIn("!!root.device && root.device.paired", device_section_source)
+    self.assertIn("readonly property var device: panel ? panel.device : null", device_section_source)
 
   def test_missing_dependency_state_retains_native_setup_guidance(self):
     discovery_source = (ROOT / "scripts" / "discover_devices.sh").read_text()
@@ -2201,8 +1885,6 @@ class QmlWiringAndContractTests(unittest.TestCase):
     self.assertIn("TransferModel.status", controller_source)
     self.assertIn('"kde.accepted.command"', controller_source)
     self.assertEqual(ENGLISH_COPY["kde.accepted.command"], "Command request accepted. Execution is not confirmed.")
-    self.assertIn('"Pair request sent"', english_copy(controller_source))
-    self.assertIn('"Device unpaired"', english_copy(controller_source))
 
     # Ensure no generic "accepted" action messages remain
     self.assertNotIn('"Ping request accepted"', controller_source)
@@ -2423,53 +2105,6 @@ class QmlWiringAndContractTests(unittest.TestCase):
 
 
 class PanelNavigationAndLayoutContractTests(unittest.TestCase):
-  def test_confirming_unpair_cannot_follow_a_device_switch(self):
-    class UnpairStateMachine:
-        def __init__(self):
-            self.selected_device_id = "dev-1"
-            self.unpair_confirming_id = ""
-            self.unpaired = []
-
-        def select_device(self, dev_id):
-            if self.unpair_confirming_id and self.unpair_confirming_id != dev_id:
-                self.cancel_unpair_confirm(self.unpair_confirming_id)
-            self.selected_device_id = dev_id
-
-        def request_unpair_confirm(self, dev_id):
-            if self.unpair_confirming_id and self.unpair_confirming_id != dev_id:
-                self.cancel_unpair_confirm(self.unpair_confirming_id)
-            self.unpair_confirming_id = dev_id
-
-        def cancel_unpair_confirm(self, dev_id):
-            if not dev_id or self.unpair_confirming_id == dev_id:
-                self.unpair_confirming_id = ""
-
-        def confirm_unpair(self, dev_id):
-            if self.unpair_confirming_id and self.unpair_confirming_id != dev_id:
-                return
-            self.unpair_confirming_id = ""
-            self.unpaired.append(dev_id)
-
-    sm = UnpairStateMachine()
-    sm.request_unpair_confirm("dev-1")
-    self.assertEqual(sm.unpair_confirming_id, "dev-1")
-    sm.select_device("dev-2")
-    self.assertEqual(sm.unpair_confirming_id, "")
-
-    sm.request_unpair_confirm("dev-1")
-    sm.confirm_unpair("dev-2")
-    self.assertEqual(sm.unpaired, [])
-    self.assertEqual(sm.unpair_confirming_id, "dev-1")
-
-    sm.confirm_unpair("dev-1")
-    self.assertEqual(sm.unpaired, ["dev-1"])
-    self.assertEqual(sm.unpair_confirming_id, "")
-
-    panel_source = (ROOT / "Panel.qml").read_text()
-    self.assertIn("unpairConfirmingId", panel_source)
-    self.assertIn("confirmUnpair", panel_source)
-    self.assertIn("cancelUnpairConfirm", panel_source)
-
   def test_complete_panel_layout_and_action_navigation_contracts(self):
     ui_source = (ROOT / "Panel.qml").read_text() + "\n" + "\n".join(p.read_text() for p in (ROOT / "components").glob("*.qml"))
     self.assertIn("availableActions", ui_source)

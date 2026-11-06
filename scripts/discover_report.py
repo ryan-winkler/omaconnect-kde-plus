@@ -12,12 +12,13 @@ malformed input instead of raising. Subcommands (exit 3 on malformed input,
 including a stdin reply over MAX_REPLY_BYTES; callers map it to skip-device /
 exit-70):
 
-    ids        stdin: daemon.devices() call reply          -> ids, one per line
+    ids        stdin: daemon.devices() call reply          -> unique device IDs, one per line
     addresses  stdin: customDevices get-property reply     -> addresses, one per line
     truthy     stdin: single-boolean call reply            -> exit 0 iff data == [true]
+    owner      stdin: GetNameOwner string reply            -> unique D-Bus name
     registered stdin: ListActivatableNames call reply      -> exit 0 iff KDE is registered
     device     argv: <id> <device_json> <battery_json> <connectivity_json> [<loaded_json>]
-              -> DEVICE line: 16 legacy fields plus optional bounded information JSON
+              -> DEVICE line: 16 legacy fields plus bounded information JSON
 
 Dependencies: busctl (systemd) for the callers, python3.
 """
@@ -28,9 +29,12 @@ import sys
 
 from media_status import parse_call_result, parse_properties
 
+SAFE_ID = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}")
+DEVICE_PATH_PREFIX = "/modules/kdeconnect/devices/"
+DEVICE_FLAGS = ("isPaired", "isReachable", "isPairRequested", "isPairRequestedByPeer")
+UNIQUE_OWNER = re.compile(r":[0-9]+\.[0-9]+")
 # Keep future native plugin IDs without a UI whitelist.
 # ponytail: 256 IDs / 32 KiB per list; raise with evidence if native KDE grows past this.
-PLUGIN_ID = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}")
 MAX_PLUGIN_IDS = 256
 MAX_PLUGIN_BYTES = 32768
 # One busctl reply; twice the largest valid plugin list. discover_devices.sh uses the same cap.
@@ -55,6 +59,47 @@ def parse_string_list(raw):
     return [item for item in data if isinstance(item, str) and item]
 
 
+def parse_device_ids(raw):
+    """Return unique safe IDs in daemon order, or None for a malformed reply."""
+    data = parse_call_result(raw, "as")
+    if data is None or len(data) != 1 or not isinstance(data[0], list):
+        return None
+    ids = {}
+    for entry in data[0]:
+        if not isinstance(entry, str):
+            return None
+        device_id = entry.removeprefix(DEVICE_PATH_PREFIX)
+        if not SAFE_ID.fullmatch(device_id):
+            return None
+        ids[device_id] = None
+    return list(ids)
+
+
+def parse_device_properties(raw):
+    """Read a device GetAll reply and keep trust flags only from boolean variants."""
+    data = parse_call_result(raw, "a{sv}")
+    if data is None or len(data) != 1 or not isinstance(data[0], dict):
+        return None
+    props = {}
+    for name, variant in data[0].items():
+        if not isinstance(variant, dict) or "data" not in variant:
+            continue
+        if name not in DEVICE_FLAGS or variant.get("type") == "b":
+            props[name] = variant["data"]
+    return props
+
+
+def parse_unique_owner(raw):
+    """Return a bounded D-Bus unique connection name, or None for a malformed reply."""
+    data = parse_call_result(raw, "s")
+    if data is None or len(data) != 1:
+        return None
+    value = data[0]
+    if not isinstance(value, str) or len(value) > 64 or not UNIQUE_OWNER.fullmatch(value):
+        return None
+    return value
+
+
 def plugin_ids(value):
     """String list -> de-duplicated plugin IDs in order, or None.
 
@@ -67,7 +112,7 @@ def plugin_ids(value):
         return None
     result = []
     for item in value:
-        if not isinstance(item, str) or not PLUGIN_ID.fullmatch(item):
+        if not isinstance(item, str) or not SAFE_ID.fullmatch(item):
             return None
         if item not in result:
             result.append(item)
@@ -114,7 +159,7 @@ def bounded_strings(value):
 
 
 def format_device(device_id, device_props, battery_props=None, conn_props=None, loaded=None, monitor=None):
-    """Flattened GetAll properties -> DEVICE TSV, with optional information JSON.
+    """Flattened GetAll properties -> DEVICE TSV, with information JSON.
 
     Fields: DEVICE, id, name, type, paired, reachable, charge (-1 n/a),
     charging, plugins (comma list), netType, netStrength (-1 n/a),
@@ -164,22 +209,24 @@ def format_device(device_id, device_props, battery_props=None, conn_props=None, 
         ",".join(loaded or []),
         _flag(loaded is not None),
     ]
-    if "reachableAddresses" in props or "activeProviderNames" in props or monitor is not None:
-        known = isinstance(monitor, dict) and type(monitor.get("active")) is bool and type(monitor.get("isVirtualMonitorAvailable")) is bool
-        information = {
-            "addresses": bounded_strings(props.get("reachableAddresses")),
-            "providers": bounded_strings(props.get("activeProviderNames")),
-            "monitor": {"known": known, "active": bool(known and monitor["active"]),
-                        "available": bool(known and monitor["isVirtualMonitorAvailable"])},
-        }
+    known = isinstance(monitor, dict) and type(monitor.get("active")) is bool and type(monitor.get("isVirtualMonitorAvailable")) is bool
+    information = {
+        "addresses": bounded_strings(props.get("reachableAddresses")),
+        "providers": bounded_strings(props.get("activeProviderNames")),
+        "monitor": {"known": known, "active": bool(known and monitor["active"]),
+                    "available": bool(known and monitor["isVirtualMonitorAvailable"])},
+        "pairingKnown": type(props.get("isPaired")) is bool,
+        "reachabilityKnown": type(props.get("isReachable")) is bool,
+        "requestKnown": type(props.get("isPairRequested")) is bool and type(props.get("isPairRequestedByPeer")) is bool,
+    }
+    encoded = json.dumps(information, separators=(",", ":"))
+    # Match the QML field bound after JSON escaping, keeping native state.
+    for key in sorted(("addresses", "providers"), key=lambda key: len(json.dumps(information[key])), reverse=True):
+        if len(encoded) <= 16384:
+            break
+        information[key] = []
         encoded = json.dumps(information, separators=(",", ":"))
-        # Match the QML field bound after JSON escaping, keeping native state.
-        for key in sorted(("addresses", "providers"), key=lambda key: len(json.dumps(information[key])), reverse=True):
-            if len(encoded) <= 16384:
-                break
-            information[key] = []
-            encoded = json.dumps(information, separators=(",", ":"))
-        fields.append(encoded)
+    fields.append(encoded)
     return "\t".join(fields)
 
 
@@ -195,8 +242,9 @@ def _fail(message):
 
 
 def main(argv):
+    """Dispatch bounded discovery parsing without changing daemon state."""
     if len(argv) < 2:
-        print("usage: discover_report.py ids|addresses|truthy|registered|device ...", file=sys.stderr)
+        print("usage: discover_report.py ids|addresses|truthy|owner|registered|device ...", file=sys.stderr)
         return 64
     command = argv[1]
 
@@ -205,7 +253,8 @@ def main(argv):
         return 0 if argv[3] in (plugin_ids(props.get("supportedPlugins")) or []) else 1
 
     if command in ("ids", "addresses"):
-        items = parse_string_list(read_reply(sys.stdin.buffer))
+        raw = read_reply(sys.stdin.buffer)
+        items = parse_device_ids(raw) if command == "ids" else parse_string_list(raw)
         if items is None:
             return _fail("malformed %s reply" % (command,))
         for item in items:
@@ -218,6 +267,13 @@ def main(argv):
             return _fail("malformed boolean reply")
         return 0 if data == [True] else 1
 
+    if command == "owner":
+        owner = parse_unique_owner(read_reply(sys.stdin.buffer))
+        if owner is None:
+            return _fail("malformed unique owner reply")
+        print(owner)
+        return 0
+
     if command == "registered":
         data = parse_call_result(read_reply(sys.stdin.buffer), "as")
         if (not isinstance(data, list) or len(data) != 1 or not isinstance(data[0], list)
@@ -229,7 +285,7 @@ def main(argv):
         if len(argv) not in (6, 7, 8):
             print("usage: discover_report.py device <id> <device_json> <battery_json> <conn_json> [<loaded_json> [<monitor_json>]]", file=sys.stderr)
             return 64
-        device_props = parse_properties(argv[3]) if argv[3].strip() else None
+        device_props = parse_device_properties(argv[3])
         battery_props = parse_properties(argv[4]) if argv[4].strip() else None
         conn_props = parse_properties(argv[5]) if argv[5].strip() else None
         if device_props is None:

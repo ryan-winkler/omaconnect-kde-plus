@@ -18,7 +18,10 @@ set -Eeuo pipefail
 #       id name type paired reachable charge charging plugins netType
 #       netStrength pairRequested pairRequestedByPeer verificationKey
 #       loadedPlugins loadedKnown
-#   An optional final JSON field carries bounded addresses, providers and monitor state.
+#   A final JSON field carries bounded addresses, providers, monitor state,
+#   and pairing, reachability and pairing-request knowledge flags.
+#   DEVICE_OWNER<TAB><unique D-Bus owner> (verified again after all reads)
+#   DEVICE_SCAN<TAB><enumerated><TAB><readable> (after a successful enumeration)
 # Each device is read with ONE org.freedesktop.DBus.Properties GetAll call
 # on interface org.kde.kdeconnect.device (name, type, isPaired, isReachable,
 # isPairRequested, isPairRequestedByPeer, supportedPlugins, verificationKey)
@@ -62,6 +65,13 @@ is_daemon_running() {
     reply=$(busctl_json call org.freedesktop.DBus /org/freedesktop/DBus \
         org.freedesktop.DBus NameHasOwner s org.kde.kdeconnect) || return 69
     printf '%s' "$reply" | python3 "$report" truthy
+}
+
+get_daemon_owner() {
+    local reply
+    reply=$(busctl_json call org.freedesktop.DBus /org/freedesktop/DBus \
+        org.freedesktop.DBus GetNameOwner s org.kde.kdeconnect) || return 69
+    printf '%s' "$reply" | python3 "$report" owner
 }
 
 ensure_daemon() {
@@ -109,13 +119,14 @@ sanitize_field() {
     printf '%s' "$field"
 }
 
-ids_raw=$(busctl_json call org.kde.kdeconnect "$base" \
+owner=$(get_daemon_owner) || exit 69
+ids_raw=$(busctl_json call "$owner" "$base" \
     org.kde.kdeconnect.daemon devices bb false false) || exit 69
 entries=$(printf '%s' "$ids_raw" | python3 "$report" ids) || exit 70
 
 # KDE Connect owns this list and persists it. Exposing it in the same snapshot
 # lets the UI add Tailscale or other VPN addresses without a second database.
-if custom_raw=$(busctl_json get-property org.kde.kdeconnect "$base" \
+if custom_raw=$(busctl_json get-property "$owner" "$base" \
     org.kde.kdeconnect.daemon customDevices) \
     && custom_entries=$(printf '%s' "$custom_raw" | python3 "$report" addresses); then
     printf 'CUSTOM_ADDRESSES_READY\n'
@@ -127,25 +138,31 @@ else
     printf 'CUSTOM_ADDRESSES_UNAVAILABLE\n'
 fi
 
-while IFS= read -r entry; do
-    [[ -n "$entry" ]] || continue
-    path="$entry"
-    [[ "$path" == /* ]] || path="$base/devices/$entry"
-    id=${path##*/}
-    device_json=$(busctl_json call org.kde.kdeconnect "$path" \
+enumerated=0
+readable=0
+while IFS= read -r id; do
+    [[ -n "$id" ]] || continue
+    ((++enumerated))
+    path="$base/devices/$id"
+    device_json=$(busctl_json call "$owner" "$path" \
         org.freedesktop.DBus.Properties GetAll s org.kde.kdeconnect.device) || continue
     # Sub-objects only exist while their plugin is loaded; failure means n/a.
-    battery_json=$(busctl_json call org.kde.kdeconnect "$path/battery" \
+    battery_json=$(busctl_json call "$owner" "$path/battery" \
         org.freedesktop.DBus.Properties GetAll s org.kde.kdeconnect.device.battery) || battery_json=""
-    conn_json=$(busctl_json call org.kde.kdeconnect "$path/connectivity_report" \
+    conn_json=$(busctl_json call "$owner" "$path/connectivity_report" \
         org.freedesktop.DBus.Properties GetAll s org.kde.kdeconnect.device.connectivity_report) || conn_json=""
     # Loading is distinct from support and from a user's enabled setting.
-    loaded_json=$(busctl_json call org.kde.kdeconnect "$path" \
+    loaded_json=$(busctl_json call "$owner" "$path" \
         org.kde.kdeconnect.device loadedPlugins) || loaded_json=""
     monitor_json=""
     if python3 "$report" supports "$device_json" kdeconnect_virtualmonitor; then
-        monitor_json=$(busctl_json call org.kde.kdeconnect "$path/virtualmonitor" \
+        monitor_json=$(busctl_json call "$owner" "$path/virtualmonitor" \
             org.freedesktop.DBus.Properties GetAll s org.kde.kdeconnect.device.virtualmonitor) || monitor_json=""
     fi
     python3 "$report" device "$id" "$device_json" "$battery_json" "$conn_json" "$loaded_json" "$monitor_json" || continue
+    ((++readable))
 done <<< "$entries"
+verified_owner=$(get_daemon_owner) || exit 69
+[[ "$verified_owner" == "$owner" ]] || exit 69
+printf 'DEVICE_OWNER\t%s\n' "$owner"
+printf 'DEVICE_SCAN\t%d\t%d\n' "$enumerated" "$readable"

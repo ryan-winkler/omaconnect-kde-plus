@@ -14,9 +14,7 @@ Controls.ComboBox {
     readonly property var devices: service ? service.devices : []
     readonly property string selectedId: device ? device.id : ""
     readonly property var deviceOptions: devices.map(function(entry) {
-        var name = root.deviceName(entry)
-        var duplicate = root.devices.some(function(other) { return other.id !== entry.id && root.deviceName(other) === name })
-        var displayName = name + (duplicate ? " [" + entry.id + "]" : "")
+        var displayName = root.disambiguatedName(entry)
         var state = root.deviceState(entry)
         return {value: entry.id, name: displayName, state: state, type: entry.type,
             active: entry.paired && entry.reachable, label: displayName + " · " + state}
@@ -24,6 +22,7 @@ Controls.ComboBox {
     readonly property string deviceStatus: {
         if (!service) return Locale.Strings.t("deviceSwitcher.kdeConnectIsUnavailableOpenKde")
         if (devices.length === 0) {
+            if (service.discoveryState === "partial") return service.discoveryMessage
             if (service.scanning || service.discoveryState === "starting") return Locale.Strings.t("deviceSwitcher.checkingKdeConnectForDevices")
             if (!service.daemonAvailable) return service.discoveryMessage || Locale.Strings.t("deviceSwitcher.kdeConnectIsUnavailableOpenIt")
             return Locale.Strings.t("deviceSwitcher.noDevicesFoundOpenKdeConnect")
@@ -51,7 +50,13 @@ Controls.ComboBox {
     function deviceName(entry) {
         return service && typeof service.displayName === "function" ? service.displayName(entry) : entry.name
     }
+    function disambiguatedName(entry) {
+        var name = deviceName(entry)
+        var duplicate = devices.some(function(other) { return other.id !== entry.id && root.deviceName(other) === name })
+        return name + (duplicate ? " [" + entry.id + "]" : "")
+    }
     function deviceState(entry) {
+        if (entry.pairingKnown === false || entry.reachabilityKnown === false) return Locale.Strings.t("deviceSwitcher.statusUnavailable")
         return !entry.paired ? Locale.Strings.t("deviceSwitcher.notPaired") : entry.reachable ? Locale.Strings.t("deviceSwitcher.connected") : Locale.Strings.t("deviceSwitcher.offline")
     }
     function selectDevice(id) {
