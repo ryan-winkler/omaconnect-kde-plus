@@ -36,6 +36,7 @@ if request["text"] == "Fixture unknown":
 print(json.dumps({"state": "request_accepted"}))
 ''')
         def assert_picker(fixture,home,output,calls):
+            """Require exact fake pairing commands and reject other provider actions."""
             self.assertIn('DAILY_PICKER_PASS',output)
             self.assertEqual([row['args'] for row in calls if row['tool'] == 'kdeconnect-cli'],
                              [['-d', 'B', '--unpair'], ['-d', 'A', '--unpair'], ['-d', 'C', '--pair']])
