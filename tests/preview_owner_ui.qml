@@ -61,13 +61,13 @@ ShellRoot {
     property int firstGeneration: -1
     Component {
         id: panelFactory
-        Plugin.Panel { bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false}) }
+        Plugin.Panel { bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false,useDesktopFileChooser:false}) }
     }
     Window {
         visible: true; width: 1100; height: 800
         Item { id: anchor; width: 26; height: 26 }
-        Plugin.Panel { id: first; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false}) }
-        Plugin.Panel { id: second; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false}) }
+        Plugin.Panel { id: first; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false,useDesktopFileChooser:false}) }
+        Plugin.Panel { id: second; bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false,useDesktopFileChooser:false}) }
     }
     Timer {
         interval: 25; running: true; repeat: true

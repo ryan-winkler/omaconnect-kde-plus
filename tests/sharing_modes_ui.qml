@@ -76,8 +76,9 @@ ShellRoot {
             var cancel=test.find(panel,"cancel-pending-files",[])
             if (test.phase===0 && service.devices.length===2 && service.appearance.ready) {
                 panel.open();service.selectDevice("A")
-                if(!test.check(panel.fileChooserOptions.useDesktopFileChooser===false && panel.fileChooserOptions.reviewFilesBeforeSend===false,"missing options default to native menu and immediate submission"))return
-                if(!test.check(panel.chooseFiles() && service.draftTarget.peerId==="A","actual Panel forwards selected recipient and default policy"))return
+                if(!test.check(panel.fileChooserOptions.useDesktopFileChooser===true && panel.fileChooserOptions.reviewFilesBeforeSend===false,"missing options default to desktop chooser and immediate submission"))return
+                panel.settings={showTailscale:false,useDesktopFileChooser:false}
+                if(!test.check(panel.chooseFiles() && service.draftTarget.peerId==="A","actual Panel forwards selected recipient and explicit recent-menu preference"))return
                 service.selectDevice("B")
                 panel.settings={showTailscale:false,useDesktopFileChooser:true,reviewFilesBeforeSend:true}
                 if(!test.check(service.draftTarget.peerId==="A","open chooser retains recipient after navigation and settings change"))return

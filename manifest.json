@@ -36,8 +36,8 @@
     },
     "useDesktopFileChooser": {
       "type": "boolean",
-      "default": false,
-      "description": "Use the desktop file chooser instead of the original Omarchy recent-file menu."
+      "default": true,
+      "description": "Use the desktop file chooser. Off uses the Omarchy recent-file menu, which can expose listed paths to other local accounts."
     },
     "reviewFilesBeforeSend": {
       "type": "boolean",

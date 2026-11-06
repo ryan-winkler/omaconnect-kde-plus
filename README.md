@@ -32,13 +32,12 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
 
 ## Features
 
-- **Files:** use the searchable Omarchy recent-file menu with file-type icons.
-  **Image previews…** opens a guided preview with the recipient, filename, Back
-  and Cancel. Browsing never sends; select **Send image** or **Review image** to
-  continue. Selecting a file in the ordinary list sends it to the recipient shown when the menu opened. In **Plus settings
-  → Quick actions**, enable **Review files before Send** for an explicit review,
-  or **Use desktop file chooser** for any local file and batches of up to 100.
-  Drops on Devices, the bar icon or Send window always require review and use Copy.
+- **Files:** choose up to 100 local files in the desktop chooser. In **Plus
+  settings → Quick actions**, turn on **Review files before Send** to check the
+  files and recipient before sending. Turn off **Use desktop file chooser** to
+  use the searchable Omarchy recent-file menu with file icons and **Image
+  previews…**. Drops on Devices, the bar icon or Send window always require
+  review and use Copy.
 - **Phone folders:** select **Browse phone files** to open folders shared by KDE
   Connect in your default file manager. Add it to Quick actions for direct access
   from Devices. If KDE Connect reports that storage is unmounted, select
@@ -136,12 +135,12 @@ Missing optional providers stay unavailable; Plus never installs them.
 
 Appearance and address metadata stay in owner-only files. Typed text, Ping
 messages and the paths of files you send travel over stdin and D-Bus, never
-process arguments during native submission. The original-style file menu passes
-bounded candidate paths through Omarchy’s menu arguments; those can be visible
-to same-user process inspection. Use the desktop chooser to avoid that menu
-exposure. Saved settings, such as a default Ping message, go through
-Omarchy, which briefly passes them in process arguments. Do not save private
-text there. Files in shared locations are sent from a private snapshot. Activity
+process arguments during native submission. The optional recent-file menu puts
+listed file paths and the recipient name in Omarchy’s process arguments. Other
+local accounts may be able to read those arguments. Keep the default desktop
+chooser on to avoid that exposure. Saved settings, such as a default Ping
+message, go through Omarchy, which briefly passes them in process arguments.
+Keep private text out of these saved settings. Files in shared locations are sent from a private snapshot. Activity
 keeps at most 50 summaries in memory, without paths. Media shows track text and
 controls but never loads provider-supplied album art.
 

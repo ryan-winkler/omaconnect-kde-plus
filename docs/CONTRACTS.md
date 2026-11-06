@@ -1,10 +1,11 @@
 # Provider and storage contracts
 
 Provider helpers use fixed argv plus bounded JSON stdin/stdout. The original-style
-native file menu passes bounded local candidate paths through the platform menu
-arguments; they can be visible to same-user process inspection. File submission
-paths use D-Bus instead of argv. Raw provider stderr
-is not shown in the UI. These are local process contracts; the fork adds no HTTP
+native file menu passes bounded local candidate paths and the recipient
+label through the platform menu arguments. Other local accounts may be able to
+read them, depending on system process-visibility settings. The desktop chooser
+is the default. File submission paths use D-Bus instead of argv. The UI hides
+raw provider stderr. These are local process contracts; the fork adds no HTTP
 server, arbitrary REST proxy, protocol daemon or cross-plugin service API.
 
 ## Runtime identity and retained storage
@@ -72,10 +73,11 @@ local metadata, at most 64 entries, and do not change native registration.
 
 ## File chooser and submission
 
-The UI's boolean settings are `useDesktopFileChooser=false` and
-`reviewFilesBeforeSend=false`. Explicit chooser selection therefore sends by
-default. Present non-boolean settings fall back to desktop review. UI callers
-pass `{useDesktopFileChooser, reviewFilesBeforeSend}` through the existing
+The UI's defaults are `useDesktopFileChooser=true` and
+`reviewFilesBeforeSend=false`. The desktop chooser opens and explicit selection
+submits by default. An existing `useDesktopFileChooser=false` preference still
+opens the recent-file menu. Non-boolean settings fall back to desktop review.
+UI callers pass `{useDesktopFileChooser, reviewFilesBeforeSend}` through the existing
 Service/controller API; omitted or mistyped options retain desktop review for
 compatibility. Options and recipient are captured at chooser launch. Only that
 generation can submit its result. Drops always use review regardless of settings.

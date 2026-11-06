@@ -317,7 +317,7 @@ Panel {
     readonly property var fileChooserOptions: {
         var config = settings
         var object = config && typeof config === "object" && !Array.isArray(config)
-        var desktop = object && "useDesktopFileChooser" in config ? config.useDesktopFileChooser : false
+        var desktop = object && "useDesktopFileChooser" in config ? config.useDesktopFileChooser : true
         var review = object && "reviewFilesBeforeSend" in config ? config.reviewFilesBeforeSend : false
         var valid = object && typeof desktop === "boolean" && typeof review === "boolean"
         return {useDesktopFileChooser: valid ? desktop : true, reviewFilesBeforeSend: valid ? review : true}

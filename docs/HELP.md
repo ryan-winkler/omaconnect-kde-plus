@@ -292,11 +292,11 @@ Choose a shortcut, then select **Add selected action**. Use **Up**, **Down** or
 **Remove** to change the toolbar. **Use default actions** restores Files, Text, and Clipboard. These choices do not enable a native module or execute it.
 Each action shows its description and selected-device availability.
 
-- **Files:** Open the original Omarchy recent-file menu. Selection sends to the
-  recipient shown when the menu opened. Enable **Use desktop file chooser** for
-  any local file and multiselect. Enable **Review files before Send** to check
-  chosen files before an explicit Send. These settings are independent. Drops
-  always require review. Invalid stored settings fall back to desktop review.
+- **Files:** Open the desktop file chooser. Selection sends to the device
+  selected when you opened the chooser. Turn on **Review files before Send**
+  to check the files and recipient before Send. Turn off **Use desktop file
+  chooser** to use the Omarchy recent-file menu. Drops always require review.
+  Invalid stored settings fall back to desktop review.
 - **Text:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
 - **Clipboard:** Send the current clipboard to the selected device.
 - **Quick Share:** Open [RQuickShare](https://github.com/Martichou/rquickshare)
@@ -437,16 +437,19 @@ that it could not open Plus.
 ## Send files and read activity
 
 1. Select a paired, reachable device. Expand **File sharing** in Devices, or open **Send**.
-2. Select **Choose files**. By default the original Omarchy recent-file menu opens;
-   selecting a file submits it immediately to the recipient shown in the prompt.
-   Set **Plus settings → Quick actions → Review files before Send** to review
-   first. **Use desktop file chooser** switches to the graphical chooser with
-   multiselect. The popup can close when you focus a file manager. Select
+2. Select **Choose files**. The desktop chooser opens by default. Your
+   selection submits to the device that was selected when you opened the chooser.
+   Turn on **Plus settings → Quick actions → Review files before Send** to review
+   first. The popup can close when you focus a file manager. Select
    **Keep Send window open** in Devices, or **Open Send window** in Send, for a
    persistent target. Dragging local file URLs over the bar icon also opens and
    reveals the inline target, even if its section is hidden. This reveal lasts
    for that popup session and does not change its saved visibility.
-3. The recent-file menu offers one supported file from Downloads, Documents,
+3. To use the recent-file menu, turn off **Use desktop file chooser**. Keep
+   the desktop chooser on if other people have accounts on this computer.
+   Depending on system settings, they can read the listed file paths and the
+   recipient name from the recent menu's process arguments while it is open.
+   The recent menu offers one supported file from Downloads, Documents,
    Pictures, Videos or Desktop, within four levels, most recently changed first.
    These five starting folders can link to moved storage. The menu uses their
    resolved locations and skips links and hidden items inside them. Search stops

@@ -76,17 +76,24 @@ const review={useDesktopFileChooser:true,reviewFilesBeforeSend:true};
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_panel_defaults_normalizes_malformed_options_and_forwards_target(self):
-        """Distinguish authorized defaults from malformed preferences before forwarding selection."""
+        """Verify the portal default, explicit opt-in and malformed settings fallback."""
+        schema = json.loads((ROOT / 'manifest.json').read_text())
+        self.assertIs(schema['settings']['useDesktopFileChooser']['default'], True)
         self.node(r'''
-for(const settings of [{}]){
- const p=panel(settings,{},null);assert.deepEqual(JSON.parse(JSON.stringify(p.fileChooserOptions)),immediate);
-}
+const desktopImmediate={useDesktopFileChooser:true,reviewFilesBeforeSend:false};
+const defaults=panel({}, {}, null).fileChooserOptions;
+assert.deepEqual(JSON.parse(JSON.stringify(defaults)),desktopImmediate);
+assert.deepEqual(JSON.parse(JSON.stringify(panel({useDesktopFileChooser:false},{},null).fileChooserOptions)),immediate);
+const normal=fresh().ctx;
+assert.equal(normal.chooseFiles('A',defaults),true);
+assert.equal(normal.filePickerProcess.command[0],'bash');
+assert.equal(normal.filePickerProcess.payload,'','default chooser keeps recipient off the external menu path');
 for(const settings of [{useDesktopFileChooser:'false'},{reviewFilesBeforeSend:0},{useDesktopFileChooser:[],reviewFilesBeforeSend:false},
  {reviewFilesBeforeSend:null},{useDesktopFileChooser:null},{reviewFilesBeforeSend:undefined},null,undefined,[], 'false']){
  const p=panel(settings,{},null);assert.deepEqual(JSON.parse(JSON.stringify(p.fileChooserOptions)),review);
 }
 const seen=[];const p=panel({}, {chooseFiles(id,opts){seen.push({id,opts});return true}}, {id:'A'});
-assert.equal(p.chooseFiles(),true);assert.equal(seen[0].id,'A');assert.equal(seen[0].opts.useDesktopFileChooser,false);
+assert.equal(p.chooseFiles(),true);assert.equal(seen[0].id,'A');assert.equal(seen[0].opts.useDesktopFileChooser,true);
 p.device=null;assert.equal(p.chooseFiles(),false);assert.equal(seen.length,1);
 ''')
 
@@ -206,7 +213,7 @@ assert.equal(c.draftTarget.peerId,'A');assert.match(c.selectionError,/no longer 
     def test_panel_generation_owner_is_single_and_destruction_cancels_only_its_preview(self):
         """Multiple panels keep one origin and release only their unfinished selection."""
         self.node(r'''
-const f=fresh(),c=f.ctx,a=panel({},c,c.devices[0]),b=panel({},c,c.devices[0]);
+const f=fresh(),c=f.ctx,a=panel(immediate,c,c.devices[0]),b=panel(immediate,c,c.devices[0]);
 assert.equal(a.chooseFiles(),true);assert.equal(a.previewGeneration,c.selectionGeneration);assert.equal(b.previewGeneration,-1);
 c.filePickerProcess.running=false;c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
 assert.equal(b.chooseFiles(),false);assert.equal(b.previewGeneration,-1);assert.equal(b.backToFiles(),false);
@@ -299,7 +306,7 @@ print('Image previews…')
         runner.assert_fixture = checked
         runner.test_actual_service_bar_panel_and_controls()
 
-    def test_native_default_menu_immediate_review_and_global_cancel(self):
+    def test_native_opt_in_menu_immediate_review_and_global_cancel(self):
         """Exercise actual chooser modes and accessible cancellation on a private native bus."""
         runner = native_ui.NativeUi('test_actual_service_bar_panel_and_controls')
         runner.qml_fixture = 'sharing_modes_ui.qml'
