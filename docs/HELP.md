@@ -41,8 +41,10 @@ devices are unavailable** means KDE Connect listed devices that Plus could
 not read. Supported actions stay available for a device that Plus confirms is
 paired and connected. Check the native device list on both computers for missing devices.
 **Status unavailable** means Plus could not establish a device's status. KDE
-Connect can keep a pairing while the device is offline. If the list is empty,
-select **Open KDE Connect** to find and pair a device.
+Connect can keep a pairing while the device is offline. When discovery completes
+with an empty list, select **Open KDE Connect**. If discovery is unavailable,
+select **Refresh devices**. If the button to open KDE Connect is still absent,
+open **KDE Connect** from the application launcher.
 
 ## Screenshots
 
