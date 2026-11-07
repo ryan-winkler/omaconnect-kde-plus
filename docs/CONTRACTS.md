@@ -318,10 +318,14 @@ from an address is accepted.
 
 An owner-only record stores provenance, automatic opt-in, manual baseline and
 registration state. The helper serializes fork writers, reads KDE customDevices,
-merges, writes and reads back. It permits two retries under one five-second
-deadline. KDE exposes no compare-and-swap operation: an unrelated simultaneous
-writer remains a limit. Existing external/manual baselines are preserved. Forget
-removes metadata only; KDE removal has a separate explicit review step.
+merges, writes and reads back. The Saved addresses helper receives changes on
+stdin and sends the merged list through the KDE Connect session bus. It keeps
+address values out of process arguments. Writes need PyGObject, an existing
+session-bus address and a running KDE Connect service. The helper permits two
+retries under one five-second deadline. KDE has no compare-and-swap operation, so an unrelated
+simultaneous writer can still cause a conflict. Existing external/manual
+baselines are preserved. Forget removes metadata only. KDE removal has a
+separate review step.
 
 Request changes accept `op` values `add`, `remove` or `auto`, plus required
 `peer_id` and `address`. `source` defaults to `manual`. `add` and `auto` require
