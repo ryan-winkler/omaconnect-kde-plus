@@ -382,12 +382,12 @@ class RecentFiles(unittest.TestCase):
                          {'state': 'failed', 'error': 'recent-files-timeout'})
         self.assertLess(time.monotonic() - started, 2)
         pid = int(child_pid.read_text())
+        status = Path(f'/proc/{pid}/stat')
         for _ in range(100):
-            status = Path(f'/proc/{pid}/stat')
             try:
                 state = status.read_text().split()[2]
-            except FileNotFoundError:
-                break  # The descendant can exit between the probe and read.
+            except (FileNotFoundError, ProcessLookupError):
+                break  # procfs can report ENOENT or ESRCH after the descendant exits.
             if state == 'Z':
                 break
             time.sleep(.01)
