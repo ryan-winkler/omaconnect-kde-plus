@@ -287,7 +287,14 @@ def main():
                 raise ValueError('selection-limit')
             value = json.loads(raw)
             if mode == 'inspect':
-                emit({'state': 'selected', 'files': inspect_uris(value)})
+                if isinstance(value, dict) and value.keys() == {'preview'}:
+                    try:
+                        files = [validate_file(value['preview'])]
+                    except ValueError:
+                        raise ValueError('source-changed') from None
+                else:
+                    files = inspect_uris(value)
+                emit({'state': 'selected', 'files': files})
             else:
                 submit(value)
         else:

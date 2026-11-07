@@ -74,6 +74,32 @@ def _preview_options(options):
     return images
 
 
+def _preview_files(options, cancelled, menu_deadline):
+    """Capture bounded file identities before the preview can display them."""
+    from portal_files import inspect_file
+
+    files, size = [], 2
+    deadline = min(menu_deadline, time.monotonic() + SCAN_SECONDS)
+    for path in _preview_options(options):
+        if cancelled():
+            raise Cancelled()
+        if time.monotonic() >= deadline:
+            break
+        try:
+            item = inspect_file(path)
+        except ValueError:
+            continue
+        cost = len(json.dumps(item, ensure_ascii=True, separators=(',', ':'))) + bool(files)
+        if size + cost <= PREVIEW_ROW_BUDGET:
+            files.append(item)
+            size += cost
+    if cancelled():
+        raise Cancelled()
+    if not files:
+        raise RecentError('recent-files-timeout' if time.monotonic() >= deadline else 'source-changed')
+    return files
+
+
 def _plain_path(value):
     # Native menu rows cannot represent separators or bidi/control text safely.
     """Check whether a bounded path can form one unambiguous native menu row."""
@@ -202,7 +228,7 @@ def _display_text(value, limit):
 
 
 def _menu(options, cancelled, prompt, preview_label):
-    """Return one offered label and remove private result files on every exit."""
+    """Return one offered label and the existing deadline for its handoff."""
     images = _preview_options(options)
     rows = [_file_row(path) for path in options]
     if images:
@@ -230,7 +256,7 @@ def _menu(options, cancelled, prompt, preview_label):
                 raise RecentError('source-path-rejected')
         finally:
             _stop_group(process)
-    return selected
+    return selected, deadline
 
 
 def choose_recent(label='', title='', preview_label=''):
@@ -254,11 +280,11 @@ def choose_recent(label='', title='', preview_label=''):
             raise Cancelled()
         if not options:
             raise RecentError('recent-files-empty')
-        selected = _menu(options, lambda: cancelled, prompt, preview_label)
+        selected, deadline = _menu(options, lambda: cancelled, prompt, preview_label)
         if cancelled:
             raise Cancelled()
         if selected == preview_label:
-            return {'state': 'preview', 'paths': _preview_options(options)}
+            return {'state': 'preview', 'files': _preview_files(options, lambda: cancelled, deadline)}
         from portal_files import inspect_uris
         files = inspect_uris([Path(selected).as_uri()])
         if cancelled:

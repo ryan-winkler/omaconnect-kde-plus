@@ -108,11 +108,14 @@ directory which is removed after exit, so a stale native menu cannot recreate
 its deleted result paths. No unscoped global hide is used. The menu does not submit; it returns inspected metadata.
 
 When displayed candidates include JPEG, PNG, WebP or GIF files, **Image previews…**
-returns an internal `{state:"preview",paths:[...]}` handoff instead of a selected
-file. Paths are exact displayed canonical raster candidates, at most 200 within
-48 KiB of conservative ASCII-escaped JSON. Distinct paths with the same basename
-remain available. SVG, video and optional image codecs stay in the ordinary list.
-The helper opens no image overlay and creates no preview result files or cache.
+returns an internal `{state:"preview",files:[...]}` handoff instead of a selected
+file. Each record holds an exact displayed canonical raster path and the existing
+inspection identity. The helper captures these identities before display without
+reading image content. It checks the scan and menu deadlines between files. The
+records fit within 48 KiB of conservative ASCII-escaped JSON and at most 200
+entries. Distinct paths with the same basename remain available. SVG, video and
+optional image codecs stay in the ordinary list. The helper opens no image
+overlay and creates no preview result files or cache.
 
 `FileTransferController` validates the handoff before display: nonempty bounded
 array, unique absolute raster paths, no control/bidi separators or dot segments,
@@ -131,8 +134,10 @@ with a new selection generation. Navigation does not require the recipient to
 stay connected; confirmation and submission still check it. Back does not adopt
 current settings or device navigation. Cancel, Escape and window close clear the preview and draft; scoped
 preview cancellation closes only that window. Confirm accepts only an exact
-candidate, rechecks the original peer, then runs the existing file inspector.
-Only its current generation can enter the normal immediate/review flow. The Send
+candidate, rechecks the original peer, then sends its captured identity to the
+existing file inspector as `{preview: file}`. The inspector refuses a file with
+changed identity fields or an unavailable path. Only a match for the current
+generation can enter the normal immediate/review flow. The Send
 window shows inspection/submission or the review draft; Review still needs a
 separate explicit Send. Metadata identity and private-source checks are unchanged.
 

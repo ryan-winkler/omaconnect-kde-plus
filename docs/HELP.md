@@ -458,6 +458,7 @@ that it could not open Plus.
    always visible. Search or use **Previous** and **Next** to find the image.
    Browsing never sends. Select **Send image** to send it, or **Review image** to
    check it before the separate Send step when review is enabled.
+   If you edit, replace or move an image after its preview opens, choose it again.
    **Back to files** returns to the file list for the same recipient and saved
    send/review choice. **Cancel**, Escape or closing the preview clears this
    selection. Previews support JPEG, PNG, WebP and GIF, with up to 200 images

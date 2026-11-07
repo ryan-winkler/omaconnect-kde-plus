@@ -82,7 +82,7 @@ class RecentFiles(unittest.TestCase):
         self.assertEqual(self.helper.choose_recent()['files'][0]['path'], str(chosen))
 
     def test_preview_handoff_contains_exact_offered_rasters_without_native_overlay(self):
-        """Return bounded canonical paths without opening an overlay or inspecting a choice."""
+        """Return bounded canonical identities without opening an overlay or sending."""
         newest = self.file('Pictures/new/photo.png', 30)
         same_name = self.file('Pictures/old/photo.png', 20)
         other = self.file('Pictures/other.gif', 10)
@@ -93,10 +93,12 @@ class RecentFiles(unittest.TestCase):
         import portal_files
         with patch.object(portal_files, 'inspect_uris') as inspector:
             self.assertEqual(self.helper.choose_recent(),
-                             {'state': 'preview', 'paths': [str(newest), str(same_name), str(other)]})
+                             {'state': 'preview', 'files': [portal_files.inspect_file(str(path))
+                                                            for path in (newest, same_name, other)]})
             inspector.assert_not_called()
         self.helper.MAX_PREVIEW_FILES = 1
-        self.assertEqual(self.helper.choose_recent(), {'state': 'preview', 'paths': [str(newest)]})
+        self.assertEqual(self.helper.choose_recent(),
+                         {'state': 'preview', 'files': [portal_files.inspect_file(str(newest))]})
         self.helper.PREVIEW_ROW_BUDGET = 2
         self.assertEqual(self.helper.choose_recent(),
                          {'state': 'failed', 'error': 'source-path-rejected'})
@@ -108,11 +110,56 @@ class RecentFiles(unittest.TestCase):
                   'assert sys.argv[2] == "\uf03e\tمعاينات الصور…"\n'
                   'print(sys.argv[2].split("\\t", 1)[1])')
         result = self.helper.choose_recent('Phone', 'اختر ملفًا لإرساله إلى \u202ePhone', 'معاينات\tالصور…')
-        self.assertEqual(result, {'state': 'preview', 'paths': [str(photo)]})
+        self.assertEqual(result['state'], 'preview')
+        self.assertEqual([item['path'] for item in result['files']], [str(photo)])
         self.fake(f'print({str(photo)!r})')
         result = self.helper.choose_recent('Phone', preview_label=str(photo))
         self.assertEqual(result['state'], 'selected')
         self.assertEqual(result['files'][0]['path'], str(photo))
+
+    def test_preview_file_budget_includes_identity_fields(self):
+        """Adding metadata cannot exceed the existing serialized list budget."""
+        photos = [self.file(f'Pictures/photo-{i}.png') for i in range(12)]
+        self.helper.PREVIEW_ROW_BUDGET = 1200
+        self.fake(f'print({self.helper.PREVIEW_LABEL!r})')
+        self.assertLess(len(json.dumps([str(path) for path in photos])), self.helper.PREVIEW_ROW_BUDGET)
+        result = self.helper.choose_recent()
+        self.assertEqual(result['state'], 'preview')
+        self.assertGreater(len(result['files']), 0)
+        self.assertLess(len(result['files']), len(photos))
+        encoded = json.dumps(result['files'], ensure_ascii=True, separators=(',', ':'))
+        self.assertLessEqual(len(encoded), self.helper.PREVIEW_ROW_BUDGET)
+
+    def test_preview_inspection_refuses_an_edited_replaced_or_moved_source(self):
+        """The real inspector must compare the identity captured before display."""
+        self.fake(f'print({self.helper.PREVIEW_LABEL!r})')
+        for change in ('edit', 'replace', 'move'):
+            with self.subTest(change=change):
+                path = self.file()
+                photo = path.with_suffix('.png')
+                path.rename(photo)
+                expected = self.helper.choose_recent()['files'][0]
+
+                def inspect_preview():
+                    return subprocess.run(
+                        [sys.executable, str(SCRIPTS / 'portal_files.py'), 'inspect'],
+                        input=json.dumps({'preview': expected}) + '\n', text=True,
+                        capture_output=True, timeout=5,
+                    )
+
+                unchanged = inspect_preview()
+                self.assertEqual(unchanged.returncode, 0, unchanged.stderr)
+                self.assertEqual(json.loads(unchanged.stdout), {'state': 'selected', 'files': [expected]})
+                moved = photo.with_suffix('.moved')
+                if change == 'edit':
+                    photo.write_bytes(b'edited file!!')
+                elif change == 'replace':
+                    self.file('Downloads/replacement', mtime=10).replace(photo)
+                else:
+                    photo.rename(moved)
+                stale = inspect_preview()
+                self.assertEqual(stale.returncode, 1, stale.stderr)
+                self.assertEqual(json.loads(stale.stdout), {'state': 'failed', 'error': 'source-changed'})
 
     def test_nonpreview_formats_keep_normal_menu_and_rendered_rows_fit_budget(self):
         """Keep vectors, video and optional codecs selectable without native raster decode."""

@@ -48,6 +48,7 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Ask for a new selection if a file changes after Plus opens its image preview.
 - Activity explains what to check before sending a missing file again.
 
 - Keep File sharing collapsed when the Browse phone files shortcut opens a

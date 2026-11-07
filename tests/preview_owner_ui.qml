@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Window
 import Quickshell
+import Quickshell.Io
 import "plugin" as Plugin
 
 ShellRoot {
@@ -59,6 +60,13 @@ ShellRoot {
     }
     property var temporaryPanel: null
     property int firstGeneration: -1
+    Process {
+        id: replacePreview
+        command: ["python3", "-c", "from pathlib import Path; folder = Path.home() / 'Pictures'; (folder / 'owned.png.replacement').replace(folder / 'owned.png')"]
+        onExited: function(code) {
+            if (test.check(code === 0, "synthetic image replaced after preview became ready")) test.phase = 10
+        }
+    }
     Component {
         id: panelFactory
         Plugin.Panel { bar: fakeBar; anchorItem: anchor; settings: ({showTailscale:false}) }
@@ -111,6 +119,21 @@ ShellRoot {
                 test.temporaryPanel.destroy();test.temporaryPanel=null;test.phase++
             } else if(test.phase===8 && service.selectionState==="idle") {
                 if(!test.check(!service.draftTarget && service.operations.length===0,"destroyed preview owner leaves no orphan preview or submission"))return
+                if(!test.check(first.chooseFiles(),"owner starts a fresh chooser to test the loaded image"))return
+                test.phase=9
+            } else if(test.phase===9 && a.canConfirm) {
+                service.selectDevice("B")
+                replacePreview.running=true
+                test.phase=90
+            } else if(test.phase===10) {
+                if(!test.check(a.canConfirm && service.draftTarget.peerId==="A","cached preview still shows the original reviewed recipient"))return
+                a.confirm()
+                test.phase=11
+            } else if(test.phase===11 && service.selectionState==="idle") {
+                var failedSend=test.find(first,"send-window",[])
+                if(!test.check(failedSend.visible && service.selectionError==="A selected file changed. Choose the files again."
+                        && service.draftTarget.peerId==="A" && service.selection.length===0 && service.operations.length===0,
+                        "replaced image shows choose-again feedback without review or submission"))return
                 console.log("PREVIEW_OWNER_PASS "+JSON.stringify(test.checks));console.log("NATIVE_PASS preview owner");Qt.quit()
             }
         }
