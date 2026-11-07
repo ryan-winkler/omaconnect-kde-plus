@@ -48,8 +48,10 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Activity explains what to check before sending a missing file again.
 - Keep daily actions for paired, connected devices when KDE Connect cannot read
   every device. Open native KDE Connect directly when the device list is empty.
+
 - Keep File sharing collapsed when the Browse phone files shortcut opens a
   single shared folder. Use the same shortcut to cancel while it runs.
 - Disable stale device actions when KDE Connect loses or changes its bus name.
