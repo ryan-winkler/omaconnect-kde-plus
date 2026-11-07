@@ -292,11 +292,11 @@ Choose a shortcut, then select **Add selected action**. Use **Up**, **Down** or
 **Remove** to change the toolbar. **Use default actions** restores Files, Text, and Clipboard. These choices do not enable a native module or execute it.
 Each action shows its description and selected-device availability.
 
-- **Files:** Open the original Omarchy recent-file menu. Selection sends to the
-  recipient shown when the menu opened. Enable **Use desktop file chooser** for
-  any local file and multiselect. Enable **Review files before Send** to check
-  chosen files before an explicit Send. These settings are independent. Drops
-  always require review. Invalid stored settings fall back to desktop review.
+- **Files.** Open the desktop chooser. Check the files and recipient, then
+  select **Send**. Turn off **Review files before Send** to submit when you
+  confirm the selection in the chooser. Turn off **Use desktop file chooser** to use the Omarchy
+  recent-file menu. Drops always require review. Invalid settings fall back
+  to the desktop chooser with review.
 - **Text:** Compose up to 8192 characters and send explicitly. Plus uses the native session bus; private content stays out of process command arguments.
 - **Clipboard:** Send the current clipboard to the selected device.
 - **Quick Share:** Open [RQuickShare](https://github.com/Martichou/rquickshare)
@@ -437,16 +437,18 @@ that it could not open Plus.
 ## Send files and read activity
 
 1. Select a paired, reachable device. Expand **File sharing** in Devices, or open **Send**.
-2. Select **Choose files**. By default the original Omarchy recent-file menu opens;
-   selecting a file submits it immediately to the recipient shown in the prompt.
-   Set **Plus settings → Quick actions → Review files before Send** to review
-   first. **Use desktop file chooser** switches to the graphical chooser with
-   multiselect. The popup can close when you focus a file manager. Select
-   **Keep Send window open** in Devices, or **Open Send window** in Send, for a
-   persistent target. Dragging local file URLs over the bar icon also opens and
-   reveals the inline target, even if its section is hidden. This reveal lasts
+2. Select **Choose files**. By default, the desktop chooser opens and the
+   Send window stays open for review. Your selection waits until you select
+   **Send**. If you close the Send window, open **Send** in Plus to find the
+   draft. Select **Keep Send window open** in Devices or **Open Send window**
+   in Send to use that window as a drop target. Dragging local file URLs over
+   the bar icon opens and reveals the inline target, even if its section is hidden. This reveal lasts
    for that popup session and does not change its saved visibility.
-3. The recent-file menu offers one supported file from Downloads, Documents,
+3. To use the recent-file menu, turn off **Use desktop file chooser**. Keep
+   the desktop chooser on if other people have accounts on this computer.
+   Depending on system settings, they can read the listed file paths and the
+   recipient name from the recent menu's process arguments while it is open.
+   The recent menu offers one supported file from Downloads, Documents,
    Pictures, Videos or Desktop, within four levels, most recently changed first.
    These five starting folders can link to moved storage. The menu uses their
    resolved locations and skips links and hidden items inside them. Search stops
@@ -465,9 +467,11 @@ that it could not open Plus.
    Use the desktop chooser for other files, names with controls, or larger trees.
    The desktop chooser and drops support up to 100 local regular files, 1 TiB combined.
    Directories and remote URLs are not accepted. Drops use Copy and preserve originals.
-4. With review enabled, or after any drop, check the recipient, files, count and
-   size. Select **Send files**. Changing devices or settings while a chooser is
-   open does not change its captured recipient or review policy.
+4. Check the recipient, files, count and size. Select **Send**. In **Plus
+   settings → Quick actions**, turn off **Review files before Send** to submit
+   when you confirm the selection in the chooser. Drops always require review.
+   Changing devices or settings while a chooser is open keeps its original
+   recipient and review choice.
 5. Read Activity. **Request accepted** means KDE Connect accepted the request.
    Check the receiving device's save folder before you send the files again.
 

@@ -66,6 +66,8 @@ ShellRoot {
         onExited: function(code) {
             if (!test.check(code === 0, "fixture replaces the reviewed screenshot")) return
             if (!test.check(service.submitSelection(), "explicit Send starts the reviewed transfer")) return
+            test.find(panel,"send-window",[]).close()
+            panel.open()
             panel.currentView = "Activity"
         }
     }
@@ -76,29 +78,44 @@ ShellRoot {
             var cancel=test.find(panel,"cancel-pending-files",[])
             if (test.phase===0 && service.devices.length===2 && service.appearance.ready) {
                 panel.open();service.selectDevice("A")
-                if(!test.check(panel.fileChooserOptions.useDesktopFileChooser===false && panel.fileChooserOptions.reviewFilesBeforeSend===false,"missing options default to native menu and immediate submission"))return
-                if(!test.check(panel.chooseFiles() && service.draftTarget.peerId==="A","actual Panel forwards selected recipient and default policy"))return
+                if(!test.check(panel.fileChooserOptions.useDesktopFileChooser===true && panel.fileChooserOptions.reviewFilesBeforeSend===true,"missing options default to desktop chooser and review"))return
+                panel.settings={showTailscale:false,useDesktopFileChooser:false,reviewFilesBeforeSend:false}
+                if(!test.check(panel.chooseFiles() && service.draftTarget.peerId==="A","actual Panel forwards selected recipient and explicit recent-menu preference"))return
                 service.selectDevice("B")
                 panel.settings={showTailscale:false,useDesktopFileChooser:true,reviewFilesBeforeSend:true}
                 if(!test.check(service.draftTarget.peerId==="A","open chooser retains recipient after navigation and settings change"))return
                 test.phase=1
             } else if(test.phase===1 && service.activeOperation && !service.operationBusy) {
                 if(!test.check(service.activeOperation.peerId==="A" && service.activeOperation.count===1 && service.activeOperation.accepted===1,"native recent menu inspects and submits once to captured A"))return
-                service.clearOperations();service.selectDevice("A")
-                if(!test.check(panel.chooseFiles(),"review preference starts actual desktop chooser"))return
+                service.selectDevice("A")
+                panel.settings={showTailscale:false}
+                var fileAction=test.find(panel,"quick-action-file",[])
+                if(!fileAction || !fileAction.visible || !fileAction.enabled)return
+                service.clearOperations()
+                fileAction.Accessible.pressAction()
+                var sendWindow=test.find(panel,"send-window",[])
+                if(!test.check(!panel.opened && sendWindow && sendWindow.visible
+                    && service.draftTarget && service.draftTarget.peerId==="A","default Files action opens the desktop chooser and keeps the Send window open"))return
                 test.phase=2
             } else if(test.phase===2 && service.selectionState==="draft") {
                 if(!test.check(service.selection.length===2 && service.draftTarget.peerId==="A" && !service.operationBusy && service.operations.length===0,"portal review holds complete batch without submission"))return
                 panel.settings={showTailscale:false,useDesktopFileChooser:false,reviewFilesBeforeSend:false}
-                service.selectDevice("B");test.phase=3
+                service.selectDevice("B")
+                test.phase=3
             } else if(test.phase===3) {
                 if(++test.reviewTicks<8)return
                 if(!test.check(!service.operationBusy && service.operations.length===0 && service.draftTarget.peerId==="A","later immediate setting and recipient changes do not submit or retarget review"))return
-                if(!test.check(service.submitSelection(),"review requires explicit Send"))return
+                var sendWindow=test.find(panel,"send-window",[])
+                var recipient=test.find(sendWindow,"send-window-recipient",[])
+                var send=test.find(sendWindow,"send-reviewed-files",[])
+                if(!test.check(sendWindow && sendWindow.visible && recipient && recipient.text.indexOf("Original phone")>=0 && send && send.actionAvailable && send.activeFocusOnTab,"Send window shows the captured recipient and keyboard-reachable Send after the popup closes"))return
+                send.Accessible.pressAction()
                 test.phase=4
             } else if(test.phase===4 && service.activeOperation && !service.operationBusy) {
                 if(!test.check(service.activeOperation.peerId==="A" && service.activeOperation.count===2 && service.activeOperation.accepted===2,"explicit review Send submits both files to captured A"))return
                 service.clearOperations()
+                test.find(panel,"send-window",[]).close()
+                panel.open()
                 if(!test.check(service.chooseFiles("A"),"compatibility call keeps portal and review"))return
                 test.phase=5
             } else if(test.phase===5 && service.selectionState==="draft") {
@@ -139,6 +156,8 @@ ShellRoot {
                 if (!test.check(service.selection.length === 0 && service.operations.length === 0,
                                 "cancelling screenshot review submits nothing")) return
                 service.selectDevice("A")
+                test.find(panel,"send-window",[]).close()
+                panel.open()
                 panel.currentView = "Devices"
                 test.phase = 10
             } else if (test.phase === 10) {
