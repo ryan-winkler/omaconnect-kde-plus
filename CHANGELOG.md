@@ -37,10 +37,11 @@ All notable changes are listed here. The format follows
   popup, Send window and image preview are closed. Device names are excluded by default;
   an explicit sharing preference adds them to notices and desktop history.
   The Activity action opens current activity without repeating a request.
-- Original-style searchable recent-file menu, with the desktop chooser retained
-  as an option in Quick actions settings. Explicit chooser selection sends by
-  default; Review files before Send restores the separate review step. Drops
-  always require review and keep the captured recipient.
+- The desktop chooser and review are on by default. Check the files and
+  recipient before you select **Send**. Quick actions keeps separate controls
+  for the Omarchy recent-file menu and direct submission. The chooser setting
+  explains who may see the recent menu’s process arguments. Drops always require
+  review.
 - A Cancel pending files control stays available across daily views and collapsed
   sections. Cancellation stops the Plus queue and active helper. Accepted LAN
   uploads use KDE Connect’s native progress Cancel; Bluetooth and per-transfer

@@ -57,6 +57,8 @@ ShellRoot {
             if(++test.ticks>100){test.check(false,"window scenario completes");return}
             if(test.phase===0){
                 if(!test.check(!send.visible && send.transientParent===null,"normal send window starts hidden and has no popover transient parent"))return
+                if(!test.check(send.chooserOptions.useDesktopFileChooser && send.chooserOptions.reviewFilesBeforeSend,
+                    "standalone Send window defaults to desktop chooser and review"))return
                 send.openSend();test.phase=1
             }else if(test.phase===1 && send.visible){
                 if(!test.check(send.minimumWidth===480 && send.minimumHeight===360,"send window is resizable with usable minimum bounds"))return

@@ -319,8 +319,8 @@ Panel {
     readonly property var fileChooserOptions: {
         var config = settings
         var object = config && typeof config === "object" && !Array.isArray(config)
-        var desktop = object && "useDesktopFileChooser" in config ? config.useDesktopFileChooser : false
-        var review = object && "reviewFilesBeforeSend" in config ? config.reviewFilesBeforeSend : false
+        var desktop = object && "useDesktopFileChooser" in config ? config.useDesktopFileChooser : true
+        var review = object && "reviewFilesBeforeSend" in config ? config.reviewFilesBeforeSend : true
         var valid = object && typeof desktop === "boolean" && typeof review === "boolean"
         return {useDesktopFileChooser: valid ? desktop : true, reviewFilesBeforeSend: valid ? review : true}
     }
@@ -329,8 +329,12 @@ Panel {
         : Locale.Strings.t("files.immediateHint")
     function chooseFiles(options) {
         if (!service || !device) return false
-        if (!service.chooseFiles(device.id, options || fileChooserOptions)) return false
+        var chooser = options || fileChooserOptions
+        if (!service.chooseFiles(device.id, chooser)) return false
         previewGeneration = service.selectionGeneration
+        // A desktop chooser can take focus from the popup. Keep its review open.
+        if (chooser.useDesktopFileChooser === true && chooser.reviewFilesBeforeSend === true)
+            root.openSendWindow()
         return true
     }
     function backToFiles() {
