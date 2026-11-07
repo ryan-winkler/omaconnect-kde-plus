@@ -212,6 +212,7 @@ Item {
         if (code === "portal-unavailable") return Locale.Strings.t("files.theDesktopFileChooserIsUnavailable")
         if (code === "source-preparation-failed") return Locale.Strings.t("files.couldNotPrepareAPrivateCopy")
         if (code === "source-changed") return Locale.Strings.t("files.aSelectedFileChangedChooseThe")
+        if (code === "preview-unprotected") return Locale.Strings.t("files.previewUnprotected")
         if (code === "recent-files-empty") return Locale.Strings.t("files.noSupportedRecentFilesFoundUse")
         if (code === "recent-files-timeout") return Locale.Strings.t("files.theFileMenuTimedOutIf")
         if (code === "recent-files-unavailable") return Locale.Strings.t("files.theOmarchyFilePickerIsUnavailable")

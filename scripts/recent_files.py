@@ -79,6 +79,7 @@ def _preview_files(options, cancelled, menu_deadline):
     from portal_files import inspect_file
 
     files, size = [], 2
+    unprotected = False
     deadline = min(menu_deadline, time.monotonic() + SCAN_SECONDS)
     for path in _preview_options(options):
         if cancelled():
@@ -86,8 +87,9 @@ def _preview_files(options, cancelled, menu_deadline):
         if time.monotonic() >= deadline:
             break
         try:
-            item = inspect_file(path)
-        except ValueError:
+            item = inspect_file(path, require_protected=True)
+        except ValueError as error:
+            unprotected = unprotected or str(error) == 'preview-unprotected'
             continue
         cost = len(json.dumps(item, ensure_ascii=True, separators=(',', ':'))) + bool(files)
         if size + cost <= PREVIEW_ROW_BUDGET:
@@ -96,7 +98,9 @@ def _preview_files(options, cancelled, menu_deadline):
     if cancelled():
         raise Cancelled()
     if not files:
-        raise RecentError('recent-files-timeout' if time.monotonic() >= deadline else 'source-changed')
+        if time.monotonic() >= deadline:
+            raise RecentError('recent-files-timeout')
+        raise RecentError('preview-unprotected' if unprotected else 'source-changed')
     return files
 
 

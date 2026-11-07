@@ -26,7 +26,7 @@ def emit(value):
     print(encoded, flush=True)
 
 
-def inspect_file(path):
+def inspect_file(path, *, require_protected=False):
     if not isinstance(path, str) or not path.startswith('/') or '\0' in path or len(os.fsencode(path)) > 4096:
         raise ValueError('source-path-rejected')
     # Nonblocking prevents a FIFO/device from hanging the shell. O_NOFOLLOW rejects
@@ -40,6 +40,11 @@ def inspect_file(path):
             value = os.fstat(fd)
             if not stat.S_ISREG(value.st_mode) or value.st_size > MAX_BYTES or (before.st_dev, before.st_ino) != (value.st_dev, value.st_ino):
                 raise ValueError('source-path-rejected')
+            if require_protected:
+                from private_sources import protected_path
+                canonical = Path(os.readlink('/proc/self/fd/' + str(fd)))
+                if str(canonical) != path or not protected_path(canonical, value):
+                    raise ValueError('preview-unprotected')
         finally:
             os.close(fd)
     except OSError:
@@ -75,10 +80,10 @@ def inspect_uris(uris):
     return files
 
 
-def validate_file(expected):
+def validate_file(expected, *, require_protected=False):
     if not isinstance(expected, dict):
         raise ValueError('source-path-rejected')
-    actual = inspect_file(expected.get('path'))
+    actual = inspect_file(expected.get('path'), require_protected=require_protected)
     if any(expected.get(key) != actual[key] for key in ('size', 'device', 'inode', 'mtimeNs', 'ctimeNs')):
         raise ValueError('source-changed')
     return actual
@@ -289,8 +294,10 @@ def main():
             if mode == 'inspect':
                 if isinstance(value, dict) and value.keys() == {'preview'}:
                     try:
-                        files = [validate_file(value['preview'])]
-                    except ValueError:
+                        files = [validate_file(value['preview'], require_protected=True)]
+                    except ValueError as error:
+                        if str(error) == 'preview-unprotected':
+                            raise
                         raise ValueError('source-changed') from None
                 else:
                     files = inspect_uris(value)
@@ -301,7 +308,7 @@ def main():
             raise ValueError('source-path-rejected')
     except ValueError as error:
         code = str(error)
-        allowed = ('source-path-rejected', 'source-changed', 'selection-limit', 'identity-mismatch', 'source-preparation-failed', 'recent-files-unavailable', 'recent-files-empty', 'recent-files-timeout')
+        allowed = ('source-path-rejected', 'source-changed', 'selection-limit', 'identity-mismatch', 'source-preparation-failed', 'recent-files-unavailable', 'recent-files-empty', 'recent-files-timeout', 'preview-unprotected')
         emit({'state': 'failed', 'error': code if code in allowed else 'source-path-rejected'})
         return 1
     except (OSError, ImportError, TypeError, KeyError):

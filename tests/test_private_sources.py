@@ -137,7 +137,7 @@ class PrivateSources(unittest.TestCase):
         with self.m.prepared_source(reviewed(self.source), lambda: False) as prepared:
             self.assertFalse(prepared.snapshot_used)
         with patch.object(self.m.os, 'getuid', return_value=os.getuid() + 1):
-            self.assertFalse(self.m._protected_path(self.source, self.source.stat()))
+            self.assertFalse(self.m.protected_path(self.source, self.source.stat()))
 
     def test_reflink_unavailable_falls_back_to_actual_bounded_copy(self):
         with patch.object(self.m.fcntl, 'ioctl', side_effect=OSError(errno.EXDEV, 'fixture')):

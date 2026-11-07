@@ -111,7 +111,10 @@ When displayed candidates include JPEG, PNG, WebP or GIF files, **Image previews
 returns an internal `{state:"preview",files:[...]}` handoff instead of a selected
 file. Each record holds an exact displayed canonical raster path and the existing
 inspection identity. The helper captures these identities before display without
-reading image content. It checks the scan and menu deadlines between files. The
+reading image content. It uses the open file descriptor to check the canonical
+path and excludes paths that other local accounts can replace or edit. The
+desktop chooser remains available for files in shared locations. The helper
+checks the scan and menu deadlines between files. The
 records fit within 48 KiB of conservative ASCII-escaped JSON and at most 200
 entries. Distinct paths with the same basename remain available. SVG, video and
 optional image codecs stay in the ordinary list. The helper opens no image
@@ -135,8 +138,9 @@ stay connected; confirmation and submission still check it. Back does not adopt
 current settings or device navigation. Cancel, Escape and window close clear the preview and draft; scoped
 preview cancellation closes only that window. Confirm accepts only an exact
 candidate, rechecks the original peer, then sends its captured identity to the
-existing file inspector as `{preview: file}`. The inspector refuses a file with
-changed identity fields or an unavailable path. Only a match for the current
+existing file inspector as `{preview: file}`. The inspector rechecks the
+protected canonical path and rejects changed identity fields or unavailable
+paths. Only a match for the current
 generation can enter the normal immediate/review flow. The Send
 window shows inspection/submission or the review draft; Review still needs a
 separate explicit Send. Metadata identity and private-source checks are unchanged.

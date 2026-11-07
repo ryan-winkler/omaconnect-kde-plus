@@ -48,7 +48,9 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
-- Ask for a new selection if a file changes after Plus opens its image preview.
+- Preview images in locations protected from other local accounts. Use the
+  desktop chooser for images in shared writable folders. Plus asks for a new
+  selection if the file changes during preview.
 - Activity explains what to check before sending a missing file again.
 
 - Keep File sharing collapsed when the Browse phone files shortcut opens a

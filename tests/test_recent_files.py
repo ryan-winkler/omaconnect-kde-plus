@@ -103,6 +103,24 @@ class RecentFiles(unittest.TestCase):
         self.assertEqual(self.helper.choose_recent(),
                          {'state': 'failed', 'error': 'source-path-rejected'})
 
+    def test_preview_excludes_writable_ancestry_but_desktop_can_choose_it(self):
+        """Render only protected canonical paths, while ordinary selection still works."""
+        protected = self.file('Pictures/protected.png', 10)
+        shared = self.file('Pictures/shared/nested/shared.png', 20)
+        shared.parent.parent.chmod(0o777)
+        self.fake(f'print({self.helper.PREVIEW_LABEL!r})')
+        result = self.helper.choose_recent()
+        self.assertEqual(result['state'], 'preview')
+        self.assertEqual([entry['path'] for entry in result['files']], [str(protected)])
+        from portal_files import inspect_uris, validate_file
+        self.assertEqual(inspect_uris([shared.as_uri()])[0]['path'], str(shared))
+        protected.parent.chmod(0o777)
+        expected = result['files'][0]
+        self.assertEqual(validate_file(expected), expected)
+        with self.assertRaisesRegex(ValueError, '^preview-unprotected$'):
+            validate_file(expected, require_protected=True)
+        self.assertEqual(self.helper.choose_recent(), {'state': 'failed', 'error': 'preview-unprotected'})
+
     def test_localized_menu_labels_preserve_preview_selection(self):
         photo = self.file('Pictures/owned.png')
         self.fake('import sys\n'
