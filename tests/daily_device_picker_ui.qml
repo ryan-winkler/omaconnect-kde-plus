@@ -90,6 +90,8 @@ ShellRoot {
                     service.devices=JSON.parse(JSON.stringify(service.devices));test.phase=4
                 }else if(test.phase===4){
                     if(!test.check(test.picker.popup.visible,"identical scan keeps the daily picker open"))return
+                    if(!test.check(!test.find(test.picker,"device-list-refresh-notice",[]).visible,
+                        "identical scan does not show a list change notice"))return
                     test.key(Qt.Key_Down);test.key(Qt.Key_Return);test.phase=5
                 }else if(test.phase===5){
                     if(!test.check(service.selectedDeviceId==="B" && test.picker.currentValue==="B" && !test.picker.popup.visible,"arrows and Enter switch the stable selected ID"))return
@@ -138,6 +140,12 @@ ShellRoot {
                     var changed=JSON.parse(JSON.stringify(service.devices));changed[1].name="Changed fixture phone";service.devices=changed;test.phase=9
                 }else if(test.phase===9){
                     if(!test.check(!test.picker.popup.visible,"changed labels close stale popup rows"))return
+                    var notice=test.find(test.picker,"device-list-refresh-notice",[])
+                    if(!test.check(notice && notice.visible && notice.text==="Device list changed. Open it again."
+                        && test.picker.Accessible.description.indexOf(notice.text)>=0 && test.picker.activeFocus,
+                        "a changed list explains the closure without taking keyboard focus"))return
+                    if(!test.check(test.draftBefore===JSON.stringify(service.draftTarget)+JSON.stringify(service.selection),
+                        "an invalidated list leaves the file review untouched"))return
                     service.devices=[service.devices[2],service.devices[0],service.devices[1]];test.phase=10
                 }else if(test.phase===10){
                     if(!test.check(test.picker.currentValue==="B" && test.picker.displayText.indexOf("Changed fixture phone")===0,"scan reorder keeps the selected identity and label"))return
@@ -151,6 +159,8 @@ ShellRoot {
                 }else if(test.phase===105){
                     if(!test.check(test.picker.popup.visible && test.picker.highlightedIndex===test.picker.indexOfValue("B"),
                         "reopened picker highlights the selected ID"))return
+                    if(!test.check(!test.find(test.picker,"device-list-refresh-notice",[]).visible,
+                        "reopening clears the list change notice"))return
                     test.key(Qt.Key_Escape)
                     panel.cursorActive=true;panel.focusSection="devices";panel.focusTarget.forceActiveFocus()
                     test.key(Qt.Key_U)
@@ -229,10 +239,16 @@ ShellRoot {
                 }else if(test.phase===14){
                     test.picker.selectDevice("B")
                     if(!test.check(service.selectedDeviceId==="A","removed stable ID cannot dispatch from stale rows"))return
+                    test.picker.Accessible.pressAction();test.phase=141
+                }else if(test.phase===141){
+                    if(!test.check(test.picker.popup.visible,"picker opens before the entire list disappears"))return
                     test.selectionBeforeEmpty=service.selectedDeviceId;service.devices=[];test.phase=15
                 }else if(test.phase===15){
                     test.picker.Accessible.pressAction()
                     if(!test.check(!test.picker.enabled && !test.picker.popup.visible && service.selectedDeviceId===test.selectionBeforeEmpty && test.picker.displayText==="Choose a device","disabled empty picker cannot activate by accessible press"))return
+                    var emptyNotice=test.find(test.picker,"device-list-refresh-notice",[])
+                    if(!test.check(emptyNotice.visible && emptyNotice.text==="Device list changed. Check KDE Connect.",
+                        "an empty list offers a next step without asking users to reopen a disabled control"))return
                     service.cancelDraft()
                     service.devices=test.initialDevices
                     test.phase=16

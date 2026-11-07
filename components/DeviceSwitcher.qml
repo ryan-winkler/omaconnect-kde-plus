@@ -4,6 +4,7 @@ import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Commons as Commons
+import qs.Ui as Kit
 import "../i18n" as Locale
 
 // Native selection and identity labels shared by daily and settings views.
@@ -42,7 +43,13 @@ Controls.ComboBox {
     }
     Connections {
         target: root.popup
-        function onAboutToShow() { root.popupInvalidated = false }
+        function onAboutToShow() {
+            rosterNotice.close()
+            root.popupInvalidated = false
+        }
+        function onClosed() {
+            if (root.popupInvalidated && root.visible) rosterNotice.open()
+        }
     }
     readonly property color surfaceColor: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     signal aboutToSelect(string deviceId)
@@ -88,11 +95,26 @@ Controls.ComboBox {
     palette.highlightedText: root.surfaceColor
     Accessible.role: Accessible.ComboBox
     Accessible.name: Locale.Strings.t("settings.device")
-    Accessible.description: root.selectedOption ? root.selectedOption.name + ". " + root.deviceStatus : root.deviceStatus
+    Accessible.description: (root.selectedOption ? root.selectedOption.name + ". " + root.deviceStatus : root.deviceStatus)
+        + (rosterNotice.visible ? " " + rosterNotice.text : "")
     Accessible.onPressAction: {
         if (!enabled) return
         forceActiveFocus()
         popup.visible ? popup.close() : popup.open()
+    }
+    onVisibleChanged: if (!visible) rosterNotice.close()
+    Kit.PanelToolTip {
+        id: rosterNotice
+        objectName: "device-list-refresh-notice"
+        text: Locale.Strings.t(root.enabled ? "deviceSwitcher.reopenChangedList" : "deviceSwitcher.changedListEmpty")
+        x: 0
+        y: root.height + Style.spacing.controlGap
+        width: Math.min(root.width, implicitWidth)
+        delay: 0
+        timeout: 6500
+        focus: false
+        closePolicy: Controls.Popup.NoAutoClose
+        onOpened: root.Accessible.announce(text, Accessible.Polite)
     }
     component DeviceLabel: RowLayout {
         id: row

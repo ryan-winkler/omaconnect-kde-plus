@@ -826,6 +826,8 @@
   "deviceSwitcher.connected": "Connected (paired)",
   "deviceSwitcher.offline": "Offline (paired)",
   "deviceSwitcher.choose": "Choose a device",
+  "deviceSwitcher.reopenChangedList": "Device list changed. Open it again.",
+  "deviceSwitcher.changedListEmpty": "Device list changed. Check KDE Connect.",
   "nativeFeatures.latestAction": "Latest device action: %1",
   "nativeFeatures.missingModule": "%1 · No installed module metadata",
   "quickActionsSettings.moveUp": "Move %1 up",

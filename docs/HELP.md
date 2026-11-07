@@ -21,7 +21,9 @@ Connect. Display preferences apply to Plus on this computer.
 
 Tab to **Device**, then press Space or Enter to open the list. Use the arrow keys
 and Enter to choose. Escape closes the list first; another Escape closes Settings.
-If discovery changes the list, open it again to choose from the current devices.
+If discovery changes an open list, Plus closes it and explains why. Open the
+list again to choose from the current devices. If the list is empty, check KDE
+Connect.
 **Native KDE Connect settings** shows launch progress or an error beside the button.
 Launch requested means the command was accepted; it does not confirm a visible
 window. Older KDE Connect settings frontends can open the device list instead.
