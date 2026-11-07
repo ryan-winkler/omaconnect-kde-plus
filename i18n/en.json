@@ -395,7 +395,7 @@
   "files.choose": "Choose files",
   "panel.openSendWindow": "Open Send window",
   "activity.kdeSubmissionActivity": "KDE submission activity",
-  "activity.acceptedMeansKdeConnectTookThe": "Accepted means KDE Connect took the request. Check the other device to confirm that it arrived.",
+  "activity.deliveryHelp": "Check the receiving device before you send again. If a file is missing, try sending one small file in KDE Connect.",
   "activity.clearFinishedActivity": "Clear finished activity",
   "composer.pingMessage": "Ping message",
   "composer.send": "Send",

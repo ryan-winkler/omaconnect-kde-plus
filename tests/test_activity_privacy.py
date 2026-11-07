@@ -34,6 +34,7 @@ class ActivityPrivacy(unittest.TestCase):
      result=subprocess.run(["/usr/bin/dbus-run-session","--","/usr/bin/quickshell","--no-color","-p",temporary],env=env,text=True,capture_output=True,timeout=8)
      output=result.stdout+result.stderr
      self.assertEqual(result.returncode,0,output);self.assertIn("ACTIVITY_STATE_PASS",output,output);self.assertNotIn("ACTIVITY_STATE_FAIL",output,output)
+     self.assertIn("ACTIVITY_DELIVERY_HELP true",output,output)
      leaked=uri in output or "OWNED-ACTIVITY-SENTINEL" in output
      plain="ACTIVITY_PLAIN_FORMAT true" in output
      self.assertEqual((len(hits),leaked,plain if hostile else True),(0,False,True),"Expected zero URL requests, no URL/token logs, plain hostile peer text, and truthful accepted/unknown state")

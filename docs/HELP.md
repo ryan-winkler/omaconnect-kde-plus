@@ -468,8 +468,14 @@ that it could not open Plus.
 4. With review enabled, or after any drop, check the recipient, files, count and
    size. Select **Send files**. Changing devices or settings while a chooser is
    open does not change its captured recipient or review policy.
-5. Read Activity. **Request accepted** confirms command acceptance. Check the
-   recipient for actual receipt.
+5. Read Activity. **Request accepted** means KDE Connect accepted the request.
+   Check the receiving device's save folder before you send the files again.
+
+If a file is missing, send one small test file to the same device with native
+KDE Connect. If that file also fails to arrive, check the native connection and
+receiving folder. If the native test succeeds, report the Plus send method and
+the Activity result. See the [KDE Connect user guide](https://kdeconnect.kde.org/users.html)
+and the [Plus support guide](../SUPPORT.md).
 
 **Cancel pending files** stays in daily navigation while choosing, preparing or
 submitting, even when File sharing is collapsed or you change views. **Cancel**

@@ -12,12 +12,15 @@ ShellRoot {
   return null
  }
  QtObject { id: fixtureService; property var operations: [Transfers.record(Transfers.create("owned-operation",{peerId:"owned-peer",peerName:test.peer},[{size:3}],1),0,"request_accepted","",2)]; function clearOperations() {} }
- Window { width:520;height:400;visible:true; Components.ActivitySection { id: activity; service:fixtureService;width:500 } }
+ Window { width:300;height:400;visible:true; Components.ActivitySection { id: activity; service:fixtureService;width:280 } }
  Timer { interval:800;running:true;onTriggered: {
   var actual=test.row(activity)
   if (!actual || actual.text.indexOf(test.peer)!==0 || actual.text.indexOf("1/1 requests accepted. Delivery unknown.")<0 || fixtureService.operations[0].delivery!=="unknown") console.error("ACTIVITY_STATE_FAIL")
   else console.log("ACTIVITY_STATE_PASS")
   console.log("ACTIVITY_PLAIN_FORMAT",!!actual && actual.textFormat===Text.PlainText)
+  var help = Array.from(activity.children).find(item => item.objectName === "activity-delivery-help")
+  var expected = "Check the receiving device before you send again. If a file is missing, try sending one small file in KDE Connect."
+  console.log("ACTIVITY_DELIVERY_HELP", !!help && help.text === expected && help.contentWidth <= help.width)
   Qt.quit()
  } }
 }
