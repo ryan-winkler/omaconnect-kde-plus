@@ -19,6 +19,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 MAX_BYTES = 262144
@@ -151,7 +152,40 @@ class KdeBus:
             raise AddressError("provider-reply-invalid") from None
 
     def write(self, addresses):
-        bounded_command([BUSCTL, "--user", "--auto-start=no", "set-property", DEST, OBJECT, INTERFACE, "customDevices", "as", str(len(addresses)), *addresses], self.deadline)
+        """Set the native list on the session bus without publishing it in argv."""
+        if not os.environ.get("DBUS_SESSION_BUS_ADDRESS"):
+            raise AddressError("provider-unavailable")
+        try:
+            import gi
+            gi.require_version("Gio", "2.0")
+            gi.require_version("GLib", "2.0")
+            from gi.repository import Gio, GLib
+        except (ImportError, ValueError):
+            raise AddressError("provider-missing") from None
+
+        remaining = self.deadline - time.monotonic()
+        if remaining <= 0:
+            raise AddressError("address-timeout")
+        cancellable = Gio.Cancellable()
+        timer = threading.Timer(remaining, cancellable.cancel)
+        timer.daemon = True
+        timer.start()
+        try:
+            bus = Gio.bus_get_sync(Gio.BusType.SESSION, cancellable)
+            remaining = self.deadline - time.monotonic()
+            if remaining <= 0:
+                raise AddressError("address-timeout")
+            bus.call_sync(
+                DEST, OBJECT, "org.freedesktop.DBus.Properties", "Set",
+                GLib.Variant("(ssv)", (INTERFACE, "customDevices", GLib.Variant("as", addresses))),
+                GLib.VariantType.new("()"), Gio.DBusCallFlags.NO_AUTO_START,
+                max(1, int(remaining * 1000)), cancellable,
+            )
+        except GLib.Error as error:
+            timed_out = cancellable.is_cancelled() or error.matches(Gio.io_error_quark(), Gio.IOErrorEnum.TIMED_OUT)
+            raise AddressError("address-timeout" if timed_out else "provider-unavailable") from None
+        finally:
+            timer.cancel()
 
 
 def load_metadata(directory):

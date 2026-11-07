@@ -10,6 +10,7 @@ import tempfile
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import patch
 
 ROOT = Path(__file__).parents[1]
 SPEC = importlib.util.spec_from_file_location("addresses", ROOT / "scripts/manage_addresses.py")
@@ -151,23 +152,37 @@ class AddressBoundary(unittest.TestCase):
             M.BUSCTL = old
 
     def test_concurrent_writers_are_serialized_by_owner_lock(self):
-        old = M.BUSCTL
-        state = Path(self.temp.name) / "fake-bus.json"
-        state.write_text('["external-host"]')
-        try:
-            M.BUSCTL = self.fake_tool("import sys,json,time\nfrom pathlib import Path\np=Path("+repr(str(state))+")\na=sys.argv[1:]\nif 'get-property' in a: print(json.dumps({'type':'as','data':json.loads(p.read_text())}))\nelif 'set-property' in a:\n time.sleep(.02)\n i=a.index('as'); assert int(a[i+1])==len(a[i+2:]); p.write_text(json.dumps(a[i+2:]))\nelse: raise SystemExit(2)\n")
-            with ThreadPoolExecutor(max_workers=4) as pool:
-                results = list(pool.map(lambda i: M.manage({"changes":[self.add("10.23.0.%d" % i)]}, self.directory), range(1,5)))
-            self.assertTrue(all(r["ok"] for r in results))
-            self.assertEqual(set(json.loads(state.read_text())), {"external-host", "10.23.0.1", "10.23.0.2", "10.23.0.3", "10.23.0.4"})
-        finally:
-            M.BUSCTL = old
+        class SlowBus(FakeBus):
+            writing = False
+
+            def write(self, addresses):
+                if self.writing:
+                    raise AssertionError("address writes overlap")
+                self.writing = True
+                try:
+                    time.sleep(.02)
+                    super().write(addresses)
+                finally:
+                    self.writing = False
+
+        bus = SlowBus(["external-host"])
+        requests = [{"changes": [self.add(f"10.23.0.{i}")]} for i in range(1, 5)]
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(lambda request: M.manage(request, self.directory, bus), requests))
+        self.assertTrue(all(result["ok"] for result in results))
+        self.assertEqual(len(bus.writes), 4)
+        self.assertEqual(set(bus.addresses), {"external-host", "10.23.0.1", "10.23.0.2", "10.23.0.3", "10.23.0.4"})
+
+    def test_write_refuses_an_absent_session_bus(self):
+        with patch.dict(os.environ, {"DBUS_SESSION_BUS_ADDRESS": ""}):
+            with self.assertRaisesRegex(M.AddressError, "^provider-unavailable$"):
+                M.KdeBus(time.monotonic() + 1).write(["10.23.0.10"])
 
     @unittest.skipUnless(shutil.which("dbus-run-session"), "private D-Bus test tool absent")
-    def test_real_busctl_against_private_kde_property(self):
+    def test_real_saved_address_write_keeps_private_kde_property_off_argv(self):
         probe = subprocess.run([sys.executable, "-c", "import gi"], capture_output=True)
         if probe.returncode:
-            self.skipTest("Gio fixture runtime absent; helper does not require it")
+            self.skipTest("Gio runtime absent")
         env = dict(os.environ, XDG_DATA_HOME=self.temp.name, TEST_KDE_HELPER=str(ROOT / "scripts/manage_addresses.py"))
         result = subprocess.run(["dbus-run-session", "--", sys.executable, __file__, "--fake-session"], env=env, capture_output=True, text=True, timeout=12)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -225,8 +240,18 @@ def fake_session():
     def get_prop(*_args):
         return GLib.Variant("as", values)
 
-    def set_prop(_connection, _sender, _path, _interface, _name, value):
-        values[:] = value.unpack()
+    def set_prop(bus, sender, _path, _interface, _name, value):
+        # Read only the synthetic setter's cmdline while the request is active.
+        pid, = bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus",
+                             "org.freedesktop.DBus", "GetConnectionUnixProcessID",
+                             GLib.Variant("(s)", (sender,)), GLib.VariantType.new("(u)"),
+                             Gio.DBusCallFlags.NONE, 1000, None).unpack()
+        incoming = value.unpack()
+        argv = Path(f"/proc/{pid}/cmdline").read_bytes()
+        if any(address.encode() in argv for address in incoming):
+            print("Synthetic address found in setter argv", file=sys.stderr)
+            return False
+        values[:] = incoming
         return True
 
     connection.register_object("/modules/kdeconnect", info, None, get_prop, set_prop)
