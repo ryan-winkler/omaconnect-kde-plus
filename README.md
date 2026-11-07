@@ -37,7 +37,7 @@ the application launcher. Compare the verification keys on the two devices.
 Accept the pairing request only if the keys match.
 
 If you use the original OmaConnect, read the
-[install guide](docs/INSTALL.md#install) first.
+[existing installation guide](docs/INSTALL.md#move-from-an-existing-installation) first.
 Add Plus without `--enable` to control which plugin starts.
 The Plus plugin ID is `omaconnect.plus`.
 
@@ -59,7 +59,8 @@ The Plus plugin ID is `omaconnect.plus`.
 - **Screenshots:** save an image with Omarchy Screenshot. Select
   **Review saved screenshot**. Choose one PNG file. Check the file and recipient
   in the Send window. Select **Send files**.
-- **Cancel.** Stop pending file requests from any daily view or the Send window.
+- **Cancel.** Stop queued file requests from any daily view or the Send window.
+  A file can still arrive if its request was active when you selected **Cancel**.
   After KDE Connect accepts a request over LAN, use **Cancel** in its transfer
   progress window. See the [task guide](docs/HELP.md) for Bluetooth limits.
 - **Activity:** “Request accepted” means KDE Connect accepted the request.
