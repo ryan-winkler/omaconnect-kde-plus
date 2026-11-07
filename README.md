@@ -50,13 +50,14 @@ The Plus plugin ID is `omaconnect.plus`.
 
 ## Features
 
-- **Files.** Select up to 100 local files in the desktop file chooser. Make sure
-  that the files and the recipient are correct. Select **Send files**. To send
-  files without a review in the Send window, set **Review files before Send**
-  to Off in **Plus settings → Quick actions**. With that setting Off, Plus
-  sends the files when you accept the selection in the chooser. To use the
-  Omarchy recent-file menu and **Image previews…**, set **Use desktop file
-  chooser** to Off.
+- **Files.** Select the recipient in Devices. In the default settings, select
+  up to 100 local files in the desktop file chooser. In the Send window, make
+  sure that the files and the recipient are correct. Select **Send files**.
+  If you set **Review files before Send** to Off, make sure that the recipient
+  is correct before you open the file chooser. Plus sends the files when you
+  accept the selection in the chooser. To use the Omarchy recent-file menu and
+  **Image previews…**, set **Use desktop file chooser** to Off. Both options
+  are in **Plus settings → Quick actions**.
   You can drag and drop files on Devices, the bar icon or the Send window.
   Plus always shows a review for dropped files. The source files stay in
   the same locations.
@@ -65,10 +66,13 @@ The Plus plugin ID is `omaconnect.plus`.
   **Quick actions**. If the phone shares more than one folder, Plus shows a list.
   If Plus shows that the storage is unmounted, select **Phone file settings in KDE ↗**.
   You can also select **Browse phone files** again. If the button cannot open
-  the settings, open the settings in KDE Connect.
-- **Screenshots.** Save an image with Omarchy Screenshot. Select
-  **Review saved screenshot**. Select one PNG file. In the Send window,
-  make sure that the file and the recipient are correct. Select **Send files**.
+  the settings, open the settings in KDE Connect. Refer to
+  [Browse phone files](docs/HELP.md#browse-phone-files) for the package and
+  storage instructions.
+- **Screenshots.** Add **Review saved screenshot** to **Quick actions**. Save an
+  image with Omarchy Screenshot. In Devices, select **Review saved screenshot**.
+  Select one PNG file. In the Send window, make sure that the file and the
+  recipient are correct. Select **Send files**.
 - **Cancel.** Use **Cancel** to stop queued file requests from a daily view or
   the Send window. If the request was active when you selected **Cancel**, the
   receiving device can receive the file. If KDE Connect shows a **Cancel**
