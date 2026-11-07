@@ -68,7 +68,7 @@ Object.assign(context, {
 });
 context.deviceById = id => context.devices.find(device=>device.id===id);
 context.canAct = id => !!context.deviceById(id);
-vm.runInContext(['chooseFiles','launchChooser','validPreviewPaths','backToFiles','confirmPreview','applySelection','selectionErrorText','cancelDraft','submitSelection','updateOperation','finishOperation','cancelRemaining','submitNextFile','applySubmissionLine','submissionExited','cancelOperation','clearOperations'].map(extract).join('\n'), context);
+vm.runInContext(['chooseFiles','launchChooser','validPreviewFiles','backToFiles','confirmPreview','applySelection','selectionErrorText','cancelDraft','submitSelection','updateOperation','finishOperation','cancelRemaining','submitNextFile','applySubmissionLine','submissionExited','cancelOperation','clearOperations'].map(extract).join('\n'), context);
 assert.equal(context.chooseFiles('A'), true);
 context.filePickerProcess.running=false;
 const chosen = [{path:'/private/one',name:'one',size:1},{path:'/private/two',name:'two',size:2},{path:'/private/three',name:'three',size:3}];

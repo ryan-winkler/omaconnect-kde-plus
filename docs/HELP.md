@@ -464,11 +464,13 @@ that it could not open Plus.
    always visible. Search or use **Previous** and **Next** to find the image.
    Browsing never sends. Select **Send image** to send it, or **Review image** to
    check it before the separate Send step when review is enabled.
+   If you edit, replace or move an image after its preview opens, choose it again.
    **Back to files** returns to the file list for the same recipient and saved
    send/review choice. **Cancel**, Escape or closing the preview clears this
    selection. Previews support JPEG, PNG, WebP and GIF, with up to 200 images
-   within a 48 KiB list budget. Other formats stay in the normal file list.
-   Use the desktop chooser for other files, names with controls, or larger trees.
+   within a 48 KiB list budget. Preview needs a location protected from other
+   local accounts. Use the desktop chooser for images in shared writable folders,
+   other file formats, names with controls, or larger trees.
    The desktop chooser and drops support up to 100 local regular files, 1 TiB combined.
    Directories and remote URLs are not accepted. Drops use Copy and preserve originals.
 4. Check the recipient, files, count and size. Select **Send**. In **Plus

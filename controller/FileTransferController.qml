@@ -32,7 +32,8 @@ Item {
     property bool chooserSubmits: false
     property bool selectionCancelling: false
     property bool chooserUsesNativeMenu: false
-    property var previewCandidates: []
+    property var previewFiles: []
+    readonly property var previewCandidates: previewFiles.map(function(file) { return file.path })
     readonly property bool previewSubmits: chooserSubmits
 
     onFileTransferMessageChanged: {
@@ -82,7 +83,7 @@ Item {
         chooserUsesNativeMenu = nativeMenu === true
         selection = []
         selectionBytes = 0
-        previewCandidates = []
+        previewFiles = []
         selectionState = "choosing"
         selectionError = ""
         if (screenshotOnly) {
@@ -105,10 +106,15 @@ Item {
         return true
     }
 
-    function validPreviewPaths(paths) {
-        if (!Array.isArray(paths) || !paths.length || paths.length > 200) return false
+    function validPreviewFiles(files) {
+        if (!Array.isArray(files) || !files.length || files.length > 200) return false
         var seen = ({})
-        for (var path of paths) {
+        for (var file of files) {
+            if (!file || !Number.isSafeInteger(file.size) || file.size < 0 || file.size > Math.pow(2, 40)
+                    || !["device", "inode", "mtimeNs", "ctimeNs"].every(function(key) {
+                        return typeof file[key] === "string" && /^-?\d{1,20}$/.test(file[key])
+                    })) return false
+            var path = file.path
             if (typeof path !== "string" || path.charAt(0) !== "/" || path.indexOf("//") !== -1
                     || /\/(?:\.{1,2})(?:\/|$)/.test(path) || !/\.(?:jpe?g|png|webp|gif)$/i.test(path)
                     || /[\u0000-\u001f\u007f-\u009f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u0890-\u0891\u08e2\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb]/.test(path)
@@ -118,7 +124,7 @@ Item {
             seen[path] = true
         }
         // Match the helper's conservative ASCII-escaped JSON byte budget.
-        return JSON.stringify(paths).replace(/[\u007f-\uffff]/g, function(c) {
+        return JSON.stringify(files).replace(/[\u007f-\uffff]/g, function(c) {
             return "\\u" + ("000" + c.charCodeAt(0).toString(16)).slice(-4)
         }).length <= 48 * 1024
     }
@@ -129,18 +135,20 @@ Item {
     }
 
     function confirmPreview(path) {
-        if (selectionState !== "preview" || previewCandidates.indexOf(path) === -1 || !draftTarget
+        if (selectionState !== "preview" || !draftTarget
                 || operationBusy || filePickerProcess.running || fileInspectProcess.running) return false
+        var file = previewFiles.find(function(candidate) { return candidate.path === path })
+        if (!file) return false
         var device = controller.deviceById(draftTarget.peerId)
         if (!device || !controller.canAct(draftTarget.peerId) || !device.capabilities || !device.capabilities.file) {
             selectionError = Locale.Strings.t("files.theOriginalRecipientIsNoLonger")
             return false
         }
         selectionGeneration += 1
-        previewCandidates = []
+        previewFiles = []
         selectionState = "choosing"
         selectionError = ""
-        fileInspectProcess.payload = JSON.stringify(["file://" + path.split("/").map(encodeURIComponent).join("/")]) + "\n"
+        fileInspectProcess.payload = JSON.stringify({preview: file}) + "\n"
         fileInspectProcess.targetGeneration = selectionGeneration
         fileInspectProcess.running = true
         return true
@@ -152,11 +160,11 @@ Item {
         var result
         try { result = JSON.parse(output) } catch (error) { result = null }
         if (code === 0 && result && result.state === "preview") {
-            if (!chooserUsesNativeMenu || !draftTarget || !validPreviewPaths(result.paths)) {
+            if (!chooserUsesNativeMenu || !draftTarget || !validPreviewFiles(result.files)) {
                 selectionError = Locale.Strings.t("files.theImageListCouldNotBe")
                 return
             }
-            previewCandidates = result.paths.slice()
+            previewFiles = result.files
             chooserUsesNativeMenu = false
             selectionState = "preview"
             selectionError = ""
@@ -204,6 +212,7 @@ Item {
         if (code === "portal-unavailable") return Locale.Strings.t("files.theDesktopFileChooserIsUnavailable")
         if (code === "source-preparation-failed") return Locale.Strings.t("files.couldNotPrepareAPrivateCopy")
         if (code === "source-changed") return Locale.Strings.t("files.aSelectedFileChangedChooseThe")
+        if (code === "preview-unprotected") return Locale.Strings.t("files.previewUnprotected")
         if (code === "recent-files-empty") return Locale.Strings.t("files.noSupportedRecentFilesFoundUse")
         if (code === "recent-files-timeout") return Locale.Strings.t("files.theFileMenuTimedOutIf")
         if (code === "recent-files-unavailable") return Locale.Strings.t("files.theOmarchyFilePickerIsUnavailable")
@@ -214,7 +223,7 @@ Item {
         var nativeMenuMayRemain = chooserUsesNativeMenu && filePickerProcess.running
         selectionGeneration += 1
         chooserSubmits = false
-        previewCandidates = []
+        previewFiles = []
         if (filePickerProcess.running) filePickerProcess.signal(15)
         if (fileInspectProcess.running) fileInspectProcess.signal(15)
         selectionCancelling = filePickerProcess.running || fileInspectProcess.running

@@ -785,6 +785,7 @@
   "files.theDesktopFileChooserIsUnavailable": "The desktop file chooser is unavailable. Check the desktop portal and Python Gio support.",
   "files.couldNotPrepareAPrivateCopy": "Could not prepare a private copy. Check cache access and free space, then choose again.",
   "files.aSelectedFileChangedChooseThe": "A selected file changed. Choose the files again.",
+  "files.previewUnprotected": "Image previews need files in a location protected from other local accounts. For images in shared folders, use the desktop file chooser in Plus settings → Quick actions.",
   "files.noSupportedRecentFilesFoundUse": "No supported recent files found. In Plus settings → Quick actions, turn on Use desktop file chooser.",
   "files.theFileMenuTimedOutIf": "The file menu timed out. If still visible, press Escape. Use the desktop chooser to try again.",
   "files.theOmarchyFilePickerIsUnavailable": "The Omarchy file picker is unavailable. Use the desktop chooser in Plus settings → Quick actions.",

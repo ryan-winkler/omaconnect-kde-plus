@@ -31,7 +31,7 @@ class SharingPolicy(unittest.TestCase):
     def node(self, assertions):
         """Run real policy and controller functions with observable process doubles."""
         source = (ROOT / 'controller/FileTransferController.qml').read_text()
-        names = ('chooseFiles', 'launchChooser', 'validPreviewPaths', 'backToFiles', 'confirmPreview', 'applySelection', 'selectionErrorText', 'cancelDraft',
+        names = ('chooseFiles', 'launchChooser', 'validPreviewFiles', 'backToFiles', 'confirmPreview', 'applySelection', 'selectionErrorText', 'cancelDraft',
                  'submitSelection', 'submitNextFile', 'updateOperation', 'finishOperation',
                  'cancelRemaining', 'cancelOperation', 'cancelFileTransfer', 'stageDroppedFiles')
         functions = '\n'.join(block(source, '    function ' + name + '(') for name in names)
@@ -49,18 +49,23 @@ function fresh(){
  const later=[],calls=[];
  const process=()=>({running:false,signals:[],signal(n){this.signals.push(n)}});
  const ctx={Locale,operationBusy:false,fileBusy:false,selection:[],selectionBytes:0,selectionState:'idle',selectionError:'',draftTarget:null,
-  selectionGeneration:0,chooserSubmits:false,previewCandidates:[],operationSequence:0,fileTransferGeneration:0,operations:[],activeOperation:null,
+  selectionGeneration:0,chooserSubmits:false,previewFiles:[],operationSequence:0,fileTransferGeneration:0,operations:[],activeOperation:null,
   submissionQueue:[],submissionIndex:0,cancellationRequested:false,fileTransferMessage:'',fileTransferError:'',
   fileTransferProcess:process(),filePickerProcess:process(),fileInspectProcess:process(),
   selectionCancellationTimer:{restart(){},stop(){}},cancellationTimer:{restart(){this.started=true}},operationFinished(){},TransferModel:model,Qt:{callLater(fn){later.push(fn)}},
   devices:[{id:'A',name:'Original phone',paired:true,reachable:true,capabilities:{file:true}},
            {id:'B',name:'Other phone',paired:true,reachable:true,capabilities:{file:true}}]};
+ Object.defineProperty(ctx,'previewCandidates',{get(){return this.previewFiles.map(file=>file.path)}});
  ctx.deviceById=id=>ctx.devices.find(d=>d.id===id);ctx.canAct=id=>{const d=ctx.deviceById(id);return !!d&&d.paired&&d.reachable};
  ctx.scriptPath=p=>'/fixture/'+p;ctx.getPickerScriptPath=()=>'/fixture/scripts/pick_file.sh';
  ctx.root=ctx;ctx.controller=ctx;vm.createContext(ctx);vm.runInContext(input.functions,ctx);
  let running=false;Object.defineProperty(ctx.fileTransferProcess,'running',{get(){return running},set(v){running=v;if(v)calls.push(JSON.parse(this.payload))}});
  return {ctx,later,calls,flush(){while(later.length)later.shift()()},selected(){ctx.filePickerProcess.running=false;ctx.applySelection(JSON.stringify({state:'selected',files:[{path:'/fixture/example.txt',name:'example.txt',size:3}]}),0,ctx.selectionGeneration)}};
 }
+function previewFiles(paths){
+ return paths.map(path=>typeof path==='string'?{path,name:path.split('/').pop(),size:3,device:'1',inode:'2',mtimeNs:'3',ctimeNs:'4'}:path);
+}
+function preview(paths){return JSON.stringify({state:'preview',files:previewFiles(paths)})}
 function panel(settings,service,device){
  const ctx={settings,service,device,previewGeneration:-1,sendWindowOpened:0,
   openSendWindow(){this.sendWindowOpened++}};
@@ -180,7 +185,7 @@ assert.deepEqual(active.ctx.fileTransferProcess.signals,[15]);assert.equal(activ
         self.node(r'''
 const f=fresh(),c=f.ctx;const paths=['/fixture/folder/photo #1 ☃.PNG','/fixture/other/photo #1 ☃.PNG'];
 assert.equal(c.chooseFiles('A',immediate),true);c.filePickerProcess.running=false;
-c.applySelection(JSON.stringify({state:'preview',paths}),0,c.selectionGeneration);
+c.applySelection(preview(paths),0,c.selectionGeneration);
 assert.equal(c.selectionState,'preview');assert.deepEqual(JSON.parse(JSON.stringify(c.previewCandidates)),paths);
 assert.equal(c.draftTarget.peerId,'A');assert.equal(c.chooserSubmits,true);assert.equal(f.calls.length,0);
 assert.equal(c.confirmPreview('/fixture/unoffered.png'),false);assert.equal(c.fileInspectProcess.running,false);
@@ -189,11 +194,16 @@ for(const invalid of [null,{},[],[null],new Array(201).fill('/fixture/x.png'),['
  ['/fixture/x.svg'],['/fixture/../x.png'],['/fixture//x.png'],['/fixture/control\n.png'],['/fixture/\u202ex.png'],
  ['/fixture/\u200dx.png'],['/fixture/\ud800.png'],['/fixture/'+'☃'.repeat(1400)+'.png'],['/fixture/x.png','/fixture/x.png'],
  Array.from({length:20},(_,i)=>'/fixture/'+i+'x'.repeat(3000)+'.png')]) {
- assert.equal(c.validPreviewPaths(invalid),false,JSON.stringify(invalid).slice(0,100));
+ assert.equal(c.validPreviewFiles(Array.isArray(invalid)?previewFiles(invalid):invalid),false,JSON.stringify(invalid).slice(0,100));
 }
-assert.equal(c.validPreviewPaths(['/fixture/emoji 😀.jpg']),true);
+assert.equal(c.validPreviewFiles(previewFiles(['/fixture/emoji 😀.jpg'])),true);
+const missing=previewFiles(['/fixture/a.png']);delete missing[0].ctimeNs;
+assert.equal(c.validPreviewFiles(missing),false);
+const longPaths=Array.from({length:100},(_,i)=>'/fixture/'+i+'x'.repeat(410)+'.png');
+assert.ok(JSON.stringify(longPaths).length<48*1024);
+assert.equal(c.validPreviewFiles(previewFiles(longPaths)),false);
 const g=fresh();g.ctx.chooseFiles('A',review);g.ctx.filePickerProcess.running=false;
-g.ctx.applySelection(JSON.stringify({state:'preview',paths}),0,g.ctx.selectionGeneration);
+g.ctx.applySelection(preview(paths),0,g.ctx.selectionGeneration);
 assert.notEqual(g.ctx.selectionState,'preview');assert.equal(g.calls.length,0);
 ''')
 
@@ -204,18 +214,18 @@ for(const reviewFirst of [false,true]) {
  const f=fresh(),c=f.ctx,options={useDesktopFileChooser:false,reviewFilesBeforeSend:reviewFirst};
  c.chooseFiles('A',options);c.filePickerProcess.running=false;
  const generation=c.selectionGeneration;
- c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,generation);
+ c.applySelection(preview(['/fixture/a.png']),0,generation);
  options.reviewFilesBeforeSend=!reviewFirst;options.useDesktopFileChooser=true;
  c.selectedDeviceId='B';c.devices[0].name='Renamed later';
  assert.equal(c.backToFiles(),true);assert.equal(c.selectionGeneration,generation+1);
  assert.equal(c.filePickerProcess.command[2],'recent');assert.equal(c.draftTarget.peerId,'A');
  assert.equal(JSON.parse(c.filePickerProcess.payload).recipient,'Original phone');
  assert.equal(c.chooserSubmits,!reviewFirst);assert.equal(c.previewCandidates.length,0);
- c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/stale.png']}),0,generation);
+ c.applySelection(preview(['/fixture/stale.png']),0,generation);
  assert.equal(c.selectionState,'choosing');assert.equal(c.previewCandidates.length,0);assert.equal(f.calls.length,0);
 }
 const f=fresh(),c=f.ctx;c.chooseFiles('A',immediate);c.filePickerProcess.running=false;
-c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+c.applySelection(preview(['/fixture/a.png']),0,c.selectionGeneration);
 c.devices[0].reachable=false;c.selectedDeviceId='B';assert.equal(c.backToFiles(),true);
 assert.equal(c.draftTarget.peerId,'A');assert.equal(c.chooserSubmits,true);
 assert.equal(JSON.parse(c.filePickerProcess.payload).recipient,'Original phone');
@@ -228,15 +238,15 @@ assert.equal(c.draftTarget.peerId,'A');assert.match(c.selectionError,/no longer 
         self.node(r'''
 const f=fresh(),c=f.ctx,a=panel(immediate,c,c.devices[0]),b=panel(immediate,c,c.devices[0]);
 assert.equal(a.chooseFiles(),true);assert.equal(a.previewGeneration,c.selectionGeneration);assert.equal(b.previewGeneration,-1);
-c.filePickerProcess.running=false;c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+c.filePickerProcess.running=false;c.applySelection(preview(['/fixture/a.png']),0,c.selectionGeneration);
 assert.equal(b.chooseFiles(),false);assert.equal(b.previewGeneration,-1);assert.equal(b.backToFiles(),false);
 b.releasePreview();assert.equal(c.selectionState,'preview');
 assert.equal(a.backToFiles(),true);assert.equal(a.previewGeneration,c.selectionGeneration);
-c.filePickerProcess.running=false;c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+c.filePickerProcess.running=false;c.applySelection(preview(['/fixture/a.png']),0,c.selectionGeneration);
 a.releasePreview();assert.equal(c.selectionState,'idle');assert.equal(c.draftTarget,null);
 assert.equal(b.chooseFiles(),true);assert.equal(b.previewGeneration,c.selectionGeneration);
 a.releasePreview();assert.equal(c.selectionState,'choosing');assert.equal(c.draftTarget.peerId,'A');
-c.filePickerProcess.running=false;c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+c.filePickerProcess.running=false;c.applySelection(preview(['/fixture/a.png']),0,c.selectionGeneration);
 assert.equal(c.confirmPreview('/fixture/a.png'),true);b.releasePreview();
 assert.equal(c.selectionState,'choosing');assert.equal(c.fileInspectProcess.running,true);
 c.fileInspectProcess.running=false;c.applySelection(JSON.stringify({state:'selected',files:[{path:'/fixture/a.png',size:3}]}),0,c.selectionGeneration);
@@ -252,11 +262,11 @@ const none=panel({},null,null);none.releasePreview();assert.equal(none.backToFil
 for(const reviewFirst of [false,true]) {
  const f=fresh(),c=f.ctx,path='/fixture/photo #1 ☃.png';
  c.chooseFiles('A',{useDesktopFileChooser:false,reviewFilesBeforeSend:reviewFirst});c.filePickerProcess.running=false;
- c.applySelection(JSON.stringify({state:'preview',paths:[path]}),0,c.selectionGeneration);
+ c.applySelection(preview([path]),0,c.selectionGeneration);
  f.flush();assert.equal(f.calls.length,0);assert.equal(c.selection.length,0);
  c.selectedDeviceId='B';assert.equal(c.confirmPreview(path),true);assert.equal(c.previewCandidates.length,0);
  assert.equal(c.confirmPreview(path),false);assert.equal(c.fileInspectProcess.running,true);
- const uri=JSON.parse(c.fileInspectProcess.payload)[0];assert.equal(decodeURIComponent(new URL(uri).pathname),path);
+ const request=JSON.parse(c.fileInspectProcess.payload);assert.deepEqual(request,{preview:previewFiles([path])[0]});
  assert.equal(f.calls.length,0);c.fileInspectProcess.running=false;
  c.applySelection(JSON.stringify({state:'selected',files:[{path,name:'photo #1 ☃.png',size:3}]}),0,c.selectionGeneration);
  f.flush();assert.equal(f.calls.length,reviewFirst?0:1);
@@ -270,14 +280,14 @@ for(const reviewFirst of [false,true]) {
         self.node(r'''
 for(const confirm of [false,true]) {
  const f=fresh(),c=f.ctx,path='/fixture/a.png';c.chooseFiles('A',immediate);c.filePickerProcess.running=false;
- c.applySelection(JSON.stringify({state:'preview',paths:[path]}),0,c.selectionGeneration);
+ c.applySelection(preview([path]),0,c.selectionGeneration);
  if(confirm)assert.equal(c.confirmPreview(path),true);
  const generation=c.selectionGeneration;c.cancelDraft();c.fileInspectProcess.running=false;
  c.applySelection(JSON.stringify({state:'selected',files:[{path,size:3}]}),0,generation);f.flush();
  assert.equal(c.selectionState,'idle');assert.equal(c.previewCandidates.length,0);assert.equal(c.draftTarget,null);assert.equal(f.calls.length,0);
 }
 const f=fresh(),c=f.ctx;c.chooseFiles('A',immediate);c.filePickerProcess.running=false;
-c.applySelection(JSON.stringify({state:'preview',paths:['/fixture/a.png']}),0,c.selectionGeneration);
+c.applySelection(preview(['/fixture/a.png']),0,c.selectionGeneration);
 c.devices[0].reachable=false;assert.equal(c.confirmPreview('/fixture/a.png'),false);
 assert.equal(c.selectionState,'preview');assert.match(c.selectionError,/original recipient/);assert.equal(f.calls.length,0);
 ''')
@@ -296,9 +306,10 @@ class SharingNative(unittest.TestCase):
                 return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
             pictures = home / 'Pictures'
             pictures.mkdir()
-            (pictures / 'owned.png').write_bytes(
-                b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
-                + chunk(b'IDAT', zlib.compress(b'\x00\x80\xc0\x70')) + chunk(b'IEND', b''))
+            for name, pixel in (('owned.png', b'\x80\xc0\x70'), ('owned.png.replacement', b'\x61\xc0\x70')):
+                (pictures / name).write_bytes(
+                    b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
+                    + chunk(b'IDAT', zlib.compress(b'\x00' + pixel)) + chunk(b'IEND', b''))
             menu = fake_bin / 'omarchy-menu-select'
             menu.write_text('''#!/usr/bin/python3
 import json,os,sys

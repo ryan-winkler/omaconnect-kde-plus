@@ -47,7 +47,7 @@ def _matches(expected, value):
                      ('mtimeNs', value.st_mtime_ns), ('ctimeNs', value.st_ctime_ns))))
 
 
-def _protected_path(path, opened):
+def protected_path(path, opened):
     """Check every canonical entry; sticky parents protect only owned children."""
     try:
         parts = [path] + list(path.parents)
@@ -213,7 +213,7 @@ def prepared_source(expected, cancelled=lambda: False):
             raise ValueError('source-changed')
         canonical = Path(os.readlink('/proc/self/fd/' + str(source_fd)))
         _check(cancelled, deadline)
-        if canonical.is_absolute() and _protected_path(canonical, source_stat):
+        if canonical.is_absolute() and protected_path(canonical, source_stat):
             # A protected source needs no cache. Optional old-copy housekeeping
             # must not turn an unrelated unsafe/unavailable cache into send failure.
             try:
