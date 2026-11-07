@@ -1,8 +1,8 @@
 # Omaconnect KDE Plus
 
 Use [KDE Connect](https://kdeconnect.kde.org/) from the
-[Omarchy](https://omarchy.org/) bar. Send files, browse shared phone folders
-and put the quick actions you use most within reach.
+[Omarchy](https://omarchy.org/) bar. Send files and browse shared phone folders.
+Choose the quick actions that appear in the bar menu.
 
 Omaconnect KDE Plus is a fork of
 [Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect).
@@ -10,53 +10,61 @@ KDE Connect handles pairing and device communication.
 
 <img src="preview.png" width="380" alt="Saved screenshot review with an example phone and explicit Send">
 
-Example devices, files and media are used in the screenshots.
-See the [screenshot gallery](docs/HELP.md#screenshots) for the open device dropdown,
-phone folders, the layout editor, Send, cancellation, activity, media and all four
-settings domains.
+The screenshots show example devices, files and media.
+See the [screenshot gallery](docs/HELP.md#screenshots) for the device list,
+file sharing, media controls, layout editor and settings.
 
 [![Functional checks](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml/badge.svg)](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/validate.yml)
 [![CodeQL](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml/badge.svg)](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/codeql.yml)
 
 ## Install
 
-**Existing Plus through 0.1.2:** follow the [ID migration guide](docs/INSTALL.md#former-uppercase-development-id)
-before this fresh-install command. This preserves placement and settings and
-avoids a second active Plus copy.
+If you use Plus 0.1.2 or earlier, follow the
+[ID migration guide](docs/INSTALL.md#former-uppercase-development-id) first.
+The procedure keeps your bar position and settings and prevents a duplicate
+installation.
+
+For a new installation, install the required packages. Then add and enable Plus.
 
 ```bash
 omarchy pkg add kdeconnect python python-gobject
 omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --enable
 ```
 
-Open the new bar icon. If you need to pair a device, select **Pair in KDE Connect**
+Select the Plus icon in the bar. To pair a device, select **Pair in KDE Connect**
 or **Open KDE Connect**. If neither button is visible, open **KDE Connect** from
-the application launcher. Compare the verification key on both devices before accepting.
-Moving from the original OmaConnect? Read [install, update and recovery](docs/INSTALL.md)
-first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
+the application launcher. Compare the verification keys on the two devices.
+Accept the pairing request only if the keys match.
+
+If you use the original OmaConnect, read the
+[install guide](docs/INSTALL.md#install) first.
+Add Plus without `--enable` to control which plugin starts.
+The Plus plugin ID is `omaconnect.plus`.
 
 ## Features
 
-- **Files.** Choose up to 100 local files in the desktop chooser. Check the
-  files and recipient, then select **Send files**. In **Plus settings → Quick
-  actions**, turn off **Review files before Send** to submit when you confirm
-  the selection in the chooser. Turn off **Use desktop file chooser** to use the
-  searchable Omarchy recent-file menu and **Image previews…**. Drops on Devices,
-  the bar icon or Send window always require review and use Copy.
-- **Phone folders:** select **Browse phone files** to open folders shared by KDE
-  Connect in your default file manager. Add it to Quick actions for direct access
-  from Devices. If KDE Connect reports that storage is unmounted, select
-  **Phone file settings in KDE** or retry **Browse phone files**. If the button
-  cannot open plugin settings, open KDE Connect settings manually. Several
-  advertised folders show a choice.
-- **Screenshots:** save a capture with Omarchy Screenshot, then use
-  **Review saved screenshot** to select one PNG. Check the file and recipient,
-  then select **Send files**. The action always opens review.
-- **Cancel:** stop pending file work from any daily view or the Send window.
-  After native acceptance, use KDE Connect's LAN transfer progress Cancel.
-  Bluetooth cancellation is not exposed by the current native sharing API.
-- **Honest activity:** “Request accepted” means KDE accepted the transfer;
-  delivery stays unknown. A batch keeps its reviewed recipient.
+- **Files.** Choose up to 100 local files in the desktop file chooser. Check
+  the files and recipient. Select **Send files**. To submit from the chooser,
+  turn off **Review files before Send** in **Plus settings → Quick actions**.
+  Turn off **Use desktop file chooser** to use the Omarchy recent-file menu
+  and **Image previews…**. Drag files to Devices, the bar icon or the Send
+  window to review the files before sending. A drop keeps the original files
+  in place.
+- **Phone folders.** Select **Browse phone files** to open folders from your
+  phone in the default file manager. Add this action to Quick actions to use
+  it from Devices. If the phone shares more than one folder, Plus shows a list.
+  If KDE Connect reports that storage is unmounted, select
+  **Phone file settings in KDE** or select **Browse phone files** again.
+  If the button cannot open the settings, open KDE Connect settings directly.
+- **Screenshots:** save an image with Omarchy Screenshot. Select
+  **Review saved screenshot**. Choose one PNG file. Check the file and recipient
+  in the Send window. Select **Send files**.
+- **Cancel.** Stop pending file requests from any daily view or the Send window.
+  After KDE Connect accepts a request over LAN, use **Cancel** in its transfer
+  progress window. See the [task guide](docs/HELP.md) for Bluetooth limits.
+- **Activity:** “Request accepted” means KDE Connect accepted the request.
+  Check the receiving device to confirm delivery. A batch keeps its reviewed
+  recipient.
 - **Desktop notices:** see final file-request outcomes while Plus is closed.
   Device names are omitted by default; enable them separately in Quick actions
   settings. Native notification history and Do Not Disturb remain with Omarchy.
@@ -123,7 +131,7 @@ commands. Keep it if its workflow suits you. Plus adds:
 | A choice of file workflows | Original file menu, desktop chooser, multiselect, drops and optional chooser review. |
 | Shortcuts that fit your tasks | Add, remove and reorder actions; Ring is optional. |
 | Control over popup navigation | Move the View row, choose direct shortcuts, and reorder or collapse daily sections. |
-| Every native feature in reach | Searchable installed modules, native On/Off readback and per-device configuration links. |
+| Access to installed KDE Connect modules | Search, On/Off controls and links to native settings for each device. |
 | Your existing remote access | Separate Tailscale, Back to Home and WireGuard opt-ins. |
 
 ## Requirements
@@ -138,25 +146,29 @@ Missing optional providers stay unavailable; Plus never installs them.
 
 ## Privacy
 
-Appearance and address metadata stay in owner-only files. Typed text, Ping
-messages and the paths of files you send travel over stdin and D-Bus, never
-process arguments during native submission. The optional recent-file menu puts
-listed file paths and the recipient name in Omarchy’s process arguments. Other
-local accounts may be able to read those arguments. Keep the default desktop
-chooser on to avoid that exposure. Saved settings, such as a default Ping
-message, go through Omarchy, which briefly passes them in process arguments.
-Keep private text out of these saved settings. Files in shared locations are sent from a private snapshot. Activity
-keeps at most 50 summaries in memory, without paths. Media shows track text and
-controls but never loads provider-supplied album art.
+Plus keeps its appearance and address records in owner-only files.
+Plus uses stdin and D-Bus to pass typed text, Ping messages and file paths
+to KDE Connect. These values stay out of process arguments during submission.
+
+The optional recent-file menu puts listed file paths and the recipient name
+in Omarchy’s process arguments. Other local accounts can read these arguments
+on some systems. Keep the desktop file chooser on to prevent this exposure.
+Omarchy also passes saved settings, such as a default Ping message, in process
+arguments for a short time. Keep private text out of these settings.
+
+For files in shared locations, Plus sends a private snapshot.
+Activity keeps up to 50 summaries in memory. These summaries contain no file
+paths. Media shows track text and controls only.
 
 ## Contributing
 
 Code, docs, design, accessibility and device testing are all welcome. Read the
 [contribution guide](CONTRIBUTING.md) or choose a
 [good first issue](https://github.com/ryan-winkler/omaconnect-kde-plus/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
-Ask questions in [Discussions](https://github.com/ryan-winkler/omaconnect-kde-plus/discussions),
-see [SUPPORT.md](SUPPORT.md) for help, and report vulnerabilities privately through
-[SECURITY.md](SECURITY.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+Ask questions in [Discussions](https://github.com/ryan-winkler/omaconnect-kde-plus/discussions).
+See the [support guide](SUPPORT.md) for other help. To report a vulnerability
+privately, follow the [security policy](SECURITY.md).
+See the [changelog](CHANGELOG.md) for release changes.
 
 ## Credits and license
 
