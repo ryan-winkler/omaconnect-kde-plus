@@ -1,9 +1,12 @@
 # Omaconnect KDE Plus
 
-A KDE Connect companion for the [Omarchy](https://omarchy.org/) bar: send files,
-browse shared phone folders, run your own quick actions and arrange your daily controls. It is a fork of
-[Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect), built
-on [KDE Connect](https://kdeconnect.kde.org/).
+Use [KDE Connect](https://kdeconnect.kde.org/) from the
+[Omarchy](https://omarchy.org/) bar. Send files, browse shared phone folders
+and put the quick actions you use most within reach.
+
+Omaconnect KDE Plus is a fork of
+[Jitendra Dara’s OmaConnect](https://github.com/jitendradara12/omaconnect).
+KDE Connect handles pairing and device communication.
 
 <img src="preview.png" width="380" alt="Saved screenshot review with an example phone and explicit Send">
 
@@ -35,7 +38,7 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
 ## Features
 
 - **Files.** Choose up to 100 local files in the desktop chooser. Check the
-  files and recipient, then select **Send**. In **Plus settings → Quick
+  files and recipient, then select **Send files**. In **Plus settings → Quick
   actions**, turn off **Review files before Send** to submit when you confirm
   the selection in the chooser. Turn off **Use desktop file chooser** to use the
   searchable Omarchy recent-file menu and **Image previews…**. Drops on Devices,

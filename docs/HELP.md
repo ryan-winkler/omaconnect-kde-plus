@@ -297,7 +297,7 @@ Choose a shortcut, then select **Add selected action**. Use **Up**, **Down** or
 Each action shows its description and selected-device availability.
 
 - **Files.** Open the desktop chooser. Check the files and recipient, then
-  select **Send**. Turn off **Review files before Send** to submit when you
+  select **Send files**. Turn off **Review files before Send** to submit when you
   confirm the selection in the chooser. Turn off **Use desktop file chooser** to use the Omarchy
   recent-file menu. Drops always require review. Invalid settings fall back
   to the desktop chooser with review.
@@ -330,7 +330,7 @@ saved screenshot** in **Plus settings → Quick actions**. Select it in Devices 
 choose one saved `.png` file for the selected device. The desktop chooser
 suggests the screenshots folder when it exists. If you saved to a custom
 Omasnap output directory, navigate to that folder.
-Check the filename and recipient, then select **Send**. Cancel leaves the
+Check the filename and recipient, then select **Send files**. Cancel leaves the
 saved image in place and sends nothing. If Activity reports that the selected
 file changed, choose the screenshot again and review it before sending.
 
@@ -443,8 +443,10 @@ that it could not open Plus.
 1. Select a paired, reachable device. Expand **File sharing** in Devices, or open **Send**.
 2. Select **Choose files**. By default, the desktop chooser opens and the
    Send window stays open for review. Your selection waits until you select
-   **Send**. If you close the Send window, open **Send** in Plus to find the
-   draft. Select **Keep Send window open** in Devices or **Open Send window**
+   **Send files**. If the chooser opens behind another window, switch to the
+   chooser. After it closes, return to the Send window to check your selection.
+   If you closed the Send window, open **Send** in Plus to find the draft.
+   Select **Keep Send window open** in Devices or **Open Send window**
    in Send to use that window as a drop target. Dragging local file URLs over
    the bar icon opens and reveals the inline target, even if its section is hidden. This reveal lasts
    for that popup session and does not change its saved visibility.
@@ -463,7 +465,7 @@ that it could not open Plus.
    **Image previews…** opens a preview window with your recipient and filename
    always visible. Search or use **Previous** and **Next** to find the image.
    Browsing never sends. Select **Send image** to send it, or **Review image** to
-   check it before the separate Send step when review is enabled.
+   check it before you select **Send files** when review is on.
    If you edit, replace or move an image after its preview opens, choose it again.
    **Back to files** returns to the file list for the same recipient and saved
    send/review choice. **Cancel**, Escape or closing the preview clears this
@@ -473,7 +475,7 @@ that it could not open Plus.
    other file formats, names with controls, or larger trees.
    The desktop chooser and drops support up to 100 local regular files, 1 TiB combined.
    Directories and remote URLs are not accepted. Drops use Copy and preserve originals.
-4. Check the recipient, files, count and size. Select **Send**. In **Plus
+4. Check the recipient, files, count and size. Select **Send files**. In **Plus
    settings → Quick actions**, turn off **Review files before Send** to submit
    when you confirm the selection in the chooser. Drops always require review.
    Changing devices or settings while a chooser is open keeps its original
@@ -483,7 +485,8 @@ that it could not open Plus.
 
 If a file is missing, send one small test file to the same device with native
 KDE Connect. If that file also fails to arrive, check the native connection and
-receiving folder. If the native test succeeds, report the Plus send method and
+receiving folder. Check the date and time on both devices. If the native
+test succeeds, report the Plus send method and
 the Activity result. See the [KDE Connect user guide](https://kdeconnect.kde.org/users.html)
 and the [Plus support guide](../SUPPORT.md).
 
