@@ -57,4 +57,8 @@ QtObject {
     function byteSize(bytes) {
         return Transfers.formatBytes(bytes, Commons.I18n.formatNumber)
     }
+
+    function activityTime(milliseconds) {
+        return new Date(milliseconds).toLocaleString(Qt.locale(Commons.I18n.formatLocale), Locale.ShortFormat)
+    }
 }

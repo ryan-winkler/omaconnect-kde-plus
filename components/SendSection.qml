@@ -162,15 +162,16 @@ Column {
             width: root.width
             spacing: Style.space(4)
             Text {
+                objectName: "submission-summary"
                 textFormat: Text.PlainText
                 width: parent.width
-                text: "\u2068" + operationRow.modelData.peerName + "\u2069 · KDE Connect · "
-                    + Locale.Strings.fileCount(operationRow.modelData.count) + " · " + Locale.Strings.byteSize(operationRow.modelData.total)
+                text: TransferModel.activitySummary(operationRow.modelData, root.activity, Locale.Strings)
 
                 wrapMode: Text.WrapAnywhere
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.bodySmall
+                Accessible.name: text
             }
             Text {
                 textFormat: Text.PlainText

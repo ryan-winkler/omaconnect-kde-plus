@@ -1,12 +1,12 @@
 .pragma library
 
 // Submission evidence only. Paths live in the transient queue, never this model.
-function create(id, target, files, now) {
+function create(id, target, files, now, sequence) {
     return {id: id, provider: "kdeconnect", providerJobId: "", peerId: target.peerId,
         peerName: target.peerName, count: files.length,
         total: files.reduce(function(sum, file) { return sum + file.size }, 0),
         state: "queued", delivery: "unknown", accepted: 0, failed: 0, cancelled: 0,
-        unknown: 0, processed: 0, error: "", cancellable: true, observedAt: now}
+        unknown: 0, processed: 0, error: "", cancellable: true, observedAt: now, sequence: sequence}
 }
 
 function record(operation, index, state, error, now) {
@@ -30,6 +30,33 @@ function record(operation, index, state, error, now) {
 
 function remember(history, operation) {
     return [Object.assign({}, operation)].concat(history.filter(function(item) { return item.id !== operation.id })).slice(0, 50)
+}
+
+function activityPeerName(operation, unnamed) {
+    return operation.peerName && operation.peerName !== operation.peerId ? operation.peerName : unnamed
+}
+
+function activitySummary(operation, history, strings) {
+    var unnamed = strings.t("files.activityUnnamedDevice")
+    var name = activityPeerName(operation, unnamed)
+    var recipient = "\u2068" + name + "\u2069"
+    var peerId = operation.peerId
+    var namesakes = history.filter(function(item) {
+        return item.peerId && item.peerId !== peerId && activityPeerName(item, unnamed) === name
+    })
+    if (peerId && namesakes.length) {
+        var length = Math.min(peerId.length, 6)
+        // Reveal only the part of the ID needed to distinguish these rows.
+        while (length < peerId.length && namesakes.some(function(item) { return item.peerId.endsWith(peerId.slice(-length)) }))
+            length += 1
+        recipient = strings.format("files.activityRecipient", [recipient, "\u2066" + peerId.slice(-length) + "\u2069"])
+    }
+    var count = strings.fileCount(operation.count)
+    var size = strings.byteSize(operation.total)
+    if (operation.sequence > 0 && Number.isFinite(operation.observedAt))
+        return strings.format("files.activityTimedDetails", [recipient, strings.number(operation.sequence),
+            strings.activityTime(operation.observedAt), count, size])
+    return strings.format("files.activityDetails", [recipient, count, size])
 }
 
 function formatBytes(value, formatNumber) {

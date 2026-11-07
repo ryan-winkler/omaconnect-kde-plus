@@ -42,13 +42,12 @@ Column {
     Repeater {
         model: root.service ? root.service.operations : []
         delegate: Text {
+            objectName: "submission-summary"
             textFormat: Text.PlainText
             required property var modelData
             width: root.width
-            text: Locale.Strings.format("files.activityDetails", [
-                modelData.peerName, modelData.peerId, Locale.Strings.fileCount(modelData.count),
-                Locale.Strings.byteSize(modelData.total), Transfers.status(modelData, Locale.Strings)
-            ])
+            text: Transfers.activitySummary(modelData, root.service.operations, Locale.Strings)
+                + "\n" + Transfers.status(modelData, Locale.Strings)
 
             wrapMode: Text.WrapAnywhere
             color: Commons.Color.popups.text

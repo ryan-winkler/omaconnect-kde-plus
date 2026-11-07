@@ -483,6 +483,10 @@ that it could not open Plus.
 5. Read Activity. **Request accepted** means KDE Connect accepted the request.
    Check the receiving device's save folder before you send the files again.
 
+Activity and **Recent submissions** in Send show the submission number and
+when Plus last updated it. When two devices in the history share a name,
+their labels show the end of each device ID.
+
 If a file is missing, send one small test file to the same device with native
 KDE Connect. If that file also fails to arrive, check the native connection and
 receiving folder. Check the date and time on both devices. If the native

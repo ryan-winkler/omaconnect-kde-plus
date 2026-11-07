@@ -257,7 +257,7 @@ Item {
         submissionQueue = selection.map(function(item) { return Object.assign({}, item) })
         submissionIndex = 0
         cancellationRequested = false
-        activeOperation = TransferModel.create(id, target, submissionQueue, Date.now())
+        activeOperation = TransferModel.create(id, target, submissionQueue, Date.now(), operationSequence)
         operations = TransferModel.remember(operations, activeOperation)
         operationBusy = true
         fileBusy = true
