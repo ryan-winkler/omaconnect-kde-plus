@@ -74,10 +74,13 @@ local metadata, at most 64 entries, and do not change native registration.
 ## File chooser and submission
 
 The UI's defaults are `useDesktopFileChooser=true` and
-`reviewFilesBeforeSend=false`. The desktop chooser opens and explicit selection
-submits by default. An existing `useDesktopFileChooser=false` preference still
-opens the recent-file menu. Non-boolean settings fall back to desktop review.
-UI callers pass `{useDesktopFileChooser, reviewFilesBeforeSend}` through the existing
+`reviewFilesBeforeSend=true`. The desktop chooser opens and selection waits
+for an explicit Send. When the bar starts a desktop chooser with review, it
+opens the persistent Send window so the review stays visible. A saved `false`
+still selects the recent-file menu or submits the chooser selection directly,
+according to the setting it belongs to. Non-boolean settings fall back to the
+desktop chooser with review. UI callers pass
+`{useDesktopFileChooser, reviewFilesBeforeSend}` through the existing
 Service/controller API; omitted or mistyped options retain desktop review for
 compatibility. Options and recipient are captured at chooser launch. Only that
 generation can submit its result. Drops always use review regardless of settings.

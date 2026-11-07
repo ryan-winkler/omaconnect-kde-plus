@@ -41,8 +41,8 @@
     },
     "reviewFilesBeforeSend": {
       "type": "boolean",
-      "default": false,
-      "description": "Review chosen files before Send. Off sends after explicit chooser selection. Drops always require review."
+      "default": true,
+      "description": "Check the files and recipient before Send. Off submits when you confirm the selection in the chooser. Drops always require review."
     },
     "showBatteryStats": {
       "type": "boolean",

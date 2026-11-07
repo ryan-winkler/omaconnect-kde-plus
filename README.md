@@ -32,12 +32,12 @@ first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
 
 ## Features
 
-- **Files:** choose up to 100 local files in the desktop chooser. In **Plus
-  settings → Quick actions**, turn on **Review files before Send** to check the
-  files and recipient before sending. Turn off **Use desktop file chooser** to
-  use the searchable Omarchy recent-file menu with file icons and **Image
-  previews…**. Drops on Devices, the bar icon or Send window always require
-  review and use Copy.
+- **Files.** Choose up to 100 local files in the desktop chooser. Check the
+  files and recipient, then select **Send**. In **Plus settings → Quick
+  actions**, turn off **Review files before Send** to submit when you confirm
+  the selection in the chooser. Turn off **Use desktop file chooser** to use the
+  searchable Omarchy recent-file menu and **Image previews…**. Drops on Devices,
+  the bar icon or Send window always require review and use Copy.
 - **Phone folders:** select **Browse phone files** to open folders shared by KDE
   Connect in your default file manager. Add it to Quick actions for direct access
   from Devices. If KDE Connect reports that storage is unmounted, select

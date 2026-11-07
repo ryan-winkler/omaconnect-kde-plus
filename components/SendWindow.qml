@@ -15,8 +15,8 @@ Window {
     LayoutMirroring.childrenInherit: true
     required property var service
     property var device: null
-    property var chooserOptions: ({useDesktopFileChooser: true, reviewFilesBeforeSend: false})
-    property string fileChoiceHint: Locale.Strings.t("files.immediateHint")
+    property var chooserOptions: ({useDesktopFileChooser: true, reviewFilesBeforeSend: true})
+    property string fileChoiceHint: Locale.Strings.t("files.reviewHint")
     readonly property var target: service ? service.draftTarget : null
     readonly property bool canChoose: !!(service && device && device.paired && device.reachable
         && device.capabilities && device.capabilities.file && !service.operationBusy && !service.selectionCancelling

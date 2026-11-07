@@ -349,7 +349,7 @@ Window {
                             panel: root.panel
                             preferences: [
                                 {key: "useDesktopFileChooser", label: Locale.Strings.t("settings.desktopChooser"), defaultValue: true, description: Locale.Strings.t("settings.desktopChooserHelp")},
-                                {key: "reviewFilesBeforeSend", label: Locale.Strings.t("settings.reviewFiles"), defaultValue: false, description: Locale.Strings.t("settings.reviewFilesHelp")},
+                                {key: "reviewFilesBeforeSend", label: Locale.Strings.t("settings.reviewFiles"), defaultValue: true, description: Locale.Strings.t("settings.reviewFilesHelp")},
                                 {key: "taskNotificationsEnabled", label: Locale.Strings.t("notice.enabled.label"), defaultValue: true, description: Locale.Strings.t("notice.enabled.help")},
                                 {key: "taskNotificationDeviceName", label: Locale.Strings.t("notice.deviceName.label"), defaultValue: false, description: Locale.Strings.t("notice.deviceName.help")},
                                 {key: "defaultPingMessage", label: Locale.Strings.t("settings.pingDefault"), defaultValue: "", type: "string", description: Locale.Strings.t("settings.pingDefaultHelp")}

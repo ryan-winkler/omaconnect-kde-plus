@@ -62,7 +62,9 @@ function fresh(){
  return {ctx,later,calls,flush(){while(later.length)later.shift()()},selected(){ctx.filePickerProcess.running=false;ctx.applySelection(JSON.stringify({state:'selected',files:[{path:'/fixture/example.txt',name:'example.txt',size:3}]}),0,ctx.selectionGeneration)}};
 }
 function panel(settings,service,device){
- const ctx={settings,service,device,previewGeneration:-1};ctx.root=ctx;vm.createContext(ctx);vm.runInContext(input.panel,ctx);
+ const ctx={settings,service,device,previewGeneration:-1,sendWindowOpened:0,
+  openSendWindow(){this.sendWindowOpened++}};
+ ctx.root=ctx;vm.createContext(ctx);vm.runInContext(input.panel,ctx);
  Object.defineProperty(ctx,'fileChooserOptions',{get(){return ctx.chooserOptions()}});return ctx;
 }
 const immediate={useDesktopFileChooser:false,reviewFilesBeforeSend:false};
@@ -79,22 +81,33 @@ const review={useDesktopFileChooser:true,reviewFilesBeforeSend:true};
         """Verify the portal default, explicit opt-in and malformed settings fallback."""
         schema = json.loads((ROOT / 'manifest.json').read_text())
         self.assertIs(schema['settings']['useDesktopFileChooser']['default'], True)
+        self.assertIs(schema['settings']['reviewFilesBeforeSend']['default'], True)
         self.node(r'''
-const desktopImmediate={useDesktopFileChooser:true,reviewFilesBeforeSend:false};
-const defaults=panel({}, {}, null).fileChooserOptions;
-assert.deepEqual(JSON.parse(JSON.stringify(defaults)),desktopImmediate);
-assert.deepEqual(JSON.parse(JSON.stringify(panel({useDesktopFileChooser:false},{},null).fileChooserOptions)),immediate);
-const normal=fresh().ctx;
-assert.equal(normal.chooseFiles('A',defaults),true);
-assert.equal(normal.filePickerProcess.command[0],'bash');
-assert.equal(normal.filePickerProcess.payload,'','default chooser keeps recipient off the external menu path');
+const readOptions=settings=>JSON.parse(JSON.stringify(panel(settings,{},null).fileChooserOptions));
+const defaults=readOptions({});
+assert.deepEqual(defaults,review);
+assert.deepEqual(readOptions({useDesktopFileChooser:false}),{...review,useDesktopFileChooser:false});
+assert.deepEqual(readOptions({reviewFilesBeforeSend:false}),{...review,reviewFilesBeforeSend:false});
+assert.deepEqual(readOptions(immediate),immediate);
+const normal=fresh();
+assert.equal(normal.ctx.chooseFiles('A',defaults),true);
+assert.equal(normal.ctx.filePickerProcess.command[0],'bash');
+assert.equal(normal.ctx.filePickerProcess.payload,'','default chooser keeps recipient off the external menu path');
+normal.selected();normal.flush();
+assert.equal(normal.ctx.selectionState,'draft');
+assert.equal(normal.ctx.draftTarget.peerName,'Original phone');
+assert.equal(normal.calls.length,0,'default chooser selection must wait for Send');
+assert.equal(normal.ctx.submitSelection(),true);normal.flush();
+assert.equal(normal.calls.length,1);assert.equal(normal.calls[0].peerId,'A');
 for(const settings of [{useDesktopFileChooser:'false'},{reviewFilesBeforeSend:0},{useDesktopFileChooser:[],reviewFilesBeforeSend:false},
  {reviewFilesBeforeSend:null},{useDesktopFileChooser:null},{reviewFilesBeforeSend:undefined},null,undefined,[], 'false']){
  const p=panel(settings,{},null);assert.deepEqual(JSON.parse(JSON.stringify(p.fileChooserOptions)),review);
 }
 const seen=[];const p=panel({}, {chooseFiles(id,opts){seen.push({id,opts});return true}}, {id:'A'});
 assert.equal(p.chooseFiles(),true);assert.equal(seen[0].id,'A');assert.equal(seen[0].opts.useDesktopFileChooser,true);
-p.device=null;assert.equal(p.chooseFiles(),false);assert.equal(seen.length,1);
+assert.equal(p.sendWindowOpened,1,'default chooser opens persistent review');
+p.settings={reviewFilesBeforeSend:false};assert.equal(p.chooseFiles(),true);assert.equal(p.sendWindowOpened,1);
+p.device=null;assert.equal(p.chooseFiles(),false);assert.equal(seen.length,2);
 ''')
 
     def test_immediate_freezes_target_and_policy_review_waits_for_explicit_send(self):
