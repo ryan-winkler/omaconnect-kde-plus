@@ -33,6 +33,10 @@ Controls.ComboBox {
     readonly property string deviceOptionsKey: JSON.stringify(deviceOptions.map(function(option) {
         return [option.value, option.label]
     }))
+    readonly property string rosterNotice: rosterNoticeTimer.running
+        ? Locale.Strings.t(root.enabled ? "deviceSwitcher.reopenChangedList" : "deviceSwitcher.changedListEmpty") : ""
+    readonly property string emptyRosterLabel: Locale.Strings.t(!root.enabled && rosterNoticeTimer.running
+        ? "deviceSwitcher.checkKdeConnect" : "deviceSwitcher.choose")
     property bool popupInvalidated: false
     onDeviceOptionsKeyChanged: {
         if (popup && popup.visible) {
@@ -42,7 +46,16 @@ Controls.ComboBox {
     }
     Connections {
         target: root.popup
-        function onAboutToShow() { root.popupInvalidated = false }
+        function onAboutToShow() {
+            rosterNoticeTimer.stop()
+            root.popupInvalidated = false
+        }
+        function onClosed() {
+            if (root.popupInvalidated && root.visible) {
+                rosterNoticeTimer.restart()
+                root.Accessible.announce(root.rosterNotice, Accessible.Polite)
+            }
+        }
     }
     readonly property color surfaceColor: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
     signal aboutToSelect(string deviceId)
@@ -75,7 +88,7 @@ Controls.ComboBox {
     valueRole: "value"
     currentValue: root.selectedId
     readonly property var selectedOption: deviceOptions.find(function(option) { return option.value === root.selectedId })
-    displayText: selectedOption ? selectedOption.label : Locale.Strings.t("deviceSwitcher.choose")
+    displayText: selectedOption ? selectedOption.label : root.emptyRosterLabel
     enabled: root.devices.length > 0
     font.family: Style.font.family
     font.pixelSize: Style.font.body
@@ -88,15 +101,19 @@ Controls.ComboBox {
     palette.highlightedText: root.surfaceColor
     Accessible.role: Accessible.ComboBox
     Accessible.name: Locale.Strings.t("settings.device")
-    Accessible.description: root.selectedOption ? root.selectedOption.name + ". " + root.deviceStatus : root.deviceStatus
+    Accessible.description: (root.selectedOption ? root.selectedOption.name + ". " + root.deviceStatus : root.deviceStatus)
+        + (root.rosterNotice !== "" ? " " + root.rosterNotice : "")
     Accessible.onPressAction: {
         if (!enabled) return
         forceActiveFocus()
         popup.visible ? popup.close() : popup.open()
     }
+    onVisibleChanged: if (!visible) rosterNoticeTimer.stop()
+    Timer { id: rosterNoticeTimer; interval: 6500 }
     component DeviceLabel: RowLayout {
         id: row
         property var option
+        property bool showRosterNotice: false
         spacing: Style.space(6)
         AppearanceIcon {
             readonly property var appearance: root.service && "appearance" in root.service ? root.service.appearance : null
@@ -113,23 +130,27 @@ Controls.ComboBox {
             objectName: "device-label-name"
             Layout.fillWidth: true
             Layout.minimumWidth: 0
-            text: row.option ? row.option.name : Locale.Strings.t("deviceSwitcher.choose")
+            text: row.option ? row.option.name : root.emptyRosterLabel
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font: root.font
             elide: Text.ElideMiddle
         }
         Text {
-            visible: !!row.option
+            objectName: "device-label-state"
+            visible: !!row.option || row.showRosterNotice
             Layout.maximumWidth: Math.floor(row.width * 0.48)
-            text: row.option ? row.option.state : ""
+            text: row.showRosterNotice ? Locale.Strings.t("deviceSwitcher.listChanged") : row.option ? row.option.state : ""
             textFormat: Text.PlainText
             color: Commons.Color.popups.text
             font: root.font
             elide: Text.ElideRight
         }
     }
-    contentItem: DeviceLabel { option: root.selectedOption }
+    contentItem: DeviceLabel {
+        option: root.selectedOption
+        showRosterNotice: rosterNoticeTimer.running
+    }
     // Same chevron and hover fill as the Omarchy Dropdown.
     indicator: Text {
         id: chevron

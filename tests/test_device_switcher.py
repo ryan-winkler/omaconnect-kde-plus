@@ -117,7 +117,7 @@ print(json.dumps({"state": "request_accepted"}))
                 ])
             self.assertEqual([row['args'] for row in calls if row['tool'] == 'busctl'],
                              expected_unpairs)
-            self.assertEqual([row['args'] for row in calls if row['tool'] == 'open-app'], [[], [], [], []])
+            self.assertEqual([row['args'] for row in calls if row['tool'] == 'open-app'], [[], [], [], [], []])
             self.assertEqual((home/'return-scans').read_text().splitlines(), ['before:0:', 'after:0:'])
             self.assertFalse(any(row['tool'] in ('gdbus','kdeconnect-cli','nmcli','omarchy-shell','remote-access-mode') for row in calls),calls)
             self.assertEqual(json.loads((fixture/'portal-receipt.json').read_text()),[])

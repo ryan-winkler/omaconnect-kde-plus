@@ -20,6 +20,10 @@ ShellRoot {
     property int failedGeneration:0
     property int interruptedGeneration:0
     property bool interruptedFinished:false
+    property var rosterBeforeNotice:[]
+    property point handoffPosition
+    property var pairingHandoff:null
+    property int pairingClicks:0
     FileView {
         id: launcherState
         path: Quickshell.env("HOME") + "/pairing-launch-state"
@@ -33,6 +37,7 @@ ShellRoot {
         }
     }
     Connections { target:test.section; function onDetailsToggleRequested(){test.detailsToggleCount++} }
+    Connections { target:test.pairingHandoff; function onClicked(){test.pairingClicks++} }
     function check(ok,message){
         if(!ok){console.error("NATIVE_FAIL device picker: "+message+" phase="+phase);Qt.quit();return false}
         checks=checks.concat([message]);return true
@@ -90,6 +95,8 @@ ShellRoot {
                     service.devices=JSON.parse(JSON.stringify(service.devices));test.phase=4
                 }else if(test.phase===4){
                     if(!test.check(test.picker.popup.visible,"identical scan keeps the daily picker open"))return
+                    if(!test.check(test.picker.rosterNotice==="",
+                        "identical scan does not show a list change notice"))return
                     test.key(Qt.Key_Down);test.key(Qt.Key_Return);test.phase=5
                 }else if(test.phase===5){
                     if(!test.check(service.selectedDeviceId==="B" && test.picker.currentValue==="B" && !test.picker.popup.visible,"arrows and Enter switch the stable selected ID"))return
@@ -138,6 +145,12 @@ ShellRoot {
                     var changed=JSON.parse(JSON.stringify(service.devices));changed[1].name="Changed fixture phone";service.devices=changed;test.phase=9
                 }else if(test.phase===9){
                     if(!test.check(!test.picker.popup.visible,"changed labels close stale popup rows"))return
+                    var notice=test.find(test.picker.contentItem,"device-label-state",[])
+                    if(!test.check(notice && notice.visible && notice.text==="List changed"
+                        && test.picker.Accessible.description.indexOf("Device list changed. Open it again.")>=0 && test.picker.activeFocus,
+                        "a changed list explains the closure without taking keyboard focus"))return
+                    if(!test.check(test.draftBefore===JSON.stringify(service.draftTarget)+JSON.stringify(service.selection),
+                        "an invalidated list leaves the file review untouched"))return
                     service.devices=[service.devices[2],service.devices[0],service.devices[1]];test.phase=10
                 }else if(test.phase===10){
                     if(!test.check(test.picker.currentValue==="B" && test.picker.displayText.indexOf("Changed fixture phone")===0,"scan reorder keeps the selected identity and label"))return
@@ -151,6 +164,8 @@ ShellRoot {
                 }else if(test.phase===105){
                     if(!test.check(test.picker.popup.visible && test.picker.highlightedIndex===test.picker.indexOfValue("B"),
                         "reopened picker highlights the selected ID"))return
+                    if(!test.check(test.picker.rosterNotice==="",
+                        "reopening clears the list change notice"))return
                     test.key(Qt.Key_Escape)
                     panel.cursorActive=true;panel.focusSection="devices";panel.focusTarget.forceActiveFocus()
                     test.key(Qt.Key_U)
@@ -177,6 +192,35 @@ ShellRoot {
                     test.picker.selectDevice("C");test.phase=11
                 }else if(test.phase===11){
                     if(!test.check(service.selectedDeviceId==="C" && test.picker.displayText.indexOf("<b>")===0 && test.find(test.picker.contentItem,"device-label-name",[]).textFormat===Text.PlainText,"unpaired markup-shaped names stay selectable as plain text"))return
+                    test.pairingHandoff=test.find(test.section,"pairing-native-handoff",[])
+                    if(!test.check(test.pairingHandoff && test.pairingHandoff.visible && test.pairingHandoff.text==="Pair in KDE Connect",
+                        "reachable unpaired device offers the native handoff below the picker"))return
+                    test.handoffPosition=test.pairingHandoff.mapToItem(null,0,0)
+                    test.rosterBeforeNotice=JSON.parse(JSON.stringify(service.devices))
+                    test.picker.Accessible.pressAction();test.phase=111
+                }else if(test.phase===111){
+                    if(!test.check(test.picker.popup.visible,"picker opens before the unpaired device name changes"))return
+                    service.devices=service.devices.map(function(device){
+                        return device.id==="C" ? Object.assign({},device,{name:"Updated unpaired phone"}) : device
+                    })
+                    test.phase=112
+                }else if(test.phase===112){
+                    var handoffPoint=test.pairingHandoff.mapToItem(null,0,0)
+                    var pairingNotice=test.find(test.picker.contentItem,"device-label-state",[])
+                    if(!test.check(pairingNotice.visible && pairingNotice.text==="List changed"
+                        && !test.picker.popup.visible && handoffPoint===test.handoffPosition,
+                        "list change feedback keeps the handoff visible and in place"))return
+                    if(!test.check(pairingNotice.mapToItem(null,0,pairingNotice.height).y<=handoffPoint.y,
+                        "inline feedback and pairing handoff do not overlap"))return
+                    if(!test.check(events.mouseClick(test.pairingHandoff,60,12,Qt.LeftButton,Qt.NoModifier,1),
+                        "real pointer event is delivered at the top of the pairing handoff"))return
+                    if(!test.check(test.pairingClicks===1,"list notice leaves the pairing handoff clickable"))return
+                    test.phase=113
+                }else if(test.phase===113 && !service.nativeAppOpening && !service.scanning){
+                    if(!test.check(test.draftBefore===JSON.stringify(service.draftTarget)+JSON.stringify(service.selection),
+                        "pointer handoff preserves the captured file draft"))return
+                    service.devices=test.rosterBeforeNotice
+                    service.selectDevice("C")
                     var disclosure=test.find(test.section,"section-toggle-devices",[])
                     disclosure.Accessible.pressAction()
                     if(!test.check(test.detailsToggleCount===1,"device details exposes the controlled disclosure signal"))return
@@ -229,10 +273,16 @@ ShellRoot {
                 }else if(test.phase===14){
                     test.picker.selectDevice("B")
                     if(!test.check(service.selectedDeviceId==="A","removed stable ID cannot dispatch from stale rows"))return
+                    test.picker.Accessible.pressAction();test.phase=141
+                }else if(test.phase===141){
+                    if(!test.check(test.picker.popup.visible,"picker opens before the entire list disappears"))return
                     test.selectionBeforeEmpty=service.selectedDeviceId;service.devices=[];test.phase=15
                 }else if(test.phase===15){
                     test.picker.Accessible.pressAction()
-                    if(!test.check(!test.picker.enabled && !test.picker.popup.visible && service.selectedDeviceId===test.selectionBeforeEmpty && test.picker.displayText==="Choose a device","disabled empty picker cannot activate by accessible press"))return
+                    if(!test.check(!test.picker.enabled && !test.picker.popup.visible && service.selectedDeviceId===test.selectionBeforeEmpty,"disabled empty picker cannot activate by accessible press"))return
+                    if(!test.check(test.picker.displayText==="Check KDE Connect"
+                        && test.picker.Accessible.description.indexOf("Device list changed. Check KDE Connect.")>=0,
+                        "an empty list offers a next step without asking users to reopen a disabled control"))return
                     service.cancelDraft()
                     service.devices=test.initialDevices
                     test.phase=16
