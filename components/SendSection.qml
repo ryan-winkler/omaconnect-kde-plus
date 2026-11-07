@@ -118,6 +118,7 @@ Column {
         visible: !!root.target
         spacing: Style.space(8)
         SettingsButton {
+            objectName: "send-reviewed-files"
             bordered: false
             focusable: true
             text: Locale.Strings.t("files.send")
