@@ -76,7 +76,8 @@ fi
 if [[ -f "$HOME/a-unpaired" ]]; then
     printf '%s\n' "$unpaired_a" "$unknown_peer" \
         $'DEVICE\tC\tConnected phone\tphone\ttrue\ttrue\t90\tfalse\tkdeconnect_share,kdeconnect_battery'"$state_suffix" \
-        $'DEVICE_SCAN\t4\t3'
+        $'DEVICE\tD\tPaired phone\tphone\ttrue\tfalse\t-1\tfalse\tkdeconnect_share\t\t-1\tfalse\tfalse\t\t\tfalse\t{"pairingKnown":true,"reachabilityKnown":false,"requestKnown":true}' \
+        $'DEVICE_SCAN\t5\t4'
     exit 0
 fi
 printf '%s\n' \

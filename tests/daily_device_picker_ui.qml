@@ -326,7 +326,7 @@ ShellRoot {
                         && service.actionMessage==="Device unpaired",
                         "a fresh native unpaired row confirms removal"))return
                     var partial=test.find(test.section,"partial-roster-warning",[])
-                    if(!test.check(service.discoveryState==="partial" && partial && partial.visible && test.picker.count===3,
+                    if(!test.check(service.discoveryState==="partial" && partial && partial.visible && test.picker.count===4,
                         "partial scan keeps readable rows and displays its warning outside collapsed details"))return
                     if(!test.check(test.picker.textAt(test.picker.indexOfValue("B")).indexOf("Status unavailable")>=0,
                         "an unreadable trust flag is distinct from an observed unpaired row"))return
@@ -339,6 +339,12 @@ ShellRoot {
                     if(!test.check(panel.sectionAvailability("actions")==="unavailable"
                         && panel.sectionAvailability("drop")==="unavailable",
                         "partial discovery keeps device actions blocked when pairing is unknown"))return
+                    panel.selectDevice("D")
+                    if(!test.check(service.selectedDevice && service.selectedDevice.paired
+                        && service.selectedDevice.reachabilityKnown===false && service.selectedDevice.capabilities.file
+                        && panel.sectionAvailability("actions")==="unavailable"
+                        && panel.sectionAvailability("drop")==="unavailable",
+                        "partial discovery keeps file actions blocked when reachability is unknown"))return
                     panel.selectDevice("A")
                     var handoffAfterScan=test.find(test.section,"pairing-native-handoff",[])
                     if(!test.check(handoffAfterScan && handoffAfterScan.visible && handoffAfterScan.enabled && handoffAfterScan.text==="Pair in KDE Connect",
