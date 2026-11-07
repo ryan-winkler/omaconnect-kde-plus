@@ -173,11 +173,13 @@ ShellRoot {
                 test.phase = 12
             } else if (test.phase === 12 && service.operations.length === 1 && !service.operationBusy) {
                 var operation = service.operations[0]
-                if (!test.check(operation.state === "submission_failed" && operation.error === "source-changed"
+                if (!test.check(operation.provider === "kdeconnect"
+                                && operation.state === "submission_failed" && operation.error === "source-changed"
                                 && operation.accepted === 0 && operation.failed === 1 && operation.delivery === "unknown",
                                 "changed screenshot retains typed rejection and submission evidence")) return
                 var activity = test.find(panel, function(item) {
-                    return item.visible && typeof item.text === "string" && item.text.indexOf("KDE ID: A") >= 0
+                    return item.visible && item.objectName === "submission-summary"
+                        && item.text.includes("Original phone") && !item.text.includes("KDE ID:")
                 }, [])
                 if (!test.check(activity && activity.Accessible.name === activity.text
                                 && activity.text.includes("Submission failed for 1 file.")

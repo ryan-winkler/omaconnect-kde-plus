@@ -214,8 +214,10 @@ There is no automatic retry after an ambiguous timeout.
 | `cancellation_unconfirmed` | Stop requested after invocation; remote result unknown |
 
 Operation summaries contain provider, reviewed ID/name, count/size, aggregate
-counters and timestamps. They hold no raw paths and have a 50-operation memory
-limit. The transient draft/queue does hold selected paths until use/cancellation.
+counters, the session submission number and the observation time. Activity and
+Recent submissions show a device ID suffix only when names match across distinct
+peers in history. They hold no raw paths and have a 50-operation memory limit.
+The transient draft/queue does hold selected paths until use/cancellation.
 Shared sources reach KDE
 through the retained private snapshot. Protected private sources keep the native
 pathname flow. Same-UID code and root remain trusted. No native atomic descriptor

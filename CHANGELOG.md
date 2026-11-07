@@ -51,6 +51,8 @@ All notable changes are listed here. The format follows
 
 ### Changed
 
+- Activity and Recent submissions show a submission number and update time.
+  Only devices with the same name in the history show an ID suffix.
 - Device details now include the device information: battery, cellular state,
   ID, addresses, connection providers and Pair or Unpair. Unreported rows are
   hidden. The separate Device information section is gone, and saved section
