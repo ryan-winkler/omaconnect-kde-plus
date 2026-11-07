@@ -16,6 +16,9 @@ Relevant surfaces include local helper execution, device and file input, icon im
 
 KDE Connect owns its protocol and pairing. Tailscale, WireGuard, the existing Back to Home controller and Syncshell own their policy and keys. Report defects in those components to their maintainers. If the boundary is unclear, contact this project's maintainer first without posting private data.
 
+The weekly [OpenSSF Scorecard run](https://github.com/ryan-winkler/omaconnect-kde-plus/actions/workflows/scorecard.yml)
+checks repository security practices. Open a completed run to find its report.
+
 ## Contribute a security fix
 
 Discuss a private vulnerability before publishing a patch that reveals it. Use fixed argument arrays, bounded I/O, private atomic state and explicit user actions. Add a focused fixture with invented data. Keep the protocol, trust and local appearance boundaries intact. Read [contribution guidance](CONTRIBUTING.md) and [contracts](docs/CONTRACTS.md).
