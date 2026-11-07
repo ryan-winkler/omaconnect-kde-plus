@@ -50,9 +50,10 @@ The Plus plugin ID is `omaconnect.plus`.
 
 ## Features
 
-- **Files.** Select the recipient in Devices. In the default settings, select
-  up to 100 local files in the desktop file chooser. In the Send window, make
-  sure that the files and the recipient are correct. Select **Send files**.
+- **Files.** Select the recipient in Devices. Expand **File sharing** or open
+  **Send**. Select **Choose files**. In the default settings, select up to
+  100 local files in the desktop file chooser. In the Send window, make sure
+  that the files and the recipient are correct. Select **Send files**.
   If you set **Review files before Send** to Off, make sure that the recipient
   is correct before you open the file chooser. Plus sends the files when you
   accept the selection in the chooser. To use the Omarchy recent-file menu and
