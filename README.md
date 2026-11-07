@@ -24,6 +24,10 @@ If you use Plus 0.1.2 or earlier, follow the
 The procedure keeps your bar position and settings and prevents a duplicate
 installation.
 
+If you use the original OmaConnect, read the
+[existing installation guide](docs/INSTALL.md#move-from-an-existing-installation)
+before you add Plus. The guide shows how to add Plus without enabling it.
+
 For a new installation, install the required packages. Then add and enable Plus.
 
 ```bash
@@ -36,9 +40,6 @@ or **Open KDE Connect**. If neither button is visible, open **KDE Connect** from
 the application launcher. Compare the verification keys on the two devices.
 Accept the pairing request only if the keys match.
 
-If you use the original OmaConnect, read the
-[existing installation guide](docs/INSTALL.md#move-from-an-existing-installation) first.
-Add Plus without `--enable` to control which plugin starts.
 The Plus plugin ID is `omaconnect.plus`.
 
 ## Features
