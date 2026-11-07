@@ -123,7 +123,9 @@ Panel {
         if (id === "drop" && phoneBrowseNeedsDetails) return "available"
         if (id === "actions" && availableActions.some(function(id) { return Actions.entry(id).scope === "global" })) return "available"
         if (service.scanning || ["starting", "checking"].indexOf(service.discoveryState) >= 0) return "checking"
-        if (service.discoveryState !== "ready") return "unavailable"
+        // An owner-verified partial roster can still contain an actionable device.
+        if (service.discoveryState !== "ready"
+                && (service.discoveryState !== "partial" || !service.discoveryOwner)) return "unavailable"
         if (id === "actions") return availableActions.length > 0 ? "available" : "unavailable"
         if (!device || !device.paired) return "unavailable"
         if (id === "native") return "available"

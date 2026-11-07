@@ -28,7 +28,9 @@ Column {
         : service ? service.devices.find(isOutgoing) || null : null
     readonly property bool partialRoster: !!(service && service.discoveryState === "partial")
     readonly property bool pairAvailable: !!(device && device.pairingKnown !== false && !device.paired && device.reachable)
-    readonly property bool handoffAvailable: !!(incomingRequest || outgoingRequest || partialRoster || pairAvailable
+    readonly property bool emptyRoster: !!(service && service.daemonAvailable && service.discoveryState === "ready"
+        && !service.scanning && service.devices.length === 0)
+    readonly property bool handoffAvailable: !!(incomingRequest || outgoingRequest || partialRoster || pairAvailable || emptyRoster
         || (device && (device.pairingKnown === false || device.reachabilityKnown === false)))
     readonly property bool isUnpairConfirming: !!(device && device.paired && device.pairingReported === true
         && panel.unpairConfirmingId === device.id)

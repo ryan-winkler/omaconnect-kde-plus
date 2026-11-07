@@ -38,9 +38,13 @@ If Plus cannot launch KDE Connect, open it from your application launcher.
 
 If a device is missing, use **Refresh devices** beside the picker. **Some
 devices are unavailable** means KDE Connect listed devices that Plus could
-not read. Check the native device list on both computers. **Status unavailable**
-means Plus could not establish a device's status. KDE Connect can keep a pairing
-while the device is offline.
+not read. Supported actions stay available for a device that Plus confirms is
+paired and connected. Check the native device list on both computers for missing devices.
+**Status unavailable** means Plus could not establish a device's status. KDE
+Connect can keep a pairing while the device is offline. When discovery completes
+with an empty list, select **Open KDE Connect**. If discovery is unavailable,
+select **Refresh devices**. If the button to open KDE Connect is still absent,
+open **KDE Connect** from the application launcher.
 
 ## Screenshots
 
