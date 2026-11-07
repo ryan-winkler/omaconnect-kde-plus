@@ -7,6 +7,7 @@ Shared sources can use private descriptor-backed snapshots during submission.
 import json
 import os
 from pathlib import Path
+import resource
 import signal
 import stat
 import sys
@@ -265,6 +266,7 @@ def main():
     args = sys.argv[1:]
     mode = args[0] if args else ''
     try:
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
         if mode in ('choose', 'choose-screenshot'):
             if len(args) == 1 and mode == 'choose':
                 choose()

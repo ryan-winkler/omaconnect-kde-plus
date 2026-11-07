@@ -36,13 +36,13 @@
     },
     "useDesktopFileChooser": {
       "type": "boolean",
-      "default": false,
-      "description": "Use the desktop file chooser instead of the original Omarchy recent-file menu."
+      "default": true,
+      "description": "Use the desktop file chooser. Off uses the Omarchy recent-file menu, which can expose listed paths to other local accounts."
     },
     "reviewFilesBeforeSend": {
       "type": "boolean",
-      "default": false,
-      "description": "Review chosen files before Send. Off sends after explicit chooser selection. Drops always require review."
+      "default": true,
+      "description": "Check the files and recipient before Send. Off submits when you confirm the selection in the chooser. Drops always require review."
     },
     "showBatteryStats": {
       "type": "boolean",
