@@ -49,6 +49,7 @@ All notable changes are listed here. The format follows
 
 ### Fixed
 
+- Saved addresses keeps the address list out of local process arguments.
 - Activity explains what to check before sending a missing file again.
 
 - Keep File sharing collapsed when the Browse phone files shortcut opens a
