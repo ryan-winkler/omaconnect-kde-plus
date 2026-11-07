@@ -6,6 +6,8 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-07
+
 ### Added
 
 - Optional **Review saved screenshot** Quick action. Choose a `.png` file in
@@ -38,7 +40,7 @@ All notable changes are listed here. The format follows
   an explicit sharing preference adds them to notices and desktop history.
   The Activity action opens current activity without repeating a request.
 - The desktop chooser and review are on by default. Check the files and
-  recipient before you select **Send**. Quick actions keeps separate controls
+  recipient before you select **Send files**. Quick actions keeps separate controls
   for the Omarchy recent-file menu and direct submission. The chooser setting
   explains who may see the recent menu’s process arguments. Drops always require
   review.
@@ -46,6 +48,20 @@ All notable changes are listed here. The format follows
   sections. Cancellation stops the Plus queue and active helper. Accepted LAN
   uploads use KDE Connect’s native progress Cancel; Bluetooth and per-transfer
   native cancellation remain outside the public sharing API.
+
+### Changed
+
+- Device details now include the device information: battery, cellular state,
+  ID, addresses, connection providers and Pair or Unpair. Unreported rows are
+  hidden. The separate Device information section is gone, and saved section
+  orders that name it still load.
+- Inline help paragraphs moved to the help guide, heading descriptions and empty
+  states. The Native KDE Connect section no longer repeats the device settings
+  button.
+
+- Keep the selected device and unsent drafts when the device list updates.
+- Open native KDE Connect for pairing and verification. Plus reports when
+  it can read only part of the KDE Connect device list.
 
 ### Fixed
 
@@ -102,20 +118,6 @@ All notable changes are listed here. The format follows
 - Unsupported URL drags no longer receive accepted file-hover feedback.
 - Provider contracts describe actual D-Bus deadlines, discovery timeouts, section
   normalization and request schemas.
-
-## [0.1.5] - 2026-10-31
-
-### Changed
-
-- Device details now include the device information: battery, cellular state,
-  ID, addresses, connection providers and Pair or Unpair. Unreported rows are
-  hidden. The separate Device information section is gone, and saved section
-  orders that name it still load.
-- Inline help paragraphs moved to the help guide, heading descriptions and empty
-  states. The Native KDE Connect section no longer repeats the device settings
-  button.
-
-### Fixed
 
 - Bar and device icons are sharp and centred on HiDPI screens. Presets use their
   symbol-font glyph, as the original OmaConnect does, and symbolic theme icons
