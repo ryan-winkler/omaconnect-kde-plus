@@ -54,6 +54,8 @@ All notable changes are listed here. The format follows
   selection if the file changes during preview.
 - Keep saved addresses out of local process arguments during editor writes.
 - Activity explains what to check before sending a missing file again.
+- Keep daily actions for paired, connected devices when KDE Connect cannot read
+  every device. Open native KDE Connect directly when the device list is empty.
 
 - Keep File sharing collapsed when the Browse phone files shortcut opens a
   single shared folder. Use the same shortcut to cancel while it runs.

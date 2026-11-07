@@ -26,7 +26,9 @@ omarchy pkg add kdeconnect python python-gobject
 omarchy plugin add https://github.com/ryan-winkler/omaconnect-kde-plus.git --enable
 ```
 
-Open the new bar icon, select **Native KDE Connect settings** and pair your device.
+Open the new bar icon. If you need to pair a device, select **Pair in KDE Connect**
+or **Open KDE Connect**. If neither button is visible, open **KDE Connect** from
+the application launcher. Compare the verification key on both devices before accepting.
 Moving from the original OmaConnect? Read [install, update and recovery](docs/INSTALL.md)
 first and add Plus without `--enable`. The plugin ID is `omaconnect.plus`.
 
