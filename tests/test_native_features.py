@@ -189,6 +189,20 @@ assert.equal(api.parseRemoteCommands(head+'\u00e9'.repeat((cap+1-head.length)/2)
         self.assertIn('root.remoteCommands = code === 0 ? root.parseRemoteCommands(stdout.text) : []', source)
         self.assertIn('if (isCurrent && code === 0 && stdout.text.trim())', source)
 
+    def assert_descendant_stopped(self, pid, message):
+        status = Path(f'/proc/{pid}/stat')
+        deadline = time.monotonic() + 2
+        while True:
+            try:
+                state = status.read_text().split()[2]
+            except (FileNotFoundError, ProcessLookupError):
+                return
+            if state == 'Z':
+                return
+            if time.monotonic() >= deadline:
+                self.fail(message)
+            time.sleep(.05)
+
     @unittest.skipUnless(shutil.which('node') and shutil.which('timeout'), 'node or timeout unavailable')
     def test_deadline_kills_a_provider_tree_that_ignores_sigterm(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -203,11 +217,7 @@ assert.equal(api.parseRemoteCommands(head+'\u00e9'.repeat((cap+1-head.length)/2)
             # timeout's group SIGKILL also ends timeout itself; any nonzero result is a failed read.
             self.assertNotEqual(run.returncode, 0)
             grandchild = int(pid_file.read_text())
-            deadline = time.monotonic() + 2
-            while Path('/proc/%d' % grandchild).exists() and time.monotonic() < deadline:
-                time.sleep(0.05)
-            state = Path('/proc/%d/stat' % grandchild)
-            self.assertTrue(not state.exists() or state.read_text().split()[2] == 'Z', 'grandchild still running')
+            self.assert_descendant_stopped(grandchild, 'grandchild still running')
 
     @unittest.skipUnless(shutil.which('node') and shutil.which('timeout'), 'node or timeout unavailable')
     def test_deadline_kills_a_descendant_that_outlives_its_parent(self):
@@ -222,11 +232,7 @@ assert.equal(api.parseRemoteCommands(head+'\u00e9'.repeat((cap+1-head.length)/2)
             self.assertLess(time.monotonic() - started, 6)
             self.assertNotEqual(run.returncode, 0)
             grandchild = int(pid_file.read_text())
-            deadline = time.monotonic() + 2
-            while Path('/proc/%d' % grandchild).exists() and time.monotonic() < deadline:
-                time.sleep(0.05)
-            state = Path('/proc/%d/stat' % grandchild)
-            self.assertTrue(not state.exists() or state.read_text().split()[2] == 'Z', 'descendant still running')
+            self.assert_descendant_stopped(grandchild, 'descendant still running')
 
     @unittest.skipUnless(shutil.which('node') and shutil.which('timeout'), 'node or timeout unavailable')
     def test_deadline_keeps_a_normal_exit_code_and_output(self):

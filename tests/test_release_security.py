@@ -47,10 +47,17 @@ class ReleaseSecurity(unittest.TestCase):
                 self.assertTrue(pidfile.exists(),'fake child did not start')
                 child=int(pidfile.read_text())
                 state=Path('/proc')/str(child)/'stat'
-                for unused in range(20):
-                    if not state.exists() or state.read_text().split()[2]=='Z':break
+                deadline = time.monotonic() + .2
+                while True:
+                    try:
+                        stopped = state.read_text().split()[2] == 'Z'
+                    except (FileNotFoundError, ProcessLookupError):
+                        break
+                    if stopped:
+                        break
+                    if time.monotonic() >= deadline:
+                        self.fail('timed-out provider left a live descendant')
                     time.sleep(.01)
-                self.assertTrue(not state.exists() or state.read_text().split()[2]=='Z','timed-out provider left a live descendant')
             finally:
                 if child is None and pidfile.exists():child=int(pidfile.read_text())
                 if child is not None:
